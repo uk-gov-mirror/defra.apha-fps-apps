@@ -38,6 +38,6 @@ CREATE OR REPLACE VIEW fps.vprojectmonthfinal AS
     cumtestcosts,
     paycosts,
     cumpaycosts,
-    fpsyear
+    pmf.fpsyear
    FROM fps.projectmonthfinal pmf
    JOIN fps.vtlkpproject p ON p.parentproject = pmf.project AND p.fpsyear = pmf.fpsyear;
