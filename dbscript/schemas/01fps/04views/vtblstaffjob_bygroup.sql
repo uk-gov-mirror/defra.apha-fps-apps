@@ -1,9 +1,9 @@
 -- View: fps.vtblstaffjob_bygroup
 
 CREATE OR REPLACE VIEW fps.vtblstaffjob_bygroup AS
- SELECT staffid,
-    jobcode,
-    plannedhours
-   FROM fps.tblstaffjob
-  WHERE ((jobcode)::text IN ( SELECT vtlkpproject_bygroup.parentproject
-           FROM fps.vtlkpproject_bygroup));
+ SELECT sj.staffid,
+    sj.jobcode,
+    sj.plannedhours,
+    sj.fpsyear
+   FROM fps.tblstaffjob sj
+   JOIN fps.vtlkpproject_bygroup p ON p.parentproject = sj.jobcode AND p.fpsyear = sj.fpsyear;

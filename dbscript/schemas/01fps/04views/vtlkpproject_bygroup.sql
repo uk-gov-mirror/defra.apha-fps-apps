@@ -35,7 +35,8 @@ CREATE OR REPLACE VIEW fps.vtlkpproject_bygroup AS
     oracleprojectcode,
     subaccountcode,
     projectgroup,
-    incomeaccountcode
+    incomeaccountcode,
+    fpsyear
    FROM fps.tlkpproject
   WHERE ((projectgroup)::text IN ( SELECT vtlkpprojectgroup.projectgroup
            FROM fps.vtlkpprojectgroup));

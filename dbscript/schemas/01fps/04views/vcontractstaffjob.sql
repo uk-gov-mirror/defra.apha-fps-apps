@@ -1,10 +1,9 @@
 -- View: fps.vcontractstaffjob
 
 CREATE OR REPLACE VIEW fps.vcontractstaffjob AS
- SELECT staffid,
-    jobcode,
-    plannedhours,
-    fpsyear
-   FROM fps.tblstaffjob
-  WHERE ((jobcode)::text IN ( SELECT vcontractproject.parentproject
-           FROM fps.vcontractproject));
+ SELECT sj.staffid,
+    sj.jobcode,
+    sj.plannedhours,
+    sj.fpsyear
+   FROM fps.tblstaffjob sj
+   JOIN fps.vcontractproject p ON p.parentproject = sj.jobcode AND p.fpsyear = sj.fpsyear;

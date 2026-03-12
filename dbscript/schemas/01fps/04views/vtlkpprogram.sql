@@ -8,7 +8,8 @@ CREATE OR REPLACE VIEW fps.vtlkpprogram AS
     sector_name,
     customer,
     target,
-    manager
+    manager,
+    fpsyear
    FROM fps.tlkpprogram
   WHERE ((programno)::text IN ( SELECT tbluser_program.programno
            FROM fps.tbluser_program

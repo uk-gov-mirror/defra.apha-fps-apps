@@ -1,7 +1,8 @@
 -- View: fps.qrytestspccostplan_xtab
 
 CREATE OR REPLACE VIEW fps.qrytestspccostplan_xtab AS
- SELECT testcode,
+SELECT testcode,
+    fpsyear,
     sum(
         CASE profitcentre
             WHEN 'LabT'::text THEN (price)::numeric
@@ -18,4 +19,4 @@ CREATE OR REPLACE VIEW fps.qrytestspccostplan_xtab AS
             ELSE (0)::numeric
         END) AS viro
    FROM fps.tbltestrccost
-  GROUP BY testcode;
+  GROUP BY testcode, fpsyear;

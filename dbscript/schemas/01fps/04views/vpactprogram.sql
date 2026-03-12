@@ -7,5 +7,6 @@ CREATE OR REPLACE VIEW fps.vpactprogram AS
     minim,
     sector_name,
     customer,
-    manager AS leader
+    manager AS leader,
+    fpsyear
    FROM fps.tlkpprogram;

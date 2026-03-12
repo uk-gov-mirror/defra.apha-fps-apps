@@ -9,5 +9,6 @@ CREATE OR REPLACE VIEW fps.vpacttestorproduct AS
     jobstatus,
     unitpricevla AS unitpricevlagen,
     priceahvg AS priceahvgx,
-    defraunitprice
+    defraunitprice,
+    fpsyear
    FROM fps.testorproduct;

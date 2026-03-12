@@ -1,12 +1,12 @@
 -- View: fps.vtbladditionalcosts_bygroup
 
 CREATE OR REPLACE VIEW fps.vtbladditionalcosts_bygroup AS
- SELECT jobcode,
-    account,
-    description,
-    itemcost,
-    freq,
-    supplier
-   FROM fps.tbladditionalcosts
-  WHERE ((jobcode)::text IN ( SELECT vtlkpproject_bygroup.parentproject
-           FROM fps.vtlkpproject_bygroup));
+ SELECT ac.jobcode,
+    ac.account,
+    ac.description,
+    ac.itemcost,
+    ac.freq,
+    ac.supplier,
+    ac.fpsyear
+   FROM fps.tbladditionalcosts ac
+   JOIN fps.vtlkpproject_bygroup p ON p.parentproject = ac.jobcode AND p.fpsyear = ac.fpsyear;

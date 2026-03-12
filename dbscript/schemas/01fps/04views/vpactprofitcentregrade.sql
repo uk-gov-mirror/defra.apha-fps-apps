@@ -10,5 +10,6 @@ CREATE OR REPLACE VIEW fps.vpactprofitcentregrade AS
     payrate,
     npr,
     ohr,
-    hrsavailable
+    hrsavailable,
+    fpsyear
    FROM fps.profitcentregrade;

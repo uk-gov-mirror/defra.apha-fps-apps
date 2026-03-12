@@ -17,7 +17,8 @@ CREATE OR REPLACE VIEW fps.vprojectanimalplan AS
         END) AS cost,
     tblanimals.species,
     tblanimals.security_level,
-    tblanimalreq.indcounter
+    tblanimalreq.indcounter,
+    tblanimalreq.fpsyear
    FROM ((fps.tlkpproject
-     JOIN fps.tblanimalreq ON (((tlkpproject.parentproject)::text = (tblanimalreq.jobcode)::text)))
-     JOIN fps.tblanimals ON (((tblanimalreq.animaltype)::text = (tblanimals.animaltype)::text)));
+     JOIN fps.tblanimalreq ON (((tlkpproject.parentproject)::text = (tblanimalreq.jobcode)::text) AND tlkpproject.fpsyear = tblanimalreq.fpsyear))
+     JOIN fps.tblanimals ON (((tblanimalreq.animaltype)::text = (tblanimals.animaltype)::text) AND tblanimalreq.fpsyear = tblanimals.fpsyear));

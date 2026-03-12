@@ -18,7 +18,8 @@ CREATE OR REPLACE VIEW fps.vfps_totals AS
     fpsyeartotals.projectstatus,
     fpsyeartotals.pvsincome,
     fpsyeartotals.plancaseworkdebit,
-    ma_a.bfbudget AS ma_bfbudget
+    ma_a.bfbudget AS ma_bfbudget,
+    fpsyeartotals.fpsyear
    FROM (fps.fpsyeartotals
      LEFT JOIN ( SELECT my_tlkpprojectradtrackdata.project,
             my_tlkpprojectradtrackdata.bfbudget

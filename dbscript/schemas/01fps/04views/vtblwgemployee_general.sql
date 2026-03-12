@@ -3,5 +3,6 @@
 CREATE OR REPLACE VIEW fps.vtblwgemployee_general AS
  SELECT pactid,
     spnumber,
-    workgroupgrade
+    workgroupgrade,
+    fpsyear
    FROM fps.tblwgemployee;

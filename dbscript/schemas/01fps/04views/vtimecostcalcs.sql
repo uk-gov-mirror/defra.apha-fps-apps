@@ -13,6 +13,7 @@ CREATE OR REPLACE VIEW fps.vtimecostcalcs AS
     timecostcalcs."time",
     timecostcalcs.cost,
     timecostcalcs.division,
-    timecostcalcs.jobcodeold
+    timecostcalcs.jobcodeold,
+    timecostcalcs.fpsyear
    FROM (fps.timecostcalcs
-     JOIN fps.vtlkpproject ON (((timecostcalcs.project)::text = (vtlkpproject.parentproject)::text)));
+     JOIN fps.vtlkpproject ON (((timecostcalcs.project)::text = (vtlkpproject.parentproject)::text) AND vtlkpproject.fpsyear = timecostcalcs.fpsyear));

@@ -1,10 +1,10 @@
 -- View: fps.vcontractadditionalcosts
 
 CREATE OR REPLACE VIEW fps.vcontractadditionalcosts AS
- SELECT jobcode,
-    account,
-    description,
-    itemcost
-   FROM fps.tbladditionalcosts
-  WHERE ((jobcode)::text IN ( SELECT vcontractproject.parentproject
-           FROM fps.vcontractproject));
+ SELECT ac.jobcode,
+    ac.account,
+    ac.description,
+    ac.itemcost,
+    ac.fpsyear
+   FROM fps.tbladditionalcosts ac
+   JOIN fps.vcontractproject p ON p.parentproject = ac.jobcode AND p.fpsyear = ac.fpsyear;

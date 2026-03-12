@@ -4,6 +4,7 @@ CREATE OR REPLACE VIEW fps.qryjobmonth_subcontracts1 AS
  SELECT DISTINCT project,
     month,
     acctcode,
+    fpsyear,
     sum((amount)::numeric) AS total,
         CASE
             WHEN ((acctcode)::text = ANY ((ARRAY['LargeAnimals'::character varying, 'SmallAnimals'::character varying, 'Mice'::character varying])::text[])) THEN sum((amount)::numeric)
@@ -14,4 +15,4 @@ CREATE OR REPLACE VIEW fps.qryjobmonth_subcontracts1 AS
             ELSE sum((amount)::numeric)
         END AS other1
    FROM fps.proj_subcontract
-  GROUP BY project, month, acctcode;
+  GROUP BY project, month, acctcode, fpsyear;

@@ -11,6 +11,7 @@ CREATE OR REPLACE VIEW fps.vpacttblstaff AS
     tblwgemployee.hrspaid,
     tblwgemployee.leave,
     tblwgemployee.sickspecial,
-    tblwgemployee.hrsavail
+    tblwgemployee.hrsavail,
+    tblwgemployee.fpsyear
    FROM (fps.tblemployee
      JOIN fps.tblwgemployee ON (((tblemployee.spnumber)::text = (tblwgemployee.spnumber)::text)));

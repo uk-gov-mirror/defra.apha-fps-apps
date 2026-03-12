@@ -1,9 +1,9 @@
 -- View: fps.vtblstaffjob_rm
 
 CREATE OR REPLACE VIEW fps.vtblstaffjob_rm AS
- SELECT staffid,
-    jobcode,
-    plannedhours
-   FROM fps.tblstaffjob
-  WHERE ((staffid)::text IN ( SELECT vtblwgemployee.pactid
-           FROM fps.vtblwgemployee));
+ SELECT sj.staffid,
+    sj.jobcode,
+    sj.plannedhours,
+    sj.fpsyear
+   FROM fps.tblstaffjob sj
+   JOIN fps.vtblwgemployee we ON we.pactid = sj.staffid AND we.fpsyear = sj.fpsyear;

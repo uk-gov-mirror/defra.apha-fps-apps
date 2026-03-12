@@ -12,7 +12,8 @@ CREATE OR REPLACE VIEW fps.vprofitcentregrade AS
     ohr,
     hrsavailable,
     oldchargerate,
-    defrachargerate
+    defrachargerate,
+    fpsyear
    FROM fps.profitcentregrade
   WHERE ((profitcentre)::text IN ( SELECT vtblkpprofitcentre.profitcentre
            FROM fps.vtblkpprofitcentre));

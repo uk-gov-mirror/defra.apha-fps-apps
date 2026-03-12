@@ -15,7 +15,8 @@ CREATE OR REPLACE VIEW fps.vstaffutilisation_time AS
     vfthours.fthoursperday,
     vfthours.fthoursperweek,
     tblwgemployee.startdate,
-    tblwgemployee.enddate
+    tblwgemployee.enddate,
+    tblwgemployee.fpsyear
    FROM (((fps.tblwgemployee
      JOIN fps.tblemployee ON (((tblwgemployee.spnumber)::text = (tblemployee.spnumber)::text)))
      JOIN fps.workgroupgrade ON (((tblwgemployee.workgroupgrade)::text = (workgroupgrade.wggrade)::text)))

@@ -11,8 +11,8 @@ CREATE OR REPLACE VIEW fps.vtblstaff AS
     tblwgemployee.leave,
     tblwgemployee.sickspecial,
     tblwgemployee.hrsavail,
-    tblwgemployee.makeavailable
-   FROM fps.tblwgemployee,
-    fps.tblemployee
-  WHERE (((tblwgemployee.spnumber)::text = (tblemployee.spnumber)::text) AND ((tblwgemployee.workgroupgrade)::text IN ( SELECT vworkgroupgrade.wggrade
-           FROM fps.vworkgroupgrade)));
+    tblwgemployee.makeavailable,
+    tblwgemployee.fpsyear
+   FROM fps.tblwgemployee
+   JOIN fps.tblemployee ON (tblemployee.spnumber)::text = (tblwgemployee.spnumber)::text
+   JOIN fps.vworkgroupgrade ON vworkgroupgrade.wggrade = tblwgemployee.workgroupgrade AND vworkgroupgrade.fpsyear = tblwgemployee.fpsyear;

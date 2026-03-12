@@ -1,12 +1,11 @@
 -- View: fps.vcontractanimalreq
 
 CREATE OR REPLACE VIEW fps.vcontractanimalreq AS
- SELECT jobcode,
-    animaltype,
-    numberofdays,
-    numberofanimals,
-    indcounter,
-    fpsyear
-   FROM fps.tblanimalreq
-  WHERE ((jobcode)::text IN ( SELECT vcontractproject.parentproject
-           FROM fps.vcontractproject));
+ SELECT ar.jobcode,
+    ar.animaltype,
+    ar.numberofdays,
+    ar.numberofanimals,
+    ar.indcounter,
+    ar.fpsyear
+   FROM fps.tblanimalreq ar
+   JOIN fps.vcontractproject p ON p.parentproject = ar.jobcode AND p.fpsyear = ar.fpsyear;

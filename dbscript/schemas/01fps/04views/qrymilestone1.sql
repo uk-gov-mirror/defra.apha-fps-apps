@@ -1,7 +1,7 @@
 -- View: fps.qrymilestone1
 
 CREATE OR REPLACE VIEW fps.qrymilestone1 AS
- SELECT DISTINCT project,
+SELECT DISTINCT project,
     milestoneref,
     plandate,
     actualdate,
@@ -14,6 +14,7 @@ CREATE OR REPLACE VIEW fps.qrymilestone1 AS
             WHEN (actualdate IS NULL) THEN 0
             ELSE 1
         END AS completeflag,
-    year
+    year,
+    fpsyear
    FROM fps.milestone
   WHERE ((year)::text = '2003/2004'::text);

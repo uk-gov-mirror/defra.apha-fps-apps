@@ -1,7 +1,8 @@
 -- View: fps.vcurrentperiod
 
 CREATE OR REPLACE VIEW fps.vcurrentperiod AS
- SELECT periodname
+ SELECT periodname,
+    fpsyear
    FROM fps.tblperiod
   WHERE (endperiod = ( SELECT max(tblperiod_1.endperiod) AS maxendperiod
            FROM fps.tblperiod tblperiod_1

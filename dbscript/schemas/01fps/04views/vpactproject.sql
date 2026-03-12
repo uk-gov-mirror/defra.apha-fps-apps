@@ -24,5 +24,6 @@ CREATE OR REPLACE VIEW fps.vpactproject AS
     costcentre,
     oracleprojectcode,
     subaccountcode,
-    projectgroup
+    projectgroup,
+    fpsyear
    FROM fps.tlkpproject;

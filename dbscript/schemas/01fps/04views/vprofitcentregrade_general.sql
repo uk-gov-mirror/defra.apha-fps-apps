@@ -6,5 +6,6 @@ CREATE OR REPLACE VIEW fps.vprofitcentregrade_general AS
     gradecode,
     profitcentre,
     chargerate,
-    defrachargerate
+    defrachargerate,
+    fpsyear
    FROM fps.profitcentregrade;

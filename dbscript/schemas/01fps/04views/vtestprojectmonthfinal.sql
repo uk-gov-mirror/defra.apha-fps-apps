@@ -2,6 +2,7 @@
 
 CREATE OR REPLACE VIEW fps.vtestprojectmonthfinal AS
  SELECT monthno,
+    fpsyear,
     sum(costprofile) AS costprofile,
     sum(subcontracts) AS subcontracts,
     sum(animals) AS animals,
@@ -25,4 +26,4 @@ CREATE OR REPLACE VIEW fps.vtestprojectmonthfinal AS
     sum(sumofdue__done) AS sumofdue__done,
     sum(sumofontime) AS sumofontime
    FROM fps.projectmonthfinal
-  GROUP BY monthno;
+  GROUP BY monthno, fpsyear;

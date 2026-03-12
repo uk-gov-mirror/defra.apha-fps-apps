@@ -12,5 +12,6 @@ CREATE OR REPLACE VIEW fps.vtlkpproject_general AS
     contract,
     datecreated,
     isdefraproject,
-    projectgroup
+    projectgroup,
+    fpsyear
    FROM fps.tlkpproject;

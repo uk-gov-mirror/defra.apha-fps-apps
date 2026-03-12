@@ -1,8 +1,9 @@
 -- View: fps.vstaffutilisation_summary
 
 CREATE OR REPLACE VIEW fps.vstaffutilisation_summary AS
- SELECT workgroup,
+SELECT workgroup,
     month,
+    fpsyear,
     sum(chargedhours) AS sumchargedhours,
     count(DISTINCT staffid) AS nostaff,
     fthourspermonth,
@@ -10,4 +11,4 @@ CREATE OR REPLACE VIEW fps.vstaffutilisation_summary AS
     fthoursperweek,
     sum(ztleave) AS sumztleave
    FROM fps.vstaffutilisation
-  GROUP BY workgroup, month, fthourspermonth, fthoursperweek;
+  GROUP BY workgroup, month, fpsyear, fthourspermonth, fthoursperweek;

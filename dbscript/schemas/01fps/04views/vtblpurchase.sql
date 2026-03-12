@@ -4,7 +4,8 @@ CREATE OR REPLACE VIEW fps.vtblpurchase AS
  SELECT workgroup,
     account,
     itemdescription,
-    amount
+    amount,
+    fpsyear
    FROM fps.tblpurchase
   WHERE (((workgroup)::text IN ( SELECT tblbid.workgroup
            FROM fps.tblbid

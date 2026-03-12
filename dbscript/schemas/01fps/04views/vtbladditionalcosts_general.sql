@@ -6,5 +6,6 @@ CREATE OR REPLACE VIEW fps.vtbladditionalcosts_general AS
     description,
     itemcost,
     freq,
-    supplier
+    supplier,
+    fpsyear
    FROM fps.tbladditionalcosts;

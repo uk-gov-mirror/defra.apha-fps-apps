@@ -11,5 +11,6 @@ CREATE OR REPLACE VIEW fps.vpactworkgroupgrade AS
     nprwg AS npr_wg,
     ohrwg AS ohr_wg,
     avsalary,
-    hrschangedby
+    hrschangedby,
+    fpsyear
    FROM fps.workgroupgrade;

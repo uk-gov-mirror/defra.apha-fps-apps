@@ -4,5 +4,6 @@ CREATE OR REPLACE VIEW fps.vworkgroupgrade_general AS
  SELECT wggrade,
     profitcentregrade,
     gradecode,
-    workgroup
+    workgroup,
+    fpsyear
    FROM fps.workgroupgrade;

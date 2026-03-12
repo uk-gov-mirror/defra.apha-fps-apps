@@ -37,6 +37,5 @@ CREATE OR REPLACE VIEW fps.vcontractproject AS
     projectgroup,
     incomeaccountcode,
     fpsyear
-   FROM fps.tlkpproject
-  WHERE ((contract)::text IN ( SELECT vtblcontract.contractno
-           FROM fps.vtblcontract));
+   FROM fps.tlkpproject p
+   JOIN fps.vtblcontract c ON c.contractno = p.contract AND c.fpsyear = p.fpsyear;

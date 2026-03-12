@@ -1,17 +1,17 @@
 -- View: fps.vworkgroupgrade
 
 CREATE OR REPLACE VIEW fps.vworkgroupgrade AS
- SELECT wggrade,
-    profitcentregrade,
-    gradecode,
-    workgroup,
-    chargeratewg,
-    directratewg,
-    payratewg,
-    nprwg,
-    ohrwg,
-    avsalary,
-    hrschangedby
-   FROM fps.workgroupgrade
-  WHERE ((workgroup)::text IN ( SELECT vworkgroup.workgroup
-           FROM fps.vworkgroup));
+ SELECT wgg.wggrade,
+    wgg.profitcentregrade,
+    wgg.gradecode,
+    wgg.workgroup,
+    wgg.chargeratewg,
+    wgg.directratewg,
+    wgg.payratewg,
+    wgg.nprwg,
+    wgg.ohrwg,
+    wgg.avsalary,
+    wgg.hrschangedby,
+    wgg.fpsyear
+   FROM fps.workgroupgrade wgg
+   JOIN fps.vworkgroup wg ON wg.workgroup = wgg.workgroup AND wg.fpsyear = wgg.fpsyear;
