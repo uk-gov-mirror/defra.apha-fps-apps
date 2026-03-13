@@ -1,18 +1,18 @@
 -- View: fps.vtlkpprogram
 
 CREATE OR REPLACE VIEW fps.vtlkpprogram AS
- SELECT programno,
-    programname,
-    directorate,
-    minim,
-    sector_name,
-    customer,
-    target,
-    manager,
-    fpsyear
-   FROM fps.tlkpprogram
-  WHERE ((programno)::text IN ( SELECT tbluser_program.programno
-           FROM fps.tbluser_program
-          WHERE (tbluser_program.user_id IN ( SELECT tblusers.user_id
-                   FROM fps.tblusers
-                  WHERE ((tblusers.dt2username)::text = CURRENT_USER)))));
+SELECT DISTINCT
+    p.programno,
+    p.programname,
+    p.directorate,
+    p.minim,
+    p.sector_name,
+    p.customer,
+    p.target,
+    p.manager,
+    p.fpsyear,
+    u.dt2username,
+    u.useremail
+FROM fps.tlkpprogram p
+JOIN fps.tbluser_program up ON p.programno = up.programno
+JOIN fps.tblusers u         ON up.user_id  = u.user_id;

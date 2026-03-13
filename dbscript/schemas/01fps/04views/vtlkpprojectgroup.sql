@@ -1,10 +1,10 @@
 -- View: fps.vtlkpprojectgroup
 
 CREATE OR REPLACE VIEW fps.vtlkpprojectgroup AS
- SELECT projectgroup
-   FROM fps.tlkpprojectgroup
-  WHERE ((projectgroup)::text IN ( SELECT tbluser_projectgroup.projectgroup
-           FROM fps.tbluser_projectgroup
-          WHERE (tbluser_projectgroup.user_id IN ( SELECT tblusers.user_id
-                   FROM fps.tblusers
-                  WHERE ((tblusers.dt2username)::text = CURRENT_USER)))));
+SELECT DISTINCT
+    pg.projectgroup,
+    u.dt2username,
+    u.useremail
+FROM fps.tlkpprojectgroup pg
+JOIN fps.tbluser_projectgroup upg ON pg.projectgroup = upg.projectgroup
+JOIN fps.tblusers u               ON upg.user_id = u.user_id;

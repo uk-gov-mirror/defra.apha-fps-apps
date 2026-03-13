@@ -1,17 +1,17 @@
 -- View: fps.vtblkpprofitcentre
 
 CREATE OR REPLACE VIEW fps.vtblkpprofitcentre AS
- SELECT profitcentre,
-    profitcentrename,
-    division,
-    conttarget,
-    profitcentrehead,
-    divisionid,
-    email_recipient,
-    highlevelsummary
-   FROM fps.tblkpprofitcentre
-  WHERE ((profitcentre)::text IN ( SELECT tbluser_profitcentre.profitcentre
-           FROM fps.tbluser_profitcentre
-          WHERE (tbluser_profitcentre.user_id IN ( SELECT tblusers.user_id
-                   FROM fps.tblusers
-                  WHERE ((tblusers.dt2username)::text = CURRENT_USER)))));
+SELECT DISTINCT
+    pc.profitcentre,
+    pc.profitcentrename,
+    pc.division,
+    pc.conttarget,
+    pc.profitcentrehead,
+    pc.divisionid,
+    pc.email_recipient,
+    pc.highlevelsummary,
+    u.dt2username,
+    u.useremail
+FROM fps.tblkpprofitcentre pc
+JOIN fps.tbluser_profitcentre upc ON pc.profitcentre = upc.profitcentre
+JOIN fps.tblusers u               ON upc.user_id = u.user_id;
