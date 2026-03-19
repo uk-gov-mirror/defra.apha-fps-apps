@@ -17,7 +17,8 @@ CREATE TABLE fps.timecostcalcs (
     pay money,
     nonpay money,
     overhead money,
-    fpsyear integer,
-    CONSTRAINT aaaaatimecostcalcs_pk PRIMARY KEY (workgroup, jobcode, project, month, staffid)
-);
+    fpsyear integer NOT NULL,
+    CONSTRAINT pk_timecostcalcs PRIMARY KEY (workgroup, jobcode, project, month, staffid, fpsyear),
 
+    CONSTRAINT fk_timecostcalcs_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear)
+);

@@ -8,5 +8,5 @@ CREATE OR REPLACE VIEW fps.vplancatwggrade AS
     pcwg.selleragrees,
     pcwg.buyeragrees,
     pcwg.fpsyear
-   FROM fps.plancatwggrade pcwg
-   JOIN fps.vworkgroupgrade wgg ON wgg.wggrade = pcwg.wggrade AND wgg.fpsyear = pcwg.fpsyear;
+   FROM (fps.plancatwggrade pcwg
+     JOIN fps.vworkgroupgrade wgg ON (((wgg.wggrade = pcwg.wggrade) AND (wgg.fpsyear = pcwg.fpsyear))));

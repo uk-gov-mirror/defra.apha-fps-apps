@@ -11,9 +11,9 @@ CREATE TABLE fps.mo_log (
     date_time timestamp without time zone,
     user_id character varying(20),
     insert_delete character(2),
-    fpsyear integer
+    fpsyear integer NOT NULL,
+
+    CONSTRAINT pk_mo_log PRIMARY KEY (sequenceno, fpsyear),
+
+    CONSTRAINT fk_mo_log_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear)
 );
-
-COMMENT ON TABLE fps.mo_log IS $$Note: PostgreSQL does not support column-level collations. The original SQL Server collation was Latin1_General_CI_AS.$$;
-
-COMMENT ON COLUMN fps.mo_log.sequenceno IS $$This column uses GENERATED ALWAYS AS IDENTITY, which is equivalent to IDENTITY in SQL Server.$$;

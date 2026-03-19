@@ -7,9 +7,10 @@ CREATE TABLE fps.tlkpjobcode (
     newprog character varying(20),
     type character varying(15),
     jobcodename character varying(255),
-    fpsyear integer,
-    CONSTRAINT pk_tlkpjobcode_new_1__15 PRIMARY KEY (jobcode),
+    fpsyear integer NOT NULL,
+    CONSTRAINT pk_tlkpjobcode PRIMARY KEY (jobcode, fpsyear),
     CONSTRAINT tlkpjobcode_ck_tlkpjobcode_1__11 CHECK (type IS NOT NULL),
-    CONSTRAINT fk_tlkpjobcode_1__11 FOREIGN KEY (parentproject) REFERENCES fps.tlkpproject(parentproject)
-);
+    CONSTRAINT fk_tlkpjobcode_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear),
 
+    CONSTRAINT fk_tlkpjobcode_parentproject FOREIGN KEY (parentproject, fpsyear) REFERENCES fps.tlkpproject(parentproject, fpsyear)
+);

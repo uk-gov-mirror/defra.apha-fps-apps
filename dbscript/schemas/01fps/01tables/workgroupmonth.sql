@@ -5,6 +5,9 @@ CREATE TABLE fps.workgroupmonth (
     month double precision NOT NULL,
     runningcost money,
     runcostprofile money,
-    fpsyear integer
-);
+    fpsyear integer NOT NULL,
 
+    CONSTRAINT pk_workgroupmonth PRIMARY KEY (workgroup, month, fpsyear),
+
+    CONSTRAINT fk_workgroupmonth_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear)
+);

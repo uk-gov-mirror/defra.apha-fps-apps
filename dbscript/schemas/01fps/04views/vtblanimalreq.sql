@@ -7,5 +7,5 @@ CREATE OR REPLACE VIEW fps.vtblanimalreq AS
     ar.numberofanimals,
     ar.indcounter,
     ar.fpsyear
-   FROM fps.tblanimalreq ar
-   JOIN fps.vtlkpproject p ON p.parentproject = ar.jobcode AND p.fpsyear = ar.fpsyear;
+   FROM (fps.tblanimalreq ar
+     JOIN fps.vtlkpproject p ON (((p.parentproject = ar.jobcode) AND (p.fpsyear = ar.fpsyear))));

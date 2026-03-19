@@ -7,7 +7,10 @@ CREATE TABLE fps.tlkpmonthhours (
     cvlhours numeric(5,1),
     vidhours numeric(5,1),
     fmonth smallint,
-    fpsyear integer,
-    CONSTRAINT tlkpmonthhours_pk UNIQUE (year, month)
-);
+    fpsyear integer NOT NULL,
+    CONSTRAINT tlkpmonthhours_pk UNIQUE (year, month),
 
+    CONSTRAINT pk_tlkpmonthhours PRIMARY KEY (year, month, fpsyear),
+
+    CONSTRAINT fk_tlkpmonthhours_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear)
+);

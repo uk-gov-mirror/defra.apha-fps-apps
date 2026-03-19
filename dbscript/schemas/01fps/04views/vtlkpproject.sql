@@ -37,5 +37,5 @@ CREATE OR REPLACE VIEW fps.vtlkpproject AS
     p.projectgroup,
     p.incomeaccountcode,
     p.fpsyear
-   FROM fps.tlkpproject p
-   JOIN fps.vtlkpprogram pr ON pr.programno = p.program AND pr.fpsyear = p.fpsyear;
+   FROM (fps.tlkpproject p
+     JOIN fps.vtlkpprogram pr ON (((pr.programno = p.program) AND (pr.fpsyear = p.fpsyear))));

@@ -4,9 +4,10 @@ CREATE TABLE fps.tblbid (
     workgroup citext NOT NULL,
     account citext NOT NULL,
     genbid money DEFAULT 0 NOT NULL,
-    fpsyear integer,
-    CONSTRAINT pk__tblbid__66ff53e3 PRIMARY KEY (workgroup, account),
-    CONSTRAINT fk_tblbid_account FOREIGN KEY (account) REFERENCES fps.tblkpaccountcategory(accshortname),
-    CONSTRAINT fk_tblbid_workgroup FOREIGN KEY (workgroup) REFERENCES fps.workgroup(workgroup)
-);
+    fpsyear integer NOT NULL,
+    CONSTRAINT pk_tblbid PRIMARY KEY (workgroup, account, fpsyear),
+    CONSTRAINT fk_tblbid_account FOREIGN KEY (account, fpsyear) REFERENCES fps.tblkpaccountcategory(accshortname, fpsyear),
+    CONSTRAINT fk_tblbid_workgroup FOREIGN KEY (workgroup, fpsyear) REFERENCES fps.workgroup(workgroup, fpsyear),
 
+    CONSTRAINT fk_tblbid_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear)
+);

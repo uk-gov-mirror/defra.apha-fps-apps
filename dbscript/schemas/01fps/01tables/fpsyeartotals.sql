@@ -19,7 +19,8 @@ CREATE TABLE fps.fpsyeartotals (
     pvsincome money,
     plancaseworkdebit money,
     totalpaycosts double precision,
-    fpsyear integer,
-    CONSTRAINT pk_fpsyeartotals PRIMARY KEY (parentproject)
-);
+    fpsyear integer NOT NULL,
+    CONSTRAINT pk_fpsyeartotals PRIMARY KEY (parentproject, fpsyear),
 
+    CONSTRAINT fk_fpsyeartotals_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear)
+);

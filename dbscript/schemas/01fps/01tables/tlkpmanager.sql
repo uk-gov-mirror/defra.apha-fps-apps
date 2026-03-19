@@ -5,7 +5,8 @@ CREATE TABLE fps.tlkpmanager (
     title character varying(10),
     workgroup character varying(50) NOT NULL,
     gradecode character varying(10) NOT NULL,
-    fpsyear integer,
-    CONSTRAINT pk___1__18 PRIMARY KEY (manager)
-);
+    fpsyear integer NOT NULL,
+    CONSTRAINT pk_tlkpmanager PRIMARY KEY (manager, fpsyear),
 
+    CONSTRAINT fk_tlkpmanager_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear)
+);

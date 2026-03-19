@@ -13,5 +13,5 @@ CREATE OR REPLACE VIEW fps.vworkgroupgrade AS
     wgg.avsalary,
     wgg.hrschangedby,
     wgg.fpsyear
-   FROM fps.workgroupgrade wgg
-   JOIN fps.vworkgroup wg ON wg.workgroup = wgg.workgroup AND wg.fpsyear = wgg.fpsyear;
+   FROM (fps.workgroupgrade wgg
+     JOIN fps.vworkgroup wg ON (((wg.workgroup = wgg.workgroup) AND (wg.fpsyear = wgg.fpsyear))));

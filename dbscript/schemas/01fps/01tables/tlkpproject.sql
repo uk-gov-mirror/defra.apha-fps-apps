@@ -36,15 +36,17 @@ CREATE TABLE fps.tlkpproject (
     subaccountcode citext,
     projectgroup citext,
     incomeaccountcode citext NOT NULL,
-    fpsyear integer,
-    CONSTRAINT pk__tlkpproject__6c83230f PRIMARY KEY (parentproject),
+    fpsyear integer NOT NULL,
+    CONSTRAINT pk_tlkpproject PRIMARY KEY (parentproject, fpsyear),
     CONSTRAINT fk_tlkpproject_1__10 FOREIGN KEY (projectstatus) REFERENCES fps.tblstatus(status),
     CONSTRAINT fk_tlkpproject_1__16 FOREIGN KEY (customer) REFERENCES fps.tlkpcustomer(customer),
-    CONSTRAINT fk_tlkpproject_3__10 FOREIGN KEY (program) REFERENCES fps.tlkpprogram(programno),
-    CONSTRAINT fk_tlkpproject_contract FOREIGN KEY (contract) REFERENCES fps.tblcontract(contractno),
+    CONSTRAINT fk_tlkpproject_contract FOREIGN KEY (contract, fpsyear) REFERENCES fps.tblcontract(contractno, fpsyear),
     CONSTRAINT fk_tlkpproject_disease FOREIGN KEY (disease) REFERENCES fps.tbldisease(disease),
     CONSTRAINT fk_tlkpproject_incomeaccountcode FOREIGN KEY (incomeaccountcode) REFERENCES fps.tlkpaccountcode(code),
     CONSTRAINT fk_tlkpproject_subaccountcode FOREIGN KEY (subaccountcode) REFERENCES fps.tlkpsubaccount(subaccountcode),
-    CONSTRAINT fk_tlkpproject_tlkpprojectgroup FOREIGN KEY (projectgroup) REFERENCES fps.tlkpprojectgroup(projectgroup)
-);
+    CONSTRAINT fk_tlkpproject_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear),
 
+    CONSTRAINT fk_tlkpproject_program FOREIGN KEY (program, fpsyear) REFERENCES fps.tlkpprogram(programno, fpsyear),
+
+    CONSTRAINT fk_tlkpproject_projectgroup FOREIGN KEY (projectgroup, fpsyear) REFERENCES fps.tlkpprojectgroup(projectgroup, fpsyear)
+);

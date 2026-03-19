@@ -1,7 +1,7 @@
 -- View: fps.vpostmort1
 
 CREATE OR REPLACE VIEW fps.vpostmort1 AS
-SELECT tlkptestcapability.planportfolio,
+ SELECT tlkptestcapability.planportfolio,
     monthlyoutput.testcode,
     testorproduct.shortdescription AS itemdescription,
     monthlyoutput.fpsyear,
@@ -16,9 +16,9 @@ SELECT tlkptestcapability.planportfolio,
     monthlyoutput.workgroup
    FROM (((fps.vtbltestrequ
      JOIN (fps.tlkptestcapability
-     JOIN fps.monthlyoutput ON ((((tlkptestcapability.workgroup)::text = (monthlyoutput.workgroup)::text) AND ((tlkptestcapability.testcode)::text = (monthlyoutput.testcode)::text) AND tlkptestcapability.fpsyear = monthlyoutput.fpsyear))) ON ((((vtbltestrequ.testcode)::text = (monthlyoutput.testcode)::text) AND ((vtbltestrequ.jobcode)::text = (monthlyoutput.buyer)::text) AND vtbltestrequ.fpsyear = monthlyoutput.fpsyear)))
-     JOIN fps.testorproduct ON (((monthlyoutput.testcode)::text = (testorproduct.itemcode)::text) AND monthlyoutput.fpsyear = testorproduct.fpsyear))
-     LEFT JOIN fps.qrytestspccostplan_xtab ON (((testorproduct.itemcode)::text = (qrytestspccostplan_xtab.testcode)::text) AND testorproduct.fpsyear = qrytestspccostplan_xtab.fpsyear))
+     JOIN fps.monthlyoutput ON ((((tlkptestcapability.workgroup)::text = (monthlyoutput.workgroup)::text) AND ((tlkptestcapability.testcode)::text = (monthlyoutput.testcode)::text) AND (tlkptestcapability.fpsyear = monthlyoutput.fpsyear)))) ON ((((vtbltestrequ.testcode)::text = (monthlyoutput.testcode)::text) AND ((vtbltestrequ.jobcode)::text = (monthlyoutput.buyer)::text) AND (vtbltestrequ.fpsyear = monthlyoutput.fpsyear))))
+     JOIN fps.testorproduct ON ((((monthlyoutput.testcode)::text = (testorproduct.itemcode)::text) AND (monthlyoutput.fpsyear = testorproduct.fpsyear))))
+     LEFT JOIN fps.qrytestspccostplan_xtab ON ((((testorproduct.itemcode)::text = (qrytestspccostplan_xtab.testcode)::text) AND (testorproduct.fpsyear = qrytestspccostplan_xtab.fpsyear))))
   WHERE (monthlyoutput.month <= ( SELECT max(tblperiod.endperiod) AS endperiod
            FROM fps.tblperiod
           WHERE (tblperiod.finalsummariesrun = '-1'::integer)))

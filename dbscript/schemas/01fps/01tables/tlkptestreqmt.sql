@@ -9,8 +9,9 @@ CREATE TABLE fps.tlkptestreqmt (
     testbuyercode character varying(50),
     datecreated timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     active smallint DEFAULT 1,
-    fpsyear integer,
-    CONSTRAINT aaaaatlkptestreqmt_pk PRIMARY KEY (testcode, buyer),
-    CONSTRAINT fk_tlkptestreqmt_testcode FOREIGN KEY (testcode) REFERENCES fps.testorproduct(itemcode)
-);
+    fpsyear integer NOT NULL,
+    CONSTRAINT pk_tlkptestreqmt PRIMARY KEY (testcode, buyer, fpsyear),
+    CONSTRAINT fk_tlkptestreqmt_testcode FOREIGN KEY (testcode, fpsyear) REFERENCES fps.testorproduct(itemcode, fpsyear),
 
+    CONSTRAINT fk_tlkptestreqmt_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear)
+);

@@ -11,9 +11,10 @@ CREATE TABLE fps.proj_invoice (
     invoicecounter integer NOT NULL,
     x character varying(5),
     type character varying(10),
-    fpsyear integer,
-    CONSTRAINT pk_proj_invoice_1__13 PRIMARY KEY (invoicecounter),
+    fpsyear integer NOT NULL,
+    CONSTRAINT pk_proj_invoice PRIMARY KEY (invoicecounter, fpsyear),
     CONSTRAINT proj_invoice_ck_proj_invoice_2__22 CHECK (type::text = 'PVSIncome'::text OR type::text = 'CVOGIncome'::text),
-    CONSTRAINT fk_proj_invoice_projectparent FOREIGN KEY (projectparent) REFERENCES fps.tlkpproject(parentproject)
-);
+    CONSTRAINT fk_proj_invoice_projectparent FOREIGN KEY (projectparent, fpsyear) REFERENCES fps.tlkpproject(parentproject, fpsyear),
 
+    CONSTRAINT fk_proj_invoice_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear)
+);

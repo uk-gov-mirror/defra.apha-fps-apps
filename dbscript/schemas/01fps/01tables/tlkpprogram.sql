@@ -9,7 +9,8 @@ CREATE TABLE fps.tlkpprogram (
     customer character varying(50),
     target money DEFAULT 0,
     manager character varying(50),
-    fpsyear integer,
-    CONSTRAINT pk__tlkpprogram__2180fb33 PRIMARY KEY (programno)
-);
+    fpsyear integer NOT NULL,
+    CONSTRAINT pk_tlkpprogram PRIMARY KEY (programno, fpsyear),
 
+    CONSTRAINT fk_tlkpprogram_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear)
+);

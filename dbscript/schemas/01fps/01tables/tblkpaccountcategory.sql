@@ -8,8 +8,9 @@ CREATE TABLE fps.tblkpaccountcategory (
     projectspecific integer,
     rcspecific integer,
     csg7_group character(15),
-    fpsyear integer,
-    CONSTRAINT pk__tblkpaccountcate__02dc7882 PRIMARY KEY (accshortname),
-    CONSTRAINT tblkpaccountcategory_ck_accounttype CHECK (accounttype = 'Pay'::citext OR accounttype = 'NPRC'::citext)
-);
+    fpsyear integer NOT NULL,
+    CONSTRAINT pk_tblkpaccountcategory PRIMARY KEY (accshortname, fpsyear),
+    CONSTRAINT tblkpaccountcategory_ck_accounttype CHECK (accounttype = 'Pay'::citext OR accounttype = 'NPRC'::citext),
 
+    CONSTRAINT fk_tblkpaccountcategory_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear)
+);

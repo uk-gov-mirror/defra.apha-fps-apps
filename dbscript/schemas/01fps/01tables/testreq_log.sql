@@ -13,8 +13,8 @@ CREATE TABLE fps.testreq_log (
     user_id character varying(20),
     insert_delete character(2),
     jobcode character varying(50),
-    fpsyear integer,
-    CONSTRAINT pk_testreq_log PRIMARY KEY (sequenceno)
-);
+    fpsyear integer NOT NULL,
+    CONSTRAINT pk_testreq_log PRIMARY KEY (sequenceno, fpsyear),
 
-COMMENT ON COLUMN fps.testreq_log.jobcode IS $$Generated column based on projectbuyercode$$;
+    CONSTRAINT fk_testreq_log_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear)
+);

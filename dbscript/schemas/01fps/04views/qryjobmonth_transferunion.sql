@@ -1,7 +1,7 @@
 -- View: fps.qryjobmonth_transferunion
 
 CREATE OR REPLACE VIEW fps.qryjobmonth_transferunion AS
-SELECT qryjobmonth_tctransfers.project,
+ SELECT qryjobmonth_tctransfers.project,
     qryjobmonth_tctransfers.month,
     qryjobmonth_tctransfers.fpsyear,
     qryjobmonth_tctransfers.transfercost

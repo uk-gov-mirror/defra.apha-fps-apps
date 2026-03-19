@@ -8,7 +8,8 @@ CREATE TABLE fps.staffjob_log (
     date_time timestamp without time zone,
     user_id character varying(20),
     insert_delete character(2),
-    fpsyear integer,
-    CONSTRAINT pk_staffjob_log PRIMARY KEY (sequenceno)
-);
+    fpsyear integer NOT NULL,
+    CONSTRAINT pk_staffjob_log PRIMARY KEY (sequenceno, fpsyear),
 
+    CONSTRAINT fk_staffjob_log_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear)
+);

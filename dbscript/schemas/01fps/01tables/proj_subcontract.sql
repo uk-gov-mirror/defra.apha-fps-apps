@@ -13,8 +13,9 @@ CREATE TABLE fps.proj_subcontract (
     suppliernumber integer,
     dailyrate money,
     animaldays integer,
-    fpsyear integer,
-    CONSTRAINT pk_proj_subcontract_1__13 PRIMARY KEY (subcontcounter),
-    CONSTRAINT fk_proj_subcontract_project FOREIGN KEY (project) REFERENCES fps.tlkpproject(parentproject)
-);
+    fpsyear integer NOT NULL,
+    CONSTRAINT pk_proj_subcontract PRIMARY KEY (subcontcounter, fpsyear),
+    CONSTRAINT fk_proj_subcontract_project FOREIGN KEY (project, fpsyear) REFERENCES fps.tlkpproject(parentproject, fpsyear),
 
+    CONSTRAINT fk_proj_subcontract_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear)
+);

@@ -5,7 +5,8 @@ CREATE TABLE fps.recreatesummaries_log (
     userid character varying(20),
     period smallint,
     datedone timestamp without time zone,
-    fpsyear integer,
-    CONSTRAINT pk_recreatesummaries_log PRIMARY KEY (id)
-);
+    fpsyear integer NOT NULL,
+    CONSTRAINT pk_recreatesummaries_log PRIMARY KEY (id, fpsyear),
 
+    CONSTRAINT fk_recreatesummaries_log_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear)
+);

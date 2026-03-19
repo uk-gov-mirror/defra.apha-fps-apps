@@ -11,7 +11,8 @@ CREATE TABLE fps.mt_log (
     date_time timestamp without time zone,
     user_id character varying(20),
     insert_delete character(2),
-    fpsyear integer,
-    CONSTRAINT mt_log_pk PRIMARY KEY (sequenceno)
-);
+    fpsyear integer NOT NULL,
+    CONSTRAINT pk_mt_log PRIMARY KEY (sequenceno, fpsyear),
 
+    CONSTRAINT fk_mt_log_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear)
+);

@@ -11,9 +11,10 @@ CREATE TABLE fps.workgroup (
     cos90 smallint,
     costcentreold double precision,
     email_recipient character varying(50),
-    fpsyear integer,
-    CONSTRAINT pk__workgroup__25518c17 PRIMARY KEY (workgroup),
-    CONSTRAINT fk_workgroup_costcentre FOREIGN KEY (costcentre) REFERENCES fps.costcentre(costcentre),
-    CONSTRAINT fk_workgroup_profitcentre FOREIGN KEY (profitcentre) REFERENCES fps.tblkpprofitcentre(profitcentre)
-);
+    fpsyear integer NOT NULL,
+    CONSTRAINT pk_workgroup PRIMARY KEY (workgroup, fpsyear),
+    CONSTRAINT fk_workgroup_costcentre FOREIGN KEY (costcentre, fpsyear) REFERENCES fps.costcentre(costcentre, fpsyear),
+    CONSTRAINT fk_workgroup_profitcentre FOREIGN KEY (profitcentre) REFERENCES fps.tblkpprofitcentre(profitcentre),
 
+    CONSTRAINT fk_workgroup_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear)
+);

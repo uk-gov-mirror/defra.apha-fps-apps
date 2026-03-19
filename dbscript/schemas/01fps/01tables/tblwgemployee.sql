@@ -15,9 +15,11 @@ CREATE TABLE fps.tblwgemployee (
     startdate date,
     enddate date,
     hoursperweek double precision,
-    fpsyear integer,
-    CONSTRAINT pk_tblwgemployee_1__10 PRIMARY KEY (pactid),
-    CONSTRAINT fk_tblwgemployee_3__10 FOREIGN KEY (workgroupgrade) REFERENCES fps.workgroupgrade(wggrade),
-    CONSTRAINT fk_tblwgemployee_spnumber FOREIGN KEY (spnumber) REFERENCES fps.tblemployee(spnumber)
-);
+    fpsyear integer NOT NULL,
+    CONSTRAINT pk_tblwgemployee PRIMARY KEY (pactid, fpsyear),
+    CONSTRAINT fk_tblwgemployee_spnumber FOREIGN KEY (spnumber, fpsyear) REFERENCES fps.tblemployee(spnumber, fpsyear),
 
+    CONSTRAINT fk_tblwgemployee_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear),
+
+    CONSTRAINT fk_tblwgemployee_workgroupgrade FOREIGN KEY (workgroupgrade, fpsyear) REFERENCES fps.workgroupgrade(wggrade, fpsyear)
+);

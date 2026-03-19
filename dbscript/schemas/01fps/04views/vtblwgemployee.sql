@@ -16,5 +16,5 @@ CREATE OR REPLACE VIEW fps.vtblwgemployee AS
     e.enddate,
     e.hoursperweek,
     e.fpsyear
-   FROM fps.tblwgemployee e
-   JOIN fps.vworkgroupgrade wgg ON wgg.wggrade = e.workgroupgrade AND wgg.fpsyear = e.fpsyear;
+   FROM (fps.tblwgemployee e
+     JOIN fps.vworkgroupgrade wgg ON (((wgg.wggrade = e.workgroupgrade) AND (wgg.fpsyear = e.fpsyear))));

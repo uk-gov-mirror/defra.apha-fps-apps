@@ -13,6 +13,6 @@ CREATE OR REPLACE VIEW fps.vtblstaff AS
     tblwgemployee.hrsavail,
     tblwgemployee.makeavailable,
     tblwgemployee.fpsyear
-   FROM fps.tblwgemployee
-   JOIN fps.tblemployee ON (tblemployee.spnumber)::text = (tblwgemployee.spnumber)::text
-   JOIN fps.vworkgroupgrade ON vworkgroupgrade.wggrade = tblwgemployee.workgroupgrade AND vworkgroupgrade.fpsyear = tblwgemployee.fpsyear;
+   FROM ((fps.tblwgemployee
+     JOIN fps.tblemployee ON (((tblemployee.spnumber)::text = (tblwgemployee.spnumber)::text)))
+     JOIN fps.vworkgroupgrade ON (((vworkgroupgrade.wggrade = tblwgemployee.workgroupgrade) AND (vworkgroupgrade.fpsyear = tblwgemployee.fpsyear))));

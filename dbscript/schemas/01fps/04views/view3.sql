@@ -1,7 +1,7 @@
 -- View: fps.view3
 
 CREATE OR REPLACE VIEW fps.view3 AS
-SELECT timecostcalcs.project,
+ SELECT timecostcalcs.project,
     timecostcalcs.jobcode,
     timecostcalcs.fpsyear,
     sum(timecostcalcs.cost) AS sumofcost,
@@ -11,7 +11,7 @@ SELECT timecostcalcs.project,
             ELSE 'Laboratory Testing'::text
         END AS resourcecentre
    FROM (fps.timecostcalcs
-     JOIN fps.workgroup ON (((timecostcalcs.workgroup)::text = (workgroup.workgroup)::text) AND timecostcalcs.fpsyear = workgroup.fpsyear))
+     JOIN fps.workgroup ON ((((timecostcalcs.workgroup)::text = (workgroup.workgroup)::text) AND (timecostcalcs.fpsyear = workgroup.fpsyear))))
   GROUP BY workgroup.profitcentre, timecostcalcs.project, timecostcalcs.jobcode, timecostcalcs.fpsyear,
         CASE workgroup.profitcentre
             WHEN 'Path'::text THEN 'Surveillance/Pathology'::text

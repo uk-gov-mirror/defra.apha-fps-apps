@@ -8,7 +8,8 @@ CREATE TABLE fps.tblsurvff_fees (
     record_id character varying(20) NOT NULL,
     volume double precision,
     totalfee money,
-    fpsyear integer,
-    CONSTRAINT pk_tblsurvff_fees PRIMARY KEY (owning_vic, contract, record_id)
-);
+    fpsyear integer NOT NULL,
+    CONSTRAINT pk_tblsurvff_fees PRIMARY KEY (owning_vic, contract, record_id, fpsyear),
 
+    CONSTRAINT fk_tblsurvff_fees_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear)
+);

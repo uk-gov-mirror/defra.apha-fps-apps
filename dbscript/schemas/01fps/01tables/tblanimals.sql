@@ -7,7 +7,8 @@ CREATE TABLE fps.tblanimals (
     dailyrate money,
     planbyweek boolean DEFAULT false NOT NULL,
     defradailyrate money,
-    fpsyear integer,
-    CONSTRAINT pk__tblanimals__18ebb532 PRIMARY KEY (animaltype)
-);
+    fpsyear integer NOT NULL,
+    CONSTRAINT pk_tblanimals PRIMARY KEY (animaltype, fpsyear),
 
+    CONSTRAINT fk_tblanimals_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear)
+);

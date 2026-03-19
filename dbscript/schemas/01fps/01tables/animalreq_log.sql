@@ -9,7 +9,8 @@ CREATE TABLE fps.animalreq_log (
     date_time timestamp without time zone,
     user_id character varying(20),
     insert_delete character(2),
-    fpsyear integer,
-    CONSTRAINT pk_animalreq_log PRIMARY KEY (sequenceno)
-);
+    fpsyear integer NOT NULL,
+    CONSTRAINT pk_animalreq_log PRIMARY KEY (sequenceno, fpsyear),
 
+    CONSTRAINT fk_animalreq_log_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear)
+);

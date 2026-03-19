@@ -5,5 +5,5 @@ CREATE OR REPLACE VIEW fps.vtblstaffjob_rm AS
     sj.jobcode,
     sj.plannedhours,
     sj.fpsyear
-   FROM fps.tblstaffjob sj
-   JOIN fps.vtblwgemployee we ON we.pactid = sj.staffid AND we.fpsyear = sj.fpsyear;
+   FROM (fps.tblstaffjob sj
+     JOIN fps.vtblwgemployee we ON (((we.pactid = sj.staffid) AND (we.fpsyear = sj.fpsyear))));

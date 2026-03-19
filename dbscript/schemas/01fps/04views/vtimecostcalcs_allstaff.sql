@@ -1,7 +1,7 @@
 -- View: fps.vtimecostcalcs_allstaff
 
 CREATE OR REPLACE VIEW fps.vtimecostcalcs_allstaff AS
-SELECT timecostcalcs.workgroup,
+ SELECT timecostcalcs.workgroup,
     timecostcalcs.month,
     timecostcalcs.staffid,
     timecostcalcs.project,
@@ -22,6 +22,6 @@ UNION ALL
     0 AS "time",
     vtblstaff_general.fpsyear
    FROM ((fps.vtblstaff_general
-     JOIN fps.workgroupgrade ON (((vtblstaff_general.workgroupgrade)::text = (workgroupgrade.wggrade)::text) AND vtblstaff_general.fpsyear = workgroupgrade.fpsyear))
+     JOIN fps.workgroupgrade ON ((((vtblstaff_general.workgroupgrade)::text = (workgroupgrade.wggrade)::text) AND (vtblstaff_general.fpsyear = workgroupgrade.fpsyear))))
      CROSS JOIN fps.tblperiod)
   WHERE ((tblperiod.finalsummariesrun = '-1'::integer) AND (vtblstaff_general.name !~~ '%general'::text));

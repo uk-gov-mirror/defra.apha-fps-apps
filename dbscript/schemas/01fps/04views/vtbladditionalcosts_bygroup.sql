@@ -8,5 +8,5 @@ CREATE OR REPLACE VIEW fps.vtbladditionalcosts_bygroup AS
     ac.freq,
     ac.supplier,
     ac.fpsyear
-   FROM fps.tbladditionalcosts ac
-   JOIN fps.vtlkpproject_bygroup p ON p.parentproject = ac.jobcode AND p.fpsyear = ac.fpsyear;
+   FROM (fps.tbladditionalcosts ac
+     JOIN fps.vtlkpproject_bygroup p ON (((p.parentproject = ac.jobcode) AND (p.fpsyear = ac.fpsyear))));

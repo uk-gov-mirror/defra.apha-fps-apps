@@ -7,6 +7,7 @@ CREATE TABLE fps.tblusers (
     frmwarning boolean DEFAULT false NOT NULL,
     comments character varying(255),
     dt2username character varying(50),
+    useremail character varying(255),
     CONSTRAINT pk__tblusers__1367e606 PRIMARY KEY (user_id),
     CONSTRAINT username UNIQUE (username)
 );

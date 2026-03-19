@@ -11,8 +11,9 @@ CREATE TABLE fps.testorproduct (
     chargemethod character varying(5),
     shortdescription character(18),
     defraunitprice money DEFAULT 0 NOT NULL,
-    fpsyear integer,
-    CONSTRAINT pk__testorproduct__487accc3 PRIMARY KEY (itemcode),
-    CONSTRAINT testorproduct_owner_cannot_be_null CHECK (owner IS NOT NULL AND (owner::text = 'PT'::text OR owner::text = 'PA'::text OR owner::text = 'SD'::text OR owner::text = 'LT'::text))
-);
+    fpsyear integer NOT NULL,
+    CONSTRAINT pk_testorproduct PRIMARY KEY (itemcode, fpsyear),
+    CONSTRAINT testorproduct_owner_cannot_be_null CHECK (owner IS NOT NULL AND (owner::text = 'PT'::text OR owner::text = 'PA'::text OR owner::text = 'SD'::text OR owner::text = 'LT'::text)),
 
+    CONSTRAINT fk_testorproduct_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear)
+);

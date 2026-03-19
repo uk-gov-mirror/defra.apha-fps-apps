@@ -19,7 +19,8 @@ CREATE TABLE fps.projectmonth2 (
     ontime double precision,
     totalhours double precision,
     paycosts double precision,
-    fpsyear integer,
-    CONSTRAINT aaaaaprojectmonth2_pk PRIMARY KEY (project, monthno)
-);
+    fpsyear integer NOT NULL,
+    CONSTRAINT pk_projectmonth2 PRIMARY KEY (project, monthno, fpsyear),
 
+    CONSTRAINT fk_projectmonth2_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear)
+);

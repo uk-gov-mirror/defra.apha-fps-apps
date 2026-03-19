@@ -7,7 +7,8 @@ CREATE TABLE fps.grade (
     pactcode character varying(50),
     avleavehrs double precision DEFAULT 0,
     avsickhrs double precision DEFAULT 0,
-    fpsyear integer,
-    CONSTRAINT pk__grade__1ab40213 PRIMARY KEY (gradecode)
-);
+    fpsyear integer NOT NULL,
+    CONSTRAINT pk_grade PRIMARY KEY (gradecode, fpsyear),
 
+    CONSTRAINT fk_grade_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear)
+);

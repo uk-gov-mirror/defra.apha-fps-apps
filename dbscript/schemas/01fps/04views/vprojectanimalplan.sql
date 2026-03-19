@@ -20,5 +20,5 @@ CREATE OR REPLACE VIEW fps.vprojectanimalplan AS
     tblanimalreq.indcounter,
     tblanimalreq.fpsyear
    FROM ((fps.tlkpproject
-     JOIN fps.tblanimalreq ON (((tlkpproject.parentproject)::text = (tblanimalreq.jobcode)::text) AND tlkpproject.fpsyear = tblanimalreq.fpsyear))
-     JOIN fps.tblanimals ON (((tblanimalreq.animaltype)::text = (tblanimals.animaltype)::text) AND tblanimalreq.fpsyear = tblanimals.fpsyear));
+     JOIN fps.tblanimalreq ON ((((tlkpproject.parentproject)::text = (tblanimalreq.jobcode)::text) AND (tlkpproject.fpsyear = tblanimalreq.fpsyear))))
+     JOIN fps.tblanimals ON ((((tblanimalreq.animaltype)::text = (tblanimals.animaltype)::text) AND (tblanimalreq.fpsyear = tblanimals.fpsyear))));

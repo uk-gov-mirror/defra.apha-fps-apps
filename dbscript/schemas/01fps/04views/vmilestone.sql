@@ -12,4 +12,4 @@ CREATE OR REPLACE VIEW fps.vmilestone AS
     milestone.year,
     milestone.fpsyear
    FROM (fps.milestone
-     JOIN fps.vtlkpproject ON (((milestone.project)::text = (vtlkpproject.parentproject)::text) AND vtlkpproject.fpsyear = milestone.fpsyear));
+     JOIN fps.vtlkpproject ON ((((milestone.project)::text = (vtlkpproject.parentproject)::text) AND (vtlkpproject.fpsyear = milestone.fpsyear))));

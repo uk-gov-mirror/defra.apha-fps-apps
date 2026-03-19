@@ -6,4 +6,4 @@ CREATE OR REPLACE VIEW fps.vprojectmonth AS
     projectmonth.costprofile,
     projectmonth.fpsyear
    FROM (fps.projectmonth
-     JOIN fps.vtlkpproject ON (((projectmonth.project)::text = (vtlkpproject.parentproject)::text) AND vtlkpproject.fpsyear = projectmonth.fpsyear));
+     JOIN fps.vtlkpproject ON ((((projectmonth.project)::text = (vtlkpproject.parentproject)::text) AND (vtlkpproject.fpsyear = projectmonth.fpsyear))));

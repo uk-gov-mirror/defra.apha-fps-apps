@@ -41,7 +41,8 @@ CREATE TABLE fps.project_log (
     subaccountcode character varying(50),
     projectgroup character varying(50),
     incomeaccountcode character varying(50),
-    fpsyear integer,
-    CONSTRAINT pk_project_log PRIMARY KEY (sequenceno)
-);
+    fpsyear integer NOT NULL,
+    CONSTRAINT pk_project_log PRIMARY KEY (sequenceno, fpsyear),
 
+    CONSTRAINT fk_project_log_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear)
+);

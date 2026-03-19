@@ -9,9 +9,10 @@ CREATE TABLE fps.divisiongrade (
     payrate money DEFAULT 0,
     npr money DEFAULT 0,
     ohr money DEFAULT 0,
-    fpsyear integer,
-    CONSTRAINT pk__divisiongrade__225523db PRIMARY KEY (divisiongrade),
+    fpsyear integer NOT NULL,
+    CONSTRAINT pk_divisiongrade PRIMARY KEY (divisiongrade, fpsyear),
     CONSTRAINT fk_divisiongrade_division FOREIGN KEY (division) REFERENCES fps.tlkpdivision(divname),
-    CONSTRAINT fk_divisiongrade_gradecode FOREIGN KEY (gradecode) REFERENCES fps.grade(gradecode)
-);
+    CONSTRAINT fk_divisiongrade_gradecode FOREIGN KEY (gradecode, fpsyear) REFERENCES fps.grade(gradecode, fpsyear),
 
+    CONSTRAINT fk_divisiongrade_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear)
+);

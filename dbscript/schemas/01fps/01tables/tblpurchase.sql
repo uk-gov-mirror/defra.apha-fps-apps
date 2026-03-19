@@ -5,8 +5,9 @@ CREATE TABLE fps.tblpurchase (
     account citext NOT NULL,
     itemdescription character varying(50) NOT NULL,
     amount money DEFAULT 0 NOT NULL,
-    fpsyear integer,
-    CONSTRAINT pk__tblpurchase__6acfe4c7 PRIMARY KEY (workgroup, account, itemdescription),
-    CONSTRAINT fk_tblpurchase_workgroup_account FOREIGN KEY (workgroup, account) REFERENCES fps.tblbid(workgroup, account)
-);
+    fpsyear integer NOT NULL,
+    CONSTRAINT pk_tblpurchase PRIMARY KEY (workgroup, account, itemdescription, fpsyear),
+    CONSTRAINT fk_tblpurchase_workgroup_account FOREIGN KEY (workgroup, account, fpsyear) REFERENCES fps.tblbid(workgroup, account, fpsyear),
 
+    CONSTRAINT fk_tblpurchase_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear)
+);

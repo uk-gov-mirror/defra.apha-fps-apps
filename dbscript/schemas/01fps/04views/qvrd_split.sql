@@ -1,7 +1,7 @@
 -- View: fps.qvrd_split
 
 CREATE OR REPLACE VIEW fps.qvrd_split AS
-SELECT monthlyoutput.workgroup AS location,
+ SELECT monthlyoutput.workgroup AS location,
     monthlyoutput.month,
     ((
         CASE vplancrosstab.vetr
@@ -23,9 +23,9 @@ SELECT monthlyoutput.workgroup AS location,
     ((((tlkptestreqmt.unitprice)::numeric)::double precision * sum(monthlyoutput.volume)) - (((vplancrosstab.labt)::double precision * sum(monthlyoutput.volume)) + ((vplancrosstab.vetr)::double precision * sum(monthlyoutput.volume)))) AS "profit/loss",
     (tlkptestreqmt.unitprice)::numeric AS testprice
    FROM (((fps.monthlyoutput
-     JOIN fps.tlkptestcapability ON ((((monthlyoutput.testcode)::text = (tlkptestcapability.testcode)::text) AND ((monthlyoutput.workgroup)::text = (tlkptestcapability.workgroup)::text) AND monthlyoutput.fpsyear = tlkptestcapability.fpsyear)))
-     JOIN fps.vplancrosstab ON (((monthlyoutput.testcode)::text = (vplancrosstab.testcode)::text) AND monthlyoutput.fpsyear = vplancrosstab.fpsyear))
-     JOIN fps.tlkptestreqmt ON ((((monthlyoutput.testcode)::text = (tlkptestreqmt.testcode)::text) AND ((monthlyoutput.buyer)::text = (tlkptestreqmt.buyer)::text) AND monthlyoutput.fpsyear = tlkptestreqmt.fpsyear)))
+     JOIN fps.tlkptestcapability ON ((((monthlyoutput.testcode)::text = (tlkptestcapability.testcode)::text) AND ((monthlyoutput.workgroup)::text = (tlkptestcapability.workgroup)::text) AND (monthlyoutput.fpsyear = tlkptestcapability.fpsyear))))
+     JOIN fps.vplancrosstab ON ((((monthlyoutput.testcode)::text = (vplancrosstab.testcode)::text) AND (monthlyoutput.fpsyear = vplancrosstab.fpsyear))))
+     JOIN fps.tlkptestreqmt ON ((((monthlyoutput.testcode)::text = (tlkptestreqmt.testcode)::text) AND ((monthlyoutput.buyer)::text = (tlkptestreqmt.buyer)::text) AND (monthlyoutput.fpsyear = tlkptestreqmt.fpsyear))))
   GROUP BY vplancrosstab.labt, vplancrosstab.vetr, monthlyoutput.workgroup, monthlyoutput.month, monthlyoutput.testcode, tlkptestcapability.planportfolio, ((tlkptestreqmt.unitprice)::numeric), monthlyoutput.fpsyear
  HAVING (((tlkptestcapability.planportfolio)::text = 'TG0100'::text) AND (monthlyoutput.month <= ( SELECT max(tblperiod.endperiod) AS month
            FROM fps.tblperiod

@@ -6,7 +6,8 @@ CREATE TABLE fps.tbltestreqbaseline (
     buyer character varying(20) NOT NULL,
     norequired integer,
     unitprice money,
-    fpsyear integer,
-    CONSTRAINT pk_tbltestreqbaseline_1__18 PRIMARY KEY (program, testcode, buyer)
-);
+    fpsyear integer NOT NULL,
+    CONSTRAINT pk_tbltestreqbaseline PRIMARY KEY (program, testcode, buyer, fpsyear),
 
+    CONSTRAINT fk_tbltestreqbaseline_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear)
+);

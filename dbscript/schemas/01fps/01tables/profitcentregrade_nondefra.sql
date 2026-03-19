@@ -12,10 +12,11 @@ CREATE TABLE fps.profitcentregrade_nondefra (
     ohr money DEFAULT 0,
     hrsavailable double precision DEFAULT 0,
     oldchargerate money DEFAULT 0,
-    fpsyear integer,
-    CONSTRAINT pk__profitcentregrad__666 PRIMARY KEY (pcgrade),
-    CONSTRAINT fk_profitcentregrade_nondefra_divisiongrade FOREIGN KEY (divisiongrade) REFERENCES fps.divisiongrade(divisiongrade),
-    CONSTRAINT fk_profitcentregrade_nondefra_gradecode FOREIGN KEY (gradecode) REFERENCES fps.grade(gradecode),
-    CONSTRAINT fk_profitcentregrade_nondefra_profitcentre FOREIGN KEY (profitcentre) REFERENCES fps.tblkpprofitcentre(profitcentre)
-);
+    fpsyear integer NOT NULL,
+    CONSTRAINT pk_profitcentregrade_nondefra PRIMARY KEY (pcgrade, fpsyear),
+    CONSTRAINT fk_profitcentregrade_nondefra_divisiongrade FOREIGN KEY (divisiongrade, fpsyear) REFERENCES fps.divisiongrade(divisiongrade, fpsyear),
+    CONSTRAINT fk_profitcentregrade_nondefra_gradecode FOREIGN KEY (gradecode, fpsyear) REFERENCES fps.grade(gradecode, fpsyear),
+    CONSTRAINT fk_profitcentregrade_nondefra_profitcentre FOREIGN KEY (profitcentre) REFERENCES fps.tblkpprofitcentre(profitcentre),
 
+    CONSTRAINT fk_profitcentregrade_nondefra_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear)
+);

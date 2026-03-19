@@ -7,9 +7,11 @@ CREATE TABLE fps.monthlytime (
     parentproject citext NOT NULL,
     workgroup citext,
     hours double precision,
-    fpsyear integer,
-    CONSTRAINT pk_monthlytime PRIMARY KEY (pactstaffid, timecode, month, parentproject),
-    CONSTRAINT fk_monthlytime_2__10 FOREIGN KEY (workgroup, timecode, parentproject) REFERENCES fps.timecodevalid(workgroup, timecode, parentproject),
-    CONSTRAINT fk_monthlytime_pactstaffid FOREIGN KEY (pactstaffid) REFERENCES fps.tblwgemployee(pactid)
-);
+    fpsyear integer NOT NULL,
+    CONSTRAINT pk_monthlytime PRIMARY KEY (pactstaffid, timecode, month, parentproject, fpsyear),
+    CONSTRAINT fk_monthlytime_pactstaffid FOREIGN KEY (pactstaffid, fpsyear) REFERENCES fps.tblwgemployee(pactid, fpsyear),
 
+    CONSTRAINT fk_monthlytime_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear),
+
+    CONSTRAINT fk_monthlytime_timecodevalid FOREIGN KEY (workgroup, timecode, parentproject, fpsyear) REFERENCES fps.timecodevalid(workgroup, timecode, parentproject, fpsyear)
+);

@@ -19,7 +19,8 @@ CREATE TABLE fps.projectmonth3 (
     cumsubcontracts double precision,
     cumtestcosts double precision,
     cumpaycosts double precision,
-    fpsyear integer,
-    CONSTRAINT aaaaaprojectmonth3_pk PRIMARY KEY (endperiod, project)
-);
+    fpsyear integer NOT NULL,
+    CONSTRAINT pk_projectmonth3 PRIMARY KEY (endperiod, project, fpsyear),
 
+    CONSTRAINT fk_projectmonth3_fpsyear FOREIGN KEY (fpsyear) REFERENCES fps.tblyearmaster(fpsyear)
+);

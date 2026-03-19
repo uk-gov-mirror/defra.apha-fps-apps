@@ -1,4 +1,5 @@
 -- View: fps.vprojectstaffplan
+
 CREATE OR REPLACE VIEW fps.vprojectstaffplan AS
  SELECT tlkpproject.parentproject,
     tlkpprogram.programno,
@@ -31,9 +32,9 @@ CREATE OR REPLACE VIEW fps.vprojectstaffplan AS
     workgroupgrade.gradecode,
     tblwgemployee.fpsyear
    FROM ((((((fps.tblwgemployee
-     JOIN fps.tblstaffjob ON (((tblwgemployee.pactid)::text = (tblstaffjob.staffid)::text) AND tblwgemployee.fpsyear = tblstaffjob.fpsyear))
+     JOIN fps.tblstaffjob ON ((((tblwgemployee.pactid)::text = (tblstaffjob.staffid)::text) AND (tblwgemployee.fpsyear = tblstaffjob.fpsyear))))
      JOIN fps.tblemployee ON (((tblwgemployee.spnumber)::text = (tblemployee.spnumber)::text)))
-     JOIN fps.workgroupgrade ON (((tblwgemployee.workgroupgrade)::text = (workgroupgrade.wggrade)::text) AND tblwgemployee.fpsyear = workgroupgrade.fpsyear))
-     JOIN fps.profitcentregrade ON (((workgroupgrade.profitcentregrade)::text = (profitcentregrade.pcgrade)::text) AND workgroupgrade.fpsyear = profitcentregrade.fpsyear))
-     JOIN fps.tlkpproject ON (((tblstaffjob.jobcode)::text = (tlkpproject.parentproject)::text) AND tblstaffjob.fpsyear = tlkpproject.fpsyear))
-     JOIN fps.tlkpprogram ON (((tlkpproject.program)::text = (tlkpprogram.programno)::text) AND tlkpproject.fpsyear = tlkpprogram.fpsyear));
+     JOIN fps.workgroupgrade ON ((((tblwgemployee.workgroupgrade)::text = (workgroupgrade.wggrade)::text) AND (tblwgemployee.fpsyear = workgroupgrade.fpsyear))))
+     JOIN fps.profitcentregrade ON ((((workgroupgrade.profitcentregrade)::text = (profitcentregrade.pcgrade)::text) AND (workgroupgrade.fpsyear = profitcentregrade.fpsyear))))
+     JOIN fps.tlkpproject ON ((((tblstaffjob.jobcode)::text = (tlkpproject.parentproject)::text) AND (tblstaffjob.fpsyear = tlkpproject.fpsyear))))
+     JOIN fps.tlkpprogram ON ((((tlkpproject.program)::text = (tlkpprogram.programno)::text) AND (tlkpproject.fpsyear = tlkpprogram.fpsyear))));
