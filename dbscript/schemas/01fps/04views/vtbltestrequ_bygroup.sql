@@ -1,13 +1,16 @@
 -- View: fps.vtbltestrequ_bygroup
 
 CREATE OR REPLACE VIEW fps.vtbltestrequ_bygroup AS
- SELECT buyer AS jobcode,
-    testcode,
-    norequired AS notests,
-    unitprice AS testprice,
-    datecreated,
-    projectbuyercode,
-    fpsyear
-   FROM fps.tlkptestreqmt
-  WHERE ((buyer)::text IN ( SELECT vtlkpproject_bygroup.parentproject
-           FROM fps.vtlkpproject_bygroup));
+SELECT DISTINCT
+    tr.buyer       AS jobcode,
+    tr.testcode,
+    tr.norequired  AS notests,
+    tr.unitprice   AS testprice,
+    tr.datecreated,
+    tr.projectbuyercode,
+    tr.fpsyear,
+    p.user_id,
+    p.dt2username,
+    p.useremail
+FROM fps.tlkptestreqmt tr
+JOIN fps.vtlkpproject_bygroup p ON tr.buyer = p.parentproject;

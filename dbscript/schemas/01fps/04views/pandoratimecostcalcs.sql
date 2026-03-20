@@ -19,6 +19,7 @@ SELECT DISTINCT
     tc.nonpay,
     tc.overhead,
     tc.fpsyear,
+    u.user_id,
     u.dt2username,
     u.useremail
 FROM fps.timecostcalcs tc

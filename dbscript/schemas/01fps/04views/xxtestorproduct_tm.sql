@@ -14,6 +14,7 @@ SELECT DISTINCT
     tp.defraunitprice,
     tp.fpsyear,
     u.username,
+    u.user_id,
     u.dt2username,
     u.useremail
 FROM fps.testorproduct tp

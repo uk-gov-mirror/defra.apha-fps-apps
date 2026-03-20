@@ -9,6 +9,7 @@ SELECT DISTINCT
     tr.datecreated,
     tr.projectbuyercode,
     tr.fpsyear,
+    u.user_id,
     u.dt2username,
     u.useremail
 FROM fps.tlkptestreqmt tr

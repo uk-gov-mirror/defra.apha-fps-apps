@@ -1,8 +1,9 @@
 -- View: fps.vtblstaff
 
 CREATE OR REPLACE VIEW fps.vtblstaff AS
- SELECT tblwgemployee.pactid AS staffid,
-    (((COALESCE(tblemployee.lastname, ''::character varying))::text || ', '::text) || (COALESCE(tblemployee.firstname, ''::character varying))::text) AS name,
+SELECT
+    tblwgemployee.pactid AS staffid,
+    (COALESCE(tblemployee.lastname, '')::text || ', ' || COALESCE(tblemployee.firstname, '')::text) AS name,
     tblwgemployee.workgroupgrade,
     tblemployee.title,
     tblwgemployee.personstatus,
@@ -12,7 +13,11 @@ CREATE OR REPLACE VIEW fps.vtblstaff AS
     tblwgemployee.sickspecial,
     tblwgemployee.hrsavail,
     tblwgemployee.makeavailable,
-    tblwgemployee.fpsyear
-   FROM ((fps.tblwgemployee
-     JOIN fps.tblemployee ON (((tblemployee.spnumber)::text = (tblwgemployee.spnumber)::text)))
-     JOIN fps.vworkgroupgrade ON (((vworkgroupgrade.wggrade = tblwgemployee.workgroupgrade) AND (vworkgroupgrade.fpsyear = tblwgemployee.fpsyear))));
+    tblwgemployee.fpsyear,
+    wgg.user_id,
+    wgg.dt2username,
+    wgg.useremail
+FROM fps.tblwgemployee
+JOIN fps.tblemployee ON tblemployee.spnumber = tblwgemployee.spnumber
+JOIN fps.vworkgroupgrade wgg ON wgg.wggrade = tblwgemployee.workgroupgrade
+                             AND wgg.fpsyear = tblwgemployee.fpsyear;

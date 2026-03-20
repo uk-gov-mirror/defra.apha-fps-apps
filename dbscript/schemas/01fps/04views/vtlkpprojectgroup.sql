@@ -3,6 +3,7 @@
 CREATE OR REPLACE VIEW fps.vtlkpprojectgroup AS
 SELECT DISTINCT
     pg.projectgroup,
+    u.user_id,
     u.dt2username,
     u.useremail
 FROM fps.tlkpprojectgroup pg

@@ -1,7 +1,8 @@
 -- View: fps.vtblwgemployee
 
 CREATE OR REPLACE VIEW fps.vtblwgemployee AS
- SELECT e.pactid,
+SELECT
+    e.pactid,
     e.spnumber,
     e.workgroupgrade,
     e.personstatus,
@@ -15,6 +16,10 @@ CREATE OR REPLACE VIEW fps.vtblwgemployee AS
     e.startdate,
     e.enddate,
     e.hoursperweek,
-    e.fpsyear
-   FROM (fps.tblwgemployee e
-     JOIN fps.vworkgroupgrade wgg ON (((wgg.wggrade = e.workgroupgrade) AND (wgg.fpsyear = e.fpsyear))));
+    e.fpsyear,
+    wgg.user_id,
+    wgg.dt2username,
+    wgg.useremail
+FROM fps.tblwgemployee e
+JOIN fps.vworkgroupgrade wgg ON wgg.wggrade = e.workgroupgrade
+                             AND wgg.fpsyear = e.fpsyear;

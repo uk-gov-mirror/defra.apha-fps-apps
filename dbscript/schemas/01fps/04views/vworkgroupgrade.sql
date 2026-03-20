@@ -1,7 +1,8 @@
 -- View: fps.vworkgroupgrade
 
 CREATE OR REPLACE VIEW fps.vworkgroupgrade AS
- SELECT wgg.wggrade,
+SELECT
+    wgg.wggrade,
     wgg.profitcentregrade,
     wgg.gradecode,
     wgg.workgroup,
@@ -12,6 +13,10 @@ CREATE OR REPLACE VIEW fps.vworkgroupgrade AS
     wgg.ohrwg,
     wgg.avsalary,
     wgg.hrschangedby,
-    wgg.fpsyear
-   FROM (fps.workgroupgrade wgg
-     JOIN fps.vworkgroup wg ON (((wg.workgroup = wgg.workgroup) AND (wg.fpsyear = wgg.fpsyear))));
+    wgg.fpsyear,
+    wg.user_id,
+    wg.dt2username,
+    wg.useremail
+FROM fps.workgroupgrade wgg
+JOIN fps.vworkgroup wg ON wg.workgroup = wgg.workgroup
+                       AND wg.fpsyear  = wgg.fpsyear;

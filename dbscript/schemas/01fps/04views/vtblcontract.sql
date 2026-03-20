@@ -13,6 +13,7 @@ SELECT DISTINCT
     c.contractdoc,
     c.duration,
     c.fpsyear,
+    u.user_id,
     u.dt2username,
     u.useremail
 FROM fps.tblcontract c

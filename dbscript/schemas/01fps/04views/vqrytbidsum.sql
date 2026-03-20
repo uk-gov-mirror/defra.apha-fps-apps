@@ -5,6 +5,7 @@ SELECT
     pc.profitcentre,
     b.fpsyear,
     sum(b.genbid)       AS sumofgenbid,
+    u.user_id,
     u.dt2username,
     u.useremail
 FROM fps.tblkpprofitcentre pc
@@ -13,4 +14,4 @@ JOIN fps.tblbid b                 ON w.workgroup = b.workgroup
                                  AND w.fpsyear   = b.fpsyear
 JOIN fps.tbluser_profitcentre upc ON pc.profitcentre = upc.profitcentre
 JOIN fps.tblusers u               ON upc.user_id = u.user_id
-GROUP BY pc.profitcentre, b.fpsyear, u.dt2username, u.useremail;
+GROUP BY pc.profitcentre, b.fpsyear, u.user_id, u.dt2username, u.useremail;

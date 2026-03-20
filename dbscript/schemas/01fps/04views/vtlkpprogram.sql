@@ -11,6 +11,7 @@ SELECT DISTINCT
     p.target,
     p.manager,
     p.fpsyear,
+    u.user_id,
     u.dt2username,
     u.useremail
 FROM fps.tlkpprogram p

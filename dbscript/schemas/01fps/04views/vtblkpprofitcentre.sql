@@ -10,6 +10,7 @@ SELECT DISTINCT
     pc.divisionid,
     pc.email_recipient,
     pc.highlevelsummary,
+    u.user_id,
     u.dt2username,
     u.useremail
 FROM fps.tblkpprofitcentre pc

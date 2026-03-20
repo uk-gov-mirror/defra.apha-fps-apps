@@ -1,7 +1,8 @@
 -- View: fps.vtlkpproject
 
 CREATE OR REPLACE VIEW fps.vtlkpproject AS
- SELECT p.parentproject,
+SELECT
+    p.parentproject,
     p.projecttitle,
     p.program,
     p.customer,
@@ -36,6 +37,10 @@ CREATE OR REPLACE VIEW fps.vtlkpproject AS
     p.subaccountcode,
     p.projectgroup,
     p.incomeaccountcode,
-    p.fpsyear
-   FROM (fps.tlkpproject p
-     JOIN fps.vtlkpprogram pr ON (((pr.programno = p.program) AND (pr.fpsyear = p.fpsyear))));
+    p.fpsyear,
+    pr.user_id,
+    pr.dt2username,
+    pr.useremail
+FROM fps.tlkpproject p
+JOIN fps.vtlkpprogram pr ON pr.programno = p.program
+                         AND pr.fpsyear  = p.fpsyear;

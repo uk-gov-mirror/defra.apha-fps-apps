@@ -1,19 +1,24 @@
 -- View: fps.vtimecostcalcs
 
 CREATE OR REPLACE VIEW fps.vtimecostcalcs AS
- SELECT timecostcalcs.workgroup,
-    timecostcalcs.jobcode,
-    timecostcalcs.project,
-    timecostcalcs.month,
-    timecostcalcs.staffid,
-    timecostcalcs.gradecode,
-    timecostcalcs.name,
-    timecostcalcs.chargerate,
-    timecostcalcs.class,
-    timecostcalcs."time",
-    timecostcalcs.cost,
-    timecostcalcs.division,
-    timecostcalcs.jobcodeold,
-    timecostcalcs.fpsyear
-   FROM (fps.timecostcalcs
-     JOIN fps.vtlkpproject ON ((((timecostcalcs.project)::text = (vtlkpproject.parentproject)::text) AND (vtlkpproject.fpsyear = timecostcalcs.fpsyear))));
+SELECT
+    tc.workgroup,
+    tc.jobcode,
+    tc.project,
+    tc.month,
+    tc.staffid,
+    tc.gradecode,
+    tc.name,
+    tc.chargerate,
+    tc.class,
+    tc."time",
+    tc.cost,
+    tc.division,
+    tc.jobcodeold,
+    tc.fpsyear,
+    p.user_id,
+    p.dt2username,
+    p.useremail
+FROM fps.timecostcalcs tc
+JOIN fps.vtlkpproject p ON tc.project = p.parentproject
+                        AND p.fpsyear = tc.fpsyear;

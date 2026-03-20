@@ -1,7 +1,8 @@
 -- View: fps.vprojectmonthfinal
 
 CREATE OR REPLACE VIEW fps.vprojectmonthfinal AS
- SELECT pmf.project,
+SELECT
+    pmf.project,
     pmf.monthno,
     pmf.periodname,
     pmf.cumflag,
@@ -38,6 +39,10 @@ CREATE OR REPLACE VIEW fps.vprojectmonthfinal AS
     pmf.cumtestcosts,
     pmf.paycosts,
     pmf.cumpaycosts,
-    pmf.fpsyear
-   FROM (fps.projectmonthfinal pmf
-     JOIN fps.vtlkpproject p ON ((((p.parentproject)::text = (pmf.project)::text) AND (p.fpsyear = pmf.fpsyear))));
+    pmf.fpsyear,
+    p.user_id,
+    p.dt2username,
+    p.useremail
+FROM fps.projectmonthfinal pmf
+JOIN fps.vtlkpproject p ON p.parentproject = pmf.project
+                        AND p.fpsyear      = pmf.fpsyear;

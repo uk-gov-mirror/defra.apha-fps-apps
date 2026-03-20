@@ -7,6 +7,7 @@ SELECT DISTINCT
     tp.itemdescription,
     tp.amount,
     tp.fpsyear,
+    u.user_id,
     u.dt2username,
     u.useremail
 FROM fps.tblpurchase tp

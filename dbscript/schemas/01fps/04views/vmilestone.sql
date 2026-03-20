@@ -1,15 +1,20 @@
 -- View: fps.vmilestone
 
 CREATE OR REPLACE VIEW fps.vmilestone AS
- SELECT milestone.project,
-    milestone.milestoneref,
-    milestone.objectiveref,
-    milestone.milsetonetitle,
-    milestone.plandate,
-    milestone.actualdate,
-    milestone.comment,
-    milestone.monthnofin,
-    milestone.year,
-    milestone.fpsyear
-   FROM (fps.milestone
-     JOIN fps.vtlkpproject ON ((((milestone.project)::text = (vtlkpproject.parentproject)::text) AND (vtlkpproject.fpsyear = milestone.fpsyear))));
+SELECT
+    m.project,
+    m.milestoneref,
+    m.objectiveref,
+    m.milsetonetitle,
+    m.plandate,
+    m.actualdate,
+    m.comment,
+    m.monthnofin,
+    m.year,
+    m.fpsyear,
+    p.user_id,
+    p.dt2username,
+    p.useremail
+FROM fps.milestone m
+JOIN fps.vtlkpproject p ON m.project = p.parentproject
+                        AND p.fpsyear = m.fpsyear;
