@@ -1,0 +1,108 @@
+@model Apha.FPSApps.Web.Areas.PACT.Models.CascadeTimeCodeItem
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    var isEdit = !string.IsNullOrEmpty(Model.TimeCode) && !string.IsNullOrEmpty(Model.WorkGroup);
+}
+
+<div class="modal-header flex-space-center">
+    <h3 class="govuk-heading-s" style="margin:0;">@(isEdit ? "Edit Time Code" : "Add Time Code")</h3>
+    <button type="button" class="btn-close" onclick="closeTimecodeModal()">&#x2715;</button>
+</div>
+
+<div class="modal-body" style="overflow:hidden; padding:8px 16px 0 16px;">
+    <form id="formTimecode" novalidate class="govuk-grid-column-full">
+
+        <input type="hidden" name="isEdit" value="@isEdit.ToString().ToLower()" />
+        <input type="hidden" asp-for="ParentProject" />
+        <input type="hidden" asp-for="JobCode" />
+
+        <div id="formTimecode-db-error" class="govuk-error-summary sup_margin_0" role="alert"
+             aria-labelledby="formTimecode-db-error-title" style="display:none;">
+            <h2 class="govuk-error-summary__title" id="formTimecode-db-error-title">There is a problem</h2>
+            <div class="govuk-error-summary__body">
+                <p class="govuk-body" id="formTimecode-db-error-msg"></p>
+            </div>
+        </div>
+
+        <fieldset class="govuk-fieldset">
+            <legend class="govuk-visually-hidden">Time Code Record</legend>
+            <span class="app-mandatory-note sup_padding_top_10" aria-hidden="true">
+                <span class="app-required">*</span> Mandatory Fields
+            </span>
+
+            <div class="govuk-form-group sup_margin_bottom_10" id="fg-timeCode">
+                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="TimeCode">
+                    Time Code <span class="app-required" aria-hidden="true">*</span>
+                </label>
+                @if (isEdit)
+                {
+                    <input type="hidden" asp-for="TimeCode" />
+                    <input class="govuk-input govuk-!-font-size-16" value="@Model.TimeCode" readonly />
+                }
+                else
+                {
+                    <input class="govuk-input govuk-!-font-size-16" asp-for="TimeCode"
+                           id="modal-timeCode" autocomplete="off" aria-required="true"
+                           aria-describedby="modal-timeCode-error" />
+                    <p id="modal-timeCode-error" class="govuk-error-message" style="display:none;">
+                        <span class="govuk-visually-hidden">Error:</span>
+                        <span asp-validation-for="TimeCode"></span>
+                    </p>
+                }
+            </div>
+
+            <div class="govuk-form-group sup_margin_bottom_10" id="fg-wrkGrp">
+                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="WorkGroup">
+                    Work Group <span class="app-required" aria-hidden="true">*</span>
+                </label>
+                <select class="govuk-select govuk-!-font-size-16" asp-for="WorkGroup"
+                        asp-items="@(ViewBag.WorkGroups as List<SelectListItem>)"
+                        id="modal-wrkGrp" aria-required="true" aria-describedby="modal-wrkGrp-error">
+                    <option value="">-- select --</option>
+                </select>
+                <p id="modal-wrkGrp-error" class="govuk-error-message" style="display:none;">
+                    <span class="govuk-visually-hidden">Error:</span>
+                    <span asp-validation-for="WorkGroup"></span>
+                </p>
+            </div>
+
+            <div class="govuk-form-group sup_margin_bottom_10" id="fg-projectTimecode">
+                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="ParentProject">
+                    Project <span class="app-required" aria-hidden="true">*</span>
+                </label>
+                <input class="govuk-input govuk-!-font-size-16" asp-for="ParentProject"
+                       id="modal-projectTimecode" readonly autocomplete="off" />
+            </div>
+
+            <div class="govuk-form-group sup_margin_bottom_10" id="fg-jobCodeTimecode">
+                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="JobCode">
+                    Job Code <span class="app-required" aria-hidden="true">*</span>
+                </label>
+                <input class="govuk-input govuk-!-font-size-16" asp-for="JobCode"
+                       id="modal-jobCodeTimecode" readonly autocomplete="off" />
+            </div>
+
+            <div class="govuk-form-group sup_margin_bottom_10" id="fg-active">
+                <div class="govuk-checkboxes govuk-checkboxes--small" data-module="govuk-checkboxes">
+                    <div class="govuk-checkboxes__item">
+                        <input class="govuk-checkboxes__input" asp-for="Active"
+                               id="modal-active" type="checkbox" value="true" />
+                        <label class="govuk-label govuk-checkboxes__label" for="modal-active">Active</label>
+                    </div>
+                </div>
+            </div>
+        </fieldset>
+    </form>
+</div>
+
+<div class="govuk-edit-modal__footer">
+    <button type="button" class="govuk-button govuk-button--secondary sup_margin_bottom_20"
+            data-module="govuk-button" onclick="closeTimecodeModal()">Cancel</button>
+    <div>
+        <button type="submit" class="govuk-button sup_margin_bottom_20" data-module="govuk-button"
+                id="timecodeSaveBtn" onclick="saveTimecode()" style="@(isEdit ? "display:none" : "")">Save</button>
+        <button type="submit" class="govuk-button sup_margin_bottom_20" data-module="govuk-button"
+                id="timecodeUpdateBtn" onclick="saveTimecode()" style="@(!isEdit ? "display:none" : "")">Update</button>
+    </div>
+</div>

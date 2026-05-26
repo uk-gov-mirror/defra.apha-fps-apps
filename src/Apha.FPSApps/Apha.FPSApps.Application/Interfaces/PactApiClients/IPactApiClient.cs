@@ -15,5 +15,6 @@
         IPactProjectProfileApiClient PactProjectProfile { get; }
         IPactMonthlyOutputApiClient PactMonthlyOutput { get; }
         IPactCalenderMonthApiClient PactCalenderMonth { get; }
+        IPactMonthlyTimeApiClient PactMonthlyTime { get; }
     }
 }

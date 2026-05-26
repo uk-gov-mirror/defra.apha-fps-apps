@@ -1,0 +1,93 @@
+@model Apha.FPSApps.Web.Areas.PACT.Models.CascadeJobCodeItem
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    var isEdit = !string.IsNullOrEmpty(Model.JobCodeId);
+}
+
+<div class="modal-header flex-space-center">
+    <h3 class="govuk-heading-s" style="margin:0;">@(isEdit ? "Edit Job Code" : "Add Job Code")</h3>
+    <button type="button" class="btn-close" onclick="$('#modalPopup').removeClass('show')">&#x2715;</button>
+</div>
+
+<div class="modal-body" style="overflow:hidden; padding:8px 16px 0 16px;">
+    <form id="formJobcode" novalidate class="govuk-grid-column-full">
+
+        <input type="hidden" name="isEdit" value="@isEdit.ToString().ToLower()" />
+        <input type="hidden" asp-for="ParentProject" />
+
+        <div id="formJobcode-db-error" class="govuk-error-summary sup_margin_bottom_0" role="alert"
+             aria-labelledby="formJobcode-db-error-title" style="display:none;">
+            <h2 class="govuk-error-summary__title" id="formJobcode-db-error-title">There is a problem</h2>
+            <div class="govuk-error-summary__body">
+                <p class="govuk-body" id="formJobcode-db-error-msg"></p>
+            </div>
+        </div>
+
+        <fieldset class="govuk-fieldset">
+            <legend class="govuk-visually-hidden">Job Code Record</legend>
+            <span class="app-mandatory-note sup_padding_top_10" aria-hidden="true">
+                <span class="app-required">*</span> Mandatory Fields
+            </span>
+
+            <div class="govuk-form-group sup_margin_bottom_10" id="fg-jobCode">
+                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="JobCodeId">
+                    Job Code <span class="app-required" aria-hidden="true">*</span>
+                </label>
+                @if (isEdit)
+                {
+                    <input type="hidden" asp-for="JobCodeId" />
+                    <input class="govuk-input govuk-!-font-size-16" value="@Model.JobCodeId" readonly />
+                }
+                else
+                {
+                    <input class="govuk-input govuk-!-font-size-16" asp-for="JobCodeId"
+                           id="modal-jobCode" autocomplete="off" aria-required="true"
+                           aria-describedby="modal-jobCode-error" />
+                    <p id="modal-jobCode-error" class="govuk-error-message" style="display:none;">
+                        <span class="govuk-visually-hidden">Error:</span>
+                        <span asp-validation-for="JobCodeId"></span>
+                    </p>
+                }
+            </div>
+
+            <div class="govuk-form-group sup_margin_bottom_10" id="fg-name">
+                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="JobCodeName">
+                    Name
+                </label>
+                <input class="govuk-input govuk-!-font-size-16" asp-for="JobCodeName"
+                       id="modal-name" autocomplete="off" />
+            </div>
+
+            <div class="govuk-form-group sup_margin_bottom_10" id="fg-project">
+                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="ParentProject">
+                    Project
+                </label>
+                <input class="govuk-input govuk-!-font-size-16" asp-for="ParentProject"
+                       id="modal-project" readonly disabled autocomplete="off" />
+            </div>
+
+            <div class="govuk-form-group sup_margin_bottom_10" id="fg-wkfG">
+                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="JobCodeWorkGroup">
+                    Work Group
+                </label>
+                <select class="govuk-select govuk-!-font-size-16" asp-for="JobCodeWorkGroup"
+                        asp-items="@(ViewBag.WorkGroups as List<SelectListItem>)"
+                        id="modal-wkfG">
+                    <option value="">-- select --</option>
+                </select>
+            </div>
+        </fieldset>
+    </form>
+</div>
+
+<div class="govuk-edit-modal__footer">
+    <button type="button" class="govuk-button govuk-button--secondary sup_margin_bottom_20"
+            data-module="govuk-button" onclick="closeJobcodeModal()">Cancel</button>
+    <div>
+        <button type="submit" class="govuk-button sup_margin_bottom_20" data-module="govuk-button"
+                id="jobcodeSaveBtn" onclick="saveJobcode()" style="@(isEdit ? "display:none" : "")">Save</button>
+        <button type="submit" class="govuk-button sup_margin_bottom_20" data-module="govuk-button"
+                id="jobcodeUpdateBtn" onclick="saveJobcode()" style="@(!isEdit ? "display:none" : "")">Update</button>
+    </div>
+</div>

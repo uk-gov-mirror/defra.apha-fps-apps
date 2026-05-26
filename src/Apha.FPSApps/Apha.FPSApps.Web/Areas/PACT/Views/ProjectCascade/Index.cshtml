@@ -1,0 +1,143 @@
+@using Apha.FPSApps.Web.Models.Components.DataGrid
+@model Apha.FPSApps.Web.Areas.PACT.Models.ProjectCascadeViewModel
+
+@{
+    ViewData["Title"] = "Project Cascade - PACT";
+}
+
+<div class="content-wrapper">
+
+    <!-- ── Page title / project selector ─────────────────────────────────── -->
+    <div class="govuk-grid-row sup_margin_left_right_0">
+        <div class="govuk-grid-column-full sup_flex_center_start sup_border-bottom">
+            <h1 class="sup_width_15">Project cascade for:</h1>
+            <div class="sup_flex_center_space govuk-grid-column-one-half">
+                <div class="govuk-grid-column-one-third">
+                    <label for="txtSelectedProjectcode" class="sup_visually_hidden">Selected project code</label>
+                    <input type="text" class="govuk-input govuk-!-font-size-16" readonly
+                           id="txtSelectedProjectcode" value="@Model.SelectedProjectCode" />
+                </div>
+                <div class="govuk-grid-column-three-quarters">
+                    <label for="txtSelectedProjectTitle" class="sup_visually_hidden">Selected project title</label>
+                    <input type="text" class="govuk-input govuk-!-font-size-16" readonly
+                           id="txtSelectedProjectTitle" value="@Model.SelectedProjectTitle" />
+                </div>
+            </div>
+            <div class="govuk-grid-column-one-half sup_margin_tb_5 sup_padding_right_8 sup_flex_end_center">
+                <span class="govuk-!-font-weight-bold">Select Project</span>
+                <div id="projectSelectDropdown" class="govuk-grid-column-three-quarters"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Panel 1 — Job Codes ────────────────────────────────────────────── -->
+    <div class="govuk-grid-row sup_margin_left_right_0">
+        <div class="govuk-grid-column-full sup_p_0 sup_margin_tb_10">
+            <div class="govuk-grid-column-one-quarter sup_padding_right_0">
+                <div class="sup_border sup_margin_bottom_15 sup_p_8 sup_height_300">
+                    <p class="govuk-body-s sup_margin_bottom_0">
+                        <span class="govuk-!-font-size-24">(1)</span><br />
+                        This panel shows you the JobCode that belong to this Project
+                        (a JobCode can only have one Parent Project)
+                    </p>
+                </div>
+            </div>
+            <div class="govuk-grid-column-three-quarters">
+                <div id="gridContainer_JobcodeBelongsToProjectGrid">
+                    @await Html.PartialAsync("_DataGrid", Model.JobCodeGrid)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Panel 2 — Time Code Valid ─────────────────────────────────────── -->
+    <div class="govuk-grid-row sup_margin_left_right_0">
+        <div class="govuk-grid-column-full sup_p_0 sup_margin_tb_10">
+            <div class="govuk-grid-column-one-quarter sup_padding_right_0">
+                <div class="sup_border sup_margin_bottom_15 sup_p_8 sup_height_300">
+                    <p class="govuk-body-s sup_margin_bottom_0">
+                        <span class="govuk-!-font-size-24">(2)</span><br />
+                        This shows TimeCodeValid options for
+                        <input type="text" class="govuk-input govuk-!-font-size-16" readonly id="txtSelectedJobcode" />
+                    </p>
+                </div>
+            </div>
+            <div class="govuk-grid-column-three-quarters">
+                <div id="gridContainer_TimeCodeValidOptionGrid">
+                    @await Html.PartialAsync("_DataGrid", Model.TimeCodeGrid)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Panel 3 — Monthly Time Records ───────────────────────────────── -->
+    <div class="govuk-grid-row sup_margin_left_right_0">
+        <div class="govuk-grid-column-full sup_p_0 sup_margin_tb_10">
+            <div class="govuk-grid-column-one-quarter sup_padding_right_0">
+                <div class="sup_border sup_margin_bottom_15 sup_p_8 sup_height_300">
+                    <p class="govuk-body-s">
+                        <span class="govuk-!-font-size-24">(3)</span><br />
+                        This panel shows Time Records attributed to the TimeCodeValid selected above - i.e:
+                    </p>
+                    <label for="txtSelectedProjectcodeTwo">Project</label>
+                    <input type="text" class="govuk-input govuk-!-font-size-16 sup_margin_bottom_10"
+                           readonly id="txtSelectedProjectcodeTwo" />
+                    <label for="txtSelectedWorkGroup">Work Group</label>
+                    <input type="text" class="govuk-input govuk-!-font-size-16 sup_margin_bottom_10"
+                           readonly id="txtSelectedWorkGroup" />
+                    <label for="txtSelectedTimeCode">Time code</label>
+                    <input type="text" class="govuk-input govuk-!-font-size-16"
+                           readonly id="txtSelectedTimeCode" />
+                </div>
+            </div>
+            <div class="govuk-grid-column-three-quarters">
+                <div id="gridContainer_TimeRecordsGrid">
+                    @await Html.PartialAsync("_DataGrid", Model.MonthlyTimeGrid)
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ================================================================
+     JOB CODE MODAL
+================================================================ -->
+<div class="govuk-edit-modal" id="jobcodeModal" aria-labelledby="jobcodeModalLabel" aria-modal="true" role="dialog">
+    <div class="govuk-edit-modal-dialog sup_overflow_visible sup_max_height_100">
+        <div id="jobcodeModalContent"></div>
+    </div>
+</div>
+
+<!-- ================================================================
+     TIME CODE MODAL
+================================================================ -->
+<div class="govuk-edit-modal" id="timecodeModal" aria-labelledby="timecodeModalLabel" aria-modal="true" role="dialog">
+    <div class="govuk-edit-modal-dialog sup_overflow_visible sup_max_height_100">
+        <div id="timecodeModalContent"></div>
+    </div>
+</div>
+
+<!-- ================================================================
+     TIME ENTRY MODAL
+================================================================ -->
+<div class="govuk-edit-modal" id="timeentryModal" aria-labelledby="timeentryModalLabel" aria-modal="true" role="dialog">
+    <div class="govuk-edit-modal-dialog sup_overflow_visible sup_max_height_100">
+        <div id="timeentryModalContent"></div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/common/multicolumn-dropdown.css" />
+}
+
+@section Scripts {
+    <script src="~/js/common/multicolumn-dropdown.component.js"></script>
+    <script src="~/js/pact_js/project-cascade.js"></script>
+    <script>
+        var projectsData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            Model.Projects.Select(p => new { code = p.ParentProject, title = p.ProjectTitle })
+        ));
+        initProjectCascade('@Html.Raw(Model.SelectedProjectCode ?? "")', projectsData);
+    </script>
+}

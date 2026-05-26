@@ -19,6 +19,7 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PACTApis.Clients
         public IPactProjectProfileApiClient PactProjectProfile { get; }
         public IPactMonthlyOutputApiClient PactMonthlyOutput { get; }
         public IPactCalenderMonthApiClient PactCalenderMonth { get; }
+        public IPactMonthlyTimeApiClient PactMonthlyTime { get; }
 
         public PactApiClient(IPactHttpExecutor http, IMapper mapper)
         {
@@ -35,6 +36,7 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PACTApis.Clients
             PactProjectProfile = new PactProjectProfileApiClient(http, mapper);
             PactMonthlyOutput = new PactMonthlyOutputApiClient(http, mapper);
             PactCalenderMonth = new PactCalenderMonthApiClient(http, mapper);
+            PactMonthlyTime = new PactMonthlyTimeApiClient(http, mapper);
         }
     }
 }

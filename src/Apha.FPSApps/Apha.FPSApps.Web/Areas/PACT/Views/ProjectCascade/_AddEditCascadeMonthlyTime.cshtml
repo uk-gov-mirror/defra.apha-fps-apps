@@ -1,0 +1,129 @@
+@model Apha.FPSApps.Web.Areas.PACT.Models.CascadeMonthlyTimeItem
+
+@{
+    var isEdit = !string.IsNullOrEmpty(Model.PactStaffId) && Model.Month > 0;
+}
+
+<div class="modal-header flex-space-center">
+    <h3 class="govuk-heading-s" style="margin:0;">@(isEdit ? "Edit Time Entry" : "Add Time Entry")</h3>
+    <button type="button" class="btn-close" onclick="closeTimeentryModal()">&#x2715;</button>
+</div>
+
+<div class="modal-body" style="overflow:hidden; padding:8px 16px 0 16px;">
+    <form id="formTimeentry" novalidate class="govuk-grid-column-full">
+
+        <input type="hidden" name="isEdit" value="@isEdit.ToString().ToLower()" />
+        <input type="hidden" asp-for="ParentProject" />
+        <input type="hidden" asp-for="TimeCode" />
+        <input type="hidden" asp-for="WorkGroup" />
+
+        <div id="formTimeentry-db-error" class="govuk-error-summary sup_margin_0" role="alert"
+             aria-labelledby="formTimeentry-db-error-title" style="display:none;">
+            <h2 class="govuk-error-summary__title" id="formTimeentry-db-error-title">There is a problem</h2>
+            <div class="govuk-error-summary__body">
+                <p class="govuk-body" id="formTimeentry-db-error-msg"></p>
+            </div>
+        </div>
+
+        <fieldset class="govuk-fieldset">
+            <legend class="govuk-visually-hidden">Time Entry Record</legend>
+            <span class="app-mandatory-note sup_padding_top_10" aria-hidden="true">
+                <span class="app-required">*</span> Mandatory Fields
+            </span>
+
+            <div class="govuk-form-group sup_margin_bottom_10" id="fg-pactStaffId">
+                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="PactStaffId">
+                    PACT Staff ID <span class="app-required" aria-hidden="true">*</span>
+                </label>
+                @if (isEdit)
+                {
+                    <input class="govuk-input govuk-!-font-size-16" asp-for="PactStaffId"
+                           id="modal-pactStaffId" autocomplete="off" aria-required="true"
+                           aria-describedby="modal-pactStaffId-error" readonly />
+                }
+                else
+                {
+                    <input class="govuk-input govuk-!-font-size-16" asp-for="PactStaffId"
+                           id="modal-pactStaffId" autocomplete="off" aria-required="true"
+                           aria-describedby="modal-pactStaffId-error" />
+                }
+                <p id="modal-pactStaffId-error" class="govuk-error-message" style="display:none;">
+                    <span class="govuk-visually-hidden">Error:</span>
+                    <span asp-validation-for="PactStaffId"></span>
+                </p>
+            </div>
+
+            <div class="govuk-form-group sup_margin_bottom_10" id="fg-timeCodeEntry">
+                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="TimeCode">
+                    Time Code <span class="app-required" aria-hidden="true">*</span>
+                </label>
+                <input class="govuk-input govuk-!-font-size-16" asp-for="TimeCode"
+                       id="modal-timeCodeEntry" readonly autocomplete="off" />
+            </div>
+
+            <div class="govuk-form-group sup_margin_bottom_10" id="fg-month">
+                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="Month">
+                    Month <span class="app-required" aria-hidden="true">*</span>
+                </label>
+                @if (isEdit)
+                {
+                    <input class="govuk-input govuk-!-font-size-16" asp-for="Month"
+                           id="modal-month" type="number" min="1" max="12"
+                           placeholder="Enter month (from 1 to 12)" autocomplete="off"
+                           aria-required="true" aria-describedby="modal-month-error" readonly />
+                }
+                else
+                {
+                    <input class="govuk-input govuk-!-font-size-16" asp-for="Month"
+                           id="modal-month" type="number" min="1" max="12"
+                           placeholder="Enter month (from 1 to 12)" autocomplete="off"
+                           aria-required="true" aria-describedby="modal-month-error" />
+                }
+                <p id="modal-month-error" class="govuk-error-message" style="display:none;">
+                    <span class="govuk-visually-hidden">Error:</span>
+                    <span asp-validation-for="Month"></span>
+                </p>
+            </div>
+
+            <div class="govuk-form-group sup_margin_bottom_10" id="fg-parentProject">
+                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="ParentProject">
+                    Parent Project <span class="app-required" aria-hidden="true">*</span>
+                </label>
+                <input class="govuk-input govuk-!-font-size-16" asp-for="ParentProject"
+                       id="modal-parentProject" disabled readonly autocomplete="off" />
+            </div>
+
+            <div class="govuk-form-group sup_margin_bottom_10" id="fg-workGroup">
+                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="WorkGroup">
+                    Work Group
+                </label>
+                <input class="govuk-input govuk-!-font-size-16" asp-for="WorkGroup"
+                       id="modal-workGroup" disabled readonly autocomplete="off" />
+            </div>
+
+            <div class="govuk-form-group sup_margin_bottom_10" id="fg-hours">
+                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="Hours">
+                    Hours <span class="app-required" aria-hidden="true">*</span>
+                </label>
+                <input class="govuk-input govuk-!-font-size-16" asp-for="Hours"
+                       id="modal-hours" type="number" step="0.01" autocomplete="off"
+                       aria-required="true" aria-describedby="modal-hours-error" />
+                <p id="modal-hours-error" class="govuk-error-message sup_margin_bottom_0" style="display:none;">
+                    <span class="govuk-visually-hidden">Error:</span>
+                    <span asp-validation-for="Hours"></span>
+                </p>
+            </div>
+        </fieldset>
+    </form>
+</div>
+
+<div class="govuk-edit-modal__footer">
+    <button type="button" class="govuk-button govuk-button--secondary sup_margin_bottom_20"
+            data-module="govuk-button" onclick="closeTimeentryModal()">Cancel</button>
+    <div>
+        <button type="submit" class="govuk-button sup_margin_bottom_20" data-module="govuk-button"
+                id="timeentrySaveBtn" onclick="saveTimeentry()" style="@(isEdit ? "display:none" : "")">Save</button>
+        <button type="submit" class="govuk-button sup_margin_bottom_20" data-module="govuk-button"
+                id="timeentryUpdateBtn" onclick="saveTimeentry()" style="@(!isEdit ? "display:none" : "")">Update</button>
+    </div>
+</div>

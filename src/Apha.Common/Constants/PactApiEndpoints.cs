@@ -104,5 +104,13 @@ namespace Apha.Common.Constants
 
         // Monthly Output Log
         public const string SearchMonthlyOutputLog = "api/v1/monthlyoutput/log/search";
+
+        // Monthly Time
+        public const string GetMonthlyTimeByTimeCodeAndProject = "api/v1/monthlytime/timecode/{0}/workgroup/{1}/project/{2}";
+        public const string GetPagedMonthlyTime = "api/v1/monthlytime/paged";
+        public const string GetMonthlyTimeById = "api/v1/monthlytime/{0}/{1}/{2}/{3}";
+        public const string CreateMonthlyTime = "api/v1/monthlytime";
+        public const string UpdateMonthlyTime = "api/v1/monthlytime";
+        public const string DeleteMonthlyTime = "api/v1/monthlytime/{0}/{1}/{2}/{3}";
     }
 }

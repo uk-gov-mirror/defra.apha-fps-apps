@@ -54,6 +54,13 @@ namespace Apha.FPSApps.Web.Mappings
             CreateMap<CalenderMonthDto, CalenderMonth>().ReverseMap();
             CreateMap<WorkGroupTimeCodeDto, WorkGroupTimeCodeItem>().ReverseMap();
             CreateMap<WorkGroupValidTimeCodeDto, WorkGroupValidTimeCodeItem>().ReverseMap();
+
+            // Project Cascade
+            CreateMap<JobCodeDto, CascadeJobCodeItem>().ReverseMap();
+            CreateMap<TimeCodeValidDto, CascadeTimeCodeItem>()
+                .ForMember(dest => dest.ParentProject, opt => opt.MapFrom(src => src.ParentProject))
+                .ReverseMap();
+            CreateMap<MonthlyTimeDto, CascadeMonthlyTimeItem>().ReverseMap();
         }
     }
 }

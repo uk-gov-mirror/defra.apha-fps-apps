@@ -34,6 +34,7 @@ namespace Apha.PACT.Api.Extensions
             services.AddScoped<IProjectProfileService, ProjectProfileService>();
             services.AddScoped<IMonthlyOutputService, MonthlyOutputService>();
             services.AddScoped<ICalenderMonthService, CalenderMonthService>();
+            services.AddScoped<IMonthlyTimeService, MonthlyTimeService>();
             return services;
         }
         public static IServiceCollection AddRepositories(this IServiceCollection services)

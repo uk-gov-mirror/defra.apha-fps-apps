@@ -42,6 +42,8 @@ namespace Apha.FPSApps.Infrastructure.Mappings
             CreateMap<CalenderMonthDto, CalenderMonthRes>().ReverseMap();
             CreateMap<WorkGroupTimeCodeDto, WorkGroupTimeCodeRes>().ReverseMap();
             CreateMap<WorkGroupValidTimeCodeDto, WorkGroupValidTimeCodeRes>().ReverseMap();
+            CreateMap<MonthlyTimeDto, MonthlyTimeReq>().ReverseMap();
+            CreateMap<MonthlyTimeDto, MonthlyTimeRes>().ReverseMap();
         }
     }
 }

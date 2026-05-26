@@ -1,0 +1,135 @@
+/**
+ * MultiColumn Dropdown Component Styles
+ * Version: 1.0
+ * 
+ * Styles for the reusable multi-column dropdown component with search,
+ * keyboard navigation, and fixed header scrollable table.
+ */
+
+/* Dropdown panel container */
+
+
+.multicolumn-dropdown-panel { 
+    position: absolute;
+    top: 100%;
+    left: 0px;
+    right: auto;
+    border: 1px solid #aaa;
+    background: #fff;
+    z-index: 9999;
+    max-height: 350px;
+    overflow-y: auto;
+    display: none;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: max-content;
+    min-width: 100%;
+}
+
+/* Search box wrapper */
+.multicolumn-dropdown-panel .search-box-wrapper {
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--govuk-border-colour);
+}
+
+/* Search input box */
+.multicolumn-dropdown-panel .search-box {
+    width: 100%;
+    padding: 8px;
+    border: none;
+    outline: none;
+    box-sizing: border-box;
+}
+
+/* Clear search button */
+.multicolumn-dropdown-panel .clear-search-btn {
+    padding: 6px;
+    margin: 0;
+    min-width: auto;
+    display: block;
+}
+
+/* Fixed header with scrollable content for dropdown table */
+.dropdown-table-wrapper {
+    max-height: 300px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.dropdown-table-wrapper table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+    table-layout: auto;
+}
+
+/* Sticky table header */
+.dropdown-table-wrapper thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: #f3f2f1;
+}
+
+.dropdown-table-wrapper thead th {
+    padding: 8px;
+    background-color: #f3f2f1;
+    border-bottom: 2px solid var(--govuk-border-colour);
+    font-weight: bold;
+    text-align: left;
+    white-space: nowrap;
+}
+
+/* Serial number column header */
+.dropdown-table-wrapper thead th:first-child {
+    width: 60px;
+    min-width: 60px;
+    max-width: 60px;
+    text-align: center;
+}
+
+/* Table body rows */
+.dropdown-table-wrapper tbody tr {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.dropdown-table-wrapper tbody tr:hover {
+    background-color: #f3f2f1;
+}
+
+.dropdown-table-wrapper tbody tr.selected {
+    background-color: var(--tint-80, #d8dde0);
+}
+
+/* Keyboard navigation focus styles */
+.dropdown-table-wrapper tbody tr:focus {
+    outline: 3px solid #ffdd00;
+    outline-offset: -3px;
+    background-color: #f3f2f1;
+}
+
+.dropdown-table-wrapper tbody tr.focused {
+    background-color: #e8f4f8;
+}
+
+/* Table body cells */
+.dropdown-table-wrapper tbody td {
+    padding: 8px;
+    border-bottom: 1px solid var(--govuk-border-colour);
+    max-width: max-content;
+    word-wrap: break-word;
+}
+
+/* Serial number column cells */
+.dropdown-table-wrapper tbody td:first-child {
+    /* width: 60px;
+    min-width: 60px;
+    max-width: 60px; */
+    text-align: left;
+    white-space: nowrap;
+}
