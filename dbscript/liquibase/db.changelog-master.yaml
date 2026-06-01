@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - includeAll:
+      path: baseline
+      endsWithFilter: .sql
+      relativeToChangelogFile: true
+      errorIfMissingOrEmpty: false
+  # Future incremental SQL changelogs are executed in filename order.
+  - includeAll:
+      path: changesets
+      endsWithFilter: .sql
+      relativeToChangelogFile: true
+      errorIfMissingOrEmpty: false
