@@ -15,7 +15,7 @@ SET check_function_bodies = false;
 SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
-ALTER DATABASE fps SET lc_monetary = 'en_GB.UTF-8';
+ALTER DATABASE fps_jenkins_dev SET lc_monetary = 'en_GB.UTF-8';
 CREATE SCHEMA "fps";
 
 
