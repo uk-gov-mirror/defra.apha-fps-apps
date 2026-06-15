@@ -15,7 +15,13 @@ SET check_function_bodies = false;
 SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
-ALTER DATABASE fps_jenkins_dev SET lc_monetary = 'en_GB.UTF-8';
+--ALTER DATABASE fps_jenkins_dev SET lc_monetary = 'en_GB.UTF-8';
+-- Safely alter the current database's locale setting dynamically
+DO $$
+BEGIN
+    EXECUTE format('ALTER DATABASE %I SET lc_monetary = ''en_GB.UTF-8'';', current_database());
+END $$;
+
 CREATE SCHEMA "fps";
 
 

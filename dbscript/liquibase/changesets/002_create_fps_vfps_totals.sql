@@ -32,6 +32,4 @@ CREATE OR REPLACE VIEW fps.vfps_totals
                    FROM fps.tbldb_variables
                   WHERE tbldb_variables.db_var_name::text = 'DB_Name'::text))) ma_a ON fpsyeartotals.parentproject::text = ma_a.project::text;
 
-ALTER TABLE fps.vfps_totals
-    OWNER TO fpsdev;
-
+--rollback DROP VIEW fps.vfps_totals;
