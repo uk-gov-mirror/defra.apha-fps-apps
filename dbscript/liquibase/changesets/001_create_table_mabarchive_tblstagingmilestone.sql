@@ -18,11 +18,5 @@ CREATE TABLE IF NOT EXISTS mabarchive.tblstagingmilestone
 
 TABLESPACE pg_default;
 
-ALTER TABLE IF EXISTS mabarchive.tblstagingmilestone
-    OWNER to fpsdev;
 
-GRANT ALL ON TABLE mabarchive.tblstagingmilestone TO "FPSAdmin";
-
-GRANT ALL ON TABLE mabarchive.tblstagingmilestone TO fpsdev;
-
---rollback DROP TABLE IF EXISTS public.department;
+--rollback DROP TABLE IF EXISTS mabarchive.tblstagingmilestone;
