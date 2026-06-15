@@ -572,11 +572,8 @@ static async Task VerifyExecutionContractAsync(
     var existingExecution = await executionRepository.GetExecutionByJobExecutionIdAsync(jobExecutionId, cancellationToken);
     if (existingExecution is null)
     {
-        logger.LogInformation(
-            "Execution contract pre-check passed | JobExecutionId={JobExecutionId} | JobName={JobName} | ExistingExecution=False",
-            jobExecutionId,
-            requestedJobName);
-        return;
+        throw new InvalidOperationException(
+            $"Execution contract violation: JobExecutionId '{jobExecutionId:D}' has no pre-created Initiated row. API must insert Initiated before worker start.");
     }
 
     if (!string.Equals(existingExecution.JobName, requestedJobName, StringComparison.OrdinalIgnoreCase))
@@ -593,6 +590,16 @@ static async Task VerifyExecutionContractAsync(
     {
         throw new InvalidOperationException(
             $"Execution contract violation: JobExecutionId '{jobExecutionId:D}' was already used by terminal execution '{existingExecution.Status}' (ExecutionId={existingExecution.ExecutionId}). Replays are not permitted.");
+    }
+
+    if (existingExecution.Status == JobStatus.Initiated)
+    {
+        logger.LogInformation(
+            "Execution contract pre-check passed | JobExecutionId={JobExecutionId} | JobName={JobName} | ExistingStatus={ExistingStatus}",
+            jobExecutionId,
+            requestedJobName,
+            existingExecution.Status);
+        return;
     }
 
     throw new InvalidOperationException(

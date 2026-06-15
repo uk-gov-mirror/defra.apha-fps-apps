@@ -396,38 +396,11 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td><span class="pill-xs state-accepted">TriggerAccepted</span></td>
-                                <td>Startup Watchdog</td>
-                                <td>PACT Trigger Store (in-memory)</td>
-                                <td>No</td>
-                                <td>true</td>
-                                <td>Blue spinner</td>
-                                <td>Polling…</td>
-                            </tr>
-                            <tr>
-                                <td><span class="pill-xs state-accepted">WorkerProcessStarted</span></td>
-                                <td>Startup Watchdog</td>
-                                <td>PACT Trigger Store (in-memory)</td>
-                                <td>No</td>
-                                <td>true</td>
-                                <td>Blue spinner</td>
-                                <td>Polling…</td>
-                            </tr>
-                            <tr>
-                                <td><span class="pill-xs state-timeout">StartFailedTimeout</span></td>
-                                <td>Startup Watchdog</td>
-                                <td>PACT Trigger Store (in-memory)</td>
-                                <td>Yes</td>
-                                <td>false</td>
-                                <td>Red</td>
-                                <td>Retry</td>
-                            </tr>
-                            <tr>
-                                <td><span class="pill-xs state-pending">Pending</span></td>
+                                <td><span class="pill-xs state-pending">Initiated</span></td>
                                 <td>BatchJobs DB</td>
                                 <td>fps.job_queue</td>
                                 <td>No</td>
-                                <td>false</td>
+                                <td>true</td>
                                 <td>Blue</td>
                                 <td>Polling…</td>
                             </tr>
@@ -490,43 +463,27 @@
 
                     <h4>State Transition Flow</h4>
                     <div class="flow-block">User clicks Trigger
-       │
-       ▼
-  PACT API (HTTP 202) ──saves──▶ PACT Trigger Store (IMemoryCache)
-       │                          └─ jobExecutionId, acceptedAtUtc, workerLaunchHint
-       │
-       ▼ (UI starts polling /status)
-  ┌─ Startup Watchdog Phase ────────────────────────────────────────┐
-  │  PACT resolves from trigger store (no fps.job_queue row yet)    │
-  │                                                                 │
-  │  projectedState = TriggerAccepted    (event sent, no ack yet)  │
-  │  projectedState = WorkerProcessStarted  (local proc launched)  │
-  │  projectedState = StartFailedTimeout ──────────────────────────┼──▶ ❌ STOP (SLA exceeded)
-  └─────────────────────────────────────────────────────────────────┘
-       │ (worker starts, writes row to fps.job_queue)
-       │
-       ▼
-  ┌─ Persistent DB Phase (fps.job_queue) ───────────────────────────┐
-  │                                                                 │
-  │  Pending ──▶ Running ──▶ Completed ✅                          │
-  │                      └──▶ Failed ──▶ Retry ──▶ Pending…        │
-  │                      └──▶ Cancelled ✅                         │
-  │  Skipped ✅  (concurrent detection at trigger time)            │
-  └─────────────────────────────────────────────────────────────────┘
+          │
+          ▼
+      PACT API (HTTP 202)
+          │
+          ├─ writes fps.job_queue row as Initiated
+          └─ dispatches worker event
+          │
+          ▼ (UI polls /status?jobExecutionId=...)
+      fps.job_queue lifecycle:
+      Initiated ──▶ Running ──▶ Completed ✅
+                      └──▶ Failed ❌
+                      └──▶ Cancelled ✅
 
-DB Table: fps.job_queue
-  ├─ job_execution_id   (UUID, correlation key, matches PACT trigger store)
-  ├─ job_name
-  ├─ current_state      (Pending | Running | Completed | Failed | Retry | Cancelled | Skipped)
-  ├─ started_at
-  ├─ completed_at
-  ├─ requested_by
-  └─ error_message
-
-Watchdog Correlation: /status?jobExecutionId={uuid}
-  → PACT looks up trigger store first (no acceptedAtUtc required from client)
-  → If no DB row + store hit  → returns startupWatchdog projection
-  → If DB row found           → returns lastExecution (authoritative)</div>
+    DB Table: fps.job_queue
+      ├─ job_execution_id   (UUID correlation key)
+      ├─ job_name
+      ├─ current_state      (Initiated | Running | Completed | Failed | Cancelled)
+      ├─ started_at
+      ├─ completed_at
+      ├─ requested_by
+      └─ error_message</div>
                 </div>
             </details>
         </section>
@@ -535,7 +492,6 @@ Watchdog Correlation: /status?jobExecutionId={uuid}
     <script>
         const JOB_NAME = "RecreateSummaries";
         const BATCH_JOBS_API_BASE = "/api/batch-jobs";
-        const STARTUP_POLL_MS = 2500;
         const RUNNING_POLL_MS = 15000;
         const MAX_SILENT_RETRIES = 3;
         const CORRELATION_STORAGE_KEY = `batchjobs:${JOB_NAME}:correlation`;
@@ -562,13 +518,11 @@ Watchdog Correlation: /status?jobExecutionId={uuid}
             ready: { label: "Ready", cls: "state-ready", btn: "Trigger RecreateSummaries", disabled: false, spinning: false },
             submitting: { label: "Submitting", cls: "state-submitting", btn: "Please wait...", disabled: true, spinning: true },
             accepted: { label: "Starting", cls: "state-accepted", btn: "Please wait...", disabled: true, spinning: true },
-            pending: { label: "Pending", cls: "state-pending", btn: "Please wait...", disabled: true, spinning: true },
+            initiated: { label: "Initiated", cls: "state-pending", btn: "Please wait...", disabled: true, spinning: true },
             running: { label: "Running", cls: "state-running", btn: "Please wait...", disabled: true, spinning: true },
             completed: { label: "Completed", cls: "state-completed", btn: "Re-trigger RecreateSummaries", disabled: false, spinning: false },
             failed: { label: "Failed", cls: "state-failed", btn: "Retry RecreateSummaries", disabled: false, spinning: false },
-            cancelled: { label: "Cancelled", cls: "state-cancelled", btn: "Re-trigger RecreateSummaries", disabled: false, spinning: false },
-            skipped: { label: "Skipped", cls: "state-skipped", btn: "Re-trigger RecreateSummaries", disabled: false, spinning: false },
-            timeout: { label: "StartFailedTimeout", cls: "state-timeout", btn: "Retry RecreateSummaries", disabled: false, spinning: false }
+            cancelled: { label: "Cancelled", cls: "state-cancelled", btn: "Re-trigger RecreateSummaries", disabled: false, spinning: false }
         };
 
         function addTimeline(text) {
@@ -674,11 +628,8 @@ Watchdog Correlation: /status?jobExecutionId={uuid}
         function mapApiStateToUiKey(state) {
             const key = (state || "").toLowerCase();
             const map = {
-                triggeraccepted: "accepted",
-                workerprocessstarted: "running",
-                retry: "running",
-                startfailedtimeout: "timeout",
-                workerprocessexited: "failed"
+                initiated: "initiated",
+                queued: "initiated"
             };
 
             return map[key] || key;
@@ -752,7 +703,6 @@ Watchdog Correlation: /status?jobExecutionId={uuid}
                 setRaw(response.status, bodyText);
 
                 const lastExec = payload.lastExecution;
-                const watchdog = payload.startupWatchdog;
                 const queryResolution = payload.queryResolution || null;
 
                 let currentState = "Unknown";
@@ -771,25 +721,9 @@ Watchdog Correlation: /status?jobExecutionId={uuid}
                         setFailure(lastExec.errorMessage || "BatchJobs reported Failed with no error message.");
                     } else {
                         metaText = `State from BatchJobs: ${currentState}`;
-                        if (currentState !== "Running" && currentState !== "Pending" && currentState !== "Retry") {
+                        if (currentState !== "Running" && currentState !== "Initiated" && currentState !== "Queued") {
                             setFailure("No failures yet.");
                         }
-                    }
-                } else if (watchdog && watchdog.projectedState) {
-                    currentState = watchdog.projectedState;
-                    metaText = `Startup watchdog state: ${currentState}`;
-                    if ((currentState || "").toLowerCase() === "workerprocessexited") {
-                        if (watchdog.workerFailureReason) {
-                            metaText = `${metaText} | ${watchdog.workerFailureReason}`;
-                            setFailure(watchdog.workerFailureReason);
-                        } else if (watchdog.workerExitCode !== null && watchdog.workerExitCode !== undefined) {
-                            metaText = `${metaText} | ExitCode=${watchdog.workerExitCode}`;
-                            setFailure(`Worker exited with code ${watchdog.workerExitCode}. Check local worker log for details.`);
-                        } else {
-                            setFailure("Worker exited before detailed error was captured. Check PACT LocalWorkerProcess logs.");
-                        }
-                    } else {
-                        setFailure("No failures yet.");
                     }
                 }
 
@@ -800,9 +734,6 @@ Watchdog Correlation: /status?jobExecutionId={uuid}
                     : "";
                 setState(stateKey, `${metaText}${fallbackSuffix}`);
                 addTimeline(`Status: ${currentState}${payload.sourceOfTruth ? ` (${payload.sourceOfTruth})` : ""}`);
-                if (watchdog && watchdog.workerFailureReason) {
-                    addTimeline(`Worker failure: ${watchdog.workerFailureReason}`);
-                }
 
                 if (queryResolution && queryResolution.isFallback) {
                     addTimeline(`Status query fallback active: ${queryResolution.fallbackReason || "NoCorrelation"}`);
@@ -812,7 +743,7 @@ Watchdog Correlation: /status?jobExecutionId={uuid}
                     addTimeline(`Debug diagnostics: ${JSON.stringify(payload.diagnostics)}`);
                 }
 
-                const terminalStates = new Set(["completed", "failed", "cancelled", "skipped", "startfailedtimeout", "workerprocessexited"]);
+                const terminalStates = new Set(["completed", "failed", "cancelled"]);
                 if (terminalStates.has(key)) {
                     isRunning = false;
                     cancelRequestedForCurrentRun = false;
@@ -835,9 +766,7 @@ Watchdog Correlation: /status?jobExecutionId={uuid}
             }
 
             if (isRunning) {
-                const isStartupWatchdogPhase = payload && payload.sourceOfTruth === "StartupWatchdog";
-                const interval = isStartupWatchdogPhase ? STARTUP_POLL_MS : RUNNING_POLL_MS;
-                later(interval, pollStatus);
+                later(RUNNING_POLL_MS, pollStatus);
             }
         }
 
@@ -951,8 +880,8 @@ Watchdog Correlation: /status?jobExecutionId={uuid}
             currentJobExecutionId = payload.jobExecutionId;
             currentAcceptedAtUtc = payload.acceptedAtUtc || new Date().toISOString();
             saveCorrelation();
-            setState("accepted", `ExecutionId: ${currentJobExecutionId || "n/a"}`);
-            addTimeline(`Trigger accepted (${payload.status || "TriggerAccepted"})`);
+            setState("initiated", `ExecutionId: ${currentJobExecutionId || "n/a"}`);
+            addTimeline(`Trigger accepted (${payload.status || "Initiated"})`);
 
             later(1000, pollStatus);
         }

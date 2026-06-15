@@ -88,46 +88,14 @@ public class JobExecutionRepository : IJobExecutionRepository
             return 0;
         }
 
-        // No existing row — scheduled job path: INSERT a new Running row
-        var jobId = await EnsureJobMasterAsync(record.JobName, cancellationToken);
-        var newStatusId = await EnsureStatusAsync(jobId, record.Status.ToString(), cancellationToken);
-
-        var queueRow = new TblJobQueue
-        {
-            JobQueueId = record.JobQueueId,
-            JobExecutionId = record.JobExecutionId,
-            JobId = jobId,
-            StatusId = newStatusId,
-            RequestedBy = record.UserId,
-            RequestedAtUtc = record.RequestedAtUtc,
-            StartDateTime = record.StartedAt,
-            EndDateTime = null,
-            ErrorMessage = null,
-            CreatedAt = now,
-            UpdatedAt = now
-        };
-
-        _context.TblJobQueue.Add(queueRow);
-        _context.TblJobQueueLog.Add(new TblJobQueueLog
-        {
-            JobQueueId = record.JobQueueId,
-            StatusId = newStatusId,
-            PerformedBy = record.UserId,
-            LogTime = now,
-            Note = "Execution started"
-        });
-
-        await _context.SaveChangesAsync(cancellationToken);
-
-        _logger.LogInformation(
-            "Execution record created | JobName={JobName} | JobExecutionId={JobExecutionId} | JobQueueId={JobQueueId} | UserId={UserId} | Status={Status}",
+        _logger.LogError(
+            "Execution start rejected: no pre-created Initiated row | JobName={JobName} | JobExecutionId={JobExecutionId} | JobQueueId={JobQueueId}",
             record.JobName,
             record.JobExecutionId,
-            record.JobQueueId,
-            record.UserId,
-            record.Status);
+            record.JobQueueId);
 
-        return 0;
+        throw new InvalidOperationException(
+            $"No pre-created Initiated record exists for JobExecutionId {record.JobExecutionId}. API must insert Initiated before worker execution starts.");
     }
 
     /// <inheritdoc />
@@ -327,7 +295,9 @@ public class JobExecutionRepository : IJobExecutionRepository
             StatusId = statusId,
             RequestedBy = requestedBy,
             RequestedAtUtc = requestedAtUtc,
-            StartDateTime = null,   // Not started; worker sets this when transitioning to Running
+            // Keep compatibility with environments where startdatetime is still NOT NULL.
+            // Status remains Initiated; worker updates the value when transitioning to Running.
+            StartDateTime = requestedAtUtc,
             EndDateTime = null,
             ErrorMessage = null,
             CreatedAt = now,
@@ -346,7 +316,7 @@ public class JobExecutionRepository : IJobExecutionRepository
         await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(
-            "[API → DB] ✓ Initiated record created | JobName={JobName} | JobExecutionId={JobExecutionId} | JobQueueId={JobQueueId} | RunMode={RunMode} | RequestedBy={RequestedBy} | RequestedAtUtc={RequestedAtUtc} | StartDateTime=null (pending worker lock acquisition)",
+            "[API → DB] ✓ Initiated record created | JobName={JobName} | JobExecutionId={JobExecutionId} | JobQueueId={JobQueueId} | RunMode={RunMode} | RequestedBy={RequestedBy} | RequestedAtUtc={RequestedAtUtc}",
             jobName, jobExecutionId, jobQueueId, runMode, requestedBy, requestedAtUtc);
 
         return jobQueueId;

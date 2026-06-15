@@ -2,8 +2,11 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
+using Apha.BatchJobs.Domain.Enums;
+using Apha.BatchJobs.Domain.Interfaces;
 using Apha.BatchJobs.Pact.Api.Models;
 using Apha.BatchJobs.Pact.Api.Options;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Configuration;
 
@@ -16,17 +19,20 @@ public sealed class LocalWorkerProcessTriggerDispatcher : ITriggerDispatcher
     private readonly ILogger<LocalWorkerProcessTriggerDispatcher> _logger;
     private readonly ITriggerAttemptStore _triggerAttemptStore;
     private readonly IConfiguration _configuration;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
 
     public LocalWorkerProcessTriggerDispatcher(
         IOptions<TriggerDispatchOptions> options,
         IWebHostEnvironment environment,
         IConfiguration configuration,
+        IServiceScopeFactory serviceScopeFactory,
         ITriggerAttemptStore triggerAttemptStore,
         ILogger<LocalWorkerProcessTriggerDispatcher> logger)
     {
         _options = options.Value;
         _environment = environment;
         _configuration = configuration;
+        _serviceScopeFactory = serviceScopeFactory;
         _triggerAttemptStore = triggerAttemptStore;
         _logger = logger;
     }
@@ -153,7 +159,12 @@ public sealed class LocalWorkerProcessTriggerDispatcher : ITriggerDispatcher
             await process.WaitForExitAsync();
             await Task.WhenAll(outputTask, errorTask);
 
-            await UpdateTriggerAttemptOnExitAsync(jobExecutionId, process.ExitCode, logFilePath);
+            var failureReason = process.ExitCode == 0
+                ? null
+                : TryExtractFailureReasonFromLog(logFilePath);
+
+            await UpdateTriggerAttemptOnExitAsync(jobExecutionId, process.ExitCode, failureReason, logFilePath);
+            await UpdateExecutionStatusOnExitAsync(jobExecutionId, process.ExitCode, failureReason);
 
             await writer.WriteLineAsync($"[{DateTime.UtcNow:O}] [SYS] Worker process exited with code {process.ExitCode}");
 
@@ -178,7 +189,7 @@ public sealed class LocalWorkerProcessTriggerDispatcher : ITriggerDispatcher
         }
     }
 
-    private async Task UpdateTriggerAttemptOnExitAsync(string jobExecutionId, int exitCode, string logFilePath)
+    private async Task UpdateTriggerAttemptOnExitAsync(string jobExecutionId, int exitCode, string? failureReason, string logFilePath)
     {
         var existing = await _triggerAttemptStore.GetByJobExecutionIdAsync(jobExecutionId);
         if (existing is null)
@@ -186,7 +197,7 @@ public sealed class LocalWorkerProcessTriggerDispatcher : ITriggerDispatcher
             return;
         }
 
-        var failureReason = exitCode == 0 ? null : TryExtractFailureReasonFromLog(logFilePath);
+        failureReason ??= exitCode == 0 ? null : TryExtractFailureReasonFromLog(logFilePath);
 
         var mappedStatus = exitCode switch
         {
@@ -209,6 +220,62 @@ public sealed class LocalWorkerProcessTriggerDispatcher : ITriggerDispatcher
                 FailureReason = failureReason,
                 StoredAtUtc = DateTime.UtcNow
             });
+    }
+
+    private async Task UpdateExecutionStatusOnExitAsync(string jobExecutionId, int exitCode, string? failureReason)
+    {
+        if (exitCode == 0)
+        {
+            return;
+        }
+
+        if (!Guid.TryParse(jobExecutionId, out var parsedJobExecutionId))
+        {
+            return;
+        }
+
+        try
+        {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var executionRepository = scope.ServiceProvider.GetRequiredService<IJobExecutionRepository>();
+            var execution = await executionRepository.GetExecutionByJobExecutionIdAsync(parsedJobExecutionId);
+            if (execution is null)
+            {
+                return;
+            }
+
+            if (execution.Status is JobStatus.Completed or JobStatus.Failed or JobStatus.Cancelled)
+            {
+                return;
+            }
+
+            execution.Status = exitCode == 3 ? JobStatus.Cancelled : JobStatus.Failed;
+            execution.CompletedAt = DateTime.UtcNow;
+            execution.ErrorMessage = string.IsNullOrWhiteSpace(failureReason)
+                ? $"Local worker exited with code {exitCode} before reporting terminal status."
+                : failureReason;
+
+            if (string.IsNullOrWhiteSpace(execution.UserId))
+            {
+                execution.UserId = "pact.api-local-dispatcher";
+            }
+
+            await executionRepository.UpdateExecutionRecordAsync(execution);
+
+            _logger.LogWarning(
+                "Persisted terminal execution status after local worker exit | JobExecutionId={JobExecutionId} | ExitCode={ExitCode} | MappedStatus={MappedStatus}",
+                jobExecutionId,
+                exitCode,
+                execution.Status);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Failed to persist terminal execution status after local worker exit | JobExecutionId={JobExecutionId} | ExitCode={ExitCode}",
+                jobExecutionId,
+                exitCode);
+        }
     }
 
     private static string? TryExtractFailureReasonFromLog(string logFilePath)

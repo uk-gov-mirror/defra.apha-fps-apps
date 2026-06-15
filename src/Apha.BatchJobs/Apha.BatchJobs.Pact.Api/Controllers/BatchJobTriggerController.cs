@@ -18,7 +18,6 @@ namespace Apha.BatchJobs.Pact.Api.Controllers;
 public sealed class BatchJobTriggerController : ControllerBase
 {
     private readonly ITriggerDispatcher _triggerDispatcher;
-    private readonly Apha.BatchJobs.Pact.Api.Services.ITriggerAttemptStore _triggerAttemptStore;
     private readonly IJobExecutionRepository _jobExecutionRepository;
     private readonly IBatchLockRepository _batchLockRepository;
     private readonly ILogger<BatchJobTriggerController> _logger;
@@ -26,34 +25,16 @@ public sealed class BatchJobTriggerController : ControllerBase
 
     public BatchJobTriggerController(
         ITriggerDispatcher triggerDispatcher,
-        Apha.BatchJobs.Pact.Api.Services.ITriggerAttemptStore triggerAttemptStore,
         IJobExecutionRepository jobExecutionRepository,
         IBatchLockRepository batchLockRepository,
         ILogger<BatchJobTriggerController> logger,
         IHostEnvironment environment)
     {
         _triggerDispatcher = triggerDispatcher;
-        _triggerAttemptStore = triggerAttemptStore;
         _jobExecutionRepository = jobExecutionRepository;
         _batchLockRepository = batchLockRepository;
         _logger = logger;
         _environment = environment;
-    }
-
-    [HttpGet("catalog")]
-    public IActionResult GetCatalog()
-    {
-        var catalog = BatchJobRoutingPolicy
-            .GetCatalog()
-            .Select(route => new
-            {
-                route.JobName,
-                route.Description,
-                route.RouteKind,
-                CanTriggerFromThisApi = route.RouteKind is JobRouteKind.PactApi or JobRouteKind.Neutral
-            });
-
-        return Ok(new { api = "pact.api", jobs = catalog });
     }
 
     [HttpPost("trigger")]
@@ -110,6 +91,34 @@ public sealed class BatchJobTriggerController : ControllerBase
             return BadRequest(new { accepted = false, reason = parametersError });
         }
 
+        Guid jobQueueId;
+        try
+        {
+            jobQueueId = await _jobExecutionRepository.CreateInitiatedRecordAsync(
+                normalizedJobName,
+                Guid.Parse(jobExecutionId),
+                requestedBy,
+                acceptedAtUtc,
+                RunMode.Manual,
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "PACT API failed to create Initiated record | JobName={JobName} | JobExecutionId={JobExecutionId}",
+                normalizedJobName,
+                jobExecutionId);
+
+            return StatusCode(StatusCodes.Status500InternalServerError, new
+            {
+                accepted = false,
+                source = "pact.api",
+                jobName = normalizedJobName,
+                reason = "Failed to create Initiated execution record."
+            });
+        }
+
         string eventId;
         try
         {
@@ -141,58 +150,11 @@ public sealed class BatchJobTriggerController : ControllerBase
         }
 
         _logger.LogInformation(
-            "PACT API trigger accepted | JobName={JobName} | JobExecutionId={JobExecutionId} | EventId={EventId}",
+            "PACT API trigger accepted | JobName={JobName} | JobExecutionId={JobExecutionId} | JobQueueId={JobQueueId} | EventId={EventId}",
             normalizedJobName,
             jobExecutionId,
+            jobQueueId,
             eventId);
-
-        int? workerPid = null;
-        var workerProcessLaunched = false;
-        if (eventId.StartsWith("localproc-", StringComparison.OrdinalIgnoreCase)
-            && int.TryParse(eventId["localproc-".Length..], out var parsedWorkerPid))
-        {
-            workerPid = parsedWorkerPid;
-            workerProcessLaunched = true;
-        }
-
-        var status = workerProcessLaunched ? "WorkerProcessStarted" : "TriggerAccepted";
-        var message = workerProcessLaunched
-            ? "Trigger accepted and local worker process launched. Attach debugger to workerPid."
-            : "Trigger accepted for dispatch.";
-
-        await _triggerAttemptStore.SaveAsync(
-            new Apha.BatchJobs.Pact.Api.Services.TriggerAttemptRecord
-            {
-                JobExecutionId = jobExecutionId,
-                JobName = normalizedJobName,
-                AcceptedAtUtc = acceptedAtUtc,
-                EventId = eventId,
-                WorkerProcessLaunched = workerProcessLaunched,
-                Status = status,
-                WorkerExitCode = null,
-                StoredAtUtc = DateTime.UtcNow
-            },
-            cancellationToken);
-
-        var isLocalDebug = _environment.IsDevelopment() || _environment.IsEnvironment("Local");
-
-        if (isLocalDebug)
-        {
-            return Accepted(new
-            {
-                accepted = true,
-                source = "pact.api",
-                jobName = normalizedJobName,
-                jobExecutionId,
-                eventId,
-                workerPid,
-                workerProcessLaunched,
-                status,
-                acceptedAtUtc,
-                parametersJson,
-                message
-            });
-        }
 
         return Accepted(new
         {
@@ -201,10 +163,10 @@ public sealed class BatchJobTriggerController : ControllerBase
             jobName = normalizedJobName,
             jobExecutionId,
             eventId,
-            status,
+            status = "Initiated",
             acceptedAtUtc,
             parametersJson,
-            message
+            message = "Trigger accepted and execution recorded as Initiated."
         });
     }
 

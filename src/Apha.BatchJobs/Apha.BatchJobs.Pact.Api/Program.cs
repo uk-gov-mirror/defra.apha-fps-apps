@@ -10,7 +10,6 @@ using Apha.BatchJobs.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi;
-using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -278,7 +277,6 @@ var statusHandler = async (
     string jobName,
     [FromQuery] string? jobExecutionId,
     [FromQuery] bool? debugView,
-    ITriggerAttemptStore triggerAttemptStore,
     IJobExecutionRepository executionRepository,
     ILoggerFactory loggerFactory,
     IHostEnvironment environment,
@@ -293,9 +291,27 @@ var statusHandler = async (
         {
             var latestExecution = await executionRepository.GetLastExecutionAsync(jobName, cancellationToken);
 
+            var initiatedTimeoutSeconds = environment.IsProduction() ? 600 : 120;
+            var isStaleInitiated = latestExecution is not null
+                && latestExecution.Status == JobStatus.Initiated
+                && latestExecution.CompletedAt is null
+                && (DateTime.UtcNow - latestExecution.StartedAt).TotalSeconds > initiatedTimeoutSeconds;
+
+            var latestCurrentState = latestExecution is null
+                ? null
+                : isStaleInitiated
+                    ? JobStatus.Failed.ToString()
+                    : latestExecution.Status.ToString();
+
+            var latestErrorMessage = isStaleInitiated
+                ? $"Execution remained in Initiated for more than {initiatedTimeoutSeconds} seconds and is considered failed-to-start."
+                : latestExecution?.ErrorMessage;
+
             var latestBusinessState = latestExecution is null
                 ? null
-                : latestExecution.Status switch
+                : isStaleInitiated
+                    ? JobStatus.Failed.ToString()
+                    : latestExecution.Status switch
                 {
                     JobStatus.Initiated => "Queued",
                     _ => latestExecution.Status.ToString()
@@ -305,6 +321,7 @@ var statusHandler = async (
             {
                 jobName,
                 isRunning = latestExecution is not null &&
+                            !isStaleInitiated &&
                             (latestExecution.Status == JobStatus.Running ||
                              latestExecution.Status == JobStatus.Initiated),
                 sourceOfTruth = "BatchJobs",
@@ -324,6 +341,7 @@ var statusHandler = async (
                         latestExecution.ExecutionId,
                         latestExecution.JobName,
                         latestExecution.JobExecutionId,
+                        currentState = latestCurrentState,
                         status = latestExecution.Status.ToString(),
                         businessState = latestBusinessState,
                         startedAt = latestExecution.StartedAt,
@@ -331,9 +349,8 @@ var statusHandler = async (
                         durationSeconds = latestExecution.DurationSeconds,
                         recordsProcessed = latestExecution.RecordsProcessed,
                         recordsFailed = latestExecution.RecordsFailed,
-                        errorMessage = latestExecution.ErrorMessage
+                        errorMessage = latestErrorMessage
                     },
-                startupWatchdog = (object?)null,
                 diagnostics = (object?)null
             });
         }
@@ -352,151 +369,43 @@ var statusHandler = async (
             });
         }
 
-        TriggerAttemptRecord? triggerAttempt = null;
-
-        triggerAttempt = await triggerAttemptStore.GetByJobExecutionIdAsync(jobExecutionId!, cancellationToken);
-
         var execution = await executionRepository.GetExecutionByJobExecutionIdAsync(correlatedExecutionId, cancellationToken);
+        var initiatedTimeoutSecondsForCorrelation = environment.IsProduction() ? 600 : 120;
+        var isStaleInitiatedForCorrelation = execution is not null
+            && execution.Status == JobStatus.Initiated
+            && execution.CompletedAt is null
+            && (DateTime.UtcNow - execution.StartedAt).TotalSeconds > initiatedTimeoutSecondsForCorrelation;
 
-        object? startupWatchdog = null;
-        var isRunning = false;
-        var sourceOfTruth = "BatchJobs";
-        var correlatedJobExecutionId = jobExecutionId;
-        var queryMode = "CorrelatedExecutionId";
-        string? fallbackReason = null;
+        var isRunning = execution is not null
+            && !isStaleInitiatedForCorrelation
+            && (execution.Status == JobStatus.Running || execution.Status == JobStatus.Initiated);
+        const string sourceOfTruth = "BatchJobs";
+        var correlatedJobExecutionId = execution?.JobExecutionId.ToString("D") ?? jobExecutionId;
+        const string queryMode = "CorrelatedExecutionId";
+        var fallbackReason = execution is null ? "ExecutionNotFound" : (string?)null;
 
-        if (execution is not null)
-        {
-            correlatedJobExecutionId = execution.JobExecutionId.ToString("D");
-        }
-        else if (triggerAttempt is not null)
-        {
-            correlatedJobExecutionId = triggerAttempt.JobExecutionId;
-        }
+        var currentState = execution is null
+            ? null
+            : isStaleInitiatedForCorrelation
+                ? JobStatus.Failed.ToString()
+                : execution.Status.ToString();
 
-        if (execution is null && triggerAttempt is not null)
-        {
-            var now = DateTime.UtcNow;
-            var startupSlaSeconds = environment.IsProduction() ? 600 : 30;
-            var startupDeadlineUtc = triggerAttempt.AcceptedAtUtc.AddSeconds(startupSlaSeconds);
-            var workerProcessExited = false;
-            int? workerExitCode = triggerAttempt.WorkerExitCode;
-            var workerFailureReason = triggerAttempt.FailureReason;
-
-            if (triggerAttempt.EventId.StartsWith("localproc-", StringComparison.OrdinalIgnoreCase)
-                && int.TryParse(triggerAttempt.EventId["localproc-".Length..], out var workerPid))
-            {
-                try
-                {
-                    var process = Process.GetProcessById(workerPid);
-                    workerProcessExited = process.HasExited;
-                    if (workerProcessExited && !workerExitCode.HasValue)
-                    {
-                        workerExitCode = process.ExitCode;
-                    }
-                }
-                catch
-                {
-                    workerProcessExited = true;
-                }
-            }
-
-            if (!workerProcessExited && workerExitCode.HasValue)
-            {
-                // Persisted exit code indicates process has already exited.
-                workerProcessExited = true;
-            }
-
-            if (workerProcessExited)
-            {
-                var (fallbackExitCode, fallbackFailureReason) =
-                    TryReadLocalWorkerFailureFromLog(environment.ContentRootPath, triggerAttempt.JobExecutionId);
-
-                if (!workerExitCode.HasValue && fallbackExitCode.HasValue)
-                {
-                    workerExitCode = fallbackExitCode;
-                }
-
-                if (string.IsNullOrWhiteSpace(workerFailureReason) && !string.IsNullOrWhiteSpace(fallbackFailureReason))
-                {
-                    workerFailureReason = fallbackFailureReason;
-                }
-            }
-
-            if (workerProcessExited && string.IsNullOrWhiteSpace(workerFailureReason) && workerExitCode.HasValue && workerExitCode.Value != 0)
-            {
-                workerFailureReason = $"Worker process exited with code {workerExitCode.Value}. Check LocalWorkerProcess logs for details.";
-            }
-
-            if (workerProcessExited && string.IsNullOrWhiteSpace(workerFailureReason))
-            {
-                workerFailureReason = "Worker process exited before detailed failure text was captured. Check LocalWorkerProcess logs for this JobExecutionId.";
-            }
-
-            string projectedState;
-            if (workerProcessExited)
-            {
-                projectedState = workerExitCode switch
-                {
-                    0 => "Completed",
-                    3 => "Cancelled",
-                    4 => "Skipped",
-                    _ => string.Equals(triggerAttempt.Status, "Skipped", StringComparison.OrdinalIgnoreCase)
-                        ? "Skipped"
-                        : string.Equals(triggerAttempt.Status, "Cancelled", StringComparison.OrdinalIgnoreCase)
-                            ? "Cancelled"
-                            : "WorkerProcessExited"
-                };
-            }
-            else
-            {
-                projectedState = now > startupDeadlineUtc
-                    ? triggerAttempt.WorkerProcessLaunched
-                        ? "WorkerProcessStarted"
-                        : "StartFailedTimeout"
-                    : triggerAttempt.WorkerProcessLaunched
-                        ? "WorkerProcessStarted"
-                        : "TriggerAccepted";
-            }
-
-            startupWatchdog = new
-            {
-                projectedState,
-                acceptedAtUtc = triggerAttempt.AcceptedAtUtc,
-                startupDeadlineUtc,
-                evaluatedAtUtc = now,
-                startupSlaSeconds,
-                deliveryExhaustionConfirmed = false,
-                deliveryExhaustionOwner = "IntegrationTransportReconciler",
-                eventId = triggerAttempt.EventId,
-                triggerStatus = triggerAttempt.Status,
-                workerExitCode,
-                workerFailureReason,
-                triggerStore = triggerAttemptStore.StoreName
-            };
-
-            isRunning = projectedState != "StartFailedTimeout"
-                && projectedState != "WorkerProcessExited"
-                && projectedState != "Completed"
-                && projectedState != "Skipped"
-                && projectedState != "Cancelled";
-            sourceOfTruth = "StartupWatchdog";
-        }
-        else if (execution is not null)
-        {
-            isRunning = execution.Status == JobStatus.Running || execution.Status == JobStatus.Initiated;
-        }
+        var errorMessage = isStaleInitiatedForCorrelation
+            ? $"Execution remained in Initiated for more than {initiatedTimeoutSecondsForCorrelation} seconds and is considered failed-to-start."
+            : execution?.ErrorMessage;
 
         var businessState = execution is null
             ? (string?)null
-            : execution.Status switch
+            : isStaleInitiatedForCorrelation
+                ? JobStatus.Failed.ToString()
+                : execution.Status switch
             {
                 JobStatus.Initiated => "Queued",
                 _ => execution.Status.ToString()
             };
 
         object? diagnostics = null;
-        if (debugView == true)
+        if (debugView == true && execution is not null)
         {
             diagnostics = new
             {
@@ -525,6 +434,7 @@ var statusHandler = async (
                 execution.ExecutionId,
                 execution.JobName,
                 execution.JobExecutionId,
+                currentState,
                 status = execution.Status.ToString(),
                 businessState,
                 startedAt = execution.StartedAt,
@@ -532,19 +442,17 @@ var statusHandler = async (
                 durationSeconds = execution.DurationSeconds,
                 recordsProcessed = execution.RecordsProcessed,
                 recordsFailed = execution.RecordsFailed,
-                errorMessage = execution.ErrorMessage
+                errorMessage
             },
-            startupWatchdog,
             diagnostics
         };
 
         logger.LogInformation(
-            "Status response generated | JobName={JobName} | RequestedJobExecutionId={RequestedJobExecutionId} | CorrelatedJobExecutionId={CorrelatedJobExecutionId} | QueryMode={QueryMode} | SourceOfTruth={SourceOfTruth} | IsRunning={IsRunning}",
+            "Status response generated | JobName={JobName} | RequestedJobExecutionId={RequestedJobExecutionId} | CorrelatedJobExecutionId={CorrelatedJobExecutionId} | QueryMode={QueryMode} | IsRunning={IsRunning}",
             jobName,
             jobExecutionId,
             correlatedJobExecutionId,
             queryMode,
-            sourceOfTruth,
             isRunning);
 
         return Results.Ok(result);
@@ -562,100 +470,5 @@ var statusHandler = async (
 };
 
 app.MapGet("/api/v{version:apiVersion}/batch-jobs/{jobName}/status", statusHandler);
-
-static (int? ExitCode, string? FailureReason) TryReadLocalWorkerFailureFromLog(string contentRootPath, string jobExecutionId)
-{
-    try
-    {
-        if (string.IsNullOrWhiteSpace(jobExecutionId))
-        {
-            return (null, null);
-        }
-
-        var logsRoot = Path.Combine(contentRootPath, "Logs", "LocalWorkerProcess");
-        if (!Directory.Exists(logsRoot))
-        {
-            return (null, null);
-        }
-
-        var logPath = Directory
-            .GetFiles(logsRoot, $"*{jobExecutionId}*.log", SearchOption.TopDirectoryOnly)
-            .OrderByDescending(File.GetLastWriteTimeUtc)
-            .FirstOrDefault();
-
-        if (string.IsNullOrWhiteSpace(logPath) || !File.Exists(logPath))
-        {
-            return (null, null);
-        }
-
-        var lines = File.ReadAllLines(logPath);
-        if (lines.Length == 0)
-        {
-            return (null, null);
-        }
-
-        int? exitCode = null;
-        string? failureReason = null;
-
-        for (var i = lines.Length - 1; i >= 0; i--)
-        {
-            var line = lines[i];
-
-            if (!exitCode.HasValue)
-            {
-                const string exitMarker = "Worker process exited with code";
-                var markerIndex = line.IndexOf(exitMarker, StringComparison.OrdinalIgnoreCase);
-                if (markerIndex >= 0)
-                {
-                    var tail = line[(markerIndex + exitMarker.Length)..].Trim();
-                    var firstToken = tail.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
-                    if (int.TryParse(firstToken, out var parsedExitCode))
-                    {
-                        exitCode = parsedExitCode;
-                    }
-                }
-            }
-
-            if (string.IsNullOrWhiteSpace(failureReason))
-            {
-                const string fatalMarker = "FATAL ERROR:";
-                var fatalIndex = line.IndexOf(fatalMarker, StringComparison.OrdinalIgnoreCase);
-                if (fatalIndex >= 0)
-                {
-                    failureReason = line[(fatalIndex + fatalMarker.Length)..].Trim();
-                    continue;
-                }
-
-                const string unhandledMarker = "Unhandled business/runtime exception:";
-                var unhandledIndex = line.IndexOf(unhandledMarker, StringComparison.OrdinalIgnoreCase);
-                if (unhandledIndex >= 0)
-                {
-                    failureReason = line[(unhandledIndex + unhandledMarker.Length)..].Trim();
-                    continue;
-                }
-
-                if (line.Contains("[ERR]", StringComparison.OrdinalIgnoreCase))
-                {
-                    failureReason = line[(line.IndexOf("[ERR]", StringComparison.OrdinalIgnoreCase) + 5)..].Trim();
-                    continue;
-                }
-            }
-        }
-
-        if (string.IsNullOrWhiteSpace(failureReason))
-        {
-            failureReason = lines
-                .Reverse()
-                .FirstOrDefault(l => !string.IsNullOrWhiteSpace(l) && !l.Contains("[SYS]", StringComparison.OrdinalIgnoreCase))
-                ?.Trim();
-        }
-
-        return (exitCode, failureReason);
-    }
-    catch
-    {
-        return (null, null);
-    }
-}
 
 app.Run();
