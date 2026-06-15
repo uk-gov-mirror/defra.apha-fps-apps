@@ -90,7 +90,36 @@ public sealed class JobOrchestrator : IJobOrchestrator
         CancellationToken cancellationToken = default)
     {
         var startedAt = DateTime.UtcNow;
-        var jobQueueId = Guid.NewGuid();
+        
+        // Attempt to acquire lock using a temporary jobQueueId; fetch real one after lock succeeds
+        var tempJobQueueId = Guid.NewGuid();
+        
+        _logger.LogInformation("Acquiring execution lock for '{JobName}' | JobExecutionId={JobExecutionId}...", jobName, jobExecutionId);
+        var lockAcquired = await _lockRepository.TryAcquireLockAsync(
+            jobName, tempJobQueueId, _lockTimeoutSeconds, cancellationToken);
+
+        if (!lockAcquired)
+        {
+            _logger.LogError(
+                "Job '{JobName}' is already running (lock held by another process). Cannot start execution | JobExecutionId={JobExecutionId}",
+                jobName, jobExecutionId);
+            throw new InvalidOperationException(
+                $"Job '{jobName}' is already running and cannot accept another execution at this time.");
+        }
+
+        // Fetch the Initiated record created by API layer
+        var existingExecution = await _executionRepository.GetExecutionByJobExecutionIdAsync(jobExecutionId, cancellationToken);
+        if (existingExecution == null)
+        {
+            _logger.LogError(
+                "No Initiated record found for JobExecutionId={JobExecutionId}. Worker cannot proceed without pre-created record from API.",
+                jobExecutionId);
+            throw new InvalidOperationException(
+                $"No Initiated job record found for execution {jobExecutionId}. This indicates the API did not properly create the job record.");
+        }
+
+        var jobQueueId = existingExecution.JobQueueId;
+        
         using var runScope = _logger.BeginScope(new Dictionary<string, object>
         {
             ["JobExecutionId"] = jobExecutionId,
@@ -100,23 +129,7 @@ public sealed class JobOrchestrator : IJobOrchestrator
             ["UserId"] = userId
         });
 
-        _logger.LogInformation("--- Orchestrator: Starting '{JobName}' | JobExecutionId={JobExecutionId} | JobQueueId={JobQueueId} | Mode={RunMode} | UserId={UserId}",
-            jobName, jobExecutionId, jobQueueId, runMode, userId);
-
-        // Step 1 — Acquire distributed lock
-        _logger.LogInformation("Acquiring execution lock for '{JobName}'...", jobName);
-        var lockAcquired = await _lockRepository.TryAcquireLockAsync(
-            jobName, jobQueueId, _lockTimeoutSeconds, cancellationToken);
-
-        if (!lockAcquired)
-        {
-            _logger.LogWarning(
-                "Job '{JobName}' is already running (lock held by another process). Skipping this run.",
-                jobName);
-            return new JobExecutionResult(jobQueueId, jobName, JobStatus.Skipped, TimeSpan.Zero);
-        }
-
-        _logger.LogInformation("Lock acquired for '{JobName}' | JobQueueId={JobQueueId}", jobName, jobQueueId);
+        _logger.LogInformation("Lock acquired for '{JobName}' | JobQueueId={JobQueueId} | Mode={RunMode}", jobName, jobQueueId, runMode);
 
         // Step 2 — Create execution record (Started)
         var record = new JobExecutionRecord

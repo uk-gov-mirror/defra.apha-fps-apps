@@ -13,4 +13,11 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.5" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Infrastructure and domain access for creating Initiated job records -->
+    <ProjectReference Include="..\BatchJobs.csproj">
+      <SkipGetTargetFrameworkProperties>true</SkipGetTargetFrameworkProperties>
+    </ProjectReference>
+  </ItemGroup>
+
 </Project>

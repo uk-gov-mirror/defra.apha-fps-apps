@@ -1,3 +1,5 @@
+using Apha.BatchJobs.Domain.Interfaces;
+using Apha.BatchJobs.Domain.Enums;
 using Apha.BatchJobs.Fps.Api.Models;
 using Apha.BatchJobs.Fps.Api.Policy;
 using Apha.BatchJobs.Fps.Api.Services;
@@ -12,11 +14,16 @@ namespace Apha.BatchJobs.Fps.Api.Controllers;
 public sealed class BatchJobTriggerController : ControllerBase
 {
     private readonly IEventPublisher _eventPublisher;
+    private readonly IJobExecutionRepository? _executionRepository;
     private readonly ILogger<BatchJobTriggerController> _logger;
 
-    public BatchJobTriggerController(IEventPublisher eventPublisher, ILogger<BatchJobTriggerController> logger)
+    public BatchJobTriggerController(
+        IEventPublisher eventPublisher,
+        ILogger<BatchJobTriggerController> logger,
+        IJobExecutionRepository? executionRepository = null)
     {
         _eventPublisher = eventPublisher;
+        _executionRepository = executionRepository;
         _logger = logger;
     }
 
@@ -74,6 +81,27 @@ public sealed class BatchJobTriggerController : ControllerBase
             return BadRequest(new { accepted = false, reason = parametersError });
         }
 
+        // Create Initiated record in database before publishing event
+        Guid jobQueueId = Guid.Empty;
+        if (_executionRepository != null)
+        {
+            try
+            {
+                jobQueueId = await _executionRepository.CreateInitiatedRecordAsync(
+                    normalizedJobName,
+                    Guid.Parse(jobExecutionId),
+                    requestedBy,
+                    acceptedAtUtc,
+                    Apha.BatchJobs.Domain.Enums.RunMode.Manual,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create Initiated record for job {JobName}", normalizedJobName);
+                return StatusCode(500, new { accepted = false, reason = "Failed to record job initiation in database." });
+            }
+        }
+
         var eventId = await _eventPublisher.PublishAsync(
             new BatchTriggerEventDetail(
                 jobExecutionId,
@@ -85,9 +113,10 @@ public sealed class BatchJobTriggerController : ControllerBase
             cancellationToken);
 
         _logger.LogInformation(
-            "FPS API trigger accepted | JobName={JobName} | JobExecutionId={JobExecutionId} | EventId={EventId}",
+            "FPS API trigger accepted | JobName={JobName} | JobExecutionId={JobExecutionId} | JobQueueId={JobQueueId} | EventId={EventId}",
             normalizedJobName,
             jobExecutionId,
+            jobQueueId,
             eventId);
 
         return Accepted(new

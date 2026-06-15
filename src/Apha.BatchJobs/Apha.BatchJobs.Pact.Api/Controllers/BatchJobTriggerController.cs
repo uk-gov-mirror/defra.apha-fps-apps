@@ -83,6 +83,9 @@ public sealed class BatchJobTriggerController : ControllerBase
         var acceptedAtUtc = DateTime.UtcNow;
         var requestedBy = ResolveRequestedBy(request.RequestedBy);
 
+        // Ensure all known processes have baseline rows in fps.job_status before queuing trigger.
+        await _jobExecutionRepository.EnsureJobStatusCatalogAsync(cancellationToken);
+
         string? parametersJson = string.IsNullOrWhiteSpace(request.ParametersJson) ? null : request.ParametersJson;
         if (string.Equals(normalizedJobName, "RecreateSummaries", StringComparison.OrdinalIgnoreCase))
         {

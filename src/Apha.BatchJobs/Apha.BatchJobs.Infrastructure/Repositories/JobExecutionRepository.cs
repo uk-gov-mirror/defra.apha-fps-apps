@@ -50,18 +50,55 @@ public class JobExecutionRepository : IJobExecutionRepository
             record.UserId,
             record.Status);
 
+        // Check if an Initiated row already exists for this jobExecutionId (manual job path)
+        var existingRow = await _context.TblJobQueue
+            .FirstOrDefaultAsync(q => q.JobExecutionId == record.JobExecutionId, cancellationToken);
+
+        if (existingRow != null)
+        {
+            // UPDATE the Initiated row to Running
+            var statusId = await EnsureStatusAsync(existingRow.JobId, record.Status.ToString(), cancellationToken);
+            existingRow.StatusId = statusId;
+            existingRow.StartDateTime = record.StartedAt ?? now;
+            existingRow.RequestedBy = record.UserId;
+            existingRow.UpdatedAt = now;
+
+            // Ensure the record's JobQueueId matches the persisted row
+            record.JobQueueId = existingRow.JobQueueId;
+
+            _context.TblJobQueueLog.Add(new TblJobQueueLog
+            {
+                JobQueueId = existingRow.JobQueueId,
+                StatusId = statusId,
+                PerformedBy = record.UserId,
+                LogTime = now,
+                Note = "Worker started execution"
+            });
+
+            await _context.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation(
+                "Execution record transitioned to Running | JobName={JobName} | JobExecutionId={JobExecutionId} | JobQueueId={JobQueueId}",
+                record.JobName,
+                record.JobExecutionId,
+                record.JobQueueId);
+
+            return 0;
+        }
+
+        // No existing row — scheduled job path: INSERT a new Running row
         var jobId = await EnsureJobMasterAsync(record.JobName, cancellationToken);
-        var statusId = await EnsureStatusAsync(jobId, record.Status.ToString(), cancellationToken);
+        var newStatusId = await EnsureStatusAsync(jobId, record.Status.ToString(), cancellationToken);
 
         var queueRow = new TblJobQueue
         {
             JobQueueId = record.JobQueueId,
             JobExecutionId = record.JobExecutionId,
             JobId = jobId,
-            StatusId = statusId,
+            StatusId = newStatusId,
             RequestedBy = record.UserId,
             RequestedAtUtc = record.RequestedAtUtc,
-            StartDateTime = record.StartedAt,
+            StartDateTime = record.StartedAt ?? now,
             EndDateTime = null,
             ErrorMessage = null,
             CreatedAt = now,
@@ -72,7 +109,7 @@ public class JobExecutionRepository : IJobExecutionRepository
         _context.TblJobQueueLog.Add(new TblJobQueueLog
         {
             JobQueueId = record.JobQueueId,
-            StatusId = statusId,
+            StatusId = newStatusId,
             PerformedBy = record.UserId,
             LogTime = now,
             Note = "Execution started"
@@ -88,8 +125,6 @@ public class JobExecutionRepository : IJobExecutionRepository
             record.UserId,
             record.Status);
 
-        // Foundation queue uses GUID correlation ID. The int return is retained
-        // for interface compatibility with orchestrator and tests.
         return 0;
     }
 
@@ -260,6 +295,118 @@ public class JobExecutionRepository : IJobExecutionRepository
             ErrorMessage = execution.ErrorMessage,
             RetryAttempts = 0
         };
+    }
+
+    /// <inheritdoc />
+    public async Task<Guid> CreateInitiatedRecordAsync(
+        string jobName,
+        Guid jobExecutionId,
+        string requestedBy,
+        DateTime requestedAtUtc,
+        RunMode runMode,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(jobName))
+            throw new ArgumentException("Job name is required.", nameof(jobName));
+        if (string.IsNullOrWhiteSpace(requestedBy))
+            throw new ArgumentException("RequestedBy is required.", nameof(requestedBy));
+
+        var jobId = await EnsureJobMasterAsync(jobName, cancellationToken);
+        var statusId = await EnsureStatusAsync(jobId, nameof(JobStatus.Initiated), cancellationToken);
+
+        var jobQueueId = Guid.NewGuid();
+        var now = DateTime.UtcNow;
+
+        _context.TblJobQueue.Add(new TblJobQueue
+        {
+            JobQueueId = jobQueueId,
+            JobExecutionId = jobExecutionId,
+            JobId = jobId,
+            StatusId = statusId,
+            RequestedBy = requestedBy,
+            RequestedAtUtc = requestedAtUtc,
+            StartDateTime = null,   // Not started; worker sets this when transitioning to Running
+            EndDateTime = null,
+            ErrorMessage = null,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
+        _context.TblJobQueueLog.Add(new TblJobQueueLog
+        {
+            JobQueueId = jobQueueId,
+            StatusId = statusId,
+            PerformedBy = requestedBy,
+            LogTime = now,
+            Note = "Job accepted by API - Initiated"
+        });
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Initiated record created | JobName={JobName} | JobExecutionId={JobExecutionId} | JobQueueId={JobQueueId} | RequestedBy={RequestedBy}",
+            jobName, jobExecutionId, jobQueueId, requestedBy);
+
+        return jobQueueId;
+    }
+
+    /// <inheritdoc />
+    public async Task EnsureJobStatusCatalogAsync(CancellationToken cancellationToken = default)
+    {
+        var jobIds = await _context.TblJobMaster
+            .Select(j => j.JobId)
+            .ToListAsync(cancellationToken);
+
+        if (jobIds.Count == 0)
+            return;
+
+        var baselineStatuses = new[]
+        {
+            nameof(JobStatus.Initiated),
+            nameof(JobStatus.Running),
+            nameof(JobStatus.Completed),
+            nameof(JobStatus.Failed),
+            nameof(JobStatus.Cancelled)
+        };
+
+        var existing = await _context.TblJobStatus
+            .Where(s => jobIds.Contains(s.JobId) && baselineStatuses.Contains(s.Status))
+            .Select(s => new { s.JobId, s.Status })
+            .ToListAsync(cancellationToken);
+
+        var existingSet = existing
+            .Select(s => (s.JobId, s.Status))
+            .ToHashSet();
+
+        var now = DateTime.UtcNow;
+        var toInsert = new List<TblJobStatus>();
+
+        foreach (var jobId in jobIds)
+        {
+            foreach (var status in baselineStatuses)
+            {
+                if (existingSet.Contains((jobId, status)))
+                    continue;
+
+                toInsert.Add(new TblJobStatus
+                {
+                    JobId = jobId,
+                    Status = status,
+                    CreatedAt = now
+                });
+            }
+        }
+
+        if (toInsert.Count == 0)
+            return;
+
+        _context.TblJobStatus.AddRange(toInsert);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Seeded baseline job statuses | Jobs={JobCount} | RowsInserted={RowsInserted}",
+            jobIds.Count,
+            toInsert.Count);
     }
 
     /// <inheritdoc />
@@ -533,7 +680,6 @@ ON CONFLICT (jobexecutionid) DO NOTHING;", cancellationToken);
         JobStatus.Completed => "Execution completed",
         JobStatus.Failed => "Execution failed",
         JobStatus.Cancelled => "Execution cancelled",
-        JobStatus.Skipped => "Execution skipped",
         _ => $"Status changed to {status}"
     };
 }

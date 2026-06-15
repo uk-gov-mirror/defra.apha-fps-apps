@@ -2,16 +2,17 @@ namespace Apha.BatchJobs.Domain.Enums;
 
 /// <summary>
 /// Enumeration of job execution statuses.
+/// Lifecycle: Initiated -> Running -> Completed | Failed | Cancelled
 /// </summary>
 public enum JobStatus
 {
     /// <summary>
-    /// Job is waiting to be executed.
+    /// API accepted the trigger and created the job queue record before publishing to EventBridge.
     /// </summary>
-    Pending = 0,
+    Initiated = 0,
 
     /// <summary>
-    /// Job is currently executing.
+    /// Worker has acquired the lock and is actively executing the job.
     /// </summary>
     Running = 1,
 
@@ -26,17 +27,7 @@ public enum JobStatus
     Failed = 3,
 
     /// <summary>
-    /// Job was cancelled before completion.
+    /// Job was cancelled before or during execution.
     /// </summary>
-    Cancelled = 4,
-
-    /// <summary>
-    /// Job retry is scheduled.
-    /// </summary>
-    Retry = 5,
-
-    /// <summary>
-    /// Job was skipped because a concurrent run already holds the distributed lock.
-    /// </summary>
-    Skipped = 6
+    Cancelled = 4
 }

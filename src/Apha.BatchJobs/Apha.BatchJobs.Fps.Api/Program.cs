@@ -1,6 +1,10 @@
 using Amazon.EventBridge;
+using Apha.BatchJobs.Domain.Interfaces;
 using Apha.BatchJobs.Fps.Api.Options;
 using Apha.BatchJobs.Fps.Api.Services;
+using Apha.BatchJobs.Infrastructure.Data;
+using Apha.BatchJobs.Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,7 +27,14 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.Configure<EventPublisherOptions>(builder.Configuration.GetSection("EventBridge"));
 builder.Services.AddAWSService<IAmazonEventBridge>();
 builder.Services.AddScoped<IEventPublisher, EventBridgePublisher>();
-
+// Register DB context and job execution repository for Initiated record creation
+var connectionString = builder.Configuration.GetConnectionString("FPSConnectionString");
+if (!string.IsNullOrWhiteSpace(connectionString))
+{
+    builder.Services.AddDbContext<BatchJobsDbContext>(options =>
+        options.UseNpgsql(connectionString));
+    builder.Services.AddScoped<IJobExecutionRepository, JobExecutionRepository>();
+}
 var fpsEventPublisherOptions = builder.Configuration.GetSection("EventBridge").Get<EventPublisherOptions>()
     ?? new EventPublisherOptions();
 

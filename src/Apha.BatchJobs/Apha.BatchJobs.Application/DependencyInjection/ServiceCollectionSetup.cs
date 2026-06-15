@@ -190,6 +190,18 @@ public static class ServiceCollectionSetup
         public Task<JobExecutionRecord?> GetExecutionByJobExecutionIdAsync(Guid jobExecutionId, CancellationToken cancellationToken = default)
             => Task.FromResult<JobExecutionRecord?>(null);
 
+        public Task<Guid> CreateInitiatedRecordAsync(
+            string jobName,
+            Guid jobExecutionId,
+            string requestedBy,
+            DateTime requestedAtUtc,
+            RunMode runMode,
+            CancellationToken cancellationToken = default)
+            => Task.FromResult(Guid.NewGuid());
+
+        public Task EnsureJobStatusCatalogAsync(CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+
         public Task<bool> TryRequestCancellationAsync(Guid jobExecutionId, string requestedBy, CancellationToken cancellationToken = default)
             => Task.FromResult(true);
 
