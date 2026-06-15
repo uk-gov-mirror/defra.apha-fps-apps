@@ -58,8 +58,9 @@ public class JobExecutionRepository : IJobExecutionRepository
         {
             // UPDATE the Initiated row to Running
             var statusId = await EnsureStatusAsync(existingRow.JobId, record.Status.ToString(), cancellationToken);
+            var previousStatus = existingRow.StatusId;
             existingRow.StatusId = statusId;
-            existingRow.StartDateTime = record.StartedAt ?? now;
+            existingRow.StartDateTime = record.StartedAt;
             existingRow.RequestedBy = record.UserId;
             existingRow.UpdatedAt = now;
 
@@ -72,16 +73,17 @@ public class JobExecutionRepository : IJobExecutionRepository
                 StatusId = statusId,
                 PerformedBy = record.UserId,
                 LogTime = now,
-                Note = "Worker started execution"
+                Note = "Worker started execution - Initiated → Running"
             });
 
             await _context.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation(
-                "Execution record transitioned to Running | JobName={JobName} | JobExecutionId={JobExecutionId} | JobQueueId={JobQueueId}",
+                "[Worker → DB] ✓ Initiated → Running transition complete | JobName={JobName} | JobExecutionId={JobExecutionId} | JobQueueId={JobQueueId} | StartDateTime={StartDateTime}",
                 record.JobName,
                 record.JobExecutionId,
-                record.JobQueueId);
+                record.JobQueueId,
+                record.StartedAt);
 
             return 0;
         }
@@ -98,7 +100,7 @@ public class JobExecutionRepository : IJobExecutionRepository
             StatusId = newStatusId,
             RequestedBy = record.UserId,
             RequestedAtUtc = record.RequestedAtUtc,
-            StartDateTime = record.StartedAt ?? now,
+            StartDateTime = record.StartedAt,
             EndDateTime = null,
             ErrorMessage = null,
             CreatedAt = now,
@@ -236,10 +238,10 @@ public class JobExecutionRepository : IJobExecutionRepository
             RunMode = RunMode.Manual,
             Status = parsedStatus,
             RequestedAtUtc = last.RequestedAtUtc,
-            StartedAt = last.StartDateTime,
+            StartedAt = last.StartDateTime ?? DateTime.UtcNow,
             CompletedAt = last.EndDateTime,
-            DurationSeconds = last.EndDateTime.HasValue
-                ? (int)(last.EndDateTime.Value - last.StartDateTime).TotalSeconds
+            DurationSeconds = last.EndDateTime.HasValue && last.StartDateTime.HasValue
+                ? (int)(last.EndDateTime.Value - last.StartDateTime.Value).TotalSeconds
                 : null,
             ErrorMessage = last.ErrorMessage,
             RetryAttempts = 0
@@ -287,10 +289,10 @@ public class JobExecutionRepository : IJobExecutionRepository
             RunMode = RunMode.Manual,
             Status = parsedStatus,
             RequestedAtUtc = execution.RequestedAtUtc,
-            StartedAt = execution.StartDateTime,
+            StartedAt = execution.StartDateTime ?? DateTime.UtcNow,
             CompletedAt = execution.EndDateTime,
-            DurationSeconds = execution.EndDateTime.HasValue
-                ? (int)(execution.EndDateTime.Value - execution.StartDateTime).TotalSeconds
+            DurationSeconds = execution.EndDateTime.HasValue && execution.StartDateTime.HasValue
+                ? (int)(execution.EndDateTime.Value - execution.StartDateTime.Value).TotalSeconds
                 : null,
             ErrorMessage = execution.ErrorMessage,
             RetryAttempts = 0
@@ -344,8 +346,8 @@ public class JobExecutionRepository : IJobExecutionRepository
         await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(
-            "Initiated record created | JobName={JobName} | JobExecutionId={JobExecutionId} | JobQueueId={JobQueueId} | RequestedBy={RequestedBy}",
-            jobName, jobExecutionId, jobQueueId, requestedBy);
+            "[API → DB] ✓ Initiated record created | JobName={JobName} | JobExecutionId={JobExecutionId} | JobQueueId={JobQueueId} | RunMode={RunMode} | RequestedBy={RequestedBy} | RequestedAtUtc={RequestedAtUtc} | StartDateTime=null (pending worker lock acquisition)",
+            jobName, jobExecutionId, jobQueueId, runMode, requestedBy, requestedAtUtc);
 
         return jobQueueId;
     }

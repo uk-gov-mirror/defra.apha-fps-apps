@@ -246,7 +246,7 @@ public sealed class BatchJobTriggerController : ControllerBase
             });
         }
 
-        var terminalStatuses = new[] { JobStatus.Completed, JobStatus.Failed, JobStatus.Cancelled, JobStatus.Skipped };
+        var terminalStatuses = new[] { JobStatus.Completed, JobStatus.Failed, JobStatus.Cancelled };
         if (execution is not null && terminalStatuses.Contains(execution.Status))
         {
             var terminalResponse = new BatchCancelResponse

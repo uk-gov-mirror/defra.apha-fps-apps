@@ -94,10 +94,13 @@ public sealed class BatchJobTriggerController : ControllerBase
                     acceptedAtUtc,
                     Apha.BatchJobs.Domain.Enums.RunMode.Manual,
                     cancellationToken);
+                _logger.LogInformation(
+                    "✓ Initiated record created in database | JobName={JobName} | JobExecutionId={JobExecutionId} | JobQueueId={JobQueueId}",
+                    normalizedJobName, jobExecutionId, jobQueueId);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to create Initiated record for job {JobName}", normalizedJobName);
+                _logger.LogError(ex, "✗ Failed to create Initiated record for job {JobName} | JobExecutionId={JobExecutionId}", normalizedJobName, jobExecutionId);
                 return StatusCode(500, new { accepted = false, reason = "Failed to record job initiation in database." });
             }
         }

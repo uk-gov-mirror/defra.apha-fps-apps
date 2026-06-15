@@ -197,7 +197,7 @@ var canRunHandler = async (
         var lastExecution = await executionRepository.GetLastExecutionAsync(jobName, cancellationToken);
 
         var hasActiveExecution = lastExecution is not null
-            && (lastExecution.Status == JobStatus.Running || lastExecution.Status == JobStatus.Pending || lastExecution.Status == JobStatus.Retry)
+            && (lastExecution.Status == JobStatus.Running || lastExecution.Status == JobStatus.Initiated)
             && (lastExecution.CompletedAt is null);
 
         var hasDurableActiveExecution = hasActiveExecution && activeLock is not null;
@@ -297,8 +297,7 @@ var statusHandler = async (
                 ? null
                 : latestExecution.Status switch
                 {
-                    JobStatus.Pending => "Running",
-                    JobStatus.Retry => "Running",
+                    JobStatus.Initiated => "Queued",
                     _ => latestExecution.Status.ToString()
                 };
 
@@ -307,8 +306,7 @@ var statusHandler = async (
                 jobName,
                 isRunning = latestExecution is not null &&
                             (latestExecution.Status == JobStatus.Running ||
-                             latestExecution.Status == JobStatus.Pending ||
-                             latestExecution.Status == JobStatus.Retry),
+                             latestExecution.Status == JobStatus.Initiated),
                 sourceOfTruth = "BatchJobs",
                 correlatedJobExecutionId = latestExecution?.JobExecutionId.ToString("D"),
                 queryResolution = new
@@ -486,15 +484,14 @@ var statusHandler = async (
         }
         else if (execution is not null)
         {
-            isRunning = execution.Status == JobStatus.Running || execution.Status == JobStatus.Pending || execution.Status == JobStatus.Retry;
+            isRunning = execution.Status == JobStatus.Running || execution.Status == JobStatus.Initiated;
         }
 
         var businessState = execution is null
             ? (string?)null
             : execution.Status switch
             {
-                JobStatus.Pending => "Running",
-                JobStatus.Retry => "Running",
+                JobStatus.Initiated => "Queued",
                 _ => execution.Status.ToString()
             };
 
@@ -503,15 +500,9 @@ var statusHandler = async (
         {
             diagnostics = new
             {
-                retry = execution is null ? null : new
-                {
-                    rawState = execution.Status.ToString(),
-                    businessState,
-                    execution.RetryAttempts,
-                    isInternalOperationalSignal = execution.Status == JobStatus.Retry,
-                    note = "Retry is treated as an internal operational signal and should not be surfaced as a primary business UI state."
-                },
-                triggerStore = triggerAttemptStore.StoreName
+                rawState = execution.Status.ToString(),
+                businessState,
+                execution.RetryAttempts
             };
         }
 

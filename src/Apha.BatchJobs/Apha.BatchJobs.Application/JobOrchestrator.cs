@@ -112,13 +112,16 @@ public sealed class JobOrchestrator : IJobOrchestrator
         if (existingExecution == null)
         {
             _logger.LogError(
-                "No Initiated record found for JobExecutionId={JobExecutionId}. Worker cannot proceed without pre-created record from API.",
+                "✗ No Initiated record found for JobExecutionId={JobExecutionId}. Worker cannot proceed without pre-created record from API.",
                 jobExecutionId);
             throw new InvalidOperationException(
                 $"No Initiated job record found for execution {jobExecutionId}. This indicates the API did not properly create the job record.");
         }
 
         var jobQueueId = existingExecution.JobQueueId;
+        _logger.LogInformation(
+            "[Worker → DB] ✓ Fetched Initiated record | JobName={JobName} | JobExecutionId={JobExecutionId} | JobQueueId={JobQueueId} | CurrentStatus={CurrentStatus}",
+            jobName, jobExecutionId, jobQueueId, existingExecution.Status);
         
         using var runScope = _logger.BeginScope(new Dictionary<string, object>
         {
@@ -129,7 +132,7 @@ public sealed class JobOrchestrator : IJobOrchestrator
             ["UserId"] = userId
         });
 
-        _logger.LogInformation("Lock acquired for '{JobName}' | JobQueueId={JobQueueId} | Mode={RunMode}", jobName, jobQueueId, runMode);
+        _logger.LogInformation("[Worker → DB] Transitioning from Initiated → Running | JobQueueId={JobQueueId}", jobQueueId);
 
         // Step 2 — Create execution record (Started)
         var record = new JobExecutionRecord
