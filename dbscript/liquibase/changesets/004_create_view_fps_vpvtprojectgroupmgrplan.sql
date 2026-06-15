@@ -1,48 +1,32 @@
-
 --liquibase formatted sql
 
---changeset repo-admin:004_fps_vpvtprojectgroupmgrplan labels:ddl context: all
+--changeset repo-admin:004_fps_vpvtprojectgroupmgrplan labels:ddl context:all
 
-
-CREATE OR REPLACE VIEW fps.vpvtprojectgroupmgrplan AS
-SELECT DISTINCT
-    p.projectgroup,
+CREATE OR REPLACE VIEW fps.vpvtprojectgroupmgrplan
+ AS
+ SELECT DISTINCT p.projectgroup,
     p.fpsyear,
     sj.useremail,
-    pcg.profitcentre                                              AS resourcecentre,
+    pcg.profitcentre AS resourcecentre,
     wgg.workgroup,
     wgg.gradecode,
-    COALESCE(e.lastname, '')  ', '  COALESCE(e.firstname, '') AS name,
+    (COALESCE(e.lastname, ''::character varying)::text || ', '::text) || COALESCE(e.firstname, ''::character varying)::text AS name,
     p.manager,
     sj.jobcode,
     p.projectstatus,
-    sj.plannedhours                                               AS hrs,
+    sj.plannedhours AS hrs,
     pcg.chargerate,
-    sj.plannedhours
-         CASE
-              WHEN prog.sector_name = 'charge'
-              THEN 1numeric
-              ELSE 0numeric
-          ENDdouble precision
-         pcg.chargerate AS fee
-FROM fps.tlkpproject p
-JOIN fps.vtblstaffjob_bygroup sj
-    ON sj.jobcode = p.parentproject
-   AND sj.fpsyear = p.fpsyear
-JOIN fps.tblwgemployee wge
-    ON wge.pactid = sj.staffid
-   AND wge.fpsyear = sj.fpsyear
-JOIN fps.tblemployee e
-    ON e.spnumber = wge.spnumber
-   AND e.fpsyear = wge.fpsyear
-JOIN fps.workgroupgrade wgg
-    ON wgg.wggrade = wge.workgroupgrade
-   AND wgg.fpsyear = wge.fpsyear
-JOIN fps.profitcentregrade pcg
-    ON pcg.pcgrade = wgg.profitcentregrade
-   AND pcg.fpsyear = wgg.fpsyear
-JOIN fps.tlkpprogram prog
-    ON prog.programno = p.program
-   AND prog.fpsyear = p.fpsyear
+    sj.plannedhours *
+        CASE
+            WHEN lower(prog.sector_name::text) = 'charge'::text THEN 1::numeric
+            ELSE 0::numeric
+        END::double precision * pcg.chargerate AS fee
+   FROM fps.tlkpproject p
+     JOIN fps.vtblstaffjob_bygroup sj ON sj.jobcode::text = p.parentproject::text AND sj.fpsyear = p.fpsyear
+     JOIN fps.tblwgemployee wge ON wge.pactid::text = sj.staffid::text AND wge.fpsyear = sj.fpsyear
+     JOIN fps.tblemployee e ON e.spnumber::text = wge.spnumber::text AND e.fpsyear = wge.fpsyear
+     JOIN fps.workgroupgrade wgg ON wgg.wggrade::text = wge.workgroupgrade::text AND wgg.fpsyear = wge.fpsyear
+     JOIN fps.profitcentregrade pcg ON pcg.pcgrade::text = wgg.profitcentregrade::text AND pcg.fpsyear = wgg.fpsyear
+     JOIN fps.tlkpprogram prog ON prog.programno::text = p.program::text AND prog.fpsyear = p.fpsyear;
 
 --rollback DROP VIEW fps.vpvtprojectgroupmgrplan;
