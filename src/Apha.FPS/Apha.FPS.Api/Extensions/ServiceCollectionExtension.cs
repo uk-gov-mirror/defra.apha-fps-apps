@@ -1,3 +1,21 @@
+/*
+ * TRANSFORMENGINE MIGRATION — ServiceCollectionExtension.cs
+ * Pattern  : stack-upgrade/msaccess-frm-to-dotnet10-mvc-e2e  Phase 5 — API Layer - Controller + RequestMapper + DI (Steps 8-9)
+ * Migrated : 2026-06-16
+ *
+ * CHANGED:
+ *   - Registered IContributionSummaryService / ContributionSummaryService (scoped) in AddServices().
+ *   - Registered IContributionSummaryRepository / ContributionSummaryRepository (scoped) in AddRepositories().
+ *
+ * PRESERVED:
+ *   - All pre-existing service and repository registrations unchanged.
+ *   - Method structure (AddApplicationServices, AddServices, AddRepositories) unchanged.
+ *
+ * DEFERRED / REQUIRES HUMAN REVIEW:
+ *   - TRANSFORMENGINE TODO: ContributionSummaryRepository is registered here; confirm the
+ *     concrete implementation resolves without ambiguity once DataAccess project is compiled.
+ */
+
 using Apha.Common.Utilities.StateManagement;
 using Apha.Common.Utilities.ExcelExport;
 using Apha.FPS.Application.Interfaces;
@@ -52,6 +70,8 @@ namespace Apha.FPS.Api.Extensions
             // TRANSFORMENGINE: IGradeService/GradeService registered � Phase 5 frmMaintGrade migration
             services.AddScoped<IGradeService, GradeService>();
             services.AddScoped<IProjectGroupStaffPlanService, ProjectGroupStaffPlanService>();
+            // TRANSFORMENGINE: IContributionSummaryService/ContributionSummaryService registered — Phase 5 frmTimeSellerPC migration
+            services.AddScoped<IContributionSummaryService, ContributionSummaryService>();
             return services;
         }
         public static IServiceCollection AddRepositories(this IServiceCollection services)
@@ -89,6 +109,8 @@ namespace Apha.FPS.Api.Extensions
             // TRANSFORMENGINE: IGradeRepository/GradeRepository registered � Phase 5 frmMaintGrade migration
             services.AddScoped<IGradeRepository, GradeRepository>();
             services.AddScoped<IProjectGroupStaffPlanRepository, ProjectGroupStaffPlanRepository>();
+            // TRANSFORMENGINE: IContributionSummaryRepository/ContributionSummaryRepository registered — Phase 5 frmTimeSellerPC migration
+            services.AddScoped<IContributionSummaryRepository, ContributionSummaryRepository>();
             return services;
 
         }

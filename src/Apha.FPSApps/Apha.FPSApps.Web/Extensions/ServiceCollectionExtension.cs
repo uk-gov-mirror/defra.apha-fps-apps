@@ -1,3 +1,19 @@
+/*
+ * TRANSFORMENGINE MIGRATION — ServiceCollectionExtension.cs
+ * Pattern  : stack-upgrade/msaccess-frm-to-dotnet10-mvc-e2e  Phase 10 — AutoMapper Profiles + DI Registration (Step 15)
+ * Migrated : 2026-06-16
+ *
+ * CHANGED:
+ *   - Registered IContributionSummaryService -> ContributionSummaryService (AddScoped) in AddServices()
+ *
+ * PRESERVED:
+ *   - All existing service registrations (StaffJob, Program, Employee, Project, CostBook, Grade, Division, PIMS, etc.)
+ *   - AddRepositories() empty stub preserved as-is
+ *
+ * DEFERRED / REQUIRES HUMAN REVIEW:
+ *   - TRANSFORMENGINE TODO: IFpsContributionSummaryApiClient is registered indirectly via IFpsApiClient
+ *     (aggregate client in ApiClientExtension.cs). No separate AddScoped needed for the API client itself.
+ */
 using Apha.Common.Utilities.ExcelExport;
 using Apha.Common.Utilities.StateManagement;
 using Apha.FPSApps.Application.Interfaces.Costbook;
@@ -51,6 +67,8 @@ namespace Apha.FPSApps.Web.Extensions
             services.AddScoped<IProjectSubContractService, ProjectSubContractService>();
             services.AddScoped<IMonthService, MonthService>();
             services.AddScoped<ICalenderMonthService, CalenderMonthService>();
+            // TRANSFORMENGINE: ContributionSummary service registration — Phase 10 (Step 15c)
+            services.AddScoped<IContributionSummaryService, ContributionSummaryService>();
             services.AddScoped<ITestCapabilityService, TestCapabilityService>();
             services.AddScoped<ITestRequirementService, TestRequirementService>();
             services.AddScoped<ITimeCostCalcsService, TimeCostCalcsService>();

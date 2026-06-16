@@ -1,0 +1,523 @@
+<!-- TRANSFORMENGINE MIGRATION — ContributionSummary/Index.cshtml
+     Pattern  : stack-upgrade/msaccess-frm-to-dotnet10-mvc-e2e  Phase 12 — Razor Views (Step 18)
+     Migrated : 2026-06-16
+     CHANGED:
+       - New file: Razor Index view for the Contribution Summary page (frmTimeSellerPC).
+       - Resource Centre dropdown (cs-resource-centre) outside the grid rendered as
+         asp-for + asp-items bound to Model.SelectedProfitCentre / Model.ProfitCentreList.
+       - DataGrid rendered via shared _DataGrid partial (Model.ContributionSummaryGrid).
+       - Grid total row (cs-grid-total-row) below the grid; widths synchronised by JS.
+       - Standalone Add button outside the grid triggers addContributionSummary()
+         (AllowAdd = false in DataGridConfig per JS showAddButton: false).
+       - AllowEdit = true; editContributionSummary() wired to EditFunction.
+       - AllowDelete = false; no delete function wired.
+       - View Report button calls viewContributionSummaryReport().
+       - Three summary boxes rendered with Model.SummaryTotals initial values;
+         refreshed via GetSummary AJAX on profitCentre change and grid reload.
+       - applyGroupedHeaderRow / syncSummaryWidths / syncGridTotalRow /
+         bindSummaryWidthSync JS logic preserved from contribution_summary.js prototype.
+     DEFERRED:
+       - TRANSFORMENGINE TODO: ViewReport endpoint not implemented — viewContributionSummaryReport()
+         currently opens /FPS/ContributionSummary/ViewReport; stub alert if pop-up blocked.
+       - TRANSFORMENGINE TODO: Confirm Rate Efficacy Checker (RateEfficacyOhRate / RateEfficacyTotalCont)
+         rendered in cs-grid-total-cont and summary boxes matches server-side DTO field names. -->
+
+@using Apha.FPSApps.Web.Models.Components.DataGrid
+@model Apha.FPSApps.Web.Areas.FPS.Models.ContributionSummaryViewModel
+
+@{
+    ViewData["Title"] = "2025-2026 : Contribution Summary";
+}
+
+<main class="govuk-main-wrapper govuk-!-padding-top-0" id="main-content" role="main">
+    <div class="container-fluid">
+
+        @* Breadcrumb row — Resource Centre dropdown is an explicit page-level filter per HTML prototype *@
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <div class="fps-sr-breadcrumb-row">
+                    <div class="fps-sr-breadcrumb-flex sup_flex_end_center">
+                        @* TRANSFORMENGINE: Resource Centre — explicit <select id="cs-resource-centre">
+                           outside #gridContainer_contributionSummary in the HTML prototype;
+                           rendered as a page-level filter dropdown. *@
+                        <div class="govuk-grid-column-one-quarter">
+                            <div class="govuk-form-group govuk-!-margin-bottom-0">
+                                <div class="govuk-grid-row sup_flex_left_center">
+                                    <div class="govuk-grid-column-one-third">
+                                        <label for="ddlSelectedProfitCentre"
+                                               class="govuk-label govuk-!-margin-bottom-0">Resource Centre</label>
+                                    </div>
+                                    <div class="govuk-grid-column-two-thirds">
+                                        @* asp-for binds SelectedProfitCentre; asp-items binds ProfitCentreList. *@
+                                        <select id="ddlSelectedProfitCentre"
+                                                class="govuk-select govuk-!-width-full"
+                                                asp-for="SelectedProfitCentre"
+                                                asp-items="Model.ProfitCentreList"
+                                                aria-label="Select a resource centre"
+                                                onchange="onResourceCentreChange()">
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="govuk-grid-column-full govuk-!-margin-left-3">
+                <h1 class="govuk-grid-row govuk-heading-s sup_border-bottom govuk-!-margin-top-2 govuk-!-padding-bottom-2 govuk-!-padding-left-4">
+                    Contribution Summary
+                </h1>
+            </div>
+        </div>
+
+        @* Main panel *@
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <section class="fps-cs-panel sup_border" aria-label="Income contribution summary panel">
+
+                    @* Panel header: title link + standalone Add button *@
+                    <div class="fps-cs-top-row govuk-!-margin-bottom-2">
+                        <h2 class="govuk-heading-m govuk-!-margin-bottom-0 fps-cs-title">
+                            Income/Contribution From Time Sales For:
+                            @* cs-selected-resource text updated by JS on profitCentre change *@
+                            <a href="#" id="cs-selected-resource"
+                               class="govuk-link govuk-!-font-weight-bold">@Model.SelectedProfitCentre</a>
+                        </h2>
+                        <div class="fps-cs-top-right">
+                            <div class="fps-cs-title-actions">
+                                @* TRANSFORMENGINE: Standalone Add button — AllowAdd=false in DataGridConfig
+                                   (JS showAddButton: false), but the HTML prototype has this button outside
+                                   the grid; triggers addContributionSummary() → $.get → Create (GET). *@
+                                <button type="button"
+                                        class="govuk-button govuk-!-margin-bottom-0"
+                                        id="cs-add-row-btn"
+                                        onclick="addContributionSummary()">
+                                    <img src="/images/circle-plus-solid-full-white.svg" alt="" aria-hidden="true" width="16" />&nbsp;Add
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    @* TRANSFORMENGINE: DataGrid — AllowAdd=false, AllowEdit=true, AllowDelete=false
+                       per contribution_summary.js DataGridComponent({ showAddButton: false, callbacks: { onEdit } }). *@
+                    <div id="gridContainer_contributionSummaryGrid">
+                        @await Html.PartialAsync("_DataGrid", Model.ContributionSummaryGrid)
+                    </div>
+
+                    @* TRANSFORMENGINE: Grid total row — mirrors HTML cs-grid-total-row;
+                       widths synchronised by syncSummaryWidths() JS after every grid render. *@
+                    <div id="cs-grid-total-row"
+                         class="fps-cs-grid-total-row sup_border"
+                         aria-label="Contribution summary total count">
+                        <div class="fps-cs-grid-total-cell fps-cs-grid-total-spacer"
+                             data-columns="wg,grade,availHrs,chgRate,totalPlanHrs,totalFec,totalPctPlanned,assuredPlanHrs,assuredFec,assuredPctPlanned"
+                             aria-hidden="true"></div>
+                        <div class="fps-cs-grid-total-cell fps-cs-grid-total-label"
+                             data-column="ohRate">Total Cont</div>
+                        <div class="fps-cs-grid-total-cell fps-cs-grid-total-value text-AlignRight"
+                             data-column="totalCont"
+                             id="cs-grid-total-cont">
+                            @* Initial value from SummaryTotals.RateEfficacyTotalCont; updated by JS on reload. *@
+                            @if (Model.SummaryTotals != null)
+                            {
+                                <text>£@Model.SummaryTotals.RateEfficacyTotalCont.ToString("N0")</text>
+                            }
+                            else
+                            {
+                                <text>£0</text>
+                            }
+                        </div>
+                        <div class="fps-cs-grid-total-cell" data-column="actions" aria-hidden="true"></div>
+                    </div>
+
+                    @* View Report button *@
+                    <div class="fps-cs-report-row govuk-!-margin-top-2 govuk-!-margin-bottom-2">
+                        <button type="button"
+                                class="govuk-button govuk-!-margin-bottom-0"
+                                id="cs-view-report-btn"
+                                onclick="viewContributionSummaryReport()">View Report</button>
+                    </div>
+
+                    @* TRANSFORMENGINE: Summary boxes — three-column layout matching HTML cs-summary-grid.
+                       Server-side values from Model.SummaryTotals render the initial state;
+                       loadContributionSummaryTotals() refreshes them via AJAX on every change/reload. *@
+                    <div id="cs-summary-grid"
+                         class="fps-cs-summary-grid govuk-!-margin-top-2">
+
+                        @* Box 1: Recovery *@
+                        <div id="cs-summary-base-box" class="fps-cs-summary-box sup_border">
+                            <div class="fps-cs-summary-row">
+                                <span>Total Budget Bids</span>
+                                <strong id="cs-total-budget-bids" class="text-AlignRight">
+                                    @if (Model.SummaryTotals != null)
+                                    {
+                                        <text>£@Model.SummaryTotals.TotalBudgetBids.ToString("N0")</text>
+                                    }
+                                    else
+                                    {
+                                        <text>£0</text>
+                                    }
+                                </strong>
+                            </div>
+                            <div class="fps-cs-summary-row">
+                                <span>+ Contribution Target</span>
+                                <strong id="cs-contribution-target" class="text-AlignRight">
+                                    @if (Model.SummaryTotals != null)
+                                    {
+                                        <text>£@Model.SummaryTotals.ContributionTarget.ToString("N0")</text>
+                                    }
+                                    else
+                                    {
+                                        <text>£0</text>
+                                    }
+                                </strong>
+                            </div>
+                            <div class="fps-cs-summary-row fps-cs-summary-total">
+                                <span>= Total to Recover</span>
+                                <strong id="cs-total-to-recover" class="text-AlignRight">
+                                    @if (Model.SummaryTotals != null)
+                                    {
+                                        <text>£@Model.SummaryTotals.TotalToRecover.ToString("N0")</text>
+                                    }
+                                    else
+                                    {
+                                        <text>£0</text>
+                                    }
+                                </strong>
+                            </div>
+                        </div>
+
+                        @* Box 2: Total Time *@
+                        <div id="cs-summary-total-time-box" class="fps-cs-summary-box sup_border">
+                            <div class="fps-cs-summary-box-title">Total Time</div>
+                            <div class="fps-cs-summary-row">
+                                <span>Total Time Fee from PlanHrs</span>
+                                <strong id="cs-total-time-fee" class="text-AlignRight">
+                                    @if (Model.SummaryTotals != null)
+                                    {
+                                        <text>£@Model.SummaryTotals.TotalTimeFeeFromPlanHrs.ToString("N0")</text>
+                                    }
+                                    else
+                                    {
+                                        <text>£0</text>
+                                    }
+                                </strong>
+                            </div>
+                            <div class="fps-cs-summary-row fps-cs-summary-total">
+                                <span>Surplus/Shortfall</span>
+                                <strong id="cs-total-surplus" class="text-AlignRight">
+                                    @if (Model.SummaryTotals != null)
+                                    {
+                                        <text>£@Model.SummaryTotals.TotalTimeSurplusShortfall.ToString("N0")</text>
+                                    }
+                                    else
+                                    {
+                                        <text>£0</text>
+                                    }
+                                </strong>
+                            </div>
+                        </div>
+
+                        @* Box 3: Assured Time *@
+                        <div id="cs-summary-assured-time-box" class="fps-cs-summary-box sup_border">
+                            <div class="fps-cs-summary-box-title">Assured Time</div>
+                            <div class="fps-cs-summary-row">
+                                <span>Assured Time Only Fee from PlanHrs</span>
+                                <strong id="cs-assured-time-fee" class="text-AlignRight">
+                                    @if (Model.SummaryTotals != null)
+                                    {
+                                        <text>£@Model.SummaryTotals.AssuredTimeFeeFromPlanHrs.ToString("N0")</text>
+                                    }
+                                    else
+                                    {
+                                        <text>£0</text>
+                                    }
+                                </strong>
+                            </div>
+                            <div class="fps-cs-summary-row fps-cs-summary-total">
+                                <span>Surplus/Shortfall</span>
+                                <strong id="cs-assured-surplus" class="text-AlignRight">
+                                    @if (Model.SummaryTotals != null)
+                                    {
+                                        <text>£@Model.SummaryTotals.AssuredTimeSurplusShortfall.ToString("N0")</text>
+                                    }
+                                    else
+                                    {
+                                        <text>£0</text>
+                                    }
+                                </strong>
+                            </div>
+                        </div>
+
+                    </div>@* /cs-summary-grid *@
+
+                </section>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+@section Scripts {
+    <script>
+        // ── Utility ─────────────────────────────────────────────────────────────
+
+        function formatCsGbp(value) {
+            var num = Number(value || 0);
+            return '£' + num.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        }
+
+        // ── Grid reload ──────────────────────────────────────────────────────────
+        // TRANSFORMENGINE: Always use gm.reloadGrid({ page: 1 }) — gm.reload() does not exist.
+        function reloadContributionSummaryGrid() {
+            var gm = window['gridManager_contributionSummaryGrid'];
+            if (gm) { gm.reloadGrid({ page: 1 }); }
+        }
+
+        // ── Extra filter method (called automatically by _DataGrid on every reload) ──
+        // TRANSFORMENGINE: profitCentre sourced from the Resource Centre <select> outside the grid.
+        function getContributionSummaryExtraFilters() {
+            var el = document.getElementById('ddlSelectedProfitCentre');
+            return { profitCentre: el ? el.value : '' };
+        }
+
+        // ── Resource Centre change ───────────────────────────────────────────────
+        function onResourceCentreChange() {
+            var el = document.getElementById('ddlSelectedProfitCentre');
+            var selected = el ? el.value : '';
+
+            // Update header link
+            var selectedEl = document.getElementById('cs-selected-resource');
+            if (selectedEl) { selectedEl.textContent = selected; }
+
+            // Reload grid (extra filters will pick up the new profitCentre)
+            reloadContributionSummaryGrid();
+
+            // Refresh summary boxes
+            loadContributionSummaryTotals(selected);
+        }
+
+        // ── Summary-box loader ───────────────────────────────────────────────────
+        // TRANSFORMENGINE: Calls GetSummary and updates summary panel elements to match
+        //   renderSummary() from contribution_summary.js prototype.
+        function loadContributionSummaryTotals(profitCentre) {
+            if (!profitCentre) { return; }
+            $.get('/FPS/ContributionSummary/GetSummary', { profitCentre: profitCentre }, function (data) {
+                if (!data || !data.success || !data.data) { return; }
+                var s = data.data;
+                function setText(id, value) {
+                    var el = document.getElementById(id);
+                    if (el) { el.textContent = formatCsGbp(value); }
+                }
+                setText('cs-total-budget-bids',  s.totalBudgetBids);
+                setText('cs-contribution-target', s.contributionTarget);
+                setText('cs-total-to-recover',    s.totalToRecover);
+                setText('cs-total-time-fee',      s.totalTimeFeeFromPlanHrs);
+                setText('cs-total-surplus',       s.totalTimeSurplusShortfall);
+                setText('cs-assured-time-fee',    s.assuredTimeFeeFromPlanHrs);
+                setText('cs-assured-surplus',     s.assuredTimeSurplusShortfall);
+                setText('cs-grid-total-cont',     s.rateEfficacyTotalCont);
+                scheduleSummaryWidthSync();
+            });
+        }
+
+        // ── Grouped header row (mirrors applyGroupedHeaderRow in JS prototype) ───
+        // TRANSFORMENGINE: Injects colgroup row above standard DataGrid header:
+        //   "Total Planned Time" / "Assured Planned Time" / Rate "Efficacy" Checker spans.
+        function applyGroupedHeaderRow() {
+            var table = document.getElementById('tbl_contributionSummaryGrid');
+            if (!table) { return; }
+            var thead = table.querySelector('thead');
+            if (!thead) { return; }
+            if (thead.querySelector('.cs-grouped-header-row')) { return; }
+            var groupedRow = document.createElement('tr');
+            groupedRow.className = 'cs-grouped-header-row';
+            groupedRow.innerHTML =
+                '<th scope="colgroup" colspan="4"><span class="govuk-visually-hidden">Base columns</span></th>' +
+                '<th scope="colgroup" colspan="3" class="text-AlignCenter">Total Planned Time</th>' +
+                '<th scope="colgroup" colspan="3" class="text-AlignCenter">Assured Planned Time</th>' +
+                '<th scope="colgroup" colspan="2" class="text-AlignCenter">Rate &#8220;Efficacy&#8221; Checker</th>';
+            thead.insertBefore(groupedRow, thead.firstChild);
+        }
+
+        // ── Width synchronisation (mirrors syncSummaryWidths in contribution_summary.js) ─
+        function getColumnGroupWidth(table, fields) {
+            return fields.reduce(function (total, field) {
+                var header = table.querySelector('th[data-column="' + field + '"]');
+                return total + (header ? header.offsetWidth : 0);
+            }, 0);
+        }
+
+        function syncGridTotalRow() {
+            var table    = document.getElementById('tbl_contributionSummaryGrid');
+            var totalRow = document.getElementById('cs-grid-total-row');
+            if (!table || !totalRow) { return; }
+            totalRow.querySelectorAll('.fps-cs-grid-total-cell').forEach(function (cell) {
+                var column  = cell.getAttribute('data-column');
+                var columns = cell.getAttribute('data-columns');
+                var width   = 0;
+                var header;
+                if (columns) {
+                    width = getColumnGroupWidth(table, columns.split(','));
+                } else if (column === 'actions') {
+                    header = table.querySelector('thead tr:last-child th:last-child');
+                    width  = header ? header.offsetWidth : 0;
+                } else {
+                    header = table.querySelector('th[data-column="' + column + '"]');
+                    width  = header ? header.offsetWidth : 0;
+                }
+                if (width <= 0) { return; }
+                cell.style.width    = width + 'px';
+                cell.style.minWidth = width + 'px';
+                cell.style.maxWidth = width + 'px';
+            });
+            totalRow.style.width = table.offsetWidth + 'px';
+        }
+
+        function syncSummaryWidths() {
+            var table       = document.getElementById('tbl_contributionSummaryGrid');
+            var summaryGrid = document.getElementById('cs-summary-grid');
+            if (!table || !summaryGrid) { return; }
+            var groupConfigs = [
+                { boxId: 'cs-summary-base-box',         fields: ['wg', 'grade', 'availHrs', 'chgRate'] },
+                { boxId: 'cs-summary-total-time-box',   fields: ['totalPlanHrs', 'totalFec', 'totalPctPlanned'] },
+                { boxId: 'cs-summary-assured-time-box', fields: ['assuredPlanHrs', 'assuredFec', 'assuredPctPlanned'] }
+            ];
+            var widths = groupConfigs.map(function (config) {
+                return getColumnGroupWidth(table, config.fields);
+            });
+            if (widths.some(function (w) { return w <= 0; })) { return; }
+            var totalWidth = widths.reduce(function (sum, w) { return sum + w; }, 0);
+            summaryGrid.style.gridTemplateColumns = widths.map(function (w) { return w + 'px'; }).join(' ');
+            summaryGrid.style.width = totalWidth + 'px';
+            groupConfigs.forEach(function (config, index) {
+                var box = document.getElementById(config.boxId);
+                if (box) { box.style.width = widths[index] + 'px'; }
+            });
+            syncGridTotalRow();
+        }
+
+        function scheduleSummaryWidthSync() {
+            window.requestAnimationFrame(syncSummaryWidths);
+        }
+
+        function bindSummaryWidthSync() {
+            var table = document.getElementById('tbl_contributionSummaryGrid');
+            if (!window._csSummaryResizeBound) {
+                window.addEventListener('resize', scheduleSummaryWidthSync);
+                window._csSummaryResizeBound = true;
+            }
+            if (!table || typeof window.ResizeObserver !== 'function') { return; }
+            if (window._csSummaryResizeObserver) {
+                window._csSummaryResizeObserver.disconnect();
+            }
+            window._csSummaryResizeObserver = new window.ResizeObserver(scheduleSummaryWidthSync);
+            table.querySelectorAll('th[data-column]').forEach(function (header) {
+                window._csSummaryResizeObserver.observe(header);
+            });
+        }
+
+        // ── Add (standalone cs-add-row-btn outside the DataGrid) ────────────────
+        // TRANSFORMENGINE: AllowAdd=false in DataGridConfig (JS showAddButton:false).
+        //   The HTML prototype has a standalone button outside the grid that opens the Add modal.
+        function addContributionSummary() {
+            $.get('/FPS/ContributionSummary/Create', function (html) {
+                $('#modaPopupBody').html(html);
+                $('#modalPopup').addClass('show');
+            });
+        }
+
+        // ── Edit (triggered from DataGrid EditFunction="editContributionSummary") ─
+        // TRANSFORMENGINE: $(btn).data('id') extracts the row key from the edit button.
+        function editContributionSummary(btn) {
+            var id = $(btn).data('id');
+            $.get('/FPS/ContributionSummary/Edit', { id: id }, function (html) {
+                $('#modaPopupBody').html(html);
+                $('#modalPopup').addClass('show');
+            });
+        }
+
+        // ── Save (called from _AddEditContributionSummary.cshtml buttons) ────────
+        // TRANSFORMENGINE: Collects editable modal fields; posts JSON to Create or Edit endpoint.
+        function saveContributionSummary() {
+            var id     = $('#hdnContributionSummaryId').val();
+            var isEdit = $('#hdnContributionSummaryIsEdit').val() === 'true';
+            var dto = {
+                id:                isEdit ? parseInt(id, 10) : 0,
+                wg:                $('#ContributionSummaryWg').val(),
+                grade:             $('#ContributionSummaryGrade').val(),
+                availHrs:          parseFloat($('#ContributionSummaryAvailHrs').val()) || 0,
+                chgRate:           parseFloat($('#ContributionSummaryChgRate').val()) || 0,
+                totalPlanHrs:      parseFloat($('#ContributionSummaryTotalPlanHrs').val()) || 0,
+                totalFec:          parseFloat($('#ContributionSummaryTotalFec').val()) || 0,
+                totalPctPlanned:   parseInt($('#ContributionSummaryTotalPctPlanned').val(), 10) || 0,
+                assuredPlanHrs:    parseFloat($('#ContributionSummaryAssuredPlanHrs').val()) || 0,
+                assuredFec:        parseFloat($('#ContributionSummaryAssuredFec').val()) || 0,
+                assuredPctPlanned: parseInt($('#ContributionSummaryAssuredPctPlanned').val(), 10) || 0,
+                ohRate:            parseFloat($('#ContributionSummaryOhRate').val()) || 0,
+                totalCont:         parseFloat($('#ContributionSummaryTotalCont').val()) || 0
+            };
+            var url = isEdit
+                ? '/FPS/ContributionSummary/Edit?id=' + encodeURIComponent(id)
+                : '/FPS/ContributionSummary/Create';
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: JSON.stringify(dto),
+                contentType: 'application/json; charset=utf-8',
+                success: function (data) {
+                    if (data && data.success) {
+                        closeContributionSummaryModal();
+                        reloadContributionSummaryGrid();
+                        var pc = document.getElementById('ddlSelectedProfitCentre');
+                        loadContributionSummaryTotals(pc ? pc.value : '');
+                    } else {
+                        alert('Save failed: ' + ((data && data.message) || 'An error occurred.'));
+                    }
+                },
+                error: function () { alert('An error occurred while saving.'); }
+            });
+        }
+
+        function closeContributionSummaryModal() {
+            $('#modaPopupBody').html('');
+            $('#modalPopup').removeClass('show');
+        }
+
+        // ── View Report ──────────────────────────────────────────────────────────
+        // TRANSFORMENGINE TODO: Replace with a call to the server-side report endpoint
+        //   when it is implemented (mirrors openReportForPdf in contribution_summary.js prototype).
+        function viewContributionSummaryReport() {
+            var pc = document.getElementById('ddlSelectedProfitCentre');
+            var profitCentre = pc ? pc.value : '';
+            if (!profitCentre) { alert('Please select a resource centre first.'); return; }
+            var reportWindow = window.open(
+                '/FPS/ContributionSummary/ViewReport?profitCentre=' + encodeURIComponent(profitCentre),
+                '_blank');
+            if (!reportWindow) {
+                alert('Unable to open report window. Please allow pop-ups and try again.');
+            }
+        }
+
+        // ── Grid reloaded event — re-apply grouped header + sync summary widths ─
+        // TRANSFORMENGINE: _DataGrid fires 'gridReloaded' custom event after each reload;
+        //   used to re-inject the grouped header row and sync the summary box widths.
+        document.addEventListener('gridReloaded', function (e) {
+            if (e && e.detail && e.detail.gridId === 'contributionSummaryGrid') {
+                applyGroupedHeaderRow();
+                bindSummaryWidthSync();
+                scheduleSummaryWidthSync();
+                var pc = document.getElementById('ddlSelectedProfitCentre');
+                loadContributionSummaryTotals(pc ? pc.value : '');
+            }
+        });
+
+        // ── On page load ─────────────────────────────────────────────────────────
+        $(document).ready(function () {
+            applyGroupedHeaderRow();
+            bindSummaryWidthSync();
+            scheduleSummaryWidthSync();
+        });
+    </script>
+}

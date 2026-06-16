@@ -1,3 +1,23 @@
+/*
+ * TRANSFORMENGINE MIGRATION — RequestMapper.cs
+ * Pattern  : stack-upgrade/msaccess-frm-to-dotnet10-mvc-e2e  Phase 5 — API Layer - Controller + RequestMapper + DI (Steps 8-9)
+ * Migrated : 2026-06-16
+ *
+ * CHANGED:
+ *   - Added ContributionSummary request/response mappings:
+ *       ContributionSummaryReq <-> ContributionSummaryDto (create/update input -> service layer)
+ *       ContributionSummaryDto <-> ContributionSummaryRes (service layer -> API response)
+ *       ContributionSummarySummaryDto <-> ContributionSummarySummaryRes (summary-box totals)
+ *
+ * PRESERVED:
+ *   - All pre-existing AutoMapper profile mappings unchanged.
+ *   - Generic pagination mappings, all entity/DTO/Req/Res mappings from prior phases.
+ *
+ * DEFERRED / REQUIRES HUMAN REVIEW:
+ *   - TRANSFORMENGINE TODO: Confirm no custom ForMember overrides needed for ContributionSummary
+ *     fields once Phase 4 repository and Phase 3 service are validated end-to-end.
+ */
+
 using Apha.Common.Contracts;
 using Apha.Common.Contracts.FPS;
 using Apha.FPS.Application.Dtos;
@@ -90,6 +110,14 @@ namespace Apha.FPS.Api.Mappings
 
             CreateMap<PactStaffDto, PactStaffRes>().ReverseMap();
             CreateMap<WorkgroupGradeDto, WorkgroupGradeReq>().ReverseMap();
+
+            // TRANSFORMENGINE: ContributionSummary mappings — Phase 5 frmTimeSellerPC migration
+            //   ContributionSummaryReq -> ContributionSummaryDto: create/update body -> service layer
+            //   ContributionSummaryDto -> ContributionSummaryRes: service layer -> API GET/POST/PUT response
+            //   ContributionSummarySummaryDto -> ContributionSummarySummaryRes: aggregate summary-box totals
+            CreateMap<ContributionSummaryReq, ContributionSummaryDto>().ReverseMap();
+            CreateMap<ContributionSummaryDto, ContributionSummaryRes>().ReverseMap();
+            CreateMap<ContributionSummarySummaryDto, ContributionSummarySummaryRes>().ReverseMap();
         }
     }
 }

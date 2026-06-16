@@ -26,7 +26,9 @@ namespace Apha.FPSApps.Application.Interfaces.FpsApiClients
         IFpsProjectGroupStaffPlanApiClient FpsProjectGroupStaffPlan { get; }
         IFpsAnimalApiClient FpsAnimalMaster { get; }
         IFpsProjectGroupApiClient FpsProjectGroup { get; }
-        // TRANSFORMENGINE: FpsGrade added � Phase 7 (IFpsGradeApiClient for frmMaintGrade ? api/v1/Grade)
+        // TRANSFORMENGINE: FpsGrade added � Phase 7 (IFpsGradeApiClient for frmMaintGrade ? api/v1/Grade)
         IFpsGradeApiClient FpsGrade { get; }
+        // TRANSFORMENGINE: FpsContributionSummary added — Phase 7 (IFpsContributionSummaryApiClient for frmTimeSellerPC — api/v1/contributionsummary)
+        IFpsContributionSummaryApiClient FpsContributionSummary { get; }
     }
 }

@@ -1,3 +1,21 @@
+/*
+ * TRANSFORMENGINE MIGRATION — FpsApiDtoMapper.cs
+ * Pattern  : stack-upgrade/msaccess-frm-to-dotnet10-mvc-e2e  Phase 10 — AutoMapper Profiles + DI Registration (Step 15)
+ * Migrated : 2026-06-16
+ *
+ * CHANGED:
+ *   - Added ContributionSummaryDto <-> ContributionSummaryReq mapping (POST/PUT request bodies)
+ *   - Added ContributionSummaryDto <-> ContributionSummaryRes mapping (GET/POST/PUT responses)
+ *   - Added ContributionSummarySummaryDto <-> ContributionSummarySummaryRes mapping (GET summary response)
+ *
+ * PRESERVED:
+ *   - All existing CreateMap entries for StaffJob, Program, Employee, Project, FPS lookups, Animal, Grade, Division, AdditionalCost, etc.
+ *   - All .ForMember() custom mappings (ProjectDto.CustIncome <-> BudgetExt, SubAccountDto.SubAccount, etc.)
+ *   - All .ReverseMap() directives on existing entries
+ *
+ * DEFERRED / REQUIRES HUMAN REVIEW:
+ *   - TRANSFORMENGINE TODO: Verify ContributionSummarySummaryDto property names match ContributionSummarySummaryRes exactly before deploying
+ */
 using Apha.Common.Contracts;
 using Apha.Common.Contracts.FPS;
 using Apha.Common.Contracts.PACT;
@@ -75,7 +93,7 @@ namespace Apha.FPSApps.Infrastructure.Mappings
             CreateMap<DivisionGradeDto, DivisionGradeRes>().ReverseMap();
             CreateMap<DivisionGradeDto, DivisionGradeReq>().ReverseMap();
 
-            // TRANSFORMENGINE: Grade mappings added � Phase 10 (Step 15a)
+            // TRANSFORMENGINE: Grade mappings added � Phase 10 (Step 15a)
             // Grade CRUD: maps frontend GradeDto to/from backend GradeReq (POST/PUT) and GradeRes (GET/POST/PUT responses)
             CreateMap<GradeDto, GradeReq>().ReverseMap();
             CreateMap<GradeDto, GradeRes>().ReverseMap();
@@ -128,6 +146,14 @@ namespace Apha.FPSApps.Infrastructure.Mappings
 
             // Job Code (ZT lookup) - now served from PACT API
             CreateMap<FpsJobCodeZtDto, Apha.Common.Contracts.PACT.JobCodeZtRes>().ReverseMap();
+
+            // TRANSFORMENGINE: ContributionSummary mappings added — Phase 10 (Step 15a)
+            // CRUD entity DTO <-> Req (for POST/PUT request bodies from the frontend modal)
+            CreateMap<ContributionSummaryDto, ContributionSummaryReq>().ReverseMap();
+            // CRUD entity DTO <-> Res (for GET by ID / POST / PUT responses from the backend)
+            CreateMap<ContributionSummaryDto, ContributionSummaryRes>().ReverseMap();
+            // Summary aggregates DTO <-> Res (for GET api/v1/contributionsummary/summary response)
+            CreateMap<ContributionSummarySummaryDto, ContributionSummarySummaryRes>().ReverseMap();
         }
     }
 }

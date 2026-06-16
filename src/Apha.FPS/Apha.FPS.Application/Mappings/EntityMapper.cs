@@ -1,3 +1,23 @@
+/*
+ * TRANSFORMENGINE MIGRATION — EntityMapper.cs
+ * Pattern  : stack-upgrade/msaccess-frm-to-dotnet10-mvc-e2e  Phase 3 — Application Layer - DTOs + Service Interfaces + EntityMapper + Services
+ * Migrated : 2026-06-16
+ *
+ * CHANGED:
+ *   - Added CreateMap<ContributionSummary, ContributionSummaryDto>().ReverseMap()
+ *     for the Phase 3 service layer contract.
+ *   - Added CreateMap<ContributionSummaryTotals, ContributionSummarySummaryDto>().ReverseMap()
+ *     for the GetSummaryAsync aggregate DTO mapping.
+ *
+ * PRESERVED:
+ *   - All pre-existing mappings unchanged (lines below the ContributionSummary section).
+ *   - Profile base class, constructor structure, and all ForMember overrides retained verbatim.
+ *
+ * DEFERRED / REQUIRES HUMAN REVIEW:
+ *   - TRANSFORMENGINE TODO: Verify ContributionSummaryTotals is registered with HasNoKey()
+ *     in the EF Core ContributionSummaryMap (Phase 4) before running integration tests.
+ */
+
 using Apha.FPS.Application.Dtos;
 using Apha.FPS.Application.Pagination;
 using Apha.FPS.Core.Entities;
@@ -42,7 +62,7 @@ namespace Apha.FPS.Application.Mappings
             CreateMap<Division, DivisionDto>().ReverseMap();
             CreateMap<DivisionGrade, DivisionGradeDto>().ReverseMap();
 
-            // TRANSFORMENGINE: Grade <-> GradeDto � ForMember required: Grade.DescLong <-> GradeDto.Description (field rename)
+            // TRANSFORMENGINE: Grade <-> GradeDto � ForMember required: Grade.DescLong <-> GradeDto.Description (field rename)
             CreateMap<Grade, GradeDto>()
                 .ForMember(d => d.Description, o => o.MapFrom(s => s.DescLong))
                 .ReverseMap()
@@ -77,7 +97,16 @@ namespace Apha.FPS.Application.Mappings
             CreateMap<PactStaff, PactStaffDto>().ReverseMap();
             CreateMap<ProjectProfitabilityView, ProjectProfitabilityDto>().ReverseMap();
             CreateMap<MonthlyOutput, MonthlyOutputDto>().ReverseMap();
-              
+
+            // TRANSFORMENGINE: ContributionSummary mappings — Phase 3 addition
+            //   ContributionSummary entity <-> ContributionSummaryDto (all 15 fields have identical names/types;
+            //   no ForMember overrides required).
+            CreateMap<ContributionSummary, ContributionSummaryDto>().ReverseMap();
+
+            // TRANSFORMENGINE: ContributionSummaryTotals (keyless aggregate) <-> ContributionSummarySummaryDto
+            //   All 9 summary fields have identical names/types; no ForMember overrides required.
+            //   ContributionSummaryTotals must be registered with HasNoKey() in ContributionSummaryMap (Phase 4).
+            CreateMap<ContributionSummaryTotals, ContributionSummarySummaryDto>().ReverseMap();
         }
     }
 }

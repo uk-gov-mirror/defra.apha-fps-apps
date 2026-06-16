@@ -2,6 +2,29 @@ using Apha.FPS.Core.Entities;
 using Apha.FPS.Core.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
+/*
+ * TRANSFORMENGINE MIGRATION — FpsDbContext.cs
+ * Pattern  : stack-upgrade/msaccess-frm-to-dotnet10-mvc-e2e  Phase 4 — DataAccess Layer - DbContext + Map Files + Repository (Steps 7-7a)
+ * Migrated : 2026-06-16
+ *
+ * CHANGED:
+ *   - Added DbSet<ContributionSummary> ContributionSummaries property for frmTimeSellerPC migration.
+ *   - Applied ContributionSummaryMap configuration in OnModelCreating.
+ *   - Added HasQueryFilter on ContributionSummary scoped to FilterFpsYear (same pattern as all
+ *     other year-partitioned entities in this context).
+ *   - Registered ContributionSummaryTotals as a keyless entity (HasNoKey) per the entity
+ *     documentation requirement; no DbSet needed — used only for LINQ projection results.
+ *
+ * PRESERVED:
+ *   - All existing DbSet properties and OnModelCreating registrations untouched.
+ *   - IFpsRequestContext injection and FilterFpsYear pattern unchanged.
+ *
+ * DEFERRED / REQUIRES HUMAN REVIEW:
+ *   - TRANSFORMENGINE TODO: Verify that fps.tblkpcontributionsummary table exists in the
+ *     PostgreSQL schema before applying EF Core migrations. ContributionSummaryMap maps to
+ *     this table; confirm DDL with DBA.
+ */
+
 namespace Apha.FPS.DataAccess.Data
 {
     public partial class FpsDbContext : DbContext
@@ -95,6 +118,10 @@ namespace Apha.FPS.DataAccess.Data
 
         public virtual DbSet<ProjectStaffPlanView> ProjectStaffPlanViews { get; set; }
         public virtual DbSet<ProjectGroupStaffPlanView> ProjectGroupStaffPlanViews { get; set; }
+
+        // TRANSFORMENGINE: ContributionSummaries — frmTimeSellerPC grid data; backed by fps.tblkpcontributionsummary
+        public virtual DbSet<ContributionSummary> ContributionSummaries { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfiguration(new UserMap());
@@ -295,6 +322,13 @@ namespace Apha.FPS.DataAccess.Data
 
             modelBuilder.ApplyConfiguration(new GradeMap());
             modelBuilder.Entity<Grade>().HasQueryFilter(e => e.FpsYear == FilterFpsYear);
+
+            // TRANSFORMENGINE: ContributionSummary map + FpsYear query filter — frmTimeSellerPC Phase 4
+            modelBuilder.ApplyConfiguration(new ContributionSummaryMap());
+            modelBuilder.Entity<ContributionSummary>().HasQueryFilter(e => e.FpsYear == FilterFpsYear);
+
+            // TRANSFORMENGINE: ContributionSummaryTotals — keyless aggregate projection; no DbSet required
+            modelBuilder.Entity<ContributionSummaryTotals>().HasNoKey();
         }
     }
 }

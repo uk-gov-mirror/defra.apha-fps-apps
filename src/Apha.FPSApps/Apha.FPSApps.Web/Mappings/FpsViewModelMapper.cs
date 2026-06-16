@@ -1,3 +1,20 @@
+/*
+ * TRANSFORMENGINE MIGRATION — FpsViewModelMapper.cs
+ * Pattern  : stack-upgrade/msaccess-frm-to-dotnet10-mvc-e2e  Phase 10 — AutoMapper Profiles + DI Registration (Step 15)
+ * Migrated : 2026-06-16
+ *
+ * CHANGED:
+ *   - Added ContributionSummaryItem <-> ContributionSummaryDto mapping stub (Phase 10; activated in Phase 11)
+ *   - Added ContributionSummarySummaryItem <-> ContributionSummarySummaryDto mapping stub (Phase 10; activated in Phase 11)
+ *
+ * PRESERVED:
+ *   - All existing CreateMap entries for StaffJob, Program, Employee, Project, Animal, Grade, Division, etc.
+ *   - All .ForMember() custom mappings and .ReverseMap() directives on existing entries
+ *
+ * DEFERRED / REQUIRES HUMAN REVIEW:
+ *   - Phase 11: ContributionSummaryItem and ContributionSummarySummaryItem ViewModel classes created;
+ *     mapping stubs activated (CreateMap entries uncommented).
+ */
 using Apha.FPSApps.Application.Dtos;
 using Apha.FPSApps.Application.Dtos.FPS;
 using Apha.FPSApps.Application.Dtos.PACT;
@@ -89,6 +106,11 @@ namespace Apha.FPSApps.Web.Mappings
                 .ForMember(d => d.OracleProjectCode, o => o.MapFrom(s => s.OracleProjectCode))
                 .ForMember(d => d.SubAccountCode, o => o.MapFrom(s => s.SubAccountCode))
                 .ReverseMap();
+
+            // TRANSFORMENGINE: ContributionSummary ViewModel mappings — Phase 11 (Step 16) activated
+            // ContributionSummaryItem and ContributionSummarySummaryItem created in Phase 11.
+            CreateMap<ContributionSummaryItem, ContributionSummaryDto>().ReverseMap();
+            CreateMap<ContributionSummarySummaryItem, ContributionSummarySummaryDto>().ReverseMap();
         }
     }
 }

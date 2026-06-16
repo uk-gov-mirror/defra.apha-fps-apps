@@ -1,0 +1,323 @@
+<!-- TRANSFORMENGINE MIGRATION — _AddEditContributionSummary.cshtml
+     Pattern  : stack-upgrade/msaccess-frm-to-dotnet10-mvc-e2e  Phase 12 — Razor Views (Step 18)
+     Migrated : 2026-06-16
+     CHANGED:
+       - New file: CRUD modal partial for Add/Edit ContributionSummary rows (frmTimeSellerPC).
+       - Modal fields derived from the JS crudFields[] array in contribution_summary.js:
+           csCrudWg (text), csCrudGrade (text), csCrudAvailHrs (number), csCrudChgRate (number),
+           csCrudTotalPlanHrs (number), csCrudTotalFec (number), csCrudTotalPctPlanned (number 0-100),
+           csCrudAssuredPlanHrs (number), csCrudAssuredFec (number),
+           csCrudAssuredPctPlanned (number 0-100), csCrudOhRate (number), csCrudTotalCont (number).
+       - All 12 fields are editable (no read-only / computed / disabled fields per crudFields config).
+       - Id (PK) rendered as hidden input; hdnContributionSummaryIsEdit drives the Add/Edit title.
+       - Two-column layout per HTML prototype (govuk-grid-column-one-half per row).
+       - Modal header close button calls closeContributionSummaryModal() (defined in Index.cshtml).
+       - Save/Update buttons call saveContributionSummary() (defined in Index.cshtml).
+       - Anti-forgery token included (@Html.AntiForgeryToken()).
+       - Shared modal host (#modalPopup / #modaPopupBody) used — no inline modal markup.
+     PRESERVED:
+       - Field IDs use prefix "ContributionSummary" to avoid collisions (matched in saveContributionSummary).
+       - Error message elements preserved per govuk-error-message pattern.
+       - All label text taken verbatim from HTML prototype crudFields[].label values.
+     DEFERRED:
+       - TRANSFORMENGINE TODO: Verify that saveContributionSummary() in Index.cshtml reads
+         #ContributionSummaryXxx IDs correctly for all 12 fields. -->
+
+@model Apha.FPSApps.Web.Areas.FPS.Models.ContributionSummaryItem
+
+@{
+    @* TRANSFORMENGINE: isEditMode true when Id > 0 (edit flow); false for add flow. *@
+    var isEditMode = Model.Id > 0;
+    var title      = isEditMode ? "Edit Contribution Row" : "Add Contribution Row";
+    var saveLabel  = isEditMode ? "Update" : "Save";
+}
+
+<div class="modal-header flex-space-center">
+    <h3 class="modal-title" style="margin: 0;">@title</h3>
+    <button type="button" class="btn-close btn-red"
+            onclick="closeContributionSummaryModal()">X</button>
+</div>
+<div class="modal-body" style="padding-top: 5px;">
+    <p class="app-mandatory-note">
+        <span aria-hidden="true" class="app-required">*</span> Mandatory fields
+    </p>
+    <form class="row" id="formContributionSummaryCrud">
+        @Html.AntiForgeryToken()
+
+        @* TRANSFORMENGINE: Hidden PK — Id posted as hdnContributionSummaryId;
+           isEdit flag drives Save/Update label and POST URL selection in saveContributionSummary(). *@
+        <input type="hidden" asp-for="Id" id="hdnContributionSummaryId" />
+        <input type="hidden" id="hdnContributionSummaryIsEdit" value="@isEditMode.ToString().ToLower()" />
+
+        @* Row 1: WG + Grade *@
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-one-half">
+                @* TRANSFORMENGINE: WG — crudFields[0] { label:"WG", type:text, required:true } *@
+                <div class="govuk-form-group sup_margin_bottom_10" id="fg-ContributionSummaryWg">
+                    <label class="govuk-label govuk-!-font-weight-bold" asp-for="Wg">
+                        WG<span aria-hidden="true" class="app-required">*</span>
+                    </label>
+                    <input class="govuk-input govuk-!-font-size-16"
+                           asp-for="Wg"
+                           id="ContributionSummaryWg"
+                           type="text"
+                           aria-describedby="ContributionSummaryWg-error" />
+                    <span asp-validation-for="Wg"
+                          class="govuk-error-message"
+                          id="ContributionSummaryWg-error"
+                          style="display:none;"></span>
+                </div>
+            </div>
+            <div class="govuk-grid-column-one-half">
+                @* TRANSFORMENGINE: Grade — crudFields[1] { label:"Grade", type:text, required:true } *@
+                <div class="govuk-form-group sup_margin_bottom_10" id="fg-ContributionSummaryGrade">
+                    <label class="govuk-label govuk-!-font-weight-bold" asp-for="Grade">
+                        Grade<span aria-hidden="true" class="app-required">*</span>
+                    </label>
+                    <input class="govuk-input govuk-!-font-size-16"
+                           asp-for="Grade"
+                           id="ContributionSummaryGrade"
+                           type="text"
+                           aria-describedby="ContributionSummaryGrade-error" />
+                    <span asp-validation-for="Grade"
+                          class="govuk-error-message"
+                          id="ContributionSummaryGrade-error"
+                          style="display:none;"></span>
+                </div>
+            </div>
+        </div>
+
+        @* Row 2: Avail Hrs + Chg Rate *@
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-one-half">
+                @* TRANSFORMENGINE: AvailHrs — crudFields[2] { label:"Avail Hrs", type:number, min:0, required:true } *@
+                <div class="govuk-form-group sup_margin_bottom_10" id="fg-ContributionSummaryAvailHrs">
+                    <label class="govuk-label govuk-!-font-weight-bold" asp-for="AvailHrs">
+                        Avail Hrs<span aria-hidden="true" class="app-required">*</span>
+                    </label>
+                    <input class="govuk-input govuk-!-font-size-16"
+                           asp-for="AvailHrs"
+                           id="ContributionSummaryAvailHrs"
+                           type="number"
+                           step="0.1"
+                           min="0"
+                           aria-describedby="ContributionSummaryAvailHrs-error" />
+                    <span asp-validation-for="AvailHrs"
+                          class="govuk-error-message"
+                          id="ContributionSummaryAvailHrs-error"
+                          style="display:none;"></span>
+                </div>
+            </div>
+            <div class="govuk-grid-column-one-half">
+                @* TRANSFORMENGINE: ChgRate — crudFields[3] { label:"Chg Rate", type:number, min:0, required:true } *@
+                <div class="govuk-form-group sup_margin_bottom_10" id="fg-ContributionSummaryChgRate">
+                    <label class="govuk-label govuk-!-font-weight-bold" asp-for="ChgRate">
+                        Chg Rate<span aria-hidden="true" class="app-required">*</span>
+                    </label>
+                    <input class="govuk-input currency-input govuk-!-font-size-16"
+                           asp-for="ChgRate"
+                           id="ContributionSummaryChgRate"
+                           type="number"
+                           step="0.1"
+                           min="0"
+                           aria-describedby="ContributionSummaryChgRate-error" />
+                    <span asp-validation-for="ChgRate"
+                          class="govuk-error-message"
+                          id="ContributionSummaryChgRate-error"
+                          style="display:none;"></span>
+                </div>
+            </div>
+        </div>
+
+        @* Row 3: Total PlanHrs + Total FEC *@
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-one-half">
+                @* TRANSFORMENGINE: TotalPlanHrs — crudFields[4] { label:"Total PlanHrs", type:number, min:0, required:true } *@
+                <div class="govuk-form-group sup_margin_bottom_10" id="fg-ContributionSummaryTotalPlanHrs">
+                    <label class="govuk-label govuk-!-font-weight-bold" asp-for="TotalPlanHrs">
+                        Total PlanHrs<span aria-hidden="true" class="app-required">*</span>
+                    </label>
+                    <input class="govuk-input govuk-!-font-size-16"
+                           asp-for="TotalPlanHrs"
+                           id="ContributionSummaryTotalPlanHrs"
+                           type="number"
+                           step="0.1"
+                           min="0"
+                           aria-describedby="ContributionSummaryTotalPlanHrs-error" />
+                    <span asp-validation-for="TotalPlanHrs"
+                          class="govuk-error-message"
+                          id="ContributionSummaryTotalPlanHrs-error"
+                          style="display:none;"></span>
+                </div>
+            </div>
+            <div class="govuk-grid-column-one-half">
+                @* TRANSFORMENGINE: TotalFec — crudFields[5] { label:"Total FEC", type:number, min:0, required:true } *@
+                <div class="govuk-form-group sup_margin_bottom_10" id="fg-ContributionSummaryTotalFec">
+                    <label class="govuk-label govuk-!-font-weight-bold" asp-for="TotalFec">
+                        Total FEC<span aria-hidden="true" class="app-required">*</span>
+                    </label>
+                    <input class="govuk-input currency-input govuk-!-font-size-16"
+                           asp-for="TotalFec"
+                           id="ContributionSummaryTotalFec"
+                           type="number"
+                           step="1"
+                           min="0"
+                           aria-describedby="ContributionSummaryTotalFec-error" />
+                    <span asp-validation-for="TotalFec"
+                          class="govuk-error-message"
+                          id="ContributionSummaryTotalFec-error"
+                          style="display:none;"></span>
+                </div>
+            </div>
+        </div>
+
+        @* Row 4: Total % Planned + Assured PlanHrs *@
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-one-half">
+                @* TRANSFORMENGINE: TotalPctPlanned — crudFields[6] { label:"Total % Planned",
+                   type:number, min:0, max:100, required:true } *@
+                <div class="govuk-form-group sup_margin_bottom_10" id="fg-ContributionSummaryTotalPctPlanned">
+                    <label class="govuk-label govuk-!-font-weight-bold" asp-for="TotalPctPlanned">
+                        Total % Planned<span aria-hidden="true" class="app-required">*</span>
+                    </label>
+                    <input class="govuk-input govuk-!-font-size-16"
+                           asp-for="TotalPctPlanned"
+                           id="ContributionSummaryTotalPctPlanned"
+                           type="number"
+                           step="1"
+                           min="0"
+                           max="100"
+                           aria-describedby="ContributionSummaryTotalPctPlanned-error" />
+                    <span asp-validation-for="TotalPctPlanned"
+                          class="govuk-error-message"
+                          id="ContributionSummaryTotalPctPlanned-error"
+                          style="display:none;"></span>
+                </div>
+            </div>
+            <div class="govuk-grid-column-one-half">
+                @* TRANSFORMENGINE: AssuredPlanHrs — crudFields[7] { label:"Assured PlanHrs",
+                   type:number, min:0, required:true } *@
+                <div class="govuk-form-group sup_margin_bottom_10" id="fg-ContributionSummaryAssuredPlanHrs">
+                    <label class="govuk-label govuk-!-font-weight-bold" asp-for="AssuredPlanHrs">
+                        Assured PlanHrs<span aria-hidden="true" class="app-required">*</span>
+                    </label>
+                    <input class="govuk-input govuk-!-font-size-16"
+                           asp-for="AssuredPlanHrs"
+                           id="ContributionSummaryAssuredPlanHrs"
+                           type="number"
+                           step="0.1"
+                           min="0"
+                           aria-describedby="ContributionSummaryAssuredPlanHrs-error" />
+                    <span asp-validation-for="AssuredPlanHrs"
+                          class="govuk-error-message"
+                          id="ContributionSummaryAssuredPlanHrs-error"
+                          style="display:none;"></span>
+                </div>
+            </div>
+        </div>
+
+        @* Row 5: Assured FEC + Assured % Planned *@
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-one-half">
+                @* TRANSFORMENGINE: AssuredFec — crudFields[8] { label:"Assured FEC",
+                   type:number, min:0, required:true } *@
+                <div class="govuk-form-group sup_margin_bottom_10" id="fg-ContributionSummaryAssuredFec">
+                    <label class="govuk-label govuk-!-font-weight-bold" asp-for="AssuredFec">
+                        Assured FEC<span aria-hidden="true" class="app-required">*</span>
+                    </label>
+                    <input class="govuk-input currency-input govuk-!-font-size-16"
+                           asp-for="AssuredFec"
+                           id="ContributionSummaryAssuredFec"
+                           type="number"
+                           step="1"
+                           min="0"
+                           aria-describedby="ContributionSummaryAssuredFec-error" />
+                    <span asp-validation-for="AssuredFec"
+                          class="govuk-error-message"
+                          id="ContributionSummaryAssuredFec-error"
+                          style="display:none;"></span>
+                </div>
+            </div>
+            <div class="govuk-grid-column-one-half">
+                @* TRANSFORMENGINE: AssuredPctPlanned — crudFields[9] { label:"Assured % Planned",
+                   type:number, min:0, max:100, required:true } *@
+                <div class="govuk-form-group sup_margin_bottom_10" id="fg-ContributionSummaryAssuredPctPlanned">
+                    <label class="govuk-label govuk-!-font-weight-bold" asp-for="AssuredPctPlanned">
+                        Assured % Planned<span aria-hidden="true" class="app-required">*</span>
+                    </label>
+                    <input class="govuk-input govuk-!-font-size-16"
+                           asp-for="AssuredPctPlanned"
+                           id="ContributionSummaryAssuredPctPlanned"
+                           type="number"
+                           step="1"
+                           min="0"
+                           max="100"
+                           aria-describedby="ContributionSummaryAssuredPctPlanned-error" />
+                    <span asp-validation-for="AssuredPctPlanned"
+                          class="govuk-error-message"
+                          id="ContributionSummaryAssuredPctPlanned-error"
+                          style="display:none;"></span>
+                </div>
+            </div>
+        </div>
+
+        @* Row 6: OH Rate + Total Cont *@
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-one-half">
+                @* TRANSFORMENGINE: OhRate — crudFields[10] { label:"OH Rate",
+                   type:number, min:0, required:true } *@
+                <div class="govuk-form-group sup_margin_bottom_10" id="fg-ContributionSummaryOhRate">
+                    <label class="govuk-label govuk-!-font-weight-bold" asp-for="OhRate">
+                        OH Rate<span aria-hidden="true" class="app-required">*</span>
+                    </label>
+                    <input class="govuk-input currency-input govuk-!-font-size-16"
+                           asp-for="OhRate"
+                           id="ContributionSummaryOhRate"
+                           type="number"
+                           step="0.1"
+                           min="0"
+                           aria-describedby="ContributionSummaryOhRate-error" />
+                    <span asp-validation-for="OhRate"
+                          class="govuk-error-message"
+                          id="ContributionSummaryOhRate-error"
+                          style="display:none;"></span>
+                </div>
+            </div>
+            <div class="govuk-grid-column-one-half">
+                @* TRANSFORMENGINE: TotalCont — crudFields[11] { label:"Total Cont",
+                   type:number, min:0, required:true } *@
+                <div class="govuk-form-group sup_margin_bottom_10" id="fg-ContributionSummaryTotalCont">
+                    <label class="govuk-label govuk-!-font-weight-bold" asp-for="TotalCont">
+                        Total Cont<span aria-hidden="true" class="app-required">*</span>
+                    </label>
+                    <input class="govuk-input currency-input govuk-!-font-size-16"
+                           asp-for="TotalCont"
+                           id="ContributionSummaryTotalCont"
+                           type="number"
+                           step="1"
+                           min="0"
+                           aria-describedby="ContributionSummaryTotalCont-error" />
+                    <span asp-validation-for="TotalCont"
+                          class="govuk-error-message"
+                          id="ContributionSummaryTotalCont-error"
+                          style="display:none;"></span>
+                </div>
+            </div>
+        </div>
+
+        @* Action buttons *@
+        <div class="col-12" style="text-align: right; margin-top: 10px;">
+            <button type="button"
+                    class="govuk-button govuk-button--secondary sup_margin_0"
+                    onclick="closeContributionSummaryModal()">
+                Cancel
+            </button>
+            <button type="button"
+                    class="govuk-button sup_margin_0"
+                    onclick="saveContributionSummary()">
+                @saveLabel
+            </button>
+        </div>
+
+    </form>
+</div>
