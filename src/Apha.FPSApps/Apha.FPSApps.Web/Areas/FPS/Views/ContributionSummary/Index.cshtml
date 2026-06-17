@@ -1,27 +1,3 @@
-<!-- TRANSFORMENGINE MIGRATION — ContributionSummary/Index.cshtml
-     Pattern  : stack-upgrade/msaccess-frm-to-dotnet10-mvc-e2e  Phase 12 — Razor Views (Step 18)
-     Migrated : 2026-06-16
-     CHANGED:
-       - New file: Razor Index view for the Contribution Summary page (frmTimeSellerPC).
-       - Resource Centre dropdown (cs-resource-centre) outside the grid rendered as
-         asp-for + asp-items bound to Model.SelectedProfitCentre / Model.ProfitCentreList.
-       - DataGrid rendered via shared _DataGrid partial (Model.ContributionSummaryGrid).
-       - Grid total row (cs-grid-total-row) below the grid; widths synchronised by JS.
-       - Standalone Add button outside the grid triggers addContributionSummary()
-         (AllowAdd = false in DataGridConfig per JS showAddButton: false).
-       - AllowEdit = true; editContributionSummary() wired to EditFunction.
-       - AllowDelete = false; no delete function wired.
-       - View Report button calls viewContributionSummaryReport().
-       - Three summary boxes rendered with Model.SummaryTotals initial values;
-         refreshed via GetSummary AJAX on profitCentre change and grid reload.
-       - applyGroupedHeaderRow / syncSummaryWidths / syncGridTotalRow /
-         bindSummaryWidthSync JS logic preserved from contribution_summary.js prototype.
-     DEFERRED:
-       - TRANSFORMENGINE TODO: ViewReport endpoint not implemented — viewContributionSummaryReport()
-         currently opens /FPS/ContributionSummary/ViewReport; stub alert if pop-up blocked.
-       - TRANSFORMENGINE TODO: Confirm Rate Efficacy Checker (RateEfficacyOhRate / RateEfficacyTotalCont)
-         rendered in cs-grid-total-cont and summary boxes matches server-side DTO field names. -->
-
 @using Apha.FPSApps.Web.Models.Components.DataGrid
 @model Apha.FPSApps.Web.Areas.FPS.Models.ContributionSummaryViewModel
 

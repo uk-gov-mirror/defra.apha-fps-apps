@@ -1,28 +1,3 @@
-<!-- TRANSFORMENGINE MIGRATION — _AddEditContributionSummary.cshtml
-     Pattern  : stack-upgrade/msaccess-frm-to-dotnet10-mvc-e2e  Phase 12 — Razor Views (Step 18)
-     Migrated : 2026-06-16
-     CHANGED:
-       - New file: CRUD modal partial for Add/Edit ContributionSummary rows (frmTimeSellerPC).
-       - Modal fields derived from the JS crudFields[] array in contribution_summary.js:
-           csCrudWg (text), csCrudGrade (text), csCrudAvailHrs (number), csCrudChgRate (number),
-           csCrudTotalPlanHrs (number), csCrudTotalFec (number), csCrudTotalPctPlanned (number 0-100),
-           csCrudAssuredPlanHrs (number), csCrudAssuredFec (number),
-           csCrudAssuredPctPlanned (number 0-100), csCrudOhRate (number), csCrudTotalCont (number).
-       - All 12 fields are editable (no read-only / computed / disabled fields per crudFields config).
-       - Id (PK) rendered as hidden input; hdnContributionSummaryIsEdit drives the Add/Edit title.
-       - Two-column layout per HTML prototype (govuk-grid-column-one-half per row).
-       - Modal header close button calls closeContributionSummaryModal() (defined in Index.cshtml).
-       - Save/Update buttons call saveContributionSummary() (defined in Index.cshtml).
-       - Anti-forgery token included (@Html.AntiForgeryToken()).
-       - Shared modal host (#modalPopup / #modaPopupBody) used — no inline modal markup.
-     PRESERVED:
-       - Field IDs use prefix "ContributionSummary" to avoid collisions (matched in saveContributionSummary).
-       - Error message elements preserved per govuk-error-message pattern.
-       - All label text taken verbatim from HTML prototype crudFields[].label values.
-     DEFERRED:
-       - TRANSFORMENGINE TODO: Verify that saveContributionSummary() in Index.cshtml reads
-         #ContributionSummaryXxx IDs correctly for all 12 fields. -->
-
 @model Apha.FPSApps.Web.Areas.FPS.Models.ContributionSummaryItem
 
 @{
