@@ -1,3 +1,23 @@
+/*
+ * TRANSFORMENGINE MIGRATION — EntityMapper.cs
+ * Pattern  : stack-upgrade/msaccess-frm-to-dotnet10-mvc-e2e  Phase 3 — Application Layer - DTOs + Service Interfaces + EntityMapper + Services (Steps 4-6)
+ * Migrated : 2026-07-02
+ *
+ * CHANGED:
+ *   - VERIFY completed: AnimalCostView <-> AnimalCostViewDto mapping is confirmed present and
+ *     covers the new GetAnimalCostByAnimalTypeAsync method (reuses same entity/DTO pair)
+ *   - No new CreateMap entries required: AsuView resource family reuses AnimalCostView entity
+ *     and AnimalCostViewDto DTO; no additional entity or DTO was created for ASU View
+ *
+ * PRESERVED:
+ *   - All existing CreateMap entries (Animal, AnimalCostView, AnimalRequest, and all other
+ *     entity <-> DTO mappings)
+ *   - All ForMember overrides (Grade, PactProjectView, ProfitCentreView, etc.)
+ *   - Generic pagination mappings (PaginationParameters <-> QueryParameters, PagedData <-> PaginatedResult)
+ *
+ * DEFERRED / REQUIRES HUMAN REVIEW:
+ *   - none — fully automated.
+ */
 using Apha.FPS.Application.Dtos;
 using Apha.FPS.Application.Pagination;
 using Apha.FPS.Core.Entities;
@@ -25,6 +45,9 @@ namespace Apha.FPS.Application.Mappings
             CreateMap<Project, ProjectDto>().ReverseMap();
             CreateMap<ProjectView, Project>().ReverseMap();
             CreateMap<Contract, ContractDto>().ReverseMap();
+            // TRANSFORMENGINE: AnimalCostView <-> AnimalCostViewDto confirmed — covers both
+            // GetAnimalCostAsync (by jobCode) and GetAnimalCostByAnimalTypeAsync (by animalType)
+            // No new mapping entry required for the ASU View resource family
             CreateMap<AnimalCostView, AnimalCostViewDto>().ReverseMap();
             CreateMap<Animal, AnimalDto>().ReverseMap();
             CreateMap<AnimalRequest, AnimalRequestDto>().ReverseMap();

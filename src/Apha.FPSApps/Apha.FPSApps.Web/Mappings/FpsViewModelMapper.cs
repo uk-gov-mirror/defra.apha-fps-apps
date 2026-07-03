@@ -1,3 +1,22 @@
+/*
+ * TRANSFORMENGINE MIGRATION — FpsViewModelMapper.cs
+ * Pattern  : stack-upgrade/msaccess-frm-to-dotnet10-mvc-e2e  Phase 10 — AutoMapper Profiles + DI Registration (Step 15)
+ * Migrated : 2026-07-02
+ *
+ * CHANGED:
+ *   - Added CreateMap<AsuViewItem, AsuViewDto>().ReverseMap() for the ASU View resource family
+ *   - AsuViewItem.cs stub created in Phase 10 (Phase 11 will add full GridColumn attributes)
+ *   - AsuViewItem and AsuViewDto have matching property names (Id, AnimalType, Project, AnimalDays, Cost)
+ *     — AutoMapper convention mapping with .ReverseMap() is sufficient
+ *
+ * PRESERVED:
+ *   - All existing CreateMap entries unchanged
+ *
+ * DEFERRED / REQUIRES HUMAN REVIEW:
+ *   - TRANSFORMENGINE TODO: Phase 11 — verify AsuViewItem properties after grid attributes are added;
+ *     if any names diverge from AsuViewDto, add .ForMember() overrides here
+ */
+
 using Apha.FPSApps.Application.Dtos;
 using Apha.FPSApps.Application.Dtos.FPS;
 using Apha.FPSApps.Application.Dtos.PACT;
@@ -109,6 +128,12 @@ namespace Apha.FPSApps.Web.Mappings
                 .ForMember(d => d.OracleProjectCode, o => o.MapFrom(s => s.OracleProjectCode))
                 .ForMember(d => d.SubAccountCode, o => o.MapFrom(s => s.SubAccountCode))
                 .ReverseMap();
+
+            // TRANSFORMENGINE: AsuView mapping added — Phase 10 (Step 15b)
+            // AsuViewItem ↔ AsuViewDto: identical property names (Id, AnimalType, Project, AnimalDays, Cost)
+            // — convention-based .ReverseMap() sufficient. AsuViewItem stub created in Phase 10;
+            //   Phase 11 will add GridColumn/Display attributes without breaking this mapping.
+            CreateMap<AsuViewItem, AsuViewDto>().ReverseMap();
         }
     }
 }

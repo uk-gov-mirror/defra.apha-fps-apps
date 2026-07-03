@@ -38,6 +38,8 @@ namespace Apha.FPSApps.Infrastructure.Integrations.FPSApis.Clients
 
         // TRANSFORMENGINE: FpsGrade added
         public IFpsGradeApiClient FpsGrade { get; }
+        // TRANSFORMENGINE: FpsAsuView added — Phase 7 AsuView resource family (stub until Phase 9)
+        public IFpsAsuViewApiClient FpsAsuView { get; }
 
         public FpsApiClient(IFpsHttpExecutor http, IMapper mapper)
         {
@@ -70,6 +72,8 @@ namespace Apha.FPSApps.Infrastructure.Integrations.FPSApis.Clients
             FpsUserPermission = new FpsUserApiClient(http, mapper);
             // TRANSFORMENGINE: FpsGrade wired
             FpsGrade = new FpsGradeApiClient(http, mapper);
+            // TRANSFORMENGINE: FpsAsuView wired — stub client; full implementation in Phase 9
+            FpsAsuView = new FpsAsuViewApiClient(http, mapper);
         }
     }
 }

@@ -1,3 +1,23 @@
+/*
+ * TRANSFORMENGINE MIGRATION — FpsApiDtoMapper.cs
+ * Pattern  : stack-upgrade/msaccess-frm-to-dotnet10-mvc-e2e  Phase 10 — AutoMapper Profiles + DI Registration (Step 15)
+ * Migrated : 2026-07-02
+ *
+ * CHANGED:
+ *   - Added CreateMap<AsuViewDto, AsuViewRes>().ReverseMap() for the ASU View resource family
+ *     (used by FpsAsuViewApiClient.GetAsuViewAsync to map AsuViewRes API responses to AsuViewDto)
+ *   - AsuViewRes and AsuViewDto have identical field names and types (Id, AnimalType, Project,
+ *     AnimalDays, Cost) — convention mapping with .ReverseMap() is sufficient
+ *
+ * PRESERVED:
+ *   - All existing CreateMap entries unchanged
+ *   - AnimalDto/AnimalRes mapping already present covers GetAnimalTypeLookupAsync — no duplicate added
+ *
+ * DEFERRED / REQUIRES HUMAN REVIEW:
+ *   - TRANSFORMENGINE TODO: verify Cost type (decimal vs double) in AsuViewDto/AsuViewRes
+ *     against the actual DB column type once DataAccess layer is finalised
+ */
+
 using Apha.Common.Contracts;
 using Apha.Common.Contracts.FPS;
 using Apha.Common.Contracts.PACT;
@@ -56,6 +76,12 @@ namespace Apha.FPSApps.Infrastructure.Mappings
             // FPS Animal Master
             CreateMap<AnimalDto, AnimalReq>().ReverseMap();
 
+            // TRANSFORMENGINE: AsuView mapping added — Phase 10 (Step 15a)
+            // AsuViewDto ↔ AsuViewRes: identical field names (Id, AnimalType, Project, AnimalDays, Cost)
+            // — convention-based .ReverseMap() covers both directions used by FpsAsuViewApiClient.
+            // AnimalDto ↔ AnimalRes (above) already covers GetAnimalTypeLookupAsync — no duplicate needed.
+            CreateMap<AsuViewDto, AsuViewRes>().ReverseMap();
+
             // YEar Master
             CreateMap<YearMasterDto, YearMasterRes>().ReverseMap();
             CreateMap<YearMasterDto, YearMasterReq>().ReverseMap();
@@ -75,7 +101,7 @@ namespace Apha.FPSApps.Infrastructure.Mappings
             CreateMap<DivisionGradeDto, DivisionGradeRes>().ReverseMap();
             CreateMap<DivisionGradeDto, DivisionGradeReq>().ReverseMap();
 
-            // TRANSFORMENGINE: Grade mappings added � Phase 10 (Step 15a)
+            // TRANSFORMENGINE: Grade mappings added � Phase 10 (Step 15a)
             // Grade CRUD: maps frontend GradeDto to/from backend GradeReq (POST/PUT) and GradeRes (GET/POST/PUT responses)
             CreateMap<GradeDto, GradeReq>().ReverseMap();
             CreateMap<GradeDto, GradeRes>().ReverseMap();

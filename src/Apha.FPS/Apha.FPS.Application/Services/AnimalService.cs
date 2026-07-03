@@ -1,4 +1,29 @@
-﻿using Apha.FPS.Application.Dtos;
+/*
+ * TRANSFORMENGINE MIGRATION — AnimalService.cs
+ * Pattern  : stack-upgrade/msaccess-frm-to-dotnet10-mvc-e2e  Phase 3 — Application Layer - DTOs + Service Interfaces + EntityMapper + Services (Steps 4-6)
+ * Migrated : 2026-07-02
+ *
+ * CHANGED:
+ *   - Implemented GetAnimalCostByAnimalTypeAsync(QueryParameters<string> query, string animalType)
+ *     to support the ASU View resource family — validates input, delegates to
+ *     IAnimalRepository.GetAnimalCostByAnimalTypeAsync, and maps PagedData<AnimalCostView>
+ *     to PaginatedResult<AnimalCostViewDto> via AutoMapper, mirroring the existing
+ *     GetAnimalCostAsync pattern
+ *
+ * PRESERVED:
+ *   - All existing Animal Master CRUD methods (GetAllAnimalsAsync x2, GetAnimalByIdAsync,
+ *     AddAnimalAsync, UpdateAnimalAsync, DeleteAnimalAsync)
+ *   - All existing Animal Cost (AnimalJob) methods (GetAnimalCostAsync, GetAnimalLookupAsync,
+ *     GetAnimalRateByIdAsync, AddAnimalCostAsync, UpdateAnimalCostAsync, DeleteAnimalCostAsync,
+ *     GetTotalAnimalCostAsync, GetAnimalCostViewByIdAsync)
+ *   - All validation guards (ArgumentNullException, ArgumentException, ArgumentOutOfRangeException,
+ *     InvalidOperationException, KeyNotFoundException)
+ *   - Constructor injection and null checks
+ *
+ * DEFERRED / REQUIRES HUMAN REVIEW:
+ *   - none — fully automated.
+ */
+using Apha.FPS.Application.Dtos;
 using Apha.FPS.Application.Interfaces;
 using Apha.FPS.Application.Pagination;
 using Apha.FPS.Core.Entities;
@@ -130,6 +155,18 @@ namespace Apha.FPS.Application.Services
         {
             var result = await _animalRepository.GetAnimalCostViewByIdAsync(indCounter, jobCode);
             return result == null ? null : _mapper.Map<AnimalCostViewDto>(result);
+        }
+
+        // TRANSFORMENGINE: New method for ASU View — delegates to repository filtered by animalType
+        // Mirrors GetAnimalCostAsync pattern: map query → PaginationParameters, call repo, map result
+        public async Task<PaginatedResult<AnimalCostViewDto>> GetAnimalCostByAnimalTypeAsync(QueryParameters<string> query, string animalType)
+        {
+            ArgumentNullException.ThrowIfNull(query);
+            ArgumentException.ThrowIfNullOrWhiteSpace(animalType);
+
+            var filter = _mapper.Map<PaginationParameters<string>>(query);
+            var paged = await _animalRepository.GetAnimalCostByAnimalTypeAsync(filter, animalType);
+            return _mapper.Map<PaginatedResult<AnimalCostViewDto>>(paged);
         }
 
     }

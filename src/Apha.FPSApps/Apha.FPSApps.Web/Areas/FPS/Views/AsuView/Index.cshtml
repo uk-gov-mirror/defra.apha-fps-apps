@@ -1,0 +1,471 @@
+<!-- TRANSFORMENGINE MIGRATION — AsuView/Index.cshtml
+     Pattern  : stack-upgrade/msaccess-frm-to-dotnet10-mvc-e2e  Phase 12 — Razor Views (Step 18)
+     Migrated : 2026-07-02
+
+     CHANGED (Phase 12):
+       - New Razor view created; no prior equivalent in the MVC frontend layer
+       - Multi-column Animal Type custom dropdown (fps_asuview.html #animal-type-dropdown)
+         replicated exactly: visible text input + hidden value input + dropdown panel with
+         search box and two-column table (Animal Type | Daily Rate)
+       - Dropdown data populated from server-rendered Model.AnimalTypeList (via PopulateDropdownsAsync
+         in AsuViewController.Index()); no AJAX needed for dropdown — replaces the JS
+         populateAnimalTypeOptions() which loaded from a static JSON file
+       - Daily Rate column in dropdown populated from the static animalTypeRateLookup map
+         (preserved verbatim from fps_asuview.js) for client-side display
+       - DataGrid bound to /FPS/AsuView/LoadAsuViewGrid via _DataGrid partial (AllowAdd/Edit/Delete = false)
+       - AsuViewController.Index() omits ExtraFilterMethod in DataGridConfig; the view patches
+         window['gridManager_asuViewGrid'].getAjaxParams after DOM ready to inject the current
+         animalType from #asu-animal-type-value on every grid reload
+       - Summary row (#asuTotalDays, #asuTotalCost) updated via AJAX GET to /FPS/AsuView/GetTotals
+         on animal type selection, replacing client-side updateAsuSummary() from fps_asuview.js
+       - Side card with "PREVIEW All Large Animal Plans" and "Email ASU Charge Rates" buttons
+         replicated from HTML prototype (href="#" per prototype — routes not confirmed)
+       - No CRUD modal partials — read-only view (JS showAddButton: false;
+         IAsuViewService exposes no mutating operations)
+       - @Html.AntiForgeryToken() included for security compliance
+
+     CHANGED (Phase 14 — Pre-Build Security Review Gate):
+       - SECURITY FIX: renderAnimalTypeRows() replaced innerHTML concatenation for data cells
+         with DOM API (createElement + textContent) to prevent DOM-based XSS. item.animalType
+         originates from the database via AnimalDto; although JsonSerializer HTML-encodes the
+         JSON literal, JS string values are decoded on parse and unsafe if inserted via innerHTML.
+         Using textContent neutralises the sink regardless of database content.
+
+     PRESERVED:
+       - All HTML IDs and CSS classes from fps_asuview.html:
+         #animal-type-dropdown, #animal-type-input, #asu-animal-type-value,
+         #animal-type-panel, #animal-type-search, #animal-type-body,
+         #gridContainer_asuUsageList, #asuTotalDays, #asuTotalCost
+       - Breadcrumb row structure (empty inner content per prototype)
+       - govuk-heading-s sup_border-bottom h1 "ASU Data View"
+       - govuk-grid-column-two-thirds (grid area) + govuk-grid-column-one-third (side card)
+       - animalTypeRateLookup static lookup map preserved for client-side Daily Rate display
+       - All JS interaction logic from fps_asuview.js: dropdown open/close, search, row click,
+         grid refresh, summary update
+     DEFERRED / REQUIRES HUMAN REVIEW:
+       - TRANSFORMENGINE TODO: "PREVIEW All Large Animal Plans" href="#" — wire to real route
+         once backend target is confirmed (no route identified in this wrapper run)
+       - TRANSFORMENGINE TODO: "Email ASU Charge Rates" href="#" — wire to real route
+         once backend target is confirmed (no route identified in this wrapper run)
+       - TRANSFORMENGINE TODO: AsuViewController.Index() omits ExtraFilterMethod on DataGridConfig;
+         view patches gridManager.getAjaxParams as a workaround. If the controller is updated to
+         set ExtraFilterMethod = "getAsuViewExtraFilters", remove the manual patch below. -->
+
+@using Apha.FPSApps.Web.Models.Components.DataGrid
+@using System.Text.Json
+@model Apha.FPSApps.Web.Areas.FPS.Models.AsuViewViewModel
+
+@{
+    ViewData["Title"] = "ASU Data View";
+
+    // TRANSFORMENGINE: Serialize AnimalTypeList to a JSON array for the client-side dropdown.
+    // Each element has animalType (the Value from SelectListItem) only — Daily Rate is added
+    // client-side from the static animalTypeRateLookup map, matching fps_asuview.js behaviour.
+    var animalTypesJson = JsonSerializer.Serialize(
+        Model.AnimalTypeList.Select(item => new { animalType = item.Value }).ToList());
+}
+
+@* TRANSFORMENGINE: Anti-forgery token rendered for AJAX POST security compliance
+   (msaccess-dotnet-security-prebuild requirement). *@
+@Html.AntiForgeryToken()
+
+<main class="govuk-main-wrapper govuk-!-padding-top-0" id="main-content" role="main">
+    <div class="govuk-!-margin-bottom-5">
+
+        <!-- ── Breadcrumb row (mirrors fps_asuview.html .fps-sr-breadcrumb-row) ─────────── -->
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <div class="fps-sr-breadcrumb-row">
+                    <div class="fps-sr-breadcrumb-flex sup_context_row">
+                        <div class="govuk-grid-column-two-thirds govuk-!-padding-left-0">
+                            @* Breadcrumb content — empty in HTML prototype *@
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Page title ──────────────────────────────────────────────────────────── -->
+            <div class="govuk-grid-column-full">
+                <h1 class="govuk-grid-row govuk-heading-s sup_border-bottom govuk-!-margin-top-2 govuk-!-padding-bottom-2 govuk-!-padding-left-4">
+                    ASU Data View
+                </h1>
+            </div>
+        </div>
+
+        <!-- ── Main content row: two-thirds (grid area) + one-third (side card) ────────── -->
+        <div class="govuk-grid-row sup_margin_left_right_10">
+
+            <!-- ── Left column: Animal Type dropdown + DataGrid + summary row ──────────── -->
+            <div class="govuk-grid-column-two-thirds govuk-!-padding-left-0">
+
+                <!-- TRANSFORMENGINE: Custom multi-column Animal Type dropdown replicated from
+                     fps_asuview.html #animal-type-dropdown. The visible <input> (#animal-type-input)
+                     acts as the click trigger to open the panel; the hidden <input>
+                     (#asu-animal-type-value) holds the selected animal type string passed to
+                     LoadAsuViewGrid as the animalType POST parameter on every grid reload.
+                     Panel data populated from server-rendered Model.AnimalTypeList (serialised
+                     into the initAnimalTypeDropdownData JS variable below). -->
+                <div class="govuk-form-group govuk-!-margin-bottom-2 fps-test-inline-select asu-dropdown-wrapper"
+                     id="animal-type-dropdown">
+                    <label class="govuk-label govuk-!-font-weight-bold" for="animal-type-input">
+                        Choose an Animal Type
+                    </label>
+                    <input type="text"
+                           id="animal-type-input"
+                           value=""
+                           class="dropdown-input down-arrow-img govuk-input govuk-!-font-size-16"
+                           readonly
+                           aria-label="Choose an animal type" />
+                    <input type="hidden"
+                           id="asu-animal-type-value"
+                           name="animalTypeFilter"
+                           value="" />
+
+                    <div class="multicolumn-dropdown-panel" id="animal-type-panel" style="display:none;">
+                        <div class="search-box-wrapper">
+                            <input type="text"
+                                   class="search-box"
+                                   id="animal-type-search"
+                                   placeholder="Type to search animal type" />
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Animal Type</th>
+                                    <th>Daily Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody id="animal-type-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TRANSFORMENGINE: DataGrid container. The inner div ID "gridContainer_asuViewGrid"
+                     matches the GridId set in AsuViewController ("asuViewGrid") so that the _DataGrid
+                     partial's own AJAX reload targeting ('#gridContainer_' + GridId) works correctly.
+                     The outer "gridContainer_asuUsageList" div preserves the HTML prototype DOM shape. -->
+                <div id="gridContainer_asuUsageList">
+                    <div id="gridContainer_asuViewGrid">
+                        @await Html.PartialAsync("_DataGrid", Model.AsuViewGrid)
+                    </div>
+                </div>
+
+                <!-- TRANSFORMENGINE: Summary row — mirrors .asu-summary-row from fps_asuview.html.
+                     Initial values from Model (TotalAnimalDays = 0, TotalCost = 0 on first load).
+                     Refreshed via AJAX GET to GetTotals on animal type selection. -->
+                <div class="asu-summary-row govuk-!-margin-bottom-2">
+                    <div class="govuk-form-group govuk-!-margin-bottom-0">
+                        <label class="govuk-label govuk-label--s govuk-!-margin-bottom-0"
+                               for="asuTotalDays">
+                            Total Animal Days
+                        </label>
+                        <input type="text"
+                               id="asuTotalDays"
+                               class="govuk-input text-AlignRight pva-input-95"
+                               value="@Model.TotalAnimalDays"
+                               readonly
+                               aria-label="Total animal days" />
+                    </div>
+                    <div class="govuk-form-group govuk-!-margin-bottom-0">
+                        <label class="govuk-label govuk-label--s govuk-!-margin-bottom-0"
+                               for="asuTotalCost">
+                            Total Cost
+                        </label>
+                        <input type="text"
+                               id="asuTotalCost"
+                               class="govuk-input text-AlignRight pva-input-160"
+                               value="£@Model.TotalCost.ToString("N2")"
+                               readonly
+                               aria-label="Total cost" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Right column: side card ──────────────────────────────────────────────── -->
+            <div class="govuk-grid-column-one-third govuk-!-padding-right-0">
+                <div class="pva-summary-card asu-side-card">
+                    <div class="asu-side-actions">
+                        @* TRANSFORMENGINE TODO: href="#" — wire to real route once confirmed *@
+                        <a href="#"
+                           class="govuk-button asu-side-button"
+                           data-module="govuk-button"
+                           role="button">
+                            PREVIEW<br />All Large Animal Plans
+                        </a>
+                        @* TRANSFORMENGINE TODO: href="#" — wire to real route once confirmed *@
+                        <a href="#"
+                           class="govuk-button govuk-button--secondary asu-side-button"
+                           data-module="govuk-button"
+                           role="button">
+                            Email ASU Charge<br />Rates
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</main>
+
+@section Scripts {
+    <script>
+        'use strict';
+
+        // ── Server-rendered Animal Type data ────────────────────────────────────────────────
+        // TRANSFORMENGINE: initAnimalTypeDropdownData — server-rendered from Model.AnimalTypeList.
+        // Each item has {animalType} only; Daily Rate is added client-side from the static
+        // animalTypeRateLookup map below, matching fps_asuview.js getAnimalTypeDailyRate() pattern.
+        var initAnimalTypeDropdownData = @Html.Raw(animalTypesJson);
+
+        // ── Static Animal Type / Daily Rate lookup ─────────────────────────────────────────
+        // TRANSFORMENGINE: animalTypeRateLookup preserved verbatim from fps_asuview.js.
+        var animalTypeRateLookup = {
+            'b&b fixed price, avian': '£1.00',
+            'b&b fixed price, large animals': '£1.00',
+            'b&b fixed price, small animals': '£1.00',
+            'b&b fixed price, tse mice': '£1.00',
+            'b&b fixed price, tse mice (breeding)': '£1.00',
+            'cow, field': '£7.68',
+            'cow, high security': '£696.76',
+            'cow, low security': '£22.22',
+            'cow, medium security': '£32.87',
+            'eggs (chicken) - hatching': '£1.10',
+            'ferrets - cages (1 room)': '£305.19',
+            'ferrets, medium security': '£120.28',
+            'goat, field': '£5.30',
+            'goat, low security': '£7.44',
+            'goat, medium security': '£11.48',
+            'goats, high security': '£696.76',
+            'guinea pig, high - per room': '£251.76',
+            'guinea pig, low - per room': '£43.21',
+            'guinea pig, medium - per room': '£43.21',
+            'horse, field': '£12.90',
+            'horse, high security': '£696.76',
+            'horse, low security': '£22.22',
+            'poultry, high - per room': '-',
+            'eggs [chicken] - hatching': '£1.10',
+            'b and b fixed price, avian': '£1.00',
+            'b and b fixed price, small animals': '£1.00'
+        };
+
+        // ── Dropdown state ─────────────────────────────────────────────────────────────────
+        var animalTypeDropdownData = [];
+
+        // TRANSFORMENGINE: normalizeAnimalTypeLabel + getAnimalTypeDailyRate preserved verbatim
+        // from fps_asuview.js — used to look up the Daily Rate in the dropdown panel table.
+        function normalizeAnimalTypeLabel(value) {
+            return String(value || '').trim().toLowerCase();
+        }
+
+        function getAnimalTypeDailyRate(animalType) {
+            var key = normalizeAnimalTypeLabel(animalType);
+            return animalTypeRateLookup[key] || '-';
+        }
+
+        // ── ExtraFilter function — called by patched gridManager.getAjaxParams() ──────────
+        // TRANSFORMENGINE: getAsuViewExtraFilters supplies animalType to LoadAsuViewGrid on every
+        // grid reload. Exported to window so it would also work if the controller is later updated
+        // to set ExtraFilterMethod = "getAsuViewExtraFilters" in the DataGridConfig.
+        function getAsuViewExtraFilters() {
+            return { animalType: getCurrentAnimalType() };
+        }
+        window['getAsuViewExtraFilters'] = getAsuViewExtraFilters;
+
+        // ── Animal Type value accessors ────────────────────────────────────────────────────
+        // TRANSFORMENGINE: getCurrentAnimalType / setSelectedAnimalType preserved verbatim from
+        // fps_asuview.js — drive the #asu-animal-type-value hidden input used by getAsuViewExtraFilters.
+        function getCurrentAnimalType() {
+            var hidden = document.getElementById('asu-animal-type-value');
+            return hidden ? hidden.value : '';
+        }
+
+        function setSelectedAnimalType(value) {
+            var input  = document.getElementById('animal-type-input');
+            var hidden = document.getElementById('asu-animal-type-value');
+            if (!input || !hidden) { return; }
+            if (!value) {
+                input.value  = '';
+                hidden.value = '';
+                return;
+            }
+            input.value  = value;
+            hidden.value = value;
+        }
+
+        // ── Dropdown panel rendering ───────────────────────────────────────────────────────
+        // TRANSFORMENGINE: renderAnimalTypeRows preserved verbatim from fps_asuview.js.
+        function renderAnimalTypeRows(filterText) {
+            var tbody  = document.getElementById('animal-type-body');
+            var search = String(filterText || '').trim().toLowerCase();
+            if (!tbody) { return; }
+
+            var rows = animalTypeDropdownData.filter(function (item) {
+                return item.animalType.toLowerCase().indexOf(search) !== -1 ||
+                       item.dailyRate.toLowerCase().indexOf(search) !== -1;
+            });
+
+            tbody.innerHTML = '';
+
+            rows.forEach(function (item) {
+                var tr = document.createElement('tr');
+
+                // TRANSFORMENGINE: SECURITY FIX (Phase 14) — use DOM API + textContent instead
+                // of innerHTML concatenation. item.animalType comes from the database via AnimalDto;
+                // textContent prevents DOM-based XSS regardless of stored value content.
+                var tdType = document.createElement('td');
+                tdType.textContent = item.animalType;
+                var tdRate = document.createElement('td');
+                tdRate.textContent = item.dailyRate;
+                tr.appendChild(tdType);
+                tr.appendChild(tdRate);
+
+                tr.addEventListener('click', function () {
+                    var panel = document.getElementById('animal-type-panel');
+                    setSelectedAnimalType(item.animalType);
+                    if (panel) { panel.style.display = 'none'; }
+                    refreshAsuGrid();
+                });
+                tbody.appendChild(tr);
+            });
+
+            if (!rows.length) {
+                var emptyRow = document.createElement('tr');
+                emptyRow.innerHTML = '<td colspan="2">No items found</td>';
+                tbody.appendChild(emptyRow);
+            }
+        }
+
+        // ── Dropdown panel interactions ────────────────────────────────────────────────────
+        // TRANSFORMENGINE: initializeAnimalTypeDropdown preserved verbatim from fps_asuview.js.
+        function initializeAnimalTypeDropdown() {
+            var wrapper = document.getElementById('animal-type-dropdown');
+            var input   = document.getElementById('animal-type-input');
+            var panel   = document.getElementById('animal-type-panel');
+            var search  = document.getElementById('animal-type-search');
+            if (!wrapper || !input || !panel || !search) { return; }
+
+            function openPanel() {
+                panel.style.display = 'block';
+                panel.style.width   = Math.max(input.offsetWidth, 560) + 'px';
+                search.value        = '';
+                renderAnimalTypeRows('');
+                search.focus();
+            }
+
+            input.addEventListener('click', function (event) {
+                event.stopPropagation();
+                openPanel();
+            });
+
+            input.addEventListener('keydown', function (event) {
+                if (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    openPanel();
+                }
+            });
+
+            search.addEventListener('input', function (event) {
+                renderAnimalTypeRows(event.target.value);
+            });
+
+            wrapper.addEventListener('click', function (event) {
+                event.stopPropagation();
+            });
+
+            document.addEventListener('click', function () {
+                panel.style.display = 'none';
+            });
+        }
+
+        // ── Dropdown data initialisation from server-rendered data ────────────────────────
+        // TRANSFORMENGINE: populateAnimalTypeDropdownData — replaces populateAnimalTypeOptions()
+        // from fps_asuview.js. Populates animalTypeDropdownData from the server-rendered
+        // initAnimalTypeDropdownData array and combines each entry with its Daily Rate from
+        // the static animalTypeRateLookup map.
+        function populateAnimalTypeDropdownData(items) {
+            animalTypeDropdownData = (items || []).map(function (item) {
+                return {
+                    animalType: item.animalType || '',
+                    dailyRate:  getAnimalTypeDailyRate(item.animalType || '')
+                };
+            }).filter(function (item) {
+                return item.animalType !== '';
+            });
+
+            // Keep dropdown blank on load; data appears only after user selection (per prototype)
+            setSelectedAnimalType('');
+            renderAnimalTypeRows('');
+        }
+
+        // ── Format money ───────────────────────────────────────────────────────────────────
+        // TRANSFORMENGINE: formatMoney preserved verbatim from fps_asuview.js.
+        function formatMoney(value) {
+            return '£' + Number(value).toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        // ── Summary row update ─────────────────────────────────────────────────────────────
+        // TRANSFORMENGINE: updateAsuSummary — replaces client-side summing in fps_asuview.js.
+        // Calls GET /FPS/AsuView/GetTotals with the current animalType and updates
+        // #asuTotalDays and #asuTotalCost, mirroring updateAsuSummary() in fps_asuview.js.
+        function updateAsuSummary() {
+            var animalType = getCurrentAnimalType();
+            if (!animalType) {
+                document.getElementById('asuTotalDays').value = '0';
+                document.getElementById('asuTotalCost').value = formatMoney(0);
+                return;
+            }
+            $.get('@Url.Action("GetTotals", "AsuView", new { area = "FPS" })',
+                { animalType: animalType },
+                function (result) {
+                    if (result && result.success) {
+                        document.getElementById('asuTotalDays').value = result.totalAnimalDays;
+                        document.getElementById('asuTotalCost').value = formatMoney(result.totalCost);
+                    }
+                }
+            );
+        }
+
+        // ── Grid refresh ───────────────────────────────────────────────────────────────────
+        // TRANSFORMENGINE: refreshAsuGrid — replaces refreshAsuGrid() in fps_asuview.js.
+        // Uses gm.reloadGrid({ page: 1 }) — NOT gm.reload() (does not exist on gridManager).
+        // Also calls updateAsuSummary() to refresh the totals row after the grid reload.
+        function refreshAsuGrid() {
+            var gm = window['gridManager_asuViewGrid'];
+            if (gm) { gm.reloadGrid({ page: 1 }); }
+            updateAsuSummary();
+        }
+
+        // ── gridManager patch — inject animalType into every AJAX reload ──────────────────
+        // TRANSFORMENGINE: AsuViewController.Index() deliberately omits ExtraFilterMethod on
+        // the DataGridConfig (Phase 11 note: "filter state managed via the animalType hidden
+        // input"). The _DataGrid partial's built-in ExtraFilterMethod wiring therefore does not
+        // run. To wire animalType into every grid reload, the view patches getAjaxParams on the
+        // gridManager after _DataGrid registers it on window. The patch wraps the original method,
+        // calls it, and injects the current animalType key before returning params.
+        // Remove this patch and add ExtraFilterMethod = "getAsuViewExtraFilters" to the controller
+        // DataGridConfig when the Phase 11 controller is revisited.
+        function patchAsuGridManager() {
+            var gm = window['gridManager_asuViewGrid'];
+            if (!gm) { return; }
+            var originalGetAjaxParams = gm.getAjaxParams.bind(gm);
+            gm.getAjaxParams = function (customParams) {
+                var params = originalGetAjaxParams(customParams);
+                params.animalType = getCurrentAnimalType();
+                return params;
+            };
+        }
+
+        // ── DOM ready init ─────────────────────────────────────────────────────────────────
+        // TRANSFORMENGINE: DOMContentLoaded — mirrors the DOMContentLoaded handler in
+        // fps_asuview.js: populate dropdown data, initialize dropdown interactions, patch
+        // the gridManager. Grid starts empty (no animal type selected on load).
+        document.addEventListener('DOMContentLoaded', function () {
+            populateAnimalTypeDropdownData(initAnimalTypeDropdownData);
+            initializeAnimalTypeDropdown();
+            patchAsuGridManager();
+        });
+    </script>
+}

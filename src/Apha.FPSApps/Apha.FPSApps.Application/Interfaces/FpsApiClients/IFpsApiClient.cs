@@ -30,5 +30,7 @@ namespace Apha.FPSApps.Application.Interfaces.FpsApiClients
         IFpsUserApiClient FpsUserPermission { get; }
         // TRANSFORMENGINE: FpsGrade added
         IFpsGradeApiClient FpsGrade { get; }
+        // TRANSFORMENGINE: FpsAsuView added — Phase 7 ASU View resource family
+        IFpsAsuViewApiClient FpsAsuView { get; }
     }
 }

@@ -1,3 +1,26 @@
+/*
+ * TRANSFORMENGINE MIGRATION — RequestMapper.cs
+ * Pattern  : stack-upgrade/msaccess-frm-to-dotnet10-mvc-e2e  Phase 5 — API Layer - Controller + RequestMapper + DI (Steps 8-9)
+ * Migrated : 2026-07-02
+ *
+ * CHANGED:
+ *   - Added AnimalCostViewDto -> AsuViewRes mapping with ForMember overrides:
+ *       Id        <- IndCounter
+ *       Project   <- JobCode
+ *       AnimalDays <- TotalDays
+ *       Cost      <- AnimalCost (decimal? -> decimal with GetValueOrDefault)
+ *   - Added PaginatedResult<AnimalCostViewDto> -> PaginationRes<AsuViewRes> mapping to support
+ *     the GetAsuViewAsync controller action that returns PaginationRes<AsuViewRes>
+ *
+ * PRESERVED:
+ *   - All existing CreateMap entries and their ForMember overrides
+ *   - Generic pagination mappings (PaginationReq <-> QueryParameters, PaginationRes <-> PaginatedResult)
+ *   - All comment blocks documenting prior phase mappings
+ *
+ * DEFERRED / REQUIRES HUMAN REVIEW:
+ *   - TRANSFORMENGINE TODO: confirm Cost field mapping (AnimalCost decimal? -> decimal) is
+ *     correct once DB column nullability is verified in Phase 14 security/build gate
+ */
 using Apha.Common.Contracts;
 using Apha.Common.Contracts.FPS;
 using Apha.FPS.Application.Dtos;
@@ -29,6 +52,20 @@ namespace Apha.FPS.Api.Mappings
             CreateMap<AnimalReq, AnimalDto>().ReverseMap();
             CreateMap<AnimalRequestDto, AnimalRequestReq>().ReverseMap();
             CreateMap<AnimalRequestDto, AnimalRequestRes>().ReverseMap();
+
+            // TRANSFORMENGINE: AsuView mappings — Phase 5 (AnimalController.GetAsuViewAsync)
+            //   AnimalCostViewDto fields do not align 1:1 with AsuViewRes; ForMember overrides required:
+            //     Id        <- IndCounter  (view's row key)
+            //     Project   <- JobCode     (display column in fps_asuview.js grid: 'project')
+            //     AnimalDays <- TotalDays  (total days per project row from AnimalCostView)
+            //     Cost      <- AnimalCost  (decimal? nullable unwrapped to decimal with GetValueOrDefault)
+            //   AnimalType maps by convention (same property name on both types)
+            CreateMap<AnimalCostViewDto, AsuViewRes>()
+                .ForMember(d => d.Id, o => o.MapFrom(s => s.IndCounter))
+                .ForMember(d => d.Project, o => o.MapFrom(s => s.JobCode))
+                .ForMember(d => d.AnimalDays, o => o.MapFrom(s => s.TotalDays))
+                .ForMember(d => d.Cost, o => o.MapFrom(s => s.AnimalCost.GetValueOrDefault()));
+            CreateMap<PaginatedResult<AnimalCostViewDto>, PaginationRes<AsuViewRes>>();
             CreateMap<EmployeeDto, EmployeeReq>().ReverseMap();
             CreateMap<EmployeeDto, EmployeeRes>().ReverseMap();
             CreateMap<ManagerDto, ManagerRes>().ReverseMap();

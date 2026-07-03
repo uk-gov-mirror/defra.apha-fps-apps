@@ -1,4 +1,35 @@
-﻿using Apha.FPS.Core.Entities;
+﻿/*
+ * TRANSFORMENGINE MIGRATION — AnimalRepository.cs
+ * Pattern  : stack-upgrade/msaccess-frm-to-dotnet10-mvc-e2e  Phase 4 — DataAccess Layer - DbContext + Map Files + Repository
+ * Migrated : 2026-07-02
+ *
+ * CHANGED:
+ *   - Added GetAnimalCostByAnimalTypeAsync(PaginationParameters<string> query, string animalType)
+ *     to implement IAnimalRepository.GetAnimalCostByAnimalTypeAsync added in Phase 2
+ *   - Added BuildAnimalCostByAnimalTypeQuery(string animalType) private helper that mirrors
+ *     BuildAnimalCostQuery but discriminates on AnimalType instead of JobCode; used by ASU View
+ *
+ * PRESERVED:
+ *   - All existing Animal Master CRUD methods: GetAllAnimalsAsync (both overloads),
+ *     GetAnimalByIdAsync, AddAnimalAsync, UpdateAnimalAsync, DeleteAnimalAsync
+ *   - All existing Animal Cost methods: GetAnimalCostAsync, GetTotalAnimalCostAsync,
+ *     GetAnimalCostViewByIdAsync, GetAnimalRateByIdAsync, AddAnimalCostAsync,
+ *     UpdateAnimalCostAsync, DeleteJobAnimalCostAsync
+ *   - All private helper methods: BuildAnimalCostQuery, ApplyAnimalCostFilter, ApplySorting,
+ *     ApplySortingByProperty, ApplyOrder<T>, ApplyAnimalMasterSorting,
+ *     ApplyAnimalSortingByProperty, ApplyAnimalMasterOrder<T>, ApplyAnimalFilter,
+ *     CreateAnimalRequestLogEntry
+ *   - Transaction strategy pattern (CreateExecutionStrategy + BeginTransactionAsync) on all write ops
+ *   - AsNoTracking pattern on all read ops
+ *   - IFpsRequestContext injection for FpsYear and UserEmailId scoping
+ *
+ * DEFERRED / REQUIRES HUMAN REVIEW:
+ *   - TRANSFORMENGINE TODO: IFpsRequestContext.UserEmailId case-sensitivity — BuildAnimalCostQuery
+ *     and BuildAnimalCostByAnimalTypeQuery use .ToLower() comparison against stored UserEmail;
+ *     verify email values are always persisted in lowercase in the database
+ */
+
+using Apha.FPS.Core.Entities;
 using Apha.FPS.Core.Interfaces;
 using Apha.FPS.Core.Pagination;
 using Apha.FPS.DataAccess.Data;
@@ -261,6 +292,53 @@ namespace Apha.FPS.DataAccess.Repositories
                     throw;
                 }
             });
+        }
+
+        // TRANSFORMENGINE: GetAnimalCostByAnimalTypeAsync — new method required for ASU View;
+        // filters AnimalCostView rows by animalType rather than jobCode, mirroring GetAnimalCostAsync.
+        // Added here (Phase 4 DataAccess) to keep the build green after the Phase 2 interface update.
+        public async Task<PagedData<AnimalCostView>> GetAnimalCostByAnimalTypeAsync(PaginationParameters<string> query, string animalType)
+        {
+            var queryAnimalCost = BuildAnimalCostByAnimalTypeQuery(animalType);
+
+            queryAnimalCost = ApplyAnimalCostFilter(queryAnimalCost, query.Filter);
+
+            queryAnimalCost = (IQueryable<AnimalCostView>)ApplySorting(queryAnimalCost, query.SortBy, query.Descending);
+
+            var result = await queryAnimalCost.ToListAsync();
+
+            var animalCostViews = result.Select(e =>
+            {
+                e.AnimalCost = (decimal)e.NumberOfDays * (decimal)e.NumberOfAnimals * (e.DailyRate ?? 0m);
+                return e;
+            }).ToList();
+
+            return base.ApplyPaging(animalCostViews, query.Page, query.PageSize);
+        }
+
+        // TRANSFORMENGINE: BuildAnimalCostByAnimalTypeQuery — mirrors BuildAnimalCostQuery but
+        // discriminates on animalReq.AnimalType instead of animalReq.JobCode; used by ASU View.
+        private IQueryable<AnimalCostView> BuildAnimalCostByAnimalTypeQuery(string animalType)
+        {
+            return from animalReq in _dbContext.AnimalRequestViews
+                   join animal in _dbContext.Animals on animalReq.AnimalType equals animal.AnimalType
+                   join project in _dbContext.ProjectViews on
+                          new { animalReq.JobCode, animalReq.UserId } equals new { JobCode = project.ParentProject, project.UserId }
+                   let dailyRate = (project.IsDefraProject == -1 ? animal.DefraDailyRate : animal.DailyRate)
+                   where animalReq.AnimalType == animalType
+                       && animalReq.UserEmail != null
+                       && animalReq.UserEmail.ToLower() == _requestContext.UserEmailId
+                   select new AnimalCostView
+                   {
+                       IndCounter = animalReq.IndCounter,
+                       Programme = project.Program,
+                       AnimalType = animalReq.AnimalType,
+                       JobCode = animalReq.JobCode,
+                       NumberOfDays = animalReq.NumberOfDays,
+                       NumberOfAnimals = animalReq.NumberOfAnimals,
+                       DailyRate = dailyRate,
+                       TotalDays = animalReq.NumberOfAnimals * animalReq.NumberOfDays
+                   };
         }
 
         private AnimalRequestLog CreateAnimalRequestLogEntry(AnimalRequest animalReq, string insertDelete)
