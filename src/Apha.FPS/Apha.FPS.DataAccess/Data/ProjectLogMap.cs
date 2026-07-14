@@ -8,19 +8,14 @@ namespace Apha.FPS.DataAccess.Data
     {
         public void Configure(EntityTypeBuilder<ProjectLog> entity)
         {
-            entity.HasKey(e => e.SequenceNo).HasName("pk_project_log");
+            entity.HasKey(e => new { e.SequenceNo, e.FpsYear }).HasName("pk_project_log");
 
             entity.ToTable("project_log", "fps");
 
-            entity.Property(e => e.SequenceNo).HasColumnName("sequenceno");
+            entity.Property(e => e.SequenceNo)
+                .ValueGeneratedOnAdd()
+                .HasColumnName("sequenceno");
             entity.Property(e => e.ParentProject).HasMaxLength(20).HasColumnName("parentproject");
-            entity.Property(e => e.InsertDelete).HasMaxLength(2).HasColumnName("insert_delete");
-            entity.Property(e => e.DateTime)
-                .HasColumnType("timestamp without time zone")
-                .HasColumnName("date_time");
-            entity.Property(e => e.UserId).HasMaxLength(255).HasColumnName("user_id");
-            entity.Property(e => e.JobCode).HasMaxLength(20).HasColumnName("jobcode");
-            entity.Property(e => e.FpsYear).HasColumnName("fpsyear");
             entity.Property(e => e.ProjectTitle).HasColumnName("projecttitle");
             entity.Property(e => e.Program).HasColumnName("program");
             entity.Property(e => e.Customer).HasColumnName("customer");
@@ -53,12 +48,22 @@ namespace Apha.FPS.DataAccess.Data
             entity.Property(e => e.Comments).HasColumnName("comments");
             entity.Property(e => e.CarryOver).HasColumnName("carryover");
             entity.Property(e => e.CarryOverSeed).HasColumnName("carryoverseed");
+            entity.Property(e => e.DateTime)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("date_time");
+            entity.Property(e => e.UserId).HasMaxLength(255).HasColumnName("user_id");
+            entity.Property(e => e.InsertDelete)
+                .HasMaxLength(2)
+                .IsFixedLength()
+                .HasColumnName("insert_delete");
+            entity.Property(e => e.JobCode).HasMaxLength(20).HasColumnName("jobcode");
             entity.Property(e => e.IsDefraProject).HasColumnName("isdefraproject");
             entity.Property(e => e.CostCentre).HasColumnName("costcentre");
             entity.Property(e => e.OracleProjectCode).HasColumnName("oracleprojectcode");
             entity.Property(e => e.SubAccountCode).HasColumnName("subaccountcode");
             entity.Property(e => e.ProjectGroup).HasColumnName("projectgroup");
             entity.Property(e => e.IncomeAccountCode).HasColumnName("incomeaccountcode");
+            entity.Property(e => e.FpsYear).HasColumnName("fpsyear");
         }
     }
 }

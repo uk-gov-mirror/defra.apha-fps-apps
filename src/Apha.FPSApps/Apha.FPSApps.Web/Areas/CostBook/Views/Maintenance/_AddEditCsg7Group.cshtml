@@ -1,0 +1,107 @@
+@model Apha.FPSApps.Web.Areas.CostBook.Models.Csg7GroupItem
+
+@{
+    
+    var isEditMode = !string.IsNullOrEmpty(Model?.Csg7Group);
+    var modalTitle  = isEditMode ? "Edit CSG7 Group" : "Add CSG7 Group";
+}
+
+<div class="modal-header">
+    <h5 class="modal-title">@modalTitle</h5>
+    <button type="button" class="btn-close" style="color:red;" onclick="closeModal()" aria-label="Close">&#x2715;</button>
+</div>
+<div class="modal-body">
+    <p class="app-mandatory-note" style="text-align:right;">
+        <span aria-hidden="true" class="app-required">*</span> Mandatory fields
+    </p>
+    <form class="govuk-grid-column-full" id="formTblCsg7" novalidate>
+        @Html.AntiForgeryToken()
+
+       
+        <input type="hidden" id="hdnCsg7IsEdit" value="@isEditMode.ToString().ToLower()" />
+        <input type="hidden" id="hdnCsg7Original" value="@Model?.Csg7Group" />
+
+        
+        <div id="formTblCsg7-db-error" class="govuk-error-summary maint-db-error" role="alert"
+             aria-labelledby="formTblCsg7-db-error-title" hidden>
+            <h2 class="govuk-error-summary__title" id="formTblCsg7-db-error-title">There is a problem</h2>
+            <div class="govuk-error-summary__body">
+                <p id="formTblCsg7-db-error-msg" class="govuk-body"></p>
+            </div>
+        </div>
+
+       
+        <div class="govuk-form-group sup_margin_bottom_10" id="fg-csg7-group">
+            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16"
+                   for="modal-csg7-group">
+                CSG7 Group:
+                <span aria-hidden="true" class="app-required">*</span>
+            </label>
+            @if (isEditMode)
+            {
+                <input class="govuk-input govuk-!-font-size-16"
+                       id="modal-csg7-group"
+                       name="csg7Group"
+                       type="text"
+                       value="@Model!.Csg7Group"
+                       maxlength="15"
+                       readonly
+                       aria-describedby="modal-csg7-group-error" />
+            }
+            else
+            {
+                <input class="govuk-input govuk-!-font-size-16"
+                       id="modal-csg7-group"
+                       name="csg7Group"
+                       type="text"
+                       value=""
+                       maxlength="15"
+                       required aria-required="true"
+                       aria-describedby="modal-csg7-group-error" />
+            }
+            <p id="modal-csg7-group-error" class="govuk-error-message" hidden>
+                <span class="govuk-visually-hidden">Error:</span> Enter a CSG7 group name
+            </p>
+            <span data-valmsg-for="csg7Group" class="govuk-error-message field-validation-valid" style="display:none;"></span>
+        </div>
+
+       
+        <div class="govuk-form-group sup_margin_bottom_10">
+            <div class="govuk-checkboxes govuk-checkboxes--small" data-module="govuk-checkboxes">
+                <div class="govuk-checkboxes__item">
+                    <input class="govuk-checkboxes__input govuk-!-font-size-16"
+                           id="modal-csg7-useinflation"
+                           name="useInflation"
+                           type="checkbox"
+                           @(Model != null && Model.UseInflation ? "checked" : "") />
+                    <label class="govuk-label govuk-checkboxes__label govuk-!-font-size-16 sup_label_auto_width"
+                           for="modal-csg7-useinflation">
+                        Use Inflation?
+                    </label>
+                </div>
+            </div>
+        </div>
+
+    </form>
+</div>
+<div class="modal-footer">
+    <button type="button" class="govuk-button govuk-button--secondary sup_margin_0"
+            data-module="govuk-button" onclick="closeModal()">Cancel</button>
+    <div>
+        
+        @if (!isEditMode)
+        {
+            <button type="button" class="govuk-button sup_margin_0"
+                    data-module="govuk-button"
+                    id="tblCsg7SaveBtn"
+                    onclick="saveCsg7Group()">Save</button>
+        }
+        else
+        {
+            <button type="button" class="govuk-button sup_margin_0"
+                    data-module="govuk-button"
+                    id="tblCsg7UpdateBtn"
+                    onclick="saveCsg7Group()">Update</button>
+        }
+    </div>
+</div>

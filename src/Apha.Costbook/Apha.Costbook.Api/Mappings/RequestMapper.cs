@@ -72,5 +72,22 @@ public class RequestMapper : Profile
         CreateMap<ProjectCostsRowDto, ProjectCostsRowRes>().ReverseMap();
         CreateMap<ProjectCostsPivotDto, ProjectCostsPivotRes>().ReverseMap();
         CreateMap<ProjectYearCostSummaryDto, ProjectYearCostSummaryRes>().ReverseMap();
+
+        // ── Maintenance: CapsStaff (Tab 5) ───────────────────────────────────────
+        CreateMap<StaffDto, StaffRes>().ReverseMap();
+        CreateMap<StaffDto, StaffReq>().ReverseMap();
+
+        // ── Maintenance: AccountGroup / CSG7 (Tab 3) ────────────────────────────
+        CreateMap<AccountGroupDto, AccountGroupRes>().ReverseMap();
+        CreateMap<AccountGroupDto, AccountGroupReq>().ReverseMap();
+
+        // ── Maintenance: Settings (Tabs 1 + 4) ──────────────────────────────────
+        CreateMap<MaintenanceSettingsDto, MaintenanceSettingsRes>().ReverseMap();
+        CreateMap<MaintenanceSettingsDto, MaintenanceSettingsReq>().ReverseMap();
+
+        // ── Maintenance: AccountCategory (Tab 2) ─────────────────────────────────
+        CreateMap<AccountCategoryMaintenanceDto, AccountCategoryMaintenanceRes>().ReverseMap();
+        CreateMap<AccountCategoryMaintenanceDto, AccountCategoryMaintenanceReq>().ReverseMap();
+
     }
 }

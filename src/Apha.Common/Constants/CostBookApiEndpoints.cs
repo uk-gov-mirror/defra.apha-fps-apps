@@ -65,6 +65,30 @@ namespace Apha.Common.Constants
 
         // Settings
         public const string GetSettingValueById = "api/v1/settings/getvaluebyid";
-        
+        // Maintenance – Settings (Tabs 1 + 4)
+        public const string GetMaintenanceSettings = "api/v1/maintenance/settings";
+        public const string UpdateMaintenanceSettings = "api/v1/maintenance/settings";
+
+        // Maintenance – Account Categories (Tab 2)
+        public const string GetMaintenanceAccountCategories = "api/v1/maintenance/account-categories";
+        public const string GetPaginatedMaintenanceAccountCategories = "api/v1/maintenance/account-categories/paginated";
+        public const string UpdateMaintenanceAccountCategory = "api/v1/maintenance/account-categories/{0}";
+
+        // Maintenance – CapsStaff (Tab 5)
+        public const string GetAllCapsStaff = "api/v1/capsstaff";
+        public const string GetPaginatedCapsStaff = "api/v1/capsstaff/paginated";
+        public const string GetCapsStaffByMNumber = "api/v1/capsstaff/{0}";
+        public const string AddCapsStaff = "api/v1/capsstaff";
+        public const string UpdateCapsStaff = "api/v1/capsstaff/{0}";
+        public const string DeleteCapsStaff = "api/v1/capsstaff/{0}";
+
+        // Maintenance – Account Groups / CSG7 (Tab 3)
+        public const string GetAllAccountGroups = "api/v1/accountgroup";
+        public const string GetPaginatedAccountGroups = "api/v1/accountgroup/paginated";
+        public const string GetAccountGroupByCsg7 = "api/v1/accountgroup/{0}";
+        public const string AddAccountGroup = "api/v1/accountgroup";
+        public const string UpdateAccountGroup = "api/v1/accountgroup/{0}";
+        public const string DeleteAccountGroup = "api/v1/accountgroup/{0}";
+
     }
 }

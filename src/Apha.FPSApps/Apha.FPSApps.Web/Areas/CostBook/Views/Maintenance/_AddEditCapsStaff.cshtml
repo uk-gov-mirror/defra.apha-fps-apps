@@ -1,0 +1,110 @@
+
+@model Apha.FPSApps.Web.Areas.CostBook.Models.CapsStaffItem
+
+@{    
+    var isEditMode = !string.IsNullOrEmpty(Model?.MNumber);
+    var modalTitle  = isEditMode ? "Edit Staff Member" : "Add Staff Member";
+}
+
+<div class="modal-header">
+    <h5 class="modal-title">@modalTitle</h5>
+    <button type="button" class="btn-close" style="color:red;" onclick="closeModal()" aria-label="Close">&#x2715;</button>
+</div>
+<div class="modal-body">
+    <p class="app-mandatory-note" style="text-align:right;">
+        <span aria-hidden="true" class="app-required">*</span> Mandatory fields
+    </p>
+    <form class="govuk-grid-column-full" id="formTblCapsStaff" novalidate>
+        @Html.AntiForgeryToken()
+        <input type="hidden" id="hdnCapsStaffIsEdit" value="@isEditMode.ToString().ToLower()" />
+        <input type="hidden" id="hdnCapsStaffOriginal" value="@Model?.MNumber" />
+
+        
+        <div id="formTblCapsStaff-db-error" class="govuk-error-summary maint-db-error" role="alert"
+             aria-labelledby="formTblCapsStaff-db-error-title" hidden>
+            <h2 class="govuk-error-summary__title" id="formTblCapsStaff-db-error-title">There is a problem</h2>
+            <div class="govuk-error-summary__body">
+                <p id="formTblCapsStaff-db-error-msg" class="govuk-body"></p>
+            </div>
+        </div>
+
+        <div class="govuk-form-group sup_margin_bottom_10" id="fg-capsstaff-mnumber">
+            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16"
+                   for="modal-capsstaff-mnumber">
+                mNumber:
+                <span aria-hidden="true" class="app-required">*</span>
+            </label>
+            @if (isEditMode)
+            {
+                <input class="govuk-input govuk-!-font-size-16"
+                       id="modal-capsstaff-mnumber"
+                       name="mNumber"
+                       type="text"
+                       value="@Model!.MNumber"
+                       maxlength="50"
+                       disabled
+                       aria-describedby="modal-capsstaff-mnumber-error" />
+            }
+            else
+            {
+                <input class="govuk-input govuk-!-font-size-16"
+                       id="modal-capsstaff-mnumber"
+                       name="mNumber"
+                       type="text"
+                       value=""
+                       maxlength="50"
+                       required aria-required="true"
+                       aria-describedby="modal-capsstaff-mnumber-error" />
+            }
+            <p id="modal-capsstaff-mnumber-error" class="govuk-error-message" hidden>
+                <span class="govuk-visually-hidden">Error:</span> Enter an mNumber
+            </p>
+            <span data-valmsg-for="mNumber" class="govuk-error-message field-validation-valid" style="display:none;"></span>
+        </div>
+
+        <div class="govuk-form-group sup_margin_bottom_10" id="fg-capsstaff-name">
+            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16"
+                   for="modal-capsstaff-name">
+                Name:
+                <span aria-hidden="true" class="app-required">*</span>
+            </label>
+            <input class="govuk-input govuk-!-font-size-16"
+                   id="modal-capsstaff-name"
+                   name="name"
+                   type="text"
+                   value="@Model?.Name"
+                   maxlength="50"
+                   required aria-required="true"
+                   aria-describedby="modal-capsstaff-name-error" />
+            <p id="modal-capsstaff-name-error" class="govuk-error-message" hidden>
+                <span class="govuk-visually-hidden">Error:</span> Enter a name
+            </p>
+            <span data-valmsg-for="name" class="govuk-error-message field-validation-valid" style="display:none;"></span>
+        </div>
+
+       
+        <input type="hidden" name="dt2Number" value="@Model?.Dt2Number" />
+
+    </form>
+</div>
+<div class="modal-footer">
+    <button type="button" class="govuk-button govuk-button--secondary sup_margin_0"
+            data-module="govuk-button" onclick="closeModal()">Cancel</button>
+    <div>
+       
+        @if (!isEditMode)
+        {
+            <button type="button" class="govuk-button sup_margin_0"
+                    data-module="govuk-button"
+                    id="tblCapsStaffSaveBtn"
+                    onclick="saveCapsStaff()">Save</button>
+        }
+        else
+        {
+            <button type="button" class="govuk-button sup_margin_0"
+                    data-module="govuk-button"
+                    id="tblCapsStaffUpdateBtn"
+                    onclick="saveCapsStaff()">Update</button>
+        }
+    </div>
+</div>

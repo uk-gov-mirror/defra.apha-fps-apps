@@ -327,6 +327,27 @@
     background-color: #f3f2f1;
 }
 
+/* ── Column group header row ──────────────────────────────────────────────── */
+.grid-column-group-row th {
+    padding: 4px 6px;
+    font-size: 13px;
+    font-weight: 700;
+    border-bottom: 2px solid #1d70b8;
+    vertical-align: bottom;
+    white-space: nowrap;
+}
+
+.grid-column-group-cell--labelled {
+    background-color: #e8f0fe;
+    color: #0b0c0c;
+    text-align: center;
+    border-left: 2px solid #1d70b8;
+    border-right: 2px solid #1d70b8;
+}
+
+.grid-column-group-cell--empty {
+    background-color: transparent;
+    border: none;
 /* Disabled pagination links */
 .pagination--disabled,
 .pagination--disabled:hover,

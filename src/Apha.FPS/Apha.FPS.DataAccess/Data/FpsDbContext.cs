@@ -105,6 +105,7 @@ namespace Apha.FPS.DataAccess.Data
         public virtual DbSet<Bid> Bids { get; set; }
         public virtual DbSet<BidView> BidViews { get; set; }
         public virtual DbSet<Purchase> Purchases { get; set; }
+        public virtual DbSet<ContributionSummaryView> VQryFrmTimeSellerPcViews { get; set; }
         public virtual DbSet<TotalBusinessOverheads> TotalBusinessOverheads { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -315,6 +316,9 @@ namespace Apha.FPS.DataAccess.Data
 
             modelBuilder.ApplyConfiguration(new PurchaseMap());
             modelBuilder.Entity<Purchase>().HasQueryFilter(e => e.FpsYear == FilterFpsYear);
+
+            modelBuilder.ApplyConfiguration(new ContributionSummaryViewMap());
+            modelBuilder.Entity<ContributionSummaryView>().HasQueryFilter(e => e.FpsYear == FilterFpsYear);
 
             modelBuilder.ApplyConfiguration(new MonthlyTimeMap());
             modelBuilder.Entity<MonthlyTime>().HasQueryFilter(e => e.FpsYear == FilterFpsYear);

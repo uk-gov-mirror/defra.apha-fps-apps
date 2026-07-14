@@ -16,7 +16,6 @@ namespace Apha.FPS.DataAccess.Data
             entity.HasIndex(e => e.DateTime, "testreq_log_ind_dt");
 
             entity.Property(e => e.SequenceNo)
-                .ValueGeneratedOnAdd()
                 .HasColumnName("sequenceno");
             entity.Property(e => e.FpsYear).HasColumnName("fpsyear");
             entity.Property(e => e.TestCode)
@@ -44,6 +43,9 @@ namespace Apha.FPS.DataAccess.Data
                 .HasMaxLength(2)
                 .IsFixedLength()
                 .HasColumnName("insert_delete");
+            entity.Property(e => e.JobCode)
+                .HasMaxLength(50)
+                .HasColumnName("jobcode");
         }
     }
 }

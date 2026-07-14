@@ -60,6 +60,25 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.AnimalRepositoryTest
             return new AnimalRepository(dbContext.Object, requestCtx.Object);
         }
 
+        private static AnimalRepository CreateRepositoryForGlobalCost(
+            IEnumerable<AnimalRequest> animalRequests,
+            IEnumerable<Animal> animals)
+        {
+            var requestCtx = CreateRequestContextMock();
+            var dbContext  = RepositoryTestHelper.CreateMockDbContext<FpsDbContext>(requestCtx.Object);
+
+            var animalRequestSet = RepositoryTestHelper.CreateMockDbSet(animalRequests);
+            RepositoryTestHelper.SetupDbSetOperations(animalRequestSet);
+            dbContext.Setup(x => x.AnimalRequests).Returns(animalRequestSet.Object);
+
+            var animalSet = RepositoryTestHelper.CreateMockDbSet(animals);
+            RepositoryTestHelper.SetupDbSetOperations(animalSet);
+            dbContext.Setup(x => x.Animals).Returns(animalSet.Object);
+
+            RepositoryTestHelper.SetupSaveChanges(dbContext);
+            return new AnimalRepository(dbContext.Object, requestCtx.Object);
+        }
+
         private static (AnimalRepository Repo, Mock<FpsDbContext> Context, Mock<DbSet<Animal>> DbSet)
             CreateRepositoryWithMocks(IEnumerable<Animal>? animals = null)
         {
@@ -486,6 +505,70 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.AnimalRepositoryTest
             var repo = CreateRepository([BuildAnimal("CATTLE")]);
             var result = await repo.DeleteAnimalAsync("CATTLE");
             Assert.True(result);
+        }
+
+        #endregion
+
+        #region GetGlobalAnimalCostAsync Tests
+
+        [Fact]
+        public async Task GetGlobalAnimalCostAsync_ReturnsZero_WhenNoData()
+        {
+            var repo = CreateRepositoryForGlobalCost([], []);
+            var result = await repo.GetGlobalAnimalCostAsync();
+            Assert.Equal(0m, result);
+        }
+
+        [Fact]
+        public async Task GetGlobalAnimalCostAsync_ReturnsSingleRowCost()
+        {
+            // 2 days × 3 animals × £10/day = £60
+            var requests = new List<AnimalRequest>
+            {
+                new() { JobCode = "J1", AnimalType = "CATTLE", NumberOfDays = 2d, NumberOfAnimals = 3d }
+            };
+            var animals = new List<Animal>
+            {
+                BuildAnimal("CATTLE", dailyRate: 10m)
+            };
+            var repo = CreateRepositoryForGlobalCost(requests, animals);
+            var result = await repo.GetGlobalAnimalCostAsync();
+            Assert.Equal(60m, result);
+        }
+
+        [Fact]
+        public async Task GetGlobalAnimalCostAsync_SumsMultipleRows()
+        {
+            // Row 1: 1 × 2 × 5 = 10; Row 2: 4 × 1 × 3 = 12 → total 22
+            var requests = new List<AnimalRequest>
+            {
+                new() { JobCode = "J1", AnimalType = "CATTLE", NumberOfDays = 1d, NumberOfAnimals = 2d },
+                new() { JobCode = "J2", AnimalType = "SHEEP",  NumberOfDays = 4d, NumberOfAnimals = 1d }
+            };
+            var animals = new List<Animal>
+            {
+                BuildAnimal("CATTLE", dailyRate: 5m),
+                BuildAnimal("SHEEP",  dailyRate: 3m)
+            };
+            var repo = CreateRepositoryForGlobalCost(requests, animals);
+            var result = await repo.GetGlobalAnimalCostAsync();
+            Assert.Equal(22m, result);
+        }
+
+        [Fact]
+        public async Task GetGlobalAnimalCostAsync_TreatsNullDailyRateAsZero()
+        {
+            var requests = new List<AnimalRequest>
+            {
+                new() { JobCode = "J1", AnimalType = "CATTLE", NumberOfDays = 5d, NumberOfAnimals = 2d }
+            };
+            var animals = new List<Animal>
+            {
+                BuildAnimal("CATTLE", dailyRate: null)
+            };
+            var repo = CreateRepositoryForGlobalCost(requests, animals);
+            var result = await repo.GetGlobalAnimalCostAsync();
+            Assert.Equal(0m, result);
         }
 
         #endregion

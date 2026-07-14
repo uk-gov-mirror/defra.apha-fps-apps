@@ -1,4 +1,4 @@
-﻿namespace Apha.FPS.Core.Entities
+namespace Apha.FPS.Core.Entities
 {
     public partial class AnimalRequestLog
     {

@@ -22,12 +22,21 @@ namespace Apha.FPS.DataAccess.Repositories
 
         public async Task<List<ProfitCentreView>> GetProfitCentresAsync()
         {
-            return await _dbContext.ProfitCentreViews
+            var rows = await _dbContext.ProfitCentreViews
                 .AsNoTracking()
                 .Where(x => x.UserEmail != null
                          && x.UserEmail.ToLower() == _requestContext.UserEmailId)
                 .OrderBy(x => x.ProfitCentreId)
                 .ToListAsync();
+
+            // The underlying view joins profit centres with user-permissions rows, which can
+            // produce duplicate ProfitCentreId entries when a user holds multiple permission
+            // assignments for the same centre.  Deduplicate in memory after the ordered fetch
+            // so the dropdown only shows each Resource Center once.
+            return rows
+                .GroupBy(x => x.ProfitCentreId)
+                .Select(g => g.First())
+                .ToList();
         }
 
         public async Task<IEnumerable<ProfitCentre>> GetAllProfitCentresAsync()

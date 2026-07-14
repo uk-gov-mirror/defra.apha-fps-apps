@@ -68,7 +68,6 @@ namespace Apha.FPS.Api.Mappings
                 .ForMember(d => d.BudgetExt, o => o.MapFrom(s => s.CustIncome)).ReverseMap()
                 .ForMember(d => d.CustIncome, o => o.MapFrom(s => s.BudgetExt));
 
-            // TRANSFORMENGINE: VLA profitability mappings — frmJobcodeTotalsVLA Phase 5
             //   JobCode (DTO natural key) -> Project (response display column per HTML prototype)
             //   Id is int? in DTO (nullable ROW_NUMBER) -> int in Res (non-nullable contract property)
             CreateMap<ProjectProfitabilityVlaDto, ProjectProfitabilityVlaRes>()
@@ -144,6 +143,26 @@ namespace Apha.FPS.Api.Mappings
             CreateMap<PurchaseDto, PurchaseReq>().ReverseMap();
             CreateMap<PurchaseDto, PurchaseRes>().ReverseMap();
 
+            // TimeSellerPC — frmTimeSellerPC
+            CreateMap<ContributionSummaryRowDto, ContributionSummaryRowRes>().ReverseMap();
+            CreateMap<ContributionSummaryTotalsDto, ContributionSummaryTotalsRes>().ReverseMap();
+
+          
+            // 5 log tables: project_log, staffjob_log, testreq_log, animalreq_log, additionalcosts_log
+            CreateMap<ProjectLogDto, ProjectLogRes>().ReverseMap();
+            CreateMap<PaginatedResult<ProjectLogDto>, PaginationRes<ProjectLogRes>>();
+
+            CreateMap<StaffJobLogDto, StaffJobLogRes>().ReverseMap();
+            CreateMap<PaginatedResult<StaffJobLogDto>, PaginationRes<StaffJobLogRes>>();
+
+            CreateMap<TestRequirementLogDto, TestRequirementLogRes>().ReverseMap();
+            CreateMap<PaginatedResult<TestRequirementLogDto>, PaginationRes<TestRequirementLogRes>>();
+
+            CreateMap<AnimalRequestLogDto, AnimalRequestLogRes>().ReverseMap();
+            CreateMap<PaginatedResult<AnimalRequestLogDto>, PaginationRes<AnimalRequestLogRes>>();
+
+            CreateMap<AdditionalCostLogDto, AdditionalCostLogRes>().ReverseMap();
+            CreateMap<PaginatedResult<AdditionalCostLogDto>, PaginationRes<AdditionalCostLogRes>>();
             // MaintTotalBusinessOverheads
             CreateMap<TotalBusinessOverheadsDto, TotalBusinessOverheadsReq>().ReverseMap();
             CreateMap<TotalBusinessOverheadsDto, TotalBusinessOverheadsRes>().ReverseMap();

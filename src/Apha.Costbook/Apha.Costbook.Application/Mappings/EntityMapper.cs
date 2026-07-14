@@ -20,6 +20,12 @@ namespace Apha.Costbook.Application.Mappings
             CreateMap<Customer, CustomerDto>().ReverseMap();
             CreateMap<Disease, DiseaseDto>().ReverseMap();
             CreateMap<Staff, StaffDto>().ReverseMap();
+            CreateMap<AccountGroup, AccountGroupDto>().ReverseMap();
+            CreateMap<FpsAccountCategory, AccountCategoryMaintenanceDto>()
+                .ForMember(dest => dest.FpsYear, opt => opt.MapFrom(src => src.FpsYear ?? 0));
+           
+            CreateMap<AccountCategoryMaintenanceDto, FpsAccountCategory>()
+                .ForMember(dest => dest.FpsYear, opt => opt.MapFrom(src => (int?)src.FpsYear));
         }
     }
 }

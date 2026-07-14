@@ -756,6 +756,14 @@ a {
     font-weight: 500;
 }
 
+.govuk-pagination .govuk-pagination__link[disabled] {
+    pointer-events: none;
+    cursor: default;
+    opacity: 0.4;
+    color: #505a5f;
+    text-decoration: none;
+}
+
 .govuk-select,
 .govuk-input,
 .govuk-input__prefix {
@@ -1185,7 +1193,7 @@ table#tblMonthPeriod > tbody > tr > td {
 }
 
 .sup_color_red {
-    color: red;
+    color: #ca3535;
 }
 
 .sup_position_relative {
@@ -1557,7 +1565,7 @@ table#tblMonthPeriod > tbody > tr > td {
 }
 
 .sup_color_red {
-    color: red;
+    color: #ca3535;
 }
 
 .sup_position_relative {

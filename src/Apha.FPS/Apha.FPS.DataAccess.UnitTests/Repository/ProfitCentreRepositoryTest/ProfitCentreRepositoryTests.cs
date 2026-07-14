@@ -129,6 +129,29 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.ProfitCentreRepositoryTest
             Assert.Equal("PC01", single.ProfitCentreId);
         }
 
+        [Fact]
+        public async Task GetProfitCentresAsync_ReturnsDeduplicated_WhenViewContainsDuplicateProfitCentreIds()
+        {
+            // Simulate the underlying view producing multiple rows for the same
+            // ProfitCentreId because a user has more than one permission assignment.
+            var profitCentres = new List<ProfitCentreView>
+            {
+                BuildView("PC01", "Centre One", "DIV1"),
+                BuildView("PC01", "Centre One", "DIV1"),  // duplicate permission row
+                BuildView("PC02", "Centre Two", "DIV1"),
+                BuildView("PC02", "Centre Two", "DIV1"),  // duplicate permission row
+                BuildView("PC03", "Centre Three", "DIV2")
+            };
+            var repo = CreateRepository(profitCentreViews: profitCentres);
+
+            var result = await repo.GetProfitCentresAsync();
+
+            Assert.Equal(3, result.Count);
+            Assert.Equal("PC01", result[0].ProfitCentreId);
+            Assert.Equal("PC02", result[1].ProfitCentreId);
+            Assert.Equal("PC03", result[2].ProfitCentreId);
+        }
+
         #endregion
 
         #region GetAllProfitCentresAsync Tests

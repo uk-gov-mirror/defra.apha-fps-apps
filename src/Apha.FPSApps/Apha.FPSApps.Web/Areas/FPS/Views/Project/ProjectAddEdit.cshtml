@@ -496,6 +496,7 @@
         };
 
         function submitForm(formId, isEdit, parentProject) {
+            showLoader();
             clearValidationErrors('#main-content');
             var form = document.getElementById(formId);
             var formData = new FormData(form);
@@ -532,12 +533,14 @@
                 body: JSON.stringify(data)
             })
             .then(function (r) {
+                hideLoader();
                 if (!r.ok) {
                     return r.text().then(function (t) { throw new Error('Server returned ' + r.status + ': ' + t); });
                 }
                 return r.json();
             })
             .then(function (result) {
+                hideLoader();
                 if (result.success) {
                     currencyFieldNames.forEach(function (name) {
                         var $field = $('[name="' + name + '"]');
@@ -558,6 +561,7 @@
                 }
             })
             .catch(function (err) {
+                hideLoader();
                 console.error('Error:', err);
                 showAlertMessage('An error occurred while submitting the form.', AlertType.ERROR);
             });

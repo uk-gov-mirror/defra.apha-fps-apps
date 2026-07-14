@@ -101,5 +101,69 @@ namespace Apha.FPS.DataAccess.UnitTests.Data
             Assert.NotNull(property);
             Assert.Equal(expectedColumnName, property.GetColumnName());
         }
+
+        // ── VQryFrmTimeSellerPcViews / TimeSellerPcViewMap ────────────────────────
+
+        [Fact]
+        public void VQryFrmTimeSellerPcViews_PropertyIsAccessible()
+        {
+            using var ctx = CreateContext(Guid.NewGuid().ToString());
+            Assert.NotNull(ctx.VQryFrmTimeSellerPcViews);
+        }
+
+        [Fact]
+        public void OnModelCreating_TimeSellerPcView_IsRegisteredAsKeyless()
+        {
+            using var ctx = CreateContext(Guid.NewGuid().ToString());
+
+            var entityType = ctx.Model.FindEntityType(typeof(ContributionSummaryView));
+
+            Assert.NotNull(entityType);
+            Assert.Null(entityType.FindPrimaryKey());
+        }
+
+        [Fact]
+        public void OnModelCreating_TimeSellerPcView_MapsToCorrectView()
+        {
+            using var ctx = CreateContext(Guid.NewGuid().ToString());
+
+            var entityType = ctx.Model.FindEntityType(typeof(ContributionSummaryView));
+
+            Assert.NotNull(entityType);
+            Assert.Equal("vqryfrmtimesellerpc", entityType.GetViewName());
+            Assert.Equal("fps", entityType.GetViewSchema());
+        }
+
+        [Theory]
+        [InlineData(nameof(ContributionSummaryView.ContTarget),        "conttarget")]
+        [InlineData(nameof(ContributionSummaryView.SellingPc),         "sellingpc")]
+        [InlineData(nameof(ContributionSummaryView.ChargeRate),        "chargerate")]
+        [InlineData(nameof(ContributionSummaryView.Ohr),               "ohr")]
+        [InlineData(nameof(ContributionSummaryView.SumOfGenBid),       "sumofgenbid")]
+        [InlineData(nameof(ContributionSummaryView.WorkGroup),         "workgroup")]
+        [InlineData(nameof(ContributionSummaryView.ProfitCentreGrade), "profitcentregrade")]
+        [InlineData(nameof(ContributionSummaryView.WgGrade),           "wggrade")]
+        [InlineData(nameof(ContributionSummaryView.AppHours),          "apphours")]
+        [InlineData(nameof(ContributionSummaryView.Hrs),               "hrs")]
+        [InlineData(nameof(ContributionSummaryView.AvHrs),             "avhrs")]
+        [InlineData(nameof(ContributionSummaryView.Fec),               "fec")]
+        [InlineData(nameof(ContributionSummaryView.AppFec),            "appfec")]
+        [InlineData(nameof(ContributionSummaryView.Contribution),      "contribution")]
+        [InlineData(nameof(ContributionSummaryView.FpsYear),           "fpsyear")]
+        [InlineData(nameof(ContributionSummaryView.UserId),            "user_id")]
+        [InlineData(nameof(ContributionSummaryView.Dt2Username),       "dt2username")]
+        [InlineData(nameof(ContributionSummaryView.UserEmail),         "useremail")]
+        public void OnModelCreating_TimeSellerPcView_ColumnsMappedCorrectly(
+            string propertyName, string expectedColumnName)
+        {
+            using var ctx = CreateContext(Guid.NewGuid().ToString());
+
+            var entityType = ctx.Model.FindEntityType(typeof(ContributionSummaryView));
+            Assert.NotNull(entityType);
+
+            var property = entityType.FindProperty(propertyName);
+            Assert.NotNull(property);
+            Assert.Equal(expectedColumnName, property.GetColumnName());
+        }
     }
 }

@@ -1,0 +1,71 @@
+@model Apha.FPSApps.Application.Dtos.FPS.ContributionSummaryTotalsDto?
+
+@if (Model == null) { return; }
+
+@{
+    var t = Model;
+    string Gbp(decimal? v) => v.HasValue ? v.Value.ToString("C2") : "£0.00";
+    string GbpD(decimal v) => v.ToString("C2");
+}
+
+@* ── Grid total row: pinned directly below the data grid ── *@
+<div id="cs-grid-total-row" class="fps-dg-total-row sup_border"
+     aria-label="Contribution summary total count">
+    <div class="fps-dg-total-cell fps-dg-total-spacer" aria-hidden="true"></div>
+    <div class="fps-dg-total-cell fps-dg-total-label">Total Cont</div>
+    <div class="fps-dg-total-cell fps-dg-total-value text-AlignRight"
+         id="cs-grid-total-cont">@GbpD(t.TotalContribution)</div>
+</div>
+
+<div id="cs-summary-grid" class="fps-dg-summary-grid govuk-!-margin-top-2">
+
+    @* ── Box 1: Budget / Target / Recover ── *@
+    <div id="cs-summary-base-box" class="fps-dg-summary-box sup_border">
+        <div class="fps-dg-summary-row">
+            <span>Total Budget Bids</span>
+            <strong id="cs-total-budget-bids" class="text-AlignRight">@Gbp(t.SumOfGenBid)</strong>
+        </div>
+        <div class="fps-dg-summary-row">
+            <span>+ Contribution Target</span>
+            <strong id="cs-contribution-target" class="text-AlignRight">@Gbp(t.ContTarget)</strong>
+        </div>
+        <div class="fps-dg-summary-row fps-dg-summary-total">
+            <span>= Total to Recover</span>
+            <strong id="cs-total-to-recover" class="text-AlignRight">@GbpD(t.TotalToRecover)</strong>
+        </div>
+    </div>
+
+    @* ── Box 2: Total Time ── *@
+    <div id="cs-summary-total-time-box" class="fps-dg-summary-box sup_border">
+        <div class="fps-dg-summary-box-title">Total Time</div>
+        <div class="fps-dg-summary-row">
+            <span>Total Time Fee from PlanHrs</span>
+            <strong id="cs-total-time-fee" class="text-AlignRight">@GbpD(t.TotalFec)</strong>
+        </div>
+        @if (t.IsAsuMode)
+        {
+            <div class="fps-dg-summary-row">
+                <span>Total Animal Costs</span>
+                <strong class="text-AlignRight">@GbpD(t.AnimalCosts)</strong>
+            </div>
+        }
+        <div class="fps-dg-summary-row fps-dg-summary-total @(t.Surplus < 0 ? "fps-dg-summary-shortfall" : "")">
+            <span>Surplus/Shortfall</span>
+            <strong id="cs-total-surplus" class="text-AlignRight">@GbpD(t.Surplus)</strong>
+        </div>
+    </div>
+
+    @* ── Box 3: Assured Time Only ── *@
+    <div id="cs-summary-assured-time-box" class="fps-dg-summary-box sup_border">
+        <div class="fps-dg-summary-box-title">Assured Time</div>
+        <div class="fps-dg-summary-row">
+            <span>Assured Time Only Fee from PlanHrs</span>
+            <strong id="cs-assured-time-fee" class="text-AlignRight">@GbpD(t.TotalAppFec)</strong>
+        </div>
+        <div class="fps-dg-summary-row fps-dg-summary-total @(t.AssuredSurplus < 0 ? "fps-dg-summary-shortfall" : "")">
+            <span>Surplus/Shortfall</span>
+            <strong id="cs-assured-surplus" class="text-AlignRight">@GbpD(t.AssuredSurplus)</strong>
+        </div>
+    </div>
+
+</div>

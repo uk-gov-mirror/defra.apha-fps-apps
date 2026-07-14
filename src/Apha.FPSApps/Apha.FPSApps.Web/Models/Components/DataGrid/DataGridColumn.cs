@@ -10,6 +10,7 @@
         public int Width { get; set; }
         public string CssClass { get; set; } = string.Empty;
         public string DateFormat { get; set; }
+        public string DateTimeFormatHhMm { get; set; }
         public bool IsFilterable { get; set; }
         public GridColumnType? FilterType { get; set; }
         public Dictionary<string, string>? FilterOptions { get; set; }
@@ -21,6 +22,7 @@
             Width = 100;
             ColumnType = GridColumnType.Text;
             DateFormat = "dd/MM/yyyy";
+            DateTimeFormatHhMm = "dd/MM/yyyy HH:mm";
         }
     }
 }

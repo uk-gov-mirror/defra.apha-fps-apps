@@ -4,17 +4,17 @@
 
 // ── Tab grid endpoint / id maps ────────────────────────────────────
 var tabGridEndpoints = {
-    'Staff-tab':           yearlyDetailsUrls.loadStaffGrid,
-    'Tests-tab':           yearlyDetailsUrls.loadTestGrid,
-    'Animals-tab':         yearlyDetailsUrls.loadAnimalGrid,
+    'Staff-tab': yearlyDetailsUrls.loadStaffGrid,
+    'Tests-tab': yearlyDetailsUrls.loadTestGrid,
+    'Animals-tab': yearlyDetailsUrls.loadAnimalGrid,
     'AdditionalCosts-tab': yearlyDetailsUrls.loadAdditionalCostGrid,
     'MarkupAndProfit-tab': yearlyDetailsUrls.loadMarkupAndProfitGrid
 };
 
 var tabGridIds = {
-    'Staff-tab':           'staffGrid',
-    'Tests-tab':           'testGrid',
-    'Animals-tab':         'animalGrid',
+    'Staff-tab': 'staffGrid',
+    'Tests-tab': 'testGrid',
+    'Animals-tab': 'animalGrid',
     'AdditionalCosts-tab': 'additionalCostGrid',
     'MarkupAndProfit-tab': 'markupAndProfitGrid'
 };
@@ -65,19 +65,86 @@ function attachButtonEventListeners() {
 }
 
 // ── Modal helpers ──────────────────────────────────────────────────
+var _lastFocusedElementBeforeModal = null;
+
+function getModalFocusableElements(modalElement) {
+    if (!modalElement) return [];
+
+    return Array.from(modalElement.querySelectorAll(
+        'a[href], area[href], input:not([disabled]):not([type="hidden"]), select:not([disabled]), ' +
+        'textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [contenteditable], ' +
+        '[tabindex]:not([tabindex="-1"])'))
+        .filter(function (element) {
+            return element.offsetParent !== null || getComputedStyle(element).position === 'fixed';
+        });
+}
+
+function trapModalFocus(event) {
+    var modal = document.getElementById('project1ModalContainer');
+    if (!modal || modal.classList.contains('project-modal-hidden')) return;
+
+    if (event.key === 'Escape') {
+        event.preventDefault();
+        closeModal();
+        return;
+    }
+
+    if (event.key !== 'Tab') return;
+
+    var focusableElements = getModalFocusableElements(modal);
+    if (focusableElements.length === 0) {
+        event.preventDefault();
+        modal.focus();
+        return;
+    }
+
+    var firstElement = focusableElements[0];
+    var lastElement = focusableElements[focusableElements.length - 1];
+    var activeElement = document.activeElement;
+
+    if (event.shiftKey) {
+        if (activeElement === modal || activeElement === firstElement || !modal.contains(activeElement)) {
+            event.preventDefault();
+            lastElement.focus();
+        }
+    } else {
+        if (activeElement === modal || !modal.contains(activeElement)) {
+            event.preventDefault();
+            firstElement.focus();
+        } else if (activeElement === lastElement) {
+            event.preventDefault();
+            firstElement.focus();
+        }
+    }
+}
+
 function openModal() {
     var el = document.getElementById('project1ModalContainer');
+    _lastFocusedElementBeforeModal = document.activeElement;
     el.classList.remove('project-modal-hidden');
     el.classList.add('show');
     el.style.display = 'block';
+    el.setAttribute('aria-hidden', 'false');
     document.body.classList.add('modal-open');
+
+    document.addEventListener('keydown', trapModalFocus);
+
+    setTimeout(function () {
+        el.focus();
+    }, 0);
 }
 function closeModal() {
     var el = document.getElementById('project1ModalContainer');
     el.classList.remove('show');
     el.style.display = '';
     el.classList.add('project-modal-hidden');
+    el.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('modal-open');
+    document.removeEventListener('keydown', trapModalFocus);
+
+    if (_lastFocusedElementBeforeModal && typeof _lastFocusedElementBeforeModal.focus === 'function') {
+        _lastFocusedElementBeforeModal.focus();
+    }
 }
 
 // ── Year navigation ────────────────────────────────────────────────
@@ -93,24 +160,24 @@ function deletetblProjectYear(btn) {
             method: 'DELETE',
             headers: { 'RequestVerificationToken': getAntiForgeryToken() }
         })
-        .then(function (r) { return r.json(); })
-        .then(function (d) {
-            if (d.success) {
-                var row = btn.closest('.project-year-row');
-                if (row) row.remove();
-                if (year === selectedYear) {
-                    var firstRow = document.querySelector('.project-year-row');
-                    if (firstRow) {
-                        selectYear(projectId, parseInt(firstRow.getAttribute('data-year'), 10));
-                    } else {
-                        window.location.href = yearlyDetailsUrls.index + '?projectId=' + encodeURIComponent(projectId);
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (d.success) {
+                    var row = btn.closest('.project-year-row');
+                    if (row) row.remove();
+                    if (year === selectedYear) {
+                        var firstRow = document.querySelector('.project-year-row');
+                        if (firstRow) {
+                            selectYear(projectId, parseInt(firstRow.getAttribute('data-year'), 10));
+                        } else {
+                            window.location.href = yearlyDetailsUrls.index + '?projectId=' + encodeURIComponent(projectId);
+                        }
                     }
+                } else {
+                    showAlertMessage(d.message || 'Failed to delete project year.', AlertType.ERROR);
                 }
-            } else {
-                showAlertMessage(d.message || 'Failed to delete project year.', AlertType.ERROR);
-            }
-        })
-        .catch(function (err) { console.error('Delete year error:', err); showAlertMessage('Failed to delete project year.', AlertType.ERROR); });
+            })
+            .catch(function (err) { console.error('Delete year error:', err); showAlertMessage('Failed to delete project year.', AlertType.ERROR); });
     });
 }
 
@@ -136,40 +203,40 @@ function bindAddYearForm(pid, year) {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': getAntiForgeryToken() },
             body: new URLSearchParams(new FormData(form)).toString() + '&projectId=' + encodeURIComponent(pid) + '&year=' + year + '&programme=' + encodeURIComponent(programme)
         })
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-            if (data.success) { closeModal(); selectYear(pid, data.year); }
-            else { showAlertMessage('Failed to add project year.', AlertType.ERROR); }
-        });
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.success) { closeModal(); selectYear(pid, data.year); }
+                else { showAlertMessage('Failed to add project year.', AlertType.ERROR); }
+            });
     });
 }
 
 // ── DataGrid bridge functions ──────────────────────────────────────
-function gridAddStaff()                { openAddStaffModal(projectId, selectedYear); }
-function gridEditStaff(btn)            { openEditStaffModal(projectId, selectedYear, btn.getAttribute('data-id')); }
-function gridDeleteStaff(btn)          { deleteStaff(projectId, selectedYear, btn.getAttribute('data-id')); }
+function gridAddStaff() { openAddStaffModal(projectId, selectedYear); }
+function gridEditStaff(btn) { openEditStaffModal(projectId, selectedYear, btn.getAttribute('data-id')); }
+function gridDeleteStaff(btn) { deleteStaff(projectId, selectedYear, btn.getAttribute('data-id')); }
 
-function gridAddTest()                 { openAddTestModal(projectId, selectedYear); }
-function gridEditTest(btn)             { openEditTestModal(projectId, selectedYear, btn.getAttribute('data-id')); }
-function gridDeleteTest(btn)           { deleteTest(projectId, selectedYear, btn.getAttribute('data-id')); }
+function gridAddTest() { openAddTestModal(projectId, selectedYear); }
+function gridEditTest(btn) { openEditTestModal(projectId, selectedYear, btn.getAttribute('data-id')); }
+function gridDeleteTest(btn) { deleteTest(projectId, selectedYear, btn.getAttribute('data-id')); }
 
-function gridAddAnimal()               { openAddAnimalModal(projectId, selectedYear); }
-function gridEditAnimal(btn)           { openEditAnimalModal(projectId, selectedYear, btn.getAttribute('data-id')); }
-function gridDeleteAnimal(btn)         { deleteAnimal(projectId, selectedYear, btn.getAttribute('data-id')); }
+function gridAddAnimal() { openAddAnimalModal(projectId, selectedYear); }
+function gridEditAnimal(btn) { openEditAnimalModal(projectId, selectedYear, btn.getAttribute('data-id')); }
+function gridDeleteAnimal(btn) { deleteAnimal(projectId, selectedYear, btn.getAttribute('data-id')); }
 
-function gridAddAdditionalCost()       { openAddAdditionalCostModal(projectId, selectedYear); }
-function gridEditAdditionalCost(btn)   { openEditAdditionalCostModal(projectId, selectedYear, btn.getAttribute('data-id')); }
+function gridAddAdditionalCost() { openAddAdditionalCostModal(projectId, selectedYear); }
+function gridEditAdditionalCost(btn) { openEditAdditionalCostModal(projectId, selectedYear, btn.getAttribute('data-id')); }
 function gridDeleteAdditionalCost(btn) { deleteAdditionalCost(projectId, selectedYear, btn.getAttribute('data-id')); }
 
-function gridEditMarkupAndProfit(btn)  { openEditMarkupAndProfitModal(projectId, btn.getAttribute('data-id')); }
+function gridEditMarkupAndProfit(btn) { openEditMarkupAndProfitModal(projectId, btn.getAttribute('data-id')); }
 
 // ── Legacy edit/delete handlers (kept for compatibility) ───────────
-function handleEdit(id)           { openEditStaffModal(projectId, selectedYear, id); }
-function handleDelete(id)         { deleteStaff(projectId, selectedYear, id); }
-function handleAnimalEdit(id)     { openEditAnimalModal(projectId, selectedYear, id); }
-function handleAnimalDelete(id)   { deleteAnimal(projectId, selectedYear, id); }
+function handleEdit(id) { openEditStaffModal(projectId, selectedYear, id); }
+function handleDelete(id) { deleteStaff(projectId, selectedYear, id); }
+function handleAnimalEdit(id) { openEditAnimalModal(projectId, selectedYear, id); }
+function handleAnimalDelete(id) { deleteAnimal(projectId, selectedYear, id); }
 function handleAdditionalEdit(id) { openEditAdditionalCostModal(projectId, selectedYear, id); }
-function handleAdditionalDelete(id){ deleteAdditionalCost(projectId, selectedYear, id); }
+function handleAdditionalDelete(id) { deleteAdditionalCost(projectId, selectedYear, id); }
 
 // ── Staff ──────────────────────────────────────────────────────────
 var _staffIsAddingNew = true;
@@ -210,23 +277,23 @@ function saveStaff() {
     var $modal = $('#project1ModalContent');
     clearValidationErrors($modal);
     if (!isFormValid($form)) { displayClientValidationErrors($form, $modal); return; }
-    var form  = $form[0];
+    var form = $form[0];
     var token = form.querySelector('input[name="__RequestVerificationToken"]').value;
-    var url   = _staffIsAddingNew
+    var url = _staffIsAddingNew
         ? yearlyDetailsUrls.createStaff + '?projectId=' + encodeURIComponent(projectId) + '&year=' + selectedYear
-        : yearlyDetailsUrls.editStaff   + '?projectId=' + encodeURIComponent(projectId) + '&year=' + selectedYear + '&srIdentity=' + _staffCurrentIdentity;
+        : yearlyDetailsUrls.editStaff + '?projectId=' + encodeURIComponent(projectId) + '&year=' + selectedYear + '&srIdentity=' + _staffCurrentIdentity;
     fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': token },
         body: new URLSearchParams(new FormData(form)).toString()
     })
-    .then(function (r) { return r.json(); })
-    .then(function (d) {
-        if (d.success) { showAlertMessage(d.message, AlertType.SUCCESS).then(function () { closeModal(); loadStaffGrid(); }); }
-        else if (d.errors) { _showModalErrors(d.errors, $modal); }
-        else { showAlertMessage(d.message || 'Failed to save staff requirement.', AlertType.ERROR); }
-    })
-    .catch(function (err) { console.error('Staff save error:', err); showAlertMessage('Failed to save staff requirement.', AlertType.ERROR); });
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            if (d.success) { showAlertMessage(d.message, AlertType.SUCCESS).then(function () { closeModal(); loadStaffGrid(); }); }
+            else if (d.errors) { _showModalErrors(d.errors, $modal); }
+            else { showAlertMessage(d.message || 'Failed to save staff requirement.', AlertType.ERROR); }
+        })
+        .catch(function (err) { console.error('Staff save error:', err); showAlertMessage('Failed to save staff requirement.', AlertType.ERROR); });
 }
 function deleteStaff(pid, year, srIdentity) {
     showGovukConfirm('Delete this staff entry?').then(function (result) {
@@ -235,7 +302,7 @@ function deleteStaff(pid, year, srIdentity) {
             method: 'DELETE',
             headers: { 'RequestVerificationToken': getAntiForgeryToken() }
         })
-        .then(function (r) { return r.json(); })
+            .then(function (r) { return r.json(); })
             .then(function (d) {
                 if (d.success) { showAlertMessage(d.message, AlertType.SUCCESS).then(function () { loadStaffGrid(); }); }
                 else { showAlertMessage(d.message || 'Failed to delete Staff entry.', AlertType.ERROR); }
@@ -267,7 +334,7 @@ function openEditTestModal(pid, year, testCode) {
             _testCurrentCode = testCode;
             openModal();
             initTestCodeDropdown();
-            var hiddenCode   = document.getElementById('TestCode');
+            var hiddenCode = document.getElementById('TestCode');
             var displayInput = document.getElementById('testCodeSelect');
             if (hiddenCode && displayInput && hiddenCode.value) {
                 var matchRow = document.querySelector('#testCodeDropdownBody tr[data-value="' + hiddenCode.value + '"]');
@@ -280,23 +347,23 @@ function saveTest() {
     var $modal = $('#project1ModalContent');
     clearValidationErrors($modal);
     if (!isFormValid($form)) { displayClientValidationErrors($form, $modal); return; }
-    var form  = $form[0];
+    var form = $form[0];
     var token = form.querySelector('input[name="__RequestVerificationToken"]').value;
-    var url   = _testIsAddingNew
+    var url = _testIsAddingNew
         ? yearlyDetailsUrls.createTest + '?projectId=' + encodeURIComponent(projectId) + '&year=' + selectedYear
-        : yearlyDetailsUrls.editTest   + '?projectId=' + encodeURIComponent(projectId) + '&year=' + selectedYear + '&testCode=' + encodeURIComponent(_testCurrentCode);
+        : yearlyDetailsUrls.editTest + '?projectId=' + encodeURIComponent(projectId) + '&year=' + selectedYear + '&testCode=' + encodeURIComponent(_testCurrentCode);
     fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': token },
         body: new URLSearchParams(new FormData(form)).toString()
     })
-    .then(function (r) { return r.json(); })
-    .then(function (d) {
-        if (d.success) { showAlertMessage(d.message, AlertType.SUCCESS).then(function () { closeModal(); loadTestGrid(); }); }
-        else if (d.errors) { _showModalErrors(d.errors, $modal); }
-        else { showAlertMessage(d.message || 'Failed to save test requirement.', AlertType.ERROR); }
-    })
-    .catch(function (err) { console.error('Test save error:', err); showAlertMessage('Failed to save test requirement.', AlertType.ERROR); });
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            if (d.success) { showAlertMessage(d.message, AlertType.SUCCESS).then(function () { closeModal(); loadTestGrid(); }); }
+            else if (d.errors) { _showModalErrors(d.errors, $modal); }
+            else { showAlertMessage(d.message || 'Failed to save test requirement.', AlertType.ERROR); }
+        })
+        .catch(function (err) { console.error('Test save error:', err); showAlertMessage('Failed to save test requirement.', AlertType.ERROR); });
 }
 function deleteTest(pid, year, testCode) {
     showGovukConfirm('Delete this test entry?').then(function (result) {
@@ -305,7 +372,7 @@ function deleteTest(pid, year, testCode) {
             method: 'DELETE',
             headers: { 'RequestVerificationToken': getAntiForgeryToken() }
         })
-        .then(function (r) { return r.json(); })
+            .then(function (r) { return r.json(); })
             .then(function (d) {
                 if (d.success) { showAlertMessage(d.message, AlertType.SUCCESS).then(function () { loadTestGrid(); }); }
                 else { showAlertMessage(d.message || 'Failed to delete Test entry.', AlertType.ERROR); }
@@ -337,7 +404,7 @@ function openEditAnimalModal(pid, year, arIdentity) {
             _animalCurrentIdentity = arIdentity;
             openModal();
             initAnimalTypeDropdown();
-            var hiddenType   = document.getElementById('AnimalType');
+            var hiddenType = document.getElementById('AnimalType');
             var displayInput = document.getElementById('animalTypeSelect');
             if (hiddenType && displayInput && hiddenType.value) {
                 var matchRow = document.querySelector('#animalTypeDropdownBody tr[data-value="' + hiddenType.value + '"]');
@@ -350,25 +417,25 @@ function saveAnimal() {
     var $modal = $('#project1ModalContent');
     clearValidationErrors($modal);
     if (!isFormValid($form)) { displayClientValidationErrors($form, $modal); return; }
-    var form  = $form[0];
+    var form = $form[0];
     var token = form.querySelector('input[name="__RequestVerificationToken"]').value;
-    var url   = _animalIsAddingNew
+    var url = _animalIsAddingNew
         ? yearlyDetailsUrls.createAnimal + '?projectId=' + encodeURIComponent(projectId) + '&year=' + selectedYear
-        : yearlyDetailsUrls.editAnimal   + '?projectId=' + encodeURIComponent(projectId) + '&year=' + selectedYear + '&arIdentity=' + _animalCurrentIdentity;
+        : yearlyDetailsUrls.editAnimal + '?projectId=' + encodeURIComponent(projectId) + '&year=' + selectedYear + '&arIdentity=' + _animalCurrentIdentity;
     fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': token },
         body: new URLSearchParams(new FormData(form)).toString()
     })
-    .then(function (r) { return r.json(); })
-    .then(function (d) {
-        if (d.success) {
-            showAlertMessage(d.message, AlertType.SUCCESS).then(function () { closeModal(); loadAnimalGrid(); });
-        }
-        else if (d.errors) { _showModalErrors(d.errors, $modal); }
-        else { showAlertMessage(d.message || 'Failed to save animal requirement.', AlertType.ERROR); }
-    })
-    .catch(function (err) { console.error('Animal save error:', err); showAlertMessage('Failed to save animal requirement.', AlertType.ERROR); });
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            if (d.success) {
+                showAlertMessage(d.message, AlertType.SUCCESS).then(function () { closeModal(); loadAnimalGrid(); });
+            }
+            else if (d.errors) { _showModalErrors(d.errors, $modal); }
+            else { showAlertMessage(d.message || 'Failed to save animal requirement.', AlertType.ERROR); }
+        })
+        .catch(function (err) { console.error('Animal save error:', err); showAlertMessage('Failed to save animal requirement.', AlertType.ERROR); });
 }
 function deleteAnimal(pid, year, arIdentity) {
     showGovukConfirm('Delete this animal entry?').then(function (result) {
@@ -377,11 +444,11 @@ function deleteAnimal(pid, year, arIdentity) {
             method: 'DELETE',
             headers: { 'RequestVerificationToken': getAntiForgeryToken() }
         })
-        .then(function (r) { return r.json(); })
-        .then(function (d) {
-            if (d.success) { showAlertMessage(d.message, AlertType.SUCCESS).then(function () { loadAnimalGrid(); }); }
-            else { showAlertMessage(d.message || 'Failed to delete animal entry.', AlertType.ERROR); }
-        });
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (d.success) { showAlertMessage(d.message, AlertType.SUCCESS).then(function () { loadAnimalGrid(); }); }
+                else { showAlertMessage(d.message || 'Failed to delete animal entry.', AlertType.ERROR); }
+            });
     });
 }
 
@@ -409,7 +476,7 @@ function openEditAdditionalCostModal(pid, year, acIdentity) {
             _additionalCostCurrentIdentity = acIdentity;
             openModal();
             initAccountCatDropdown();
-            var hiddenCat    = document.getElementById('AccountCat');
+            var hiddenCat = document.getElementById('AccountCat');
             var displayInput = document.getElementById('accountCatSelect');
             if (hiddenCat && displayInput && hiddenCat.value) {
                 var matchRow = document.querySelector('#accountCatDropdownBody tr[data-value="' + hiddenCat.value + '"]');
@@ -422,23 +489,23 @@ function saveAdditionalCost() {
     var $modal = $('#project1ModalContent');
     clearValidationErrors($modal);
     if (!isFormValid($form)) { displayClientValidationErrors($form, $modal); return; }
-    var form  = $form[0];
+    var form = $form[0];
     var token = form.querySelector('input[name="__RequestVerificationToken"]').value;
-    var url   = _additionalCostIsAddingNew
+    var url = _additionalCostIsAddingNew
         ? yearlyDetailsUrls.createAdditionalCost + '?projectId=' + encodeURIComponent(projectId) + '&year=' + selectedYear
-        : yearlyDetailsUrls.editAdditionalCost   + '?projectId=' + encodeURIComponent(projectId) + '&year=' + selectedYear + '&acIdentity=' + _additionalCostCurrentIdentity;
+        : yearlyDetailsUrls.editAdditionalCost + '?projectId=' + encodeURIComponent(projectId) + '&year=' + selectedYear + '&acIdentity=' + _additionalCostCurrentIdentity;
     fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': token },
         body: new URLSearchParams(new FormData(form)).toString()
     })
-    .then(function (r) { return r.json(); })
-    .then(function (d) {
-        if (d.success) { showAlertMessage(d.message, AlertType.SUCCESS).then(function () { closeModal(); loadAdditionalCostGrid(); }); }
-        else if (d.errors) { _showModalErrors(d.errors, $modal); }
-        else { showAlertMessage(d.message || 'Failed to save additional cost.', AlertType.ERROR); }
-    })
-    .catch(function (err) { console.error('Additional cost save error:', err); showAlertMessage('Failed to save additional cost.', AlertType.ERROR); });
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            if (d.success) { showAlertMessage(d.message, AlertType.SUCCESS).then(function () { closeModal(); loadAdditionalCostGrid(); }); }
+            else if (d.errors) { _showModalErrors(d.errors, $modal); }
+            else { showAlertMessage(d.message || 'Failed to save additional cost.', AlertType.ERROR); }
+        })
+        .catch(function (err) { console.error('Additional cost save error:', err); showAlertMessage('Failed to save additional cost.', AlertType.ERROR); });
 }
 function deleteAdditionalCost(pid, year, acIdentity) {
     showGovukConfirm('Delete this additional cost entry?').then(function (result) {
@@ -447,7 +514,7 @@ function deleteAdditionalCost(pid, year, acIdentity) {
             method: 'DELETE',
             headers: { 'RequestVerificationToken': getAntiForgeryToken() }
         })
-        .then(function (r) { return r.json(); })
+            .then(function (r) { return r.json(); })
             .then(function (d) {
                 if (d.success) { showAlertMessage(d.message, AlertType.SUCCESS).then(function () { loadAdditionalCostGrid(); }); }
                 else { showAlertMessage(d.message || 'Failed to delete Additional cost entry.', AlertType.ERROR); }
@@ -459,13 +526,13 @@ function deleteAdditionalCost(pid, year, acIdentity) {
 function saveYearRate(pid, year, row) {
     var data = {
         Project: pid, YearValue: year,
-        MarkupTime:       row.querySelector('[name="MarkupTime"]').value,
-        MarkupTests:      row.querySelector('[name="MarkupTests"]').value,
-        MarkupAnimals:    row.querySelector('[name="MarkupAnimals"]').value,
+        MarkupTime: row.querySelector('[name="MarkupTime"]').value,
+        MarkupTests: row.querySelector('[name="MarkupTests"]').value,
+        MarkupAnimals: row.querySelector('[name="MarkupAnimals"]').value,
         MarkupAdditional: row.querySelector('[name="MarkupAdditional"]').value,
-        ProfitTime:       row.querySelector('[name="ProfitTime"]').value,
-        ProfitTests:      row.querySelector('[name="ProfitTests"]').value,
-        ProfitAnimals:    row.querySelector('[name="ProfitAnimals"]').value,
+        ProfitTime: row.querySelector('[name="ProfitTime"]').value,
+        ProfitTests: row.querySelector('[name="ProfitTests"]').value,
+        ProfitAnimals: row.querySelector('[name="ProfitAnimals"]').value,
         ProfitAdditional: row.querySelector('[name="ProfitAdditional"]').value
     };
     fetch(yearlyDetailsUrls.updateProjectYearRate + '?projectId=' + encodeURIComponent(pid) + '&year=' + year, {
@@ -493,11 +560,11 @@ function bindMarkupAndProfitForm(pid, yearVal) {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': getAntiForgeryToken() },
             body: new URLSearchParams(new FormData(form)).toString()
         })
-        .then(function (r) { return r.json(); })
-        .then(function (d) {
-            if (d.success) { closeModal(); loadMarkupAndProfitGrid(); }
-            else { showAlertMessage('Failed to save markup and profit rates.', AlertType.ERROR); }
-        });
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (d.success) { closeModal(); loadMarkupAndProfitGrid(); }
+                else { showAlertMessage('Failed to save markup and profit rates.', AlertType.ERROR); }
+            });
     });
 }
 
@@ -520,27 +587,27 @@ function loadTabGrid(tabId, page, pageSize) {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': token ? token.value : '' },
         body: params.toString()
     })
-    .then(function (response) { return response.text(); })
-    .then(function (html) {
-        var gridId = tabGridIds[tabId];
-        var gridContainer = document.getElementById('gridContainer_' + gridId);
-        if (!gridContainer) return;
-        gridContainer.innerHTML = html;
-        gridContainer.querySelectorAll('script').forEach(function (oldScript) {
-            var newScript = document.createElement('script');
-            if (oldScript.src) { newScript.src = oldScript.src; } else { newScript.textContent = oldScript.textContent; }
-            oldScript.parentNode.replaceChild(newScript, oldScript);
-        });
-        removeFilterRows(gridContainer);
-        gridContainer.querySelectorAll('.sup_pagination_footer.sup_p_0').forEach(function (el) { el.hidden = true; });
-    })
-    .catch(function (err) { console.error('Failed to load grid for ' + tabId, err); });
+        .then(function (response) { return response.text(); })
+        .then(function (html) {
+            var gridId = tabGridIds[tabId];
+            var gridContainer = document.getElementById('gridContainer_' + gridId);
+            if (!gridContainer) return;
+            gridContainer.innerHTML = html;
+            gridContainer.querySelectorAll('script').forEach(function (oldScript) {
+                var newScript = document.createElement('script');
+                if (oldScript.src) { newScript.src = oldScript.src; } else { newScript.textContent = oldScript.textContent; }
+                oldScript.parentNode.replaceChild(newScript, oldScript);
+            });
+            removeFilterRows(gridContainer);
+            gridContainer.querySelectorAll('.sup_pagination_footer.sup_p_0').forEach(function (el) { el.hidden = true; });
+        })
+        .catch(function (err) { console.error('Failed to load grid for ' + tabId, err); });
 }
 
-function loadStaffGrid(page, pageSize)          { loadTabGrid('Staff-tab', page, pageSize);           loadYearTotals(); }
-function loadTestGrid(page, pageSize)            { loadTabGrid('Tests-tab', page, pageSize);            loadYearTotals(); }
-function loadAnimalGrid(page, pageSize)          { loadTabGrid('Animals-tab', page, pageSize);          loadYearTotals(); }
-function loadAdditionalCostGrid(page, pageSize)  { loadTabGrid('AdditionalCosts-tab', page, pageSize);  loadYearTotals(); }
+function loadStaffGrid(page, pageSize) { loadTabGrid('Staff-tab', page, pageSize); loadYearTotals(); }
+function loadTestGrid(page, pageSize) { loadTabGrid('Tests-tab', page, pageSize); loadYearTotals(); }
+function loadAnimalGrid(page, pageSize) { loadTabGrid('Animals-tab', page, pageSize); loadYearTotals(); }
+function loadAdditionalCostGrid(page, pageSize) { loadTabGrid('AdditionalCosts-tab', page, pageSize); loadYearTotals(); }
 function loadMarkupAndProfitGrid(page, pageSize) { loadTabGrid('MarkupAndProfit-tab', page, pageSize); }
 
 function loadActiveTabGrid() {
@@ -561,19 +628,19 @@ function loadYearTotals() {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': token ? token.value : '' },
         body: params.toString()
     })
-    .then(function (r) { return r.json(); })
-    .then(function (d) {
-        document.getElementById('year-total-staff').value      = formatGbp(d.staffCostTotal);
-        document.getElementById('staffTotalAmount').value       = formatGbp(d.staffCostTotal);
-        document.getElementById('year-total-test').value       = formatGbp(d.testCostTotal);
-        document.getElementById('testTotalAmount').value        = formatGbp(d.testCostTotal);
-        document.getElementById('year-total-animal').value     = formatGbp(d.animalCostTotal);
-        document.getElementById('animalTotalAmount').value      = formatGbp(d.animalCostTotal);
-        document.getElementById('year-total-additional').value = formatGbp(d.additionalCostTotal);
-        document.getElementById('additionalTotalAmount').value  = formatGbp(d.additionalCostTotal);
-        document.getElementById('year-total-grand').value      = formatGbp(d.grandTotal);
-    })
-    .catch(function (err) { console.error('Failed to load year totals', err); });
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            document.getElementById('year-total-staff').value = formatGbp(d.staffCostTotal);
+            document.getElementById('staffTotalAmount').value = formatGbp(d.staffCostTotal);
+            document.getElementById('year-total-test').value = formatGbp(d.testCostTotal);
+            document.getElementById('testTotalAmount').value = formatGbp(d.testCostTotal);
+            document.getElementById('year-total-animal').value = formatGbp(d.animalCostTotal);
+            document.getElementById('animalTotalAmount').value = formatGbp(d.animalCostTotal);
+            document.getElementById('year-total-additional').value = formatGbp(d.additionalCostTotal);
+            document.getElementById('additionalTotalAmount').value = formatGbp(d.additionalCostTotal);
+            document.getElementById('year-total-grand').value = formatGbp(d.grandTotal);
+        })
+        .catch(function (err) { console.error('Failed to load year totals', err); });
 }
 
 function formatGbp(value) {
@@ -613,7 +680,7 @@ function onYearRowClick(row) {
                 link.closest('.govuk-tabs__list-item').classList.add('govuk-tabs__list-item--selected');
                 document.querySelectorAll('.govuk-tabs__panel').forEach(function (p) {
                     if (p.id === tabId) { p.classList.remove('govuk-tabs__panel--hidden'); p.style.display = 'block'; }
-                    else                { p.classList.add('govuk-tabs__panel--hidden');    p.style.display = 'none'; }
+                    else { p.classList.add('govuk-tabs__panel--hidden'); p.style.display = 'none'; }
                 });
                 e.preventDefault();
             });
@@ -637,36 +704,36 @@ function allGridExtraFilters() {
     return { year: selectedYear };
 }
 
-// ── WG Grade custom dropdown ───────────────────────────────────────
-function initWgGradeDropdown() {
-    var input     = document.getElementById('wgGradeSelect');
-    var panel     = document.getElementById('wgGradeDropdownPanel');
-    var searchBox = document.getElementById('wgGradeSearchBox');
+function initSearchableDropdown(options) {
+    var input = document.getElementById(options.inputId);
+    var panel = document.getElementById(options.panelId);
+    var searchBox = document.getElementById(options.searchBoxId);
+    var rows = document.querySelectorAll(options.rowsSelector);
     if (!input || !panel) return;
 
-    // Prevent typing in display input but allow focus
-    input.addEventListener('input', function (e) {
-        e.preventDefault();
-        this.value = this.getAttribute('data-current-value') || '';
-    });
-    input.addEventListener('beforeinput', function (e) {
-        if (e.inputType !== 'insertReplacementText') {
+    if (options.preventTyping) {
+        input.addEventListener('input', function (e) {
             e.preventDefault();
-        }
-    });
+            this.value = this.getAttribute('data-current-value') || '';
+        });
+        input.addEventListener('beforeinput', function (e) {
+            if (e.inputType !== 'insertReplacementText') {
+                e.preventDefault();
+            }
+        });
 
-    // Store current value
-    if (input.value) {
-        input.setAttribute('data-current-value', input.value);
+        if (input.value) {
+            input.setAttribute('data-current-value', input.value);
+        }
     }
 
     function openDropdown() {
         panel.style.display = 'block';
         input.setAttribute('aria-expanded', 'true');
-        if (searchBox) { 
-            searchBox.value = ''; 
-            filterWgGradeRows(''); 
-            searchBox.focus(); 
+        if (searchBox) {
+            searchBox.value = '';
+            options.filterRows('');
+            searchBox.focus();
         }
     }
 
@@ -677,14 +744,13 @@ function initWgGradeDropdown() {
 
     input.addEventListener('click', function (e) {
         e.stopPropagation();
-        if (panel.style.display === 'none') {
-            openDropdown();
-        } else {
+        if (panel.style.display === 'block') {
             closeDropdown();
+        } else {
+            openDropdown();
         }
     });
 
-    // Add keyboard support for opening dropdown
     input.addEventListener('keydown', function (e) {
         if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
             e.preventDefault();
@@ -694,38 +760,28 @@ function initWgGradeDropdown() {
 
     if (searchBox) {
         searchBox.addEventListener('click', function (e) { e.stopPropagation(); });
-        searchBox.addEventListener('input', function () { filterWgGradeRows(this.value.toLowerCase()); });
-
-        // Add keyboard support for search box
+        searchBox.addEventListener('input', function () { options.filterRows(this.value.toLowerCase()); });
         searchBox.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') {
                 closeDropdown();
                 input.focus();
             } else if (e.key === 'ArrowDown') {
                 e.preventDefault();
-                var firstVisible = document.querySelector('#wgGradeDropdownBody tr:not([style*="display: none"])');
+                var firstVisible = document.querySelector(options.rowsSelector + ':not([style*="display: none"])');
                 if (firstVisible) firstVisible.focus();
             }
         });
     }
 
-    document.querySelectorAll('#wgGradeDropdownBody tr').forEach(function (row) {
+    rows.forEach(function (row) {
+        row.tabIndex = 0;
+
         row.addEventListener('click', function () {
-            var grade      = this.getAttribute('data-value');
-            var chargeRate = this.getAttribute('data-chargeratewithinflamation') || this.getAttribute('data-chargerate');
-            input.value = grade;
-            input.setAttribute('data-current-value', grade);
-            document.getElementById('WgGrade').value    = grade;
-            document.getElementById('Chargerate').value = chargeRate;
-            document.getElementById('Payrate').value    = this.getAttribute('data-payrate');
-            document.getElementById('Npr').value        = this.getAttribute('data-npr');
-            document.getElementById('Ohr').value        = this.getAttribute('data-ohr');
-            calcStaffCost();
+            options.onRowSelect(this, input);
             closeDropdown();
             input.focus();
         });
 
-        // Add keyboard navigation for rows
         row.addEventListener('keydown', function (e) {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
@@ -749,6 +805,34 @@ function initWgGradeDropdown() {
 
         row.addEventListener('mouseenter', function () { this.style.backgroundColor = '#f3f2f1'; });
         row.addEventListener('mouseleave', function () { this.style.backgroundColor = ''; });
+    });
+
+    document.addEventListener('click', function (e) {
+        if (input && panel && !input.contains(e.target) && !panel.contains(e.target)) closeDropdown();
+    });
+}
+
+// ── WG Grade custom dropdown ───────────────────────────────────────
+function initWgGradeDropdown() {
+    initSearchableDropdown({
+        inputId: 'wgGradeSelect',
+        panelId: 'wgGradeDropdownPanel',
+        searchBoxId: 'wgGradeSearchBox',
+        rowsSelector: '#wgGradeDropdownBody tr',
+        preventTyping: true,
+        filterRows: filterWgGradeRows,
+        onRowSelect: function (row, input) {
+            var grade = row.getAttribute('data-value');
+            var chargeRate = row.getAttribute('data-chargeratewithinflamation') || row.getAttribute('data-chargerate');
+            input.value = grade;
+            input.setAttribute('data-current-value', grade);
+            document.getElementById('WgGrade').value = grade;
+            document.getElementById('Chargerate').value = chargeRate;
+            document.getElementById('Payrate').value = row.getAttribute('data-payrate');
+            document.getElementById('Npr').value = row.getAttribute('data-npr');
+            document.getElementById('Ohr').value = row.getAttribute('data-ohr');
+            calcStaffCost();
+        }
     });
 
     var hoursInput = document.getElementById('Nohours');
@@ -785,13 +869,13 @@ var _calcStaffGuard = false;
 function calcStaffCost() {
     if (_calcStaffGuard) return;
     var hoursEl = document.getElementById('Nohours');
-    var daysEl  = document.getElementById('Nodays');
-    var rateEl  = document.getElementById('Chargerate');
-    var costEl  = document.getElementById('StaffCost');
+    var daysEl = document.getElementById('Nodays');
+    var rateEl = document.getElementById('Chargerate');
+    var costEl = document.getElementById('StaffCost');
     if (!hoursEl || !rateEl || !costEl) return;
     var hoursStr = hoursEl.value.trim();
-    var hours    = hoursStr !== '' ? parseFloat(hoursStr) : 0;
-    var rate     = parseFloat(rateEl.value);
+    var hours = hoursStr !== '' ? parseFloat(hoursStr) : 0;
+    var rate = parseFloat(rateEl.value);
     if (daysEl && document.activeElement !== daysEl) {
         daysEl.value = (_hoursPerDay > 0) ? (hours / _hoursPerDay).toFixed(2) : '0.00';
     }
@@ -800,53 +884,40 @@ function calcStaffCost() {
 function calcStaffCostFromDays() {
     if (_calcStaffGuard) return;
     var hoursEl = document.getElementById('Nohours');
-    var daysEl  = document.getElementById('Nodays');
-    var rateEl  = document.getElementById('Chargerate');
-    var costEl  = document.getElementById('StaffCost');
+    var daysEl = document.getElementById('Nodays');
+    var rateEl = document.getElementById('Chargerate');
+    var costEl = document.getElementById('StaffCost');
     if (!hoursEl || !daysEl || !rateEl || !costEl) return;
     var daysStr = daysEl.value.trim();
-    var days    = daysStr !== '' ? parseFloat(daysStr) : 0;
+    var days = daysStr !== '' ? parseFloat(daysStr) : 0;
     _calcStaffGuard = true;
     if (document.activeElement !== hoursEl) {
         hoursEl.value = (_hoursPerDay > 0) ? (days * _hoursPerDay).toFixed(2) : '0.00';
     }
     var hours = parseFloat(hoursEl.value);
-    var rate  = parseFloat(rateEl.value);
+    var rate = parseFloat(rateEl.value);
     costEl.value = !isNaN(rate) ? (hours * rate).toFixed(2) : '';
     _calcStaffGuard = false;
 }
 
 // ── Test Code custom dropdown ──────────────────────────────────────
 function initTestCodeDropdown() {
-    var input     = document.getElementById('testCodeSelect');
-    var panel     = document.getElementById('testCodeDropdownPanel');
-    var searchBox = document.getElementById('testCodeSearchBox');
-    if (!input || !panel) return;
-    input.addEventListener('click', function (e) {
-        e.stopPropagation();
-        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-        if (panel.style.display === 'block' && searchBox) { searchBox.value = ''; filterTestCodeRows(''); searchBox.focus(); }
-    });
-    if (searchBox) {
-        searchBox.addEventListener('click', function (e) { e.stopPropagation(); });
-        searchBox.addEventListener('input', function () { filterTestCodeRows(this.value.toLowerCase()); });
-    }
-    document.querySelectorAll('#testCodeDropdownBody tr').forEach(function (row) {
-        row.addEventListener('click', function () {
-            var code      = this.getAttribute('data-value');
-            var unitPrice = this.getAttribute('data-unitpricewithinflamation') || this.getAttribute('data-unitprice');
+    initSearchableDropdown({
+        inputId: 'testCodeSelect',
+        panelId: 'testCodeDropdownPanel',
+        searchBoxId: 'testCodeSearchBox',
+        rowsSelector: '#testCodeDropdownBody tr',
+        filterRows: filterTestCodeRows,
+        onRowSelect: function (row, input) {
+            var code = row.getAttribute('data-value');
+            var unitPrice = row.getAttribute('data-unitpricewithinflamation') || row.getAttribute('data-unitprice');
             input.value = code;
-            document.getElementById('TestCode').value  = code;
+            document.getElementById('TestCode').value = code;
             document.getElementById('UnitPrice').value = unitPrice;
             calcTestCost();
-            panel.style.display = 'none';
-        });
-        row.addEventListener('mouseenter', function () { this.style.backgroundColor = '#f3f2f1'; });
-        row.addEventListener('mouseleave', function () { this.style.backgroundColor = ''; });
+        }
     });
-    document.addEventListener('click', function (e) {
-        if (input && panel && !input.contains(e.target) && !panel.contains(e.target)) panel.style.display = 'none';
-    });
+
     var noInput = document.getElementById('NumberOfTests');
     if (noInput) {
         ['input', 'change', 'keyup', 'keydown', 'paste'].forEach(function (evt) {
@@ -860,47 +931,34 @@ function filterTestCodeRows(term) {
     });
 }
 function calcTestCost() {
-    var noEl        = document.getElementById('NumberOfTests');
+    var noEl = document.getElementById('NumberOfTests');
     var unitPriceEl = document.getElementById('UnitPrice');
-    var costEl      = document.getElementById('TestCost');
+    var costEl = document.getElementById('TestCost');
     if (!noEl || !unitPriceEl || !costEl) return;
     var noStr = noEl.value.trim();
-    var no    = parseFloat(noStr);
+    var no = parseFloat(noStr);
     var price = parseFloat(unitPriceEl.value);
     costEl.value = (noStr !== '' && !isNaN(no) && !isNaN(price)) ? (no * price).toFixed(2) : '';
 }
 
 // ── Animal Type custom dropdown ────────────────────────────────────
 function initAnimalTypeDropdown() {
-    var input     = document.getElementById('animalTypeSelect');
-    var panel     = document.getElementById('animalTypeDropdownPanel');
-    var searchBox = document.getElementById('animalTypeSearchBox');
-    if (!input || !panel) return;
-    input.addEventListener('click', function (e) {
-        e.stopPropagation();
-        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-        if (panel.style.display === 'block' && searchBox) { searchBox.value = ''; filterAnimalTypeRows(''); searchBox.focus(); }
-    });
-    if (searchBox) {
-        searchBox.addEventListener('click', function (e) { e.stopPropagation(); });
-        searchBox.addEventListener('input', function () { filterAnimalTypeRows(this.value.toLowerCase()); });
-    }
-    document.querySelectorAll('#animalTypeDropdownBody tr').forEach(function (row) {
-        row.addEventListener('click', function () {
-            var animalType = this.getAttribute('data-value');
-            var dailyRate  = this.getAttribute('data-dailyratewithinflamation') || this.getAttribute('data-dailyrate');
+    initSearchableDropdown({
+        inputId: 'animalTypeSelect',
+        panelId: 'animalTypeDropdownPanel',
+        searchBoxId: 'animalTypeSearchBox',
+        rowsSelector: '#animalTypeDropdownBody tr',
+        filterRows: filterAnimalTypeRows,
+        onRowSelect: function (row, input) {
+            var animalType = row.getAttribute('data-value');
+            var dailyRate = row.getAttribute('data-dailyratewithinflamation') || row.getAttribute('data-dailyrate');
             input.value = animalType;
             document.getElementById('AnimalType').value = animalType;
-            document.getElementById('DailyRate').value  = dailyRate;
+            document.getElementById('DailyRate').value = dailyRate;
             calcAnimalCost();
-            panel.style.display = 'none';
-        });
-        row.addEventListener('mouseenter', function () { this.style.backgroundColor = '#f3f2f1'; });
-        row.addEventListener('mouseleave', function () { this.style.backgroundColor = ''; });
+        }
     });
-    document.addEventListener('click', function (e) {
-        if (input && panel && !input.contains(e.target) && !panel.contains(e.target)) panel.style.display = 'none';
-    });
+
     ['NumberOfAnimals', 'NumberOfDays'].forEach(function (id) {
         var el = document.getElementById(id);
         if (el) {
@@ -917,47 +975,34 @@ function filterAnimalTypeRows(term) {
 }
 function calcAnimalCost() {
     var noAnimalsEl = document.getElementById('NumberOfAnimals');
-    var noDaysEl    = document.getElementById('NumberOfDays');
-    var rateEl      = document.getElementById('DailyRate');
-    var costEl      = document.getElementById('AnimalCost');
+    var noDaysEl = document.getElementById('NumberOfDays');
+    var rateEl = document.getElementById('DailyRate');
+    var costEl = document.getElementById('AnimalCost');
     if (!noAnimalsEl || !noDaysEl || !rateEl || !costEl) return;
-    var noStr   = noAnimalsEl.value.trim();
+    var noStr = noAnimalsEl.value.trim();
     var daysStr = noDaysEl.value.trim();
-    var no      = parseFloat(noStr);
-    var days    = parseFloat(daysStr);
-    var rate    = parseFloat(rateEl.value);
+    var no = parseFloat(noStr);
+    var days = parseFloat(daysStr);
+    var rate = parseFloat(rateEl.value);
     costEl.value = (noStr !== '' && daysStr !== '' && !isNaN(no) && !isNaN(days) && !isNaN(rate))
         ? (no * days * rate).toFixed(2) : '';
 }
 
 // ── Account Category custom dropdown ──────────────────────────────
 function initAccountCatDropdown() {
-    var input     = document.getElementById('accountCatSelect');
-    var panel     = document.getElementById('accountCatDropdownPanel');
-    var searchBox = document.getElementById('accountCatSearchBox');
-    if (!input || !panel) return;
-    input.addEventListener('click', function (e) {
-        e.stopPropagation();
-        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-        if (panel.style.display === 'block' && searchBox) { searchBox.value = ''; filterAccountCatRows(''); searchBox.focus(); }
-    });
-    if (searchBox) {
-        searchBox.addEventListener('click', function (e) { e.stopPropagation(); });
-        searchBox.addEventListener('input', function () { filterAccountCatRows(this.value.toLowerCase()); });
-    }
-    document.querySelectorAll('#accountCatDropdownBody tr').forEach(function (row) {
-        row.addEventListener('click', function () {
-            var cat = this.getAttribute('data-value');
+    initSearchableDropdown({
+        inputId: 'accountCatSelect',
+        panelId: 'accountCatDropdownPanel',
+        searchBoxId: 'accountCatSearchBox',
+        rowsSelector: '#accountCatDropdownBody tr',
+        filterRows: filterAccountCatRows,
+        onRowSelect: function (row, input) {
+            var cat = row.getAttribute('data-value');
             input.value = cat;
             document.getElementById('AccountCat').value = cat;
-            panel.style.display = 'none';
-        });
-        row.addEventListener('mouseenter', function () { this.style.backgroundColor = '#f3f2f1'; });
-        row.addEventListener('mouseleave', function () { this.style.backgroundColor = ''; });
+        }
     });
-    document.addEventListener('click', function (e) {
-        if (input && panel && !input.contains(e.target) && !panel.contains(e.target)) panel.style.display = 'none';
-    });
+
     var costInput = document.getElementById('CostEntered');
     if (costInput) {
         ['input', 'change', 'keyup', 'keydown', 'paste'].forEach(function (evt) {
@@ -971,11 +1016,11 @@ function filterAccountCatRows(term) {
     });
 }
 function syncItemCost() {
-    var costEl     = document.getElementById('CostEntered');
+    var costEl = document.getElementById('CostEntered');
     var itemCostEl = document.getElementById('ItemCost');
     if (!costEl || !itemCostEl) return;
     var costStr = costEl.value.trim();
-    var cost    = parseFloat(costStr);
+    var cost = parseFloat(costStr);
     itemCostEl.value = (costStr !== '' && !isNaN(cost)) ? cost.toFixed(2) : '';
 }
 
@@ -983,7 +1028,7 @@ function syncItemCost() {
 function _showModalErrors(errors, $modal) {
     displayServerValidationErrors(errors, 'Please correct the errors below.', $modal);
     var $summary = $modal.find('.govuk-error-summary');
-    var $list    = $summary.find('.govuk-error-summary__list');
+    var $list = $summary.find('.govuk-error-summary__list');
     $summary.find('.govuk-error-summary__title').text('There is a problem');
     errors.forEach(function (e) {
         if ($list.find('a[href="#' + e.field + '"]').length === 0) {

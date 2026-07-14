@@ -3528,6 +3528,10 @@ body,
     width:350px;
 }
 
+.width-200 {
+    width: 200px;
+}
+
 .trl-intro-block {
     margin-bottom: 6px;
 }
@@ -3787,6 +3791,7 @@ body,
     }
 }
 
+
 /* ===== Maintain User Permissions ===== */
 .fps-mup-page {
     padding: 0 8px 8px 8px;
@@ -4029,3 +4034,6 @@ body,
     }
 }
 
+.text-AlignRight {
+    text-align: right;
+}

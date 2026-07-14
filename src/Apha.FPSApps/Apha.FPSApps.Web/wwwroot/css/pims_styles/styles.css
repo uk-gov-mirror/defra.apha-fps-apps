@@ -2958,3 +2958,11 @@ th.sorted-desc {
     height: 250px !important;
     max-height: 250px !important;
 }
+
+.isProjectList {
+    .editable-grid-table td {
+        width: calc(100%/4) !important;
+    }
+}
+
+

@@ -1,0 +1,929 @@
+@using Apha.FPSApps.Web.Models.Components.DataGrid
+@model Apha.FPSApps.Web.Areas.CostBook.Models.MaintenanceViewModel
+
+@{
+    ViewData["Title"] = "Costbook : Maintenance Screen";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/common/_govuk_tabs.css" />
+}
+
+<div class="govuk-template__body govuk-frontend-supported project-requirement-page">
+    <div class="govuk-grid-row sup_margin_left_right_0">
+        <div class="govuk-grid-column-full sup_border-bottom">
+            <h1 class="govuk-heading-s sup_margin_0 govuk-grid-row govuk-!-padding-top-2">
+                Maintenance Screen
+                <a asp-area="CostBook" asp-controller="Home" asp-action="Index"
+                   class="govuk-back-link sup_align_right">Back</a>
+            </h1>
+        </div>
+    </div>
+
+    <div class="sup_flex">
+        <div class="govuk-grid-row sup_margin_left_right_0">
+            <div class="govuk-grid-column-full sup_p_0">
+                <div class="main-content-cs">
+                    <div class="govuk-tabs" data-module="govuk-tabs">
+                        <ul class="govuk-tabs__list" role="tablist" aria-label="Costbook Maintainance tabs">
+
+                            <li class="govuk-tabs__list-item govuk-tabs__list-item--selected" role="presentation">
+                                <a class="govuk-tabs__tab" href="#tab-inflation" id="tab-link-inflation"
+                                   role="tab" aria-controls="tab-inflation" aria-selected="true" tabindex="0">
+                                    Inflation
+                                </a>
+                            </li>
+
+                            <li class="govuk-tabs__list-item" role="presentation">
+                                <a class="govuk-tabs__tab" href="#tab-account-categories"
+                                   id="tab-link-account-categories" role="tab"
+                                   aria-controls="tab-account-categories" aria-selected="false" tabindex="-1">
+                                    Account Categories
+                                </a>
+                            </li>
+
+                            <li class="govuk-tabs__list-item" role="presentation">
+                                <a class="govuk-tabs__tab" href="#tab-csg7" id="tab-link-csg7"
+                                   role="tab" aria-controls="tab-csg7" aria-selected="false" tabindex="-1">
+                                    CSG7 Inflation Options
+                                </a>
+                            </li>
+
+                            <li class="govuk-tabs__list-item" role="presentation">
+                                <a class="govuk-tabs__tab" href="#tab-profit-margins" id="tab-link-profit-margins"
+                                   role="tab" aria-controls="tab-profit-margins" aria-selected="false" tabindex="-1">
+                                    Profit Margins
+                                </a>
+                            </li>
+
+                            <li class="govuk-tabs__list-item" role="presentation">
+                                <a class="govuk-tabs__tab" href="#tab-caps-staff" id="tab-link-caps-staff"
+                                   role="tab" aria-controls="tab-caps-staff" aria-selected="false" tabindex="-1">
+                                    CAPS Staff
+                                </a>
+                            </li>
+
+                        </ul>
+
+                        @* ── TAB 1 — Inflation ──────────────────────────────────────────────── *@
+                        <section id="tab-inflation" class="govuk-tabs__panel active" role="tabpanel"
+                                 aria-labelledby="tab-link-inflation">
+                            <form id="formInflation" novalidate>
+                                @Html.AntiForgeryToken()
+
+                                <div id="formInflation-db-error" class="govuk-error-summary" role="alert"
+                                     aria-labelledby="formInflation-db-error-title" tabindex="-1" style="display:none;">
+                                    <h2 class="govuk-error-summary__title" id="formInflation-db-error-title">
+                                        There is a problem</h2>
+                                    <div class="govuk-error-summary__body">
+                                        <ul class="govuk-list govuk-error-summary__list"></ul>
+                                    </div>
+                                </div>
+
+                                <p class="govuk-body govuk-!-font-weight-bold govuk-!-font-size-16 maint-intro-text">
+                                    Set Inflation figures etc.
+                                </p>
+
+                                <div class="govuk-grid-row">
+
+                                    <div class="govuk-grid-column-one-half govuk-!-static-padding-right-0">
+                                        <div class="maint-panel">
+                                            <p class="govuk-!-font-size-16 govuk-!-font-weight-bold maint-panel-subheading">
+                                                % Inflation Figures
+                                            </p>
+                                            <p class="govuk-body maint-hint-text">(to set inflation at 2.5% enter 2.5)</p>
+
+                                            <div class="govuk-form-group maint-inline-form-group" id="fg-inflAnimals">
+                                                <div class="maint-field-row">
+                                                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16 maint-field-label"
+                                                           for="inflAnimals">
+                                                        Animals <span aria-hidden="true" class="app-required">*</span>
+                                                    </label>
+                                                    <input class="govuk-input govuk-!-font-size-16 govuk-input--width-10"
+                                                           asp-for="InflationAnimals"
+                                                           id="inflAnimals" name="inflAnimals" type="text"
+                                                           required aria-required="true"
+                                                           aria-describedby="inflAnimals-error" />
+                                                </div>
+                                                <span id="inflAnimals-error" data-valmsg-for="inflAnimals" class="govuk-error-message field-validation-valid" style="display:none;"></span>
+                                            </div>
+
+                                            <div class="govuk-form-group maint-inline-form-group" id="fg-inflExceptionalCosts">
+                                                <div class="maint-field-row">
+                                                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16 maint-field-label"
+                                                           for="inflExceptionalCosts">
+                                                        Exceptional Costs <span aria-hidden="true" class="app-required">*</span>
+                                                    </label>
+                                                    <input class="govuk-input govuk-!-font-size-16 govuk-input--width-10"
+                                                           asp-for="InflationExceptionalCosts"
+                                                           id="inflExceptionalCosts" name="inflExceptionalCosts" type="text"
+                                                           required aria-required="true"
+                                                           aria-describedby="inflExceptionalCosts-error" />
+                                                </div>
+                                                <span id="inflExceptionalCosts-error" data-valmsg-for="inflExceptionalCosts" class="govuk-error-message field-validation-valid" style="display:none;"></span>
+                                            </div>
+
+                                            <div class="govuk-form-group maint-inline-form-group" id="fg-inflStaff">
+                                                <div class="maint-field-row">
+                                                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16 maint-field-label"
+                                                           for="inflStaff">
+                                                        Staff <span aria-hidden="true" class="app-required">*</span>
+                                                    </label>
+                                                    <input class="govuk-input govuk-!-font-size-16 govuk-input--width-10"
+                                                           asp-for="InflationStaff"
+                                                           id="inflStaff" name="inflStaff" type="text"
+                                                           required aria-required="true"
+                                                           aria-describedby="inflStaff-error" />
+                                                </div>
+                                                <span id="inflStaff-error" data-valmsg-for="inflStaff" class="govuk-error-message field-validation-valid" style="display:none;"></span>
+                                            </div>
+
+                                            <div class="govuk-form-group maint-inline-form-group" id="fg-inflTests">
+                                                <div class="maint-field-row">
+                                                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16 maint-field-label"
+                                                           for="inflTests">
+                                                        Tests <span aria-hidden="true" class="app-required">*</span>
+                                                    </label>
+                                                    <input class="govuk-input govuk-!-font-size-16 govuk-input--width-10"
+                                                           asp-for="InflationTests"
+                                                           id="inflTests" name="inflTests" type="text"
+                                                           required aria-required="true"
+                                                           aria-describedby="inflTests-error" />
+                                                </div>
+                                                <span id="inflTests-error" data-valmsg-for="inflTests" class="govuk-error-message field-validation-valid" style="display:none;"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="govuk-grid-column-one-half">
+                                        <div class="maint-panel">
+                                            <p class="govuk-!-font-size-16 govuk-!-font-weight-bold">
+                                                Other Figures
+                                            </p>
+
+                                            <div class="govuk-form-group maint-inline-form-group" id="fg-inflCurrentFinancialYear">
+                                                <div class="maint-field-row maint-field-row--top-spaced">
+                                                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16 maint-field-label"
+                                                           for="inflCurrentFinancialYear">
+                                                        Current Financial Year <span aria-hidden="true" class="app-required">*</span>
+                                                    </label>
+                                                    <input class="govuk-input govuk-!-font-size-16 govuk-input--width-10"
+                                                           asp-for="CurrentFinancialYear"
+                                                           id="inflCurrentFinancialYear" name="inflCurrentFinancialYear" type="text"
+                                                           maxlength="4"
+                                                           required aria-required="true"
+                                                           aria-describedby="inflCurrentFinancialYear-error" />
+                                                </div>
+                                                <span id="inflCurrentFinancialYear-error" data-valmsg-for="inflCurrentFinancialYear" class="govuk-error-message field-validation-valid" style="display:none;"></span>
+                                            </div>
+
+                                            <p class="govuk-body maint-hint-text">
+                                                Changing this figure, links the lookup tables to the relevant
+                                                version of FPS. Do not attempt to use on versions of FPS before 2001.
+                                            </p>
+
+                                            <div class="govuk-form-group maint-inline-form-group" id="fg-inflWorkingHoursInDay">
+                                                <div class="maint-field-row">
+                                                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16 maint-field-label"
+                                                           for="inflWorkingHoursInDay">
+                                                        Working Hours in Day <span aria-hidden="true" class="app-required">*</span>
+                                                    </label>
+                                                    <input class="govuk-input govuk-!-font-size-16 govuk-input--width-10"
+                                                           asp-for="WorkingHoursInDay"
+                                                           id="inflWorkingHoursInDay" name="inflWorkingHoursInDay" type="text"
+                                                           required aria-required="true"
+                                                           aria-describedby="inflWorkingHoursInDay-error" />
+                                                </div>
+                                                <span id="inflWorkingHoursInDay-error" data-valmsg-for="inflWorkingHoursInDay" class="govuk-error-message field-validation-valid" style="display:none;"></span>
+                                            </div>
+
+                                           
+                                            <div class="govuk-form-group maint-inline-form-group" id="fg-inflWorkingDaysInYear">
+                                                <div class="maint-field-row">
+                                                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16 maint-field-label"
+                                                           for="inflWorkingDaysInYear">
+                                                        Working Days in Year <span aria-hidden="true" class="app-required">*</span>
+                                                    </label>
+                                                    <input class="govuk-input govuk-!-font-size-16 govuk-input--width-10"
+                                                           asp-for="WorkingDaysInYear"
+                                                           id="inflWorkingDaysInYear" name="inflWorkingDaysInYear" type="text"
+                                                           required aria-required="true"
+                                                           aria-describedby="inflWorkingDaysInYear-error" />
+                                                </div>
+                                                <span id="inflWorkingDaysInYear-error" data-valmsg-for="inflWorkingDaysInYear" class="govuk-error-message field-validation-valid" style="display:none;"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                <div class="maint-btn-group-end">
+                                    <button type="button" class="govuk-button govuk-button--secondary"
+                                            data-module="govuk-button" id="btnInflationCancel">
+                                        Cancel
+                                    </button>
+                                    <button type="submit" class="govuk-button" data-module="govuk-button">
+                                        Save
+                                    </button>
+                                </div>
+                            </form>
+
+                        </section>
+                      
+
+                        @* ── TAB 2 — Account Categories ──────────────────────────────────────── *@
+                        <section id="tab-account-categories" class="govuk-tabs__panel" role="tabpanel"
+                                 aria-labelledby="tab-link-account-categories">
+
+                            <div class="govuk-grid-row sup_margin_left_right_0 sup_margin_bottom_10">
+                                <div class="govuk-grid-column-full sup_p_0">
+                                    <div id="gridContainer_accCatGrid">
+                                        @await Html.PartialAsync("_DataGrid", Model.AccountCategoryGrid)
+                                    </div>
+                                </div>
+                            </div>
+
+                            <p class="govuk-body maint-grid-footnote">
+                                These are linked to the FPS, but the groups can be modified here.
+                            </p>
+
+                        </section>
+                        
+                        <section id="tab-csg7" class="govuk-tabs__panel" role="tabpanel"
+                                 aria-labelledby="tab-link-csg7">
+
+                            <div>
+                                <div class="govuk-grid-row sup_margin_left_right_0 sup_margin_bottom_10">
+                                    <div class="govuk-grid-column-full sup_p_0">
+                                        <div id="gridContainer_csg7Grid">
+                                            @await Html.PartialAsync("_DataGrid", Model.Csg7GroupGrid)
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <p class="govuk-body maint-grid-footnote">
+                                    If inflation is set on for a CSG7 group, it will only take effect if
+                                    inflation is set on for that project.
+                                </p>
+                            </div>
+
+                        </section>
+                       
+
+                        @* ── TAB 4 — Profit Margins ──────────────────────────────────────────── *@
+                        <section id="tab-profit-margins" class="govuk-tabs__panel" role="tabpanel"
+                                 aria-labelledby="tab-link-profit-margins">
+
+                            <form id="formProfitMargins" novalidate>
+                                @Html.AntiForgeryToken()
+
+                               
+                                <div id="formProfitMargins-db-error" class="govuk-error-summary" role="alert"
+                                     aria-labelledby="formProfitMargins-db-error-title" hidden>
+                                    <h2 class="govuk-error-summary__title" id="formProfitMargins-db-error-title">
+                                        There is a problem</h2>
+                                    <div class="govuk-error-summary__body">
+                                        <ul class="govuk-list govuk-error-summary__list"></ul>
+                                    </div>
+                                </div>
+
+                                <p class="govuk-body govuk-!-font-weight-bold govuk-!-font-size-16 maint-intro-text">
+                                    These apply only to commercial programme projects.
+                                </p>
+
+                                <div class="govuk-grid-row">
+                                    <div class="govuk-grid-column-full">
+                                        <div class="maint-panel">
+                                            <h2 class="govuk-heading-s">% Profit Figures</h2>
+                                            <p class="govuk-body govuk-!-font-size-16">(to set profit at 2.5% enter 2.5)</p>
+
+                                            
+                                            <div class="govuk-form-group maint-inline-form-group" id="fg-profitAnimals">
+                                                <div class="maint-field-row">
+                                                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16 maint-field-label"
+                                                           for="profitAnimals">
+                                                        Animals <span aria-hidden="true" class="app-required">*</span>
+                                                    </label>
+                                                    <input class="govuk-input govuk-!-font-size-16 govuk-input--width-10"
+                                                           asp-for="ProfitAnimals"
+                                                           id="profitAnimals" name="profitAnimals" type="text"
+                                                           required aria-required="true"
+                                                           aria-describedby="profitAnimals-error" />
+                                                </div>
+                                                <span id="profitAnimals-error" data-valmsg-for="profitAnimals" class="govuk-error-message field-validation-valid" style="display:none;"></span>
+                                            </div>
+
+                                          
+                                            <div class="govuk-form-group maint-inline-form-group" id="fg-profitExceptionalCosts">
+                                                <div class="maint-field-row">
+                                                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16 maint-field-label"
+                                                           for="profitExceptionalCosts">
+                                                        Exceptional Costs <span aria-hidden="true" class="app-required">*</span>
+                                                    </label>
+                                                    <input class="govuk-input govuk-!-font-size-16 govuk-input--width-10"
+                                                           asp-for="ProfitExceptionalCosts"
+                                                           id="profitExceptionalCosts" name="profitExceptionalCosts" type="text"
+                                                           required aria-required="true"
+                                                           aria-describedby="profitExceptionalCosts-error" />
+                                                </div>
+                                                <span id="profitExceptionalCosts-error" data-valmsg-for="profitExceptionalCosts" class="govuk-error-message field-validation-valid" style="display:none;"></span>
+                                            </div>
+
+                                            
+                                            <div class="govuk-form-group maint-inline-form-group" id="fg-profitStaff">
+                                                <div class="maint-field-row">
+                                                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16 maint-field-label"
+                                                           for="profitStaff">
+                                                        Staff <span aria-hidden="true" class="app-required">*</span>
+                                                    </label>
+                                                    <input class="govuk-input govuk-!-font-size-16 govuk-input--width-10"
+                                                           asp-for="ProfitStaff"
+                                                           id="profitStaff" name="profitStaff" type="text"
+                                                           required aria-required="true"
+                                                           aria-describedby="profitStaff-error" />
+                                                </div>
+                                                <span id="profitStaff-error" data-valmsg-for="profitStaff" class="govuk-error-message field-validation-valid" style="display:none;"></span>
+                                            </div>
+
+                                            
+                                            <div class="govuk-form-group maint-inline-form-group" id="fg-profitTests">
+                                                <div class="maint-field-row">
+                                                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16 maint-field-label"
+                                                           for="profitTests">
+                                                        Tests <span aria-hidden="true" class="app-required">*</span>
+                                                    </label>
+                                                    <input class="govuk-input govuk-!-font-size-16 govuk-input--width-10"
+                                                           asp-for="ProfitTests"
+                                                           id="profitTests" name="profitTests" type="text"
+                                                           required aria-required="true"
+                                                           aria-describedby="profitTests-error" />
+                                                </div>
+                                                <span id="profitTests-error" data-valmsg-for="profitTests" class="govuk-error-message field-validation-valid" style="display:none;"></span>
+                                            </div>
+                                        </div>
+
+                                        <div class="maint-btn-group-end">
+                                            <button type="button" class="govuk-button govuk-button--secondary"
+                                                    data-module="govuk-button" id="btnProfitMarginsCancel">
+                                                Cancel
+                                            </button>
+                                            <button type="submit" class="govuk-button" data-module="govuk-button">
+                                                Save
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </form>
+
+                        </section>
+                     
+                        <section id="tab-caps-staff" class="govuk-tabs__panel" role="tabpanel"
+                                 aria-labelledby="tab-link-caps-staff">
+
+                            <div>
+                                <div class="govuk-grid-row sup_margin_left_right_0 sup_margin_bottom_10">
+                                    <div class="govuk-grid-column-full sup_p_0">
+                                        <div id="gridContainer_capsStaffGrid">
+                                            @await Html.PartialAsync("_DataGrid", Model.CapsStaffGrid)
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </section>
+                       
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+@section Scripts {
+    <script src="~/js/common/_govuk_tabs.js"></script>
+    <script src="~/js/ajax-form-validation.js"></script>
+
+    <script>
+        function isNumericValue(value) {
+        return value !== '' && !isNaN(parseFloat(value)) && isFinite(value);
+        }
+
+        // Validates a field as a positive decimal (no negatives, no alpha, no special chars).
+        // Returns an error message string if invalid, or null if valid.
+        function validatePositiveDecimalField(value, label, max) {
+        var trimmed = (value || '').trim();
+        if (trimmed === '') { return label + ' is required.'; }
+        if (!/^\d+(\.\d+)?$/.test(trimmed)) {
+        return label + ' must be a positive number (digits and decimal point only).';
+        }
+        var num = parseFloat(trimmed);
+        if (num > max) { return label + ' must not be greater than ' + max + '.'; }
+        return null;
+        }
+
+        function getAntiForgeryToken() {
+        var t = document.querySelector('input[name="__RequestVerificationToken"]');
+        return t ? t.value : '';
+        }
+
+        function showDbError(formId, message) {
+        var errDiv = document.getElementById(formId + '-db-error');
+        var errMsg = document.getElementById(formId + '-db-error-msg');
+        if (errDiv && errMsg) {
+        errMsg.textContent = message;
+        errDiv.removeAttribute('hidden');
+        }
+        }
+
+        function hideDbError(formId) {
+        var errDiv = document.getElementById(formId + '-db-error');
+        if (errDiv) { errDiv.setAttribute('hidden', ''); }
+        }
+
+        function showFieldError(fieldId, errorId, wrapId) {
+        var field = document.getElementById(fieldId);
+        var error = document.getElementById(errorId);
+        var wrap  = document.getElementById(wrapId);
+        if (field) { field.classList.add('govuk-input--error'); }
+        if (error) { error.removeAttribute('hidden'); }
+        if (wrap)  { wrap.classList.add('govuk-form-group--error'); }
+        }
+
+        function clearFieldError(fieldId, errorId, wrapId) {
+        var field = document.getElementById(fieldId);
+        var error = document.getElementById(errorId);
+        var wrap  = document.getElementById(wrapId);
+        if (field) { field.classList.remove('govuk-input--error'); }
+        if (error) { error.setAttribute('hidden', ''); }
+        if (wrap)  { wrap.classList.remove('govuk-form-group--error'); }
+        }
+
+        function clearFormErrors(formId) {
+        var form = document.getElementById(formId);
+        if (!form) return;
+
+        form.querySelectorAll('.govuk-input--error').forEach(function (el) {
+        el.classList.remove('govuk-input--error');
+        });
+
+        form.querySelectorAll('.govuk-error-message').forEach(function (el) {
+        el.setAttribute('hidden', '');
+        });
+
+        form.querySelectorAll('.govuk-form-group--error').forEach(function (el) {
+        el.classList.remove('govuk-form-group--error');
+        });
+
+        hideDbError(formId);
+        }
+
+        function closeModal() {
+        $('#modaPopupBody').html('');
+        $('#modalPopup').removeClass('show');
+        }
+
+        $(function () {
+        var gmAcc   = window['gridManager_accCatGrid'];
+        var gmCsg7  = window['gridManager_csg7Grid'];
+        var gmCaps  = window['gridManager_capsStaffGrid'];
+
+        if (gmAcc)  { gmAcc.reloadGrid({ page: 1 }); }
+        if (gmCsg7) { gmCsg7.reloadGrid({ page: 1 }); }
+        if (gmCaps) { gmCaps.reloadGrid({ page: 1 }); }
+        });
+
+        // -----------------------------
+        // ACCOUNT CATEGORY
+        // -----------------------------
+        function editAccountCategory(btn) {
+        var accShortName = $(btn).data('id');
+
+        $.get('@Url.Action("EditAccountCategory", "Maintenance", new { area = "CostBook" })',
+        { accShortName: accShortName },
+        function (html) {
+        $('#modaPopupBody').html(html);
+        $('#modalPopup').addClass('show');
+        }
+        ).fail(function () {
+        showAlertMessage('Unable to load account category for editing.', AlertType.ERROR);
+        });
+        }
+
+        function saveAccountCategory() {
+        var $form  = $('#formTblAccCat');
+        var $modal = $('#modalPopup');
+
+        clearValidationErrors($modal);
+        if (!isFormValid($form)) {
+        displayClientValidationErrors($form, $modal);
+        return;
+        }
+
+        var accShortName = $('#hdnAccShortName').val();
+        var csg7Group    = $('#modal-acccat-csg7group').val();
+
+        var dto = { csg7Group: csg7Group };
+
+        var url = '@Url.Action("EditAccountCategory", "Maintenance", new { area = "CostBook" })?accShortName=' + encodeURIComponent(accShortName);
+
+        $.ajax({
+        url: url,
+        type: 'POST',
+        contentType: 'application/json; charset=utf-8',
+        data: JSON.stringify(dto),
+        headers: { 'RequestVerificationToken': getAntiForgeryToken() },
+
+        success: function (data) {
+        if (data.success) {
+        showAlertMessage(data.message || 'Account category updated successfully.', AlertType.SUCCESS);
+        closeModal();
+        reloadAccCatGrid();
+        } else {
+        displayServerValidationErrors(data.errors, data.message || 'Save failed.', $modal);
+        }
+        },
+        error: function () {
+        showAlertMessage('An error occurred while saving.', AlertType.ERROR);
+        }
+        });
+        }
+
+        function reloadAccCatGrid() {
+        var gm = window['gridManager_accCatGrid'];
+        if (gm) { gm.reloadGrid({ page: 1 }); }
+        }
+
+        // -----------------------------
+        // CSG7 GROUP
+        // -----------------------------
+        function addCsg7Group() {
+        $.get('@Url.Action("CreateCsg7Group", "Maintenance", new { area = "CostBook" })',
+        function (html) {
+        $('#modaPopupBody').html(html);
+        $('#modalPopup').addClass('show');
+        }
+        ).fail(function () {
+        showAlertMessage('Unable to load add CSG7 Group form.', AlertType.ERROR);
+        });
+        }
+
+        function editCsg7Group(btn) {
+        var csg7Group = $(btn).data('id');
+
+        $.get('@Url.Action("EditCsg7Group", "Maintenance", new { area = "CostBook" })',
+        { csg7Group: csg7Group },
+        function (html) {
+        $('#modaPopupBody').html(html);
+        $('#modalPopup').addClass('show');
+        }
+        ).fail(function () {
+        showAlertMessage('Unable to load CSG7 Group for editing.', AlertType.ERROR);
+        });
+        }
+
+        function deleteCsg7Group(btn) {
+        var csg7Group = $(btn).data('id');
+
+        showGovukConfirm('Are you sure you want to delete this CSG7 group?')
+        .then(function (confirmed) {
+        if (!confirmed) return;
+
+        $.ajax({
+        url: '@Url.Action("DeleteCsg7Group", "Maintenance", new { area = "CostBook" })?csg7Group=' + encodeURIComponent(csg7Group),
+        type: 'DELETE',
+        headers: { 'RequestVerificationToken': getAntiForgeryToken() },
+
+        success: function (data) {
+        if (data.success) {
+        showAlertMessage('CSG7 group deleted successfully.', AlertType.SUCCESS);
+        reloadCsg7Grid();
+        } else {
+        showAlertMessage('Error: ' + (data.message || 'Delete failed.'), AlertType.ERROR);
+        }
+        },
+        error: function () {
+        showAlertMessage('An error occurred while deleting.', AlertType.ERROR);
+        }
+        });
+        });
+        }
+
+        function saveCsg7Group() {
+        var $form  = $('#formTblCsg7');
+        var $modal = $('#modalPopup');
+
+        clearValidationErrors($modal);
+        if (!isFormValid($form)) {
+        displayClientValidationErrors($form, $modal);
+        return;
+        }
+
+        var isEdit    = $('#hdnCsg7IsEdit').val() === 'true';
+        var csg7Group = isEdit ? $('#hdnCsg7Original').val() : $('#modal-csg7-group').val();
+        var useInfl   = $('#modal-csg7-useinflation').is(':checked');
+
+        var dto = { csg7Group: csg7Group, useInflation: useInfl };
+
+        var url = isEdit
+        ? '@Url.Action("EditCsg7Group", "Maintenance", new { area = "CostBook" })?csg7Group=' + encodeURIComponent($('#hdnCsg7Original').val())
+        : '@Url.Action("CreateCsg7Group", "Maintenance", new { area = "CostBook" })';
+
+        $.ajax({
+        url: url,
+        type: 'POST',
+        contentType: 'application/json; charset=utf-8',
+        data: JSON.stringify(dto),
+        headers: { 'RequestVerificationToken': getAntiForgeryToken() },
+
+        success: function (data) {
+        if (data.success) {
+        showAlertMessage(data.message || 'CSG7 group saved successfully.', AlertType.SUCCESS);
+        closeModal();
+        reloadCsg7Grid();
+        } else {
+        displayServerValidationErrors(data.errors, data.message || 'Save failed.', $modal);
+        }
+        },
+        error: function () {
+        showAlertMessage('An error occurred while saving.', AlertType.ERROR);
+        }
+        });
+        }
+
+        function reloadCsg7Grid() {
+        var gm = window['gridManager_csg7Grid'];
+        if (gm) { gm.reloadGrid({ page: 1 }); }
+        }
+
+        // -----------------------------
+        // CAPS STAFF
+        // -----------------------------
+        function addCapsStaff() {
+        $.get('@Url.Action("CreateCapsStaff", "Maintenance", new { area = "CostBook" })',
+        function (html) {
+        $('#modaPopupBody').html(html);
+        $('#modalPopup').addClass('show');
+        }
+        ).fail(function () {
+        showAlertMessage('Unable to load add staff member form.', AlertType.ERROR);
+        });
+        }
+
+        function editCapsStaff(btn) {
+        var mNumber = $(btn).data('id');
+
+        $.get('@Url.Action("EditCapsStaff", "Maintenance", new { area = "CostBook" })',
+        { mNumber: mNumber },
+        function (html) {
+        $('#modaPopupBody').html(html);
+        $('#modalPopup').addClass('show');
+        }
+        ).fail(function () {
+        showAlertMessage('Unable to load staff member for editing.', AlertType.ERROR);
+        });
+        }
+
+        function deleteCapsStaff(btn) {
+        var mNumber = $(btn).data('id');
+
+        showGovukConfirm('Are you sure you want to delete this staff member?')
+        .then(function (confirmed) {
+        if (!confirmed) return;
+
+        $.ajax({
+        url: '@Url.Action("DeleteCapsStaff", "Maintenance", new { area = "CostBook" })?mNumber=' + encodeURIComponent(mNumber),
+        type: 'DELETE',
+        headers: { 'RequestVerificationToken': getAntiForgeryToken() },
+
+        success: function (data) {
+        if (data.success) {
+        showAlertMessage('Staff member deleted successfully.', AlertType.SUCCESS);
+        reloadCapsStaffGrid();
+        } else {
+        showAlertMessage('Error: ' + (data.message || 'Delete failed.'), AlertType.ERROR);
+        }
+        },
+        error: function () {
+        showAlertMessage('An error occurred while deleting.', AlertType.ERROR);
+        }
+        });
+        });
+        }
+
+        function saveCapsStaff() {
+        var $form  = $('#formTblCapsStaff');
+        var $modal = $('#modalPopup');
+
+        clearValidationErrors($modal);
+        if (!isFormValid($form)) {
+        displayClientValidationErrors($form, $modal);
+        return;
+        }
+
+        var isEdit  = $('#hdnCapsStaffIsEdit').val() === 'true';
+        var mNumber = isEdit ? $('#hdnCapsStaffOriginal').val() : $('#modal-capsstaff-mnumber').val();
+        var name    = $('#modal-capsstaff-name').val();
+
+        var dto = { mNumber: mNumber, name: name };
+
+        var url = isEdit
+        ? '@Url.Action("EditCapsStaff", "Maintenance", new { area = "CostBook" })?mNumber=' + encodeURIComponent($('#hdnCapsStaffOriginal').val())
+        : '@Url.Action("CreateCapsStaff", "Maintenance", new { area = "CostBook" })';
+
+        $.ajax({
+        url: url,
+        type: 'POST',
+        contentType: 'application/json; charset=utf-8',
+        data: JSON.stringify(dto),
+        headers: { 'RequestVerificationToken': getAntiForgeryToken() },
+
+        success: function (data) {
+        if (data.success) {
+        showAlertMessage(data.message || 'Staff member saved successfully.', AlertType.SUCCESS);
+        closeModal();
+        reloadCapsStaffGrid();
+        } else {
+        displayServerValidationErrors(data.errors, data.message || 'Save failed.', $modal);
+        }
+        },
+        error: function () {
+        showAlertMessage('An error occurred while saving.', AlertType.ERROR);
+        }
+        });
+        }
+
+        function reloadCapsStaffGrid() {
+        var gm = window['gridManager_capsStaffGrid'];
+        if (gm) { gm.reloadGrid({ page: 1 }); }
+        }
+
+        // -----------------------------
+        // INFATION SETTINGS
+        // -----------------------------
+        (function () {
+        var $form = $('#formInflation');
+
+        var cancelBtn = document.getElementById('btnInflationCancel');
+        if (cancelBtn) {
+        cancelBtn.addEventListener('click', function () {
+        clearValidationErrors($form);
+        document.getElementById('formInflation').reset();
+        });
+        }
+
+        var form = document.getElementById('formInflation');
+        if (form) {
+        form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        clearValidationErrors($form);
+
+        if (!isFormValid($form)) {
+        displayClientValidationErrors($form, $form);
+        return;
+        }
+
+        // Validate inflation percentage fields: positive decimals only, max 999.99
+        var inflFieldErrors = [];
+        var inflFields = [
+        { id: 'inflAnimals',           errorId: 'inflAnimals-error',           wrapId: 'fg-inflAnimals',           label: 'Animals' },
+        { id: 'inflExceptionalCosts',  errorId: 'inflExceptionalCosts-error',  wrapId: 'fg-inflExceptionalCosts',  label: 'Exceptional Costs' },
+        { id: 'inflStaff',             errorId: 'inflStaff-error',             wrapId: 'fg-inflStaff',             label: 'Staff' },
+        { id: 'inflTests',             errorId: 'inflTests-error',             wrapId: 'fg-inflTests',             label: 'Tests' }
+        ];
+        inflFields.forEach(function (f) {
+        var val = document.getElementById(f.id) ? document.getElementById(f.id).value : '';
+        var msg = validatePositiveDecimalField(val, f.label, 999.99);
+        if (msg) {
+        inflFieldErrors.push({ field: f.id, message: msg });
+        var errEl = document.getElementById(f.errorId);
+        var wrapEl = document.getElementById(f.wrapId);
+        var inputEl = document.getElementById(f.id);
+        if (errEl) { errEl.textContent = 'Error: ' + msg; errEl.style.display = ''; }
+        if (wrapEl) { wrapEl.classList.add('govuk-form-group--error'); }
+        if (inputEl) { inputEl.classList.add('govuk-input--error'); }
+        }
+        });
+        if (inflFieldErrors.length > 0) { return; }
+
+        var yearVal = (document.getElementById('inflCurrentFinancialYear').value || '').trim();
+        var yearNum = parseInt(yearVal, 10);
+        if (!/^\d{4}$/.test(yearVal) || yearNum < 2001 || yearNum > 2100) {
+        displayServerValidationErrors(
+        [{ field: 'inflCurrentFinancialYear', message: 'Enter a valid 4-digit year between 2001 and 2100' }],
+        'There is a problem', $form);
+        return;
+        }
+
+        var dto = {
+        inflationAnimals: parseFloat(document.getElementById('inflAnimals').value),
+        inflationExceptionalCosts: parseFloat(document.getElementById('inflExceptionalCosts').value),
+        inflationStaff: parseFloat(document.getElementById('inflStaff').value),
+        inflationTests: parseFloat(document.getElementById('inflTests').value),
+        currentFinancialYear: yearNum,
+        workingHoursInDay: parseFloat(document.getElementById('inflWorkingHoursInDay').value),
+        workingDaysInYear: parseFloat(document.getElementById('inflWorkingDaysInYear').value)
+        };
+
+        $.ajax({
+        url: '@Url.Action("SaveInflationSettings", "Maintenance", new { area = "CostBook" })',
+        type: 'POST',
+        contentType: 'application/json; charset=utf-8',
+        data: JSON.stringify(dto),
+        headers: { 'RequestVerificationToken': getAntiForgeryToken() },
+
+        success: function (data) {
+        if (data.success) {
+        showAlertMessage(data.message || 'Inflation values saved successfully.', AlertType.SUCCESS);
+        } else {
+        displayServerValidationErrors(data.errors, data.message || 'Save failed.', $form);
+        }
+        },
+        error: function () {
+        showAlertMessage('An error occurred while saving inflation values.', AlertType.ERROR);
+        }
+        });
+        });
+        }
+        })();
+
+        // -----------------------------
+        // PROFIT MARGINS
+        // -----------------------------
+        (function () {
+        var $form = $('#formProfitMargins');
+
+        var cancelBtn = document.getElementById('btnProfitMarginsCancel');
+        if (cancelBtn) {
+        cancelBtn.addEventListener('click', function () {
+        clearValidationErrors($form);
+        document.getElementById('formProfitMargins').reset();
+        });
+        }
+
+        var form = document.getElementById('formProfitMargins');
+        if (form) {
+        form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        clearValidationErrors($form);
+
+        if (!isFormValid($form)) {
+        displayClientValidationErrors($form, $form);
+        return;
+        }
+
+        // Validate profit margin fields: positive decimals only, max 999.99
+        var profitFieldErrors = [];
+        var profitFields = [
+        { id: 'profitAnimals',          errorId: 'profitAnimals-error',          wrapId: 'fg-profitAnimals',          label: 'Animals' },
+        { id: 'profitExceptionalCosts', errorId: 'profitExceptionalCosts-error', wrapId: 'fg-profitExceptionalCosts', label: 'Exceptional Costs' },
+        { id: 'profitStaff',            errorId: 'profitStaff-error',            wrapId: 'fg-profitStaff',            label: 'Staff' },
+        { id: 'profitTests',            errorId: 'profitTests-error',            wrapId: 'fg-profitTests',            label: 'Tests' }
+        ];
+        profitFields.forEach(function (f) {
+        var val = document.getElementById(f.id) ? document.getElementById(f.id).value : '';
+        var msg = validatePositiveDecimalField(val, f.label, 999.99);
+        if (msg) {
+        profitFieldErrors.push({ field: f.id, message: msg });
+        var errEl = document.getElementById(f.errorId);
+        var wrapEl = document.getElementById(f.wrapId);
+        var inputEl = document.getElementById(f.id);
+        if (errEl) { errEl.textContent = 'Error: ' + msg; errEl.style.display = ''; }
+        if (wrapEl) { wrapEl.classList.add('govuk-form-group--error'); }
+        if (inputEl) { inputEl.classList.add('govuk-input--error'); }
+        }
+        });
+        if (profitFieldErrors.length > 0) { return; }
+
+        var dto = {
+        profitAnimals: parseFloat(document.getElementById('profitAnimals').value),
+        profitExceptionalCosts: parseFloat(document.getElementById('profitExceptionalCosts').value),
+        profitStaff: parseFloat(document.getElementById('profitStaff').value),
+        profitTests: parseFloat(document.getElementById('profitTests').value)
+        };
+
+        $.ajax({
+        url: '@Url.Action("SaveProfitMargins", "Maintenance", new { area = "CostBook" })',
+        type: 'POST',
+        contentType: 'application/json; charset=utf-8',
+        data: JSON.stringify(dto),
+        headers: { 'RequestVerificationToken': getAntiForgeryToken() },
+
+        success: function (data) {
+        if (data.success) {
+        showAlertMessage(data.message || 'Profit margins saved successfully.', AlertType.SUCCESS);
+        } else {
+        displayServerValidationErrors(data.errors, data.message || 'Save failed.', $form);
+        }
+        },
+        error: function () {
+        showAlertMessage('An error occurred while saving profit margins.', AlertType.ERROR);
+        }
+        });
+        });
+        }
+        })();
+    </script>
+}

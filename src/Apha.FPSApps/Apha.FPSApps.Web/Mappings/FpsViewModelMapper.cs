@@ -67,7 +67,6 @@ namespace Apha.FPSApps.Web.Mappings
             CreateMap<ProjectProfitabilityDto, ProjectProfitabilityItem>().ReverseMap();
 
             // ProjectProfitabilityVla
-            // TRANSFORMENGINE: convention-mapped — all property names on ProjectProfitabilityVlaItem
             //   are expected to match ProjectProfitabilityVlaDto exactly (JobCode, Program, Customer,
             //   Manager, Status, StaffCosts, TestCost, AnimalCosts, AdditionalCosts, TotalCosts,
             //   Budget, Profit, TargetProfit, OffTarget, Id).
@@ -103,6 +102,8 @@ namespace Apha.FPSApps.Web.Mappings
                 .ForMember(d => d.StaffId, o => o.MapFrom(s => s.StaffID))
                 .ReverseMap();
 
+            // Contribution Summary — row grid item
+            CreateMap<ContributionSummaryRowDto, ContributionSummaryRowItem>().ReverseMap();
             // Total Business Overheads
             CreateMap<TotalBusinessOverheadsViewModel, TotalBusinessOverheadsDto>().ReverseMap();
 
@@ -114,6 +115,29 @@ namespace Apha.FPSApps.Web.Mappings
                 .ForMember(d => d.OracleProjectCode, o => o.MapFrom(s => s.OracleProjectCode))
                 .ForMember(d => d.SubAccountCode, o => o.MapFrom(s => s.SubAccountCode))
                 .ReverseMap();
+
+            // all 5 *LogItem ViewModel types are created in Phase 11.
+            // Audit log items are read-only grid rows — .ReverseMap() is intentionally omitted.
+
+            // UserEmail is NOT in ProjectLogDto (requires backend UserId→email resolution); Ignore() it.
+            CreateMap<ProjectLogDto, ProjectLogItem>()
+                .ForMember(d => d.UserEmail, o => o.Ignore());
+
+            // UserEmail is NOT in StaffJobLogDto (requires UserId→email resolution); Ignore() it.
+            CreateMap<StaffJobLogDto, StaffJobLogItem>()
+                .ForMember(d => d.UserEmail, o => o.Ignore());
+
+            // UserEmail is NOT in TestRequirementLogDto (requires UserId→email resolution); Ignore() it.
+            CreateMap<TestRequirementLogDto, TestRequirementLogItem>()
+                .ForMember(d => d.UserEmail, o => o.Ignore());
+
+            // UserEmail is NOT in AnimalRequestLogDto (requires UserId→email resolution); Ignore() it.
+            CreateMap<AnimalRequestLogDto, AnimalRequestLogItem>()
+                .ForMember(d => d.UserEmail, o => o.Ignore());
+
+            // UserEmail is NOT in AdditionalCostLogDto (requires UserId→email resolution); Ignore() it.
+            CreateMap<AdditionalCostLogDto, AdditionalCostLogItem>()
+                .ForMember(d => d.UserEmail, o => o.Ignore());
         }
     }
 }

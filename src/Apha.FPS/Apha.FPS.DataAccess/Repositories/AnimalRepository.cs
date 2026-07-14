@@ -403,5 +403,34 @@ namespace Apha.FPS.DataAccess.Repositories
 
             return query;
         }
+
+        /// <summary>
+        /// Global total animal cost across all animal requests for the current FPS year.
+        /// Converted from the MS Access Form_Activate query used when SellingPC = "ASU":
+        /// SELECT Sum(tblAnimalReq.NumberOfDays * tblAnimalReq.NumberOfAnimals * tblAnimals.DailyRate)
+        /// FROM tblAnimals INNER JOIN tblAnimalReq ON tblAnimals.AnimalType = tblAnimalReq.AnimalType
+        ///
+        /// Two-step pattern: NumberOfDays and NumberOfAnimals are double precision; DailyRate is money
+        /// (decimal). Mixed-type arithmetic is performed in LINQ-to-Objects after materialisation to
+        /// avoid a double x decimal compile error inside the IQueryable projection.
+        /// </summary>
+        public async Task<decimal> GetGlobalAnimalCostAsync()
+        {
+            // Step 1 — IQueryable: fetch raw typed columns, no arithmetic
+            var raw = await (from req in _dbContext.AnimalRequests
+                             join animal in _dbContext.Animals
+                                 on req.AnimalType equals animal.AnimalType
+                             select new
+                             {
+                                 req.NumberOfDays,
+                                 req.NumberOfAnimals,
+                                 animal.DailyRate
+                             })
+                .AsNoTracking()
+                .ToListAsync();
+
+            // Step 2 — LINQ-to-Objects: safe mixed-type arithmetic after materialisation
+            return raw.Sum(x => (decimal)x.NumberOfDays * (decimal)x.NumberOfAnimals * (x.DailyRate ?? 0m));
+        }
     }
 }

@@ -263,7 +263,7 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PIMS.Controllers.ProjectListCon
             // Assert
             var viewResult = Assert.IsType<ViewResult>(result);
             var model = Assert.IsType<ProjectListViewModel>(viewResult.Model);
-            Assert.Equal("Select Project", model.ProjectGrid.Title);
+            Assert.Equal("Select a Project", model.ProjectGrid.Title);
         }
 
         [Fact]
@@ -840,7 +840,7 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PIMS.Controllers.ProjectListCon
             // Assert
             var partialViewResult = Assert.IsType<PartialViewResult>(result);
             var model = Assert.IsType<DataGridConfig<ProjectListItem>>(partialViewResult.Model);
-            Assert.Equal("Select Project", model.Title);
+            Assert.Equal("Select a Project", model.Title);
         }
 
         [Fact]

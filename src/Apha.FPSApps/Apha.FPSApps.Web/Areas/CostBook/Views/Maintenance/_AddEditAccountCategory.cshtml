@@ -1,0 +1,85 @@
+@using Microsoft.AspNetCore.Mvc.Rendering
+@model Apha.FPSApps.Web.Areas.CostBook.Models.AccountCategoryItem
+
+@{
+    var csg7GroupList = ViewBag.Csg7GroupList as List<SelectListItem> ?? new List<SelectListItem>();
+}
+
+<div class="modal-header">
+    <h5 class="modal-title">Edit Account Category</h5>
+    <button type="button" class="btn-close" style="color:red;" onclick="closeModal()" aria-label="Close">&#x2715;</button>
+</div>
+<div class="modal-body">
+    <p class="app-mandatory-note" style="text-align:right;">
+        <span aria-hidden="true" class="app-required">*</span> Mandatory fields
+    </p>
+    <form class="govuk-grid-column-full" id="formTblAccCat" novalidate>
+        @Html.AntiForgeryToken()
+
+        <input type="hidden" id="hdnAccShortName" value="@Model?.AccShortName" />
+
+        <div class="govuk-error-summary" id="formTblAccCat-db-error" role="alert"
+             aria-labelledby="formTblAccCat-db-error-title" style="display:none;">
+            <h2 class="govuk-error-summary__title" id="formTblAccCat-db-error-title">There is a problem</h2>
+            <div class="govuk-error-summary__body">
+                <ul class="govuk-list govuk-error-summary__list"></ul>
+            </div>
+        </div>
+
+        <div class="govuk-form-group govuk-!-margin-bottom-4" id="fg-acccat-shortname">
+            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16"
+                   for="modal-acccat-shortname">
+                Account Short Name:
+            </label>
+            <input class="govuk-input govuk-!-font-size-16"
+                   id="modal-acccat-shortname"
+                   name="accountShortName"
+                   type="text"
+                   value="@Model?.AccShortName"
+                   readonly
+                   aria-describedby="modal-acccat-shortname-error" />
+        </div>
+
+        <div class="govuk-form-group govuk-!-margin-bottom-4" id="fg-acccat-description">
+            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16"
+                   for="modal-acccat-description">
+                Description:
+            </label>
+            <input class="govuk-input govuk-!-font-size-16"
+                   id="modal-acccat-description"
+                   name="description"
+                   type="text"
+                   value="@Model?.AccountDescription"
+                  readonly
+                   maxlength="50"
+                   aria-describedby="modal-acccat-description-error" />
+        </div>
+
+        <div class="govuk-form-group govuk-!-margin-bottom-4" id="fg-acccat-csg7group">
+            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16"
+                   for="modal-acccat-csg7group">
+                CSG7 Group: <span class="app-required">*</span>
+            </label>
+            <select class="govuk-select govuk-!-font-size-16"
+                    id="modal-acccat-csg7group"
+                    name="csg7Group"
+                    asp-for="Csg7Group"
+                    asp-items="csg7GroupList"
+                    required aria-required="true"
+                    style="width:100%;"
+                    aria-describedby="modal-acccat-csg7group-error">
+                <option value="">-- Select --</option>
+            </select>
+            <span data-valmsg-for="csg7Group" class="govuk-error-message field-validation-valid" style="display:none;"></span>
+        </div>
+
+    </form>
+</div>
+<div class="modal-footer">
+    <button type="button" class="govuk-button govuk-button--secondary sup_margin_0"
+            data-module="govuk-button" onclick="closeModal()">Cancel</button>
+    <button type="button" class="govuk-button sup_margin_0"
+            data-module="govuk-button"
+            id="tblAccCatUpdateBtn"
+            onclick="saveAccountCategory()">Update</button>
+</div>

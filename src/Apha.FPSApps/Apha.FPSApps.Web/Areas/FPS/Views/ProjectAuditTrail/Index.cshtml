@@ -1,0 +1,398 @@
+﻿@using Apha.FPSApps.Web.Models.Components.DataGrid
+@model Apha.FPSApps.Web.Areas.FPS.Models.ProjectAuditTrailViewModel
+
+@{
+    ViewData["Title"] = FyContext.Year + " : Project Audit Trail";
+}
+
+@section Styles {
+    <link href="~/css/common/_govuk_tabs.css" rel="stylesheet" />
+}
+
+<main class="govuk-main-wrapper govuk-!-padding-top-0" id="main-content" role="main">
+    <div class="govuk-!-margin-bottom-5">
+
+        <!-- ── Breadcrumb row ──────────────────────────────────────────────── -->
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <div class="row fps-sr-breadcrumb-row">
+                    <div class="fps-sr-breadcrumb-flex sup_context_row">
+                        <div class="col-md-10">
+                        </div>
+                        <div class="col-md-2">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Page title ──────────────────────────────────────────────── -->
+            <div class="govuk-grid-column-full">
+                <h1 class="govuk-grid-row govuk-heading-s sup_border-bottom govuk-!-margin-top-2 govuk-!-padding-bottom-2 govuk-!-padding-left-4">
+                    Project Audit Trail
+                </h1>
+            </div>
+        </div>
+
+        <!-- ── Filter section ─────────────────────────────────────────────── -->
+        
+        <div class="govuk-grid-row sup_margin_left_right_10 trl-intro-block">
+            <div class="govuk-grid-column-full sup_p_0">
+
+                <section class="govuk-!-margin-top-2" aria-label="Project audit filters">
+                    <div class="trl-filter-row spc-filter-row-near">
+
+                        <!-- Project filter -->
+                        <div class="govuk-form-group trl-filter-group sup_margin_bottom_10">
+                            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16"
+                                   for="filter-project"
+                                   id="filter-project-label">Project</label>
+                            <select class="govuk-select govuk-!-font-size-16 sup_select_option_width_100"
+                                    id="filter-project"
+                                    name="filterProject"
+                                    asp-for="ParentProject"
+                                    asp-items="Model.ProjectList"
+                                    aria-describedby="filter-project-error"
+                                    aria-label="Select project">
+                                <option value="">-- Select a project --</option>
+                            </select>
+                            <p class="govuk-error-message govuk-!-font-size-16 govuk-!-margin-top-1 govuk-!-margin-bottom-0"
+                               id="filter-project-error"
+                               role="alert"
+                               style="display:none">
+                                <span class="govuk-visually-hidden">Error:</span> Please select a project before searching.
+                            </p>
+                        </div>
+
+                        <!-- Date of change fieldset -->
+                        <fieldset class="govuk-fieldset trl-filter-group sup_margin_bottom_10 border-legend">
+                            <legend class="govuk-fieldset__legend govuk-!-font-weight-bold govuk-!-font-size-16">
+                                Date of change
+                            </legend>
+                            <div class="sup_flex_gap_10">
+                                <div class="govuk-form-group govuk-!-margin-bottom-0">
+                                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16"
+                                           for="filter-from">From</label>
+                                    <input class="govuk-input width-200 govuk-!-font-size-16"
+                                           id="filter-from"
+                                           name="filterFrom"
+                                           asp-for="FromDate"
+                                           type="date"
+                                           aria-label="Date of change from" />
+                                </div>
+                                <div class="govuk-form-group govuk-!-margin-bottom-0">
+                                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16"
+                                           for="filter-to">To</label>
+                                    <input class="govuk-input width-200 govuk-!-font-size-16"
+                                           id="filter-to"
+                                           name="filterTo"
+                                           asp-for="ToDate"
+                                           type="date"
+                                           aria-label="Date of change to" />
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        <!-- Filter actions -->
+                        <div class="trl-filter-actions spc-filter-actions-near sup_margin_bottom_10">
+                            <span class="trl-filter-actions-label" aria-hidden="true">Actions</span>
+                            <div class="govuk-button-group sup_margin_0 trl-filter-actions-buttons">
+                                <button type="button"
+                                        class="govuk-button sup_margin_0"
+                                        id="btnApplyProjectAuditFilters"
+                                        data-module="govuk-button">Search</button>
+                                <button type="button"
+                                        class="govuk-button sup_margin_0"
+                                        id="btnResetProjectAuditFilters"
+                                        data-module="govuk-button">Clear</button>
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+
+            </div>
+        </div>
+
+        <!-- ── Tabbed grid area ────────────────────────────────────────────── -->
+        <div class="govuk-grid-row sup_margin_left_right_10">
+            <div class="govuk-grid-column-full sup_p_0">
+
+                <div class="govuk-tabs">
+
+                    <!-- Tab navigation -->
+                    <div class="govuk-tabs__list" role="tablist" aria-label="Project audit sections">
+                        <div class="govuk-tabs__list-item govuk-tabs__list-item--selected govuk-!-margin-left-0">
+                            <a class="govuk-tabs__tab"
+                               id="tab-project-detail-changes"
+                               href="#panel-project-detail-changes"
+                               role="tab"
+                               aria-controls="panel-project-detail-changes"
+                               aria-selected="true"
+                               tabindex="0">Project Detail Change</a>
+                        </div>
+                        <div class="govuk-tabs__list-item">
+                            <a class="govuk-tabs__tab"
+                               id="tab-staff-plan-changes"
+                               href="#panel-staff-plan-changes"
+                               role="tab"
+                               aria-controls="panel-staff-plan-changes"
+                               aria-selected="false"
+                               tabindex="-1">Staff Plan Changes</a>
+                        </div>
+                        <div class="govuk-tabs__list-item">
+                            <a class="govuk-tabs__tab"
+                               id="tab-test-requirement-changes"
+                               href="#panel-test-requirement-changes"
+                               role="tab"
+                               aria-controls="panel-test-requirement-changes"
+                               aria-selected="false"
+                               tabindex="-1">Test Requirement Changes</a>
+                        </div>
+                        <div class="govuk-tabs__list-item">
+                            <a class="govuk-tabs__tab"
+                               id="tab-animal-requirement-changes"
+                               href="#panel-animal-requirement-changes"
+                               role="tab"
+                               aria-controls="panel-animal-requirement-changes"
+                               aria-selected="false"
+                               tabindex="-1">Animal Requirement Changes</a>
+                        </div>
+                        <div class="govuk-tabs__list-item">
+                            <a class="govuk-tabs__tab"
+                               id="tab-exceptional-cost-changes"
+                               href="#panel-exceptional-cost-changes"
+                               role="tab"
+                               aria-controls="panel-exceptional-cost-changes"
+                               aria-selected="false"
+                               tabindex="-1">Exceptional Cost Changes</a>
+                        </div>
+                    </div>
+
+                    <!-- Tab 1 — Project Detail Changes -->
+                    <div class="govuk-tabs__panel active"
+                         id="panel-project-detail-changes"
+                         role="tabpanel"
+                         aria-labelledby="tab-project-detail-changes">
+                        <div class="govuk-grid-row sup_margin_left_right_10 sup_margin_bottom_10">
+                            <div class="govuk-grid-column-full sup_p_0">
+                                
+                                <div id="@($"gridContainer_{Model.ProjectLogsGrid.GridId}")">
+                                    @await Html.PartialAsync("_DataGrid", Model.ProjectLogsGrid)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab 2 — Staff Plan Changes -->
+                    <div class="govuk-tabs__panel"
+                         id="panel-staff-plan-changes"
+                         role="tabpanel"
+                         aria-labelledby="tab-staff-plan-changes">
+                        <div class="govuk-grid-row sup_margin_left_right_10 sup_margin_bottom_10">
+                            <div class="govuk-grid-column-full sup_p_0">
+                                
+                                <div id="@($"gridContainer_{Model.StaffJobLogsGrid.GridId}")">
+                                    @await Html.PartialAsync("_DataGrid", Model.StaffJobLogsGrid)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab 3 — Test Requirement Changes -->
+                    <div class="govuk-tabs__panel"
+                         id="panel-test-requirement-changes"
+                         role="tabpanel"
+                         aria-labelledby="tab-test-requirement-changes">
+                        <div class="govuk-grid-row sup_margin_left_right_10 sup_margin_bottom_10">
+                            <div class="govuk-grid-column-full sup_p_0">
+                                
+                                <div id="@($"gridContainer_{Model.TestRequirementLogsGrid.GridId}")">
+                                    @await Html.PartialAsync("_DataGrid", Model.TestRequirementLogsGrid)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab 4 — Animal Requirement Changes -->
+                    <div class="govuk-tabs__panel"
+                         id="panel-animal-requirement-changes"
+                         role="tabpanel"
+                         aria-labelledby="tab-animal-requirement-changes">
+                        <div class="govuk-grid-row sup_margin_left_right_10 sup_margin_bottom_10">
+                            <div class="govuk-grid-column-full sup_p_0">
+                                
+                                <div id="@($"gridContainer_{Model.AnimalRequestLogsGrid.GridId}")">
+                                    @await Html.PartialAsync("_DataGrid", Model.AnimalRequestLogsGrid)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab 5 — Exceptional Cost Changes -->
+                    <div class="govuk-tabs__panel"
+                         id="panel-exceptional-cost-changes"
+                         role="tabpanel"
+                         aria-labelledby="tab-exceptional-cost-changes">
+                        <div class="govuk-grid-row sup_margin_left_right_10 sup_margin_bottom_10">
+                            <div class="govuk-grid-column-full sup_p_0">
+                                
+                                <div id="@($"gridContainer_{Model.AdditionalCostLogsGrid.GridId}")">
+                                    @await Html.PartialAsync("_DataGrid", Model.AdditionalCostLogsGrid)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div><!-- /.govuk-tabs -->
+
+            </div>
+        </div>
+
+        <div id="app-footer"></div>
+
+    </div>
+</main>
+
+@section Scripts {
+    <script>
+        // ── Tab switching (mirrors govuk_tabs.js behavior from HTML prototype) ──────────
+        function showAuditTab(targetId) {
+            document.querySelectorAll('.govuk-tabs__panel').forEach(function (panel) {
+                panel.classList.remove('active');
+                panel.classList.add('govuk-tabs__panel--hidden');
+                panel.hidden = true;
+            });
+            document.querySelectorAll('.govuk-tabs__tab').forEach(function (link) {
+                link.setAttribute('aria-selected', 'false');
+                link.setAttribute('tabindex', '-1');
+                link.parentElement.classList.remove('govuk-tabs__list-item--selected');
+            });
+            var activePanel = document.getElementById(targetId);
+            if (activePanel) {
+                activePanel.classList.add('active');
+                activePanel.classList.remove('govuk-tabs__panel--hidden');
+                activePanel.hidden = false;
+            }
+            var activeLink = document.querySelector('[aria-controls="' + targetId + '"]');
+            if (activeLink) {
+                activeLink.setAttribute('aria-selected', 'true');
+                activeLink.setAttribute('tabindex', '0');
+                activeLink.parentElement.classList.add('govuk-tabs__list-item--selected');
+            }
+        }
+
+        // ── Extra filter methods — called by each _DataGrid on every AJAX reload ────────
+        // The controller LoadXxxLogsGrid actions read project/fromDate/toDate from these params.
+        function getProjectAuditTrailExtraFilters() {
+            return {
+                project:  document.getElementById('filter-project')?.value || '',
+                fromDate: document.getElementById('filter-from')?.value   || '',
+                toDate:   document.getElementById('filter-to')?.value     || ''
+            };
+        }
+        function getStaffPlanChangesExtraFilters() {
+            return {
+                project:  document.getElementById('filter-project')?.value || '',
+                fromDate: document.getElementById('filter-from')?.value   || '',
+                toDate:   document.getElementById('filter-to')?.value     || ''
+            };
+        }
+        function getTestRequirementChangesExtraFilters() {
+            return {
+                project:  document.getElementById('filter-project')?.value || '',
+                fromDate: document.getElementById('filter-from')?.value   || '',
+                toDate:   document.getElementById('filter-to')?.value     || ''
+            };
+        }
+        function getAnimalRequirementChangesExtraFilters() {
+            return {
+                project:  document.getElementById('filter-project')?.value || '',
+                fromDate: document.getElementById('filter-from')?.value   || '',
+                toDate:   document.getElementById('filter-to')?.value     || ''
+            };
+        }
+        function getExceptionalCostChangesExtraFilters() {
+            return {
+                project:  document.getElementById('filter-project')?.value || '',
+                fromDate: document.getElementById('filter-from')?.value   || '',
+                toDate:   document.getElementById('filter-to')?.value     || ''
+            };
+        }
+
+        // ── Grid reload helpers — reloadGrid({ page: 1 }) per _DataGrid contract ────────
+        function reloadAllAuditGrids() {
+            ['projectAuditTrailGrid',
+             'staffPlanChangesGrid',
+             'testRequirementChangesGrid',
+             'animalRequirementChangesGrid',
+             'exceptionalCostChangesGrid'].forEach(function (gridId) {
+                var gm = window['gridManager_' + gridId];
+                if (gm) { gm.reloadGrid({ page: 1 }); }
+            });
+        }
+
+        // ── Apply filters (Search button) ─────────────────────────────────────────────
+        function applyProjectAuditTrailFilters() {
+            var projectVal = document.getElementById('filter-project')?.value || '';
+            var errorEl    = document.getElementById('filter-project-error');
+            var selectEl   = document.getElementById('filter-project');
+
+            if (!projectVal) {
+                if (errorEl)  { errorEl.style.display = ''; }
+                if (selectEl) { selectEl.classList.add('govuk-select--error'); selectEl.focus(); }
+                return;
+            }
+
+            if (errorEl)  { errorEl.style.display = 'none'; }
+            if (selectEl) { selectEl.classList.remove('govuk-select--error'); }
+            reloadAllAuditGrids();
+        }
+
+        // ── Reset filters (Clear button) ──────────────────────────────────────────────
+        function resetProjectAuditTrailFilters() {
+            document.getElementById('filter-project').value = '';
+            document.getElementById('filter-from').value   = '';
+            document.getElementById('filter-to').value     = '';
+            var errorEl  = document.getElementById('filter-project-error');
+            var selectEl = document.getElementById('filter-project');
+            if (errorEl)  { errorEl.style.display = 'none'; }
+            if (selectEl) { selectEl.classList.remove('govuk-select--error'); }
+            reloadAllAuditGrids();
+        }
+
+        // ── DOMContentLoaded: wire tabs + buttons ─────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // Wire tab click events
+            document.querySelectorAll('.govuk-tabs__tab').forEach(function (link) {
+                link.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    showAuditTab(this.getAttribute('aria-controls'));
+                });
+                link.addEventListener('keydown', function (event) {
+                    var tabs = Array.from(document.querySelectorAll('.govuk-tabs__tab'));
+                    var index = tabs.indexOf(this);
+                    if (event.key === 'ArrowRight' && index < tabs.length - 1) {
+                        event.preventDefault();
+                        showAuditTab(tabs[index + 1].getAttribute('aria-controls'));
+                        tabs[index + 1].focus();
+                    } else if (event.key === 'ArrowLeft' && index > 0) {
+                        event.preventDefault();
+                        showAuditTab(tabs[index - 1].getAttribute('aria-controls'));
+                        tabs[index - 1].focus();
+                    }
+                });
+            });
+
+            // Wire Search / Clear buttons
+            var btnApply = document.getElementById('btnApplyProjectAuditFilters');
+            if (btnApply) { btnApply.addEventListener('click', applyProjectAuditTrailFilters); }
+            var btnReset = document.getElementById('btnResetProjectAuditFilters');
+            if (btnReset) { btnReset.addEventListener('click', resetProjectAuditTrailFilters); }
+
+            // Activate first tab on load
+            var firstTab = document.querySelector('.govuk-tabs__tab');
+            if (firstTab) { showAuditTab(firstTab.getAttribute('aria-controls')); }
+        });
+    </script>
+}

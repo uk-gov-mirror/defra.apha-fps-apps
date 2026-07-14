@@ -49,7 +49,7 @@
                     break;
                 case GridColumnType.DateTime:
                     if (value is DateTime dateTimeValue)
-                        return dateTimeValue.ToString(column.DateFormat ?? "yyyy-MM-dd HH:mm");
+                        return dateTimeValue.ToString(column.DateTimeFormatHhMm ?? "yyyy-MM-dd HH:mm");
                     break;
                 case GridColumnType.UsdValue:
                     if (value is decimal usdValue)

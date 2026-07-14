@@ -14,7 +14,10 @@ namespace Apha.FPSApps.Infrastructure.Integrations.CostBookApis.Clients
         public ICostBookContractApiClient Contracts { get; }
         public ICostBookYearlyDetailsApiClient YearlyDetails { get; }
         public ICostBookProjectSummaryApiClient ProjectSummary { get; }
-        public ICostBookSettingsApiClient CostbookSettings { get; }
+        public ICostBookSettingsApiClient CostbookSettings { get; }        
+        public ICostBookMaintenanceApiClient CostbookMaintenance { get; }
+        public ICostBookCapsStaffApiClient CostbookCapsStaff { get; }       
+        public ICostBookAccountGroupApiClient CostbookAccountGroup { get; }
 
         public CostBookApiClient(ICostBookHttpExecutor http, IMapper mapper)
         {
@@ -27,6 +30,9 @@ namespace Apha.FPSApps.Infrastructure.Integrations.CostBookApis.Clients
             YearlyDetails = new CostBookYearlyDetailsApiClient(http, mapper);
             ProjectSummary = new CostBookProjectSummaryApiClient(http, mapper);
             CostbookSettings = new CostBookSettingsApiClient(http, mapper);
+            CostbookMaintenance = new CostBookMaintenanceApiClient(http, mapper);
+            CostbookCapsStaff = new CostBookCapsStaffApiClient(http, mapper);
+            CostbookAccountGroup = new CostBookAccountGroupApiClient(http, mapper);
         }
     }
 }

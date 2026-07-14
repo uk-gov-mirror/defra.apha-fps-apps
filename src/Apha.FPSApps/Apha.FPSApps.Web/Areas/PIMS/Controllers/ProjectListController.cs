@@ -76,7 +76,7 @@ namespace Apha.FPSApps.Web.Areas.PIMS.Controllers
             return new DataGridConfig<ProjectListItem>
             {
                 GridId = "projectListGrid",
-                Title = "Select Project",
+                Title = "Select a Project",
                 ShowCheckboxColumn = false,
                 ShowPagination = true,
                 KeyProperty = "Parentproject",

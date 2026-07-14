@@ -31,6 +31,10 @@ namespace Apha.Costbook.Api.Extensions
             services.AddScoped<IProjectSummaryService, ProjectSummaryService>();
             services.AddScoped<ISettingsService, SettingsService>();
             services.AddScoped<IYearMasterService, YearMasterService>();
+            services.AddScoped<ICapsStaffService, CapsStaffService>();
+            services.AddScoped<IAccountGroupService, AccountGroupService>();
+            services.AddScoped<IMaintenanceSettingsService, MaintenanceSettingsService>();
+            services.AddScoped<IAccountCategoryMaintenanceService, AccountCategoryMaintenanceService>();
             return services;
         }
 
@@ -50,6 +54,9 @@ namespace Apha.Costbook.Api.Extensions
             services.AddScoped<IAnimalRequirementRepository, AnimalRequirementRepository>();
             services.AddScoped<IAdditionalCostRepository, AdditionalCostRepository>();
             services.AddScoped<IYearMasterRepository, YearMasterRepository>();
+            services.AddScoped<ICapsStaffRepository, CapsStaffRepository>();
+            services.AddScoped<IAccountGroupRepository, AccountGroupRepository>();
+            services.AddScoped<IFpsAccountCategoryRepository, FpsAccountCategoryRepository>();
             return services;
         }
     }

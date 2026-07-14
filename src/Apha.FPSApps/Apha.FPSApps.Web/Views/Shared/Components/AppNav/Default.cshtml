@@ -3,6 +3,12 @@
    Model = appArea (e.g. "FPS", "PACT", "PIMS", "CostBook").
    Menu items are supplied by each area's _NavItems.cshtml partial. *@
 <div id="header">
+<div id="loader">
+    <div class="spinner">
+        <i></i><i></i><i></i><i></i><i></i><i></i>
+        <i></i><i></i><i></i><i></i><i></i><i></i>
+    </div>
+</div>
     <nav class="main-nav">
         @await Html.PartialAsync($"~/Areas/{Model}/Views/Shared/_NavItems.cshtml")
     </nav>

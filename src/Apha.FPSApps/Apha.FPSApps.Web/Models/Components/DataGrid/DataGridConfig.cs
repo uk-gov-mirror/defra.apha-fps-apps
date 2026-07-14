@@ -34,6 +34,13 @@
         public string? CurrentSearch { get; set; }
         public Dictionary<string, string>? CurrentFilters { get; set; } = null;
 
+        /// <summary>
+        /// Optional column-group header row rendered above the main header.
+        /// Each entry spans the given number of visible columns (left to right).
+        /// Use an empty Label for ungrouped filler columns.
+        /// </summary>
+        public List<DataGridColumnGroup>? ColumnGroups { get; set; }
+
         public DataGridConfig()
         {
             Columns = new List<DataGridColumn>();

@@ -22,6 +22,13 @@ namespace Apha.FPS.Core.Interfaces
         Task<AnimalRequest> AddAnimalCostAsync(AnimalRequest animalReq);
         Task<AnimalRequest> UpdateAnimalCostAsync(AnimalRequest animalReq);
         Task<bool> DeleteJobAnimalCostAsync(int indCounter);
+
+        /// <summary>
+        /// Returns the global total animal cost across all animal requests for the current FPS year.
+        /// Equivalent to the MS Access Form_Activate query used when SellingPC = "ASU":
+        /// Sum(NumberOfDays * NumberOfAnimals * DailyRate) JOIN tblAnimals ON AnimalType.
+        /// </summary>
+        Task<decimal> GetGlobalAnimalCostAsync();
     }
 }
 

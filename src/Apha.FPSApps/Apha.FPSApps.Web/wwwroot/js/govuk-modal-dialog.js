@@ -338,6 +338,17 @@
         });
     };
 
+    window.showLoader = function () {
+        $("#loader").show();
+        // document.getElementById("loader").style.display = "block";
+    }
+
+    window.hideLoader = function () {
+        $("#loader").hide();
+        //document.getElementById("loader").style.display = "none";
+    }
+
+
     window.showGovukYesNo = function (message) {
         pending = pending.then(function () {
             return openDialog({

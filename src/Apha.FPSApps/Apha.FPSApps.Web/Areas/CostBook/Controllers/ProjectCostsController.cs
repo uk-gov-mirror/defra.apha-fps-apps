@@ -71,34 +71,24 @@ namespace Apha.FPSApps.Web.Areas.CostBook.Controllers
             var filterDict = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, string>>(request?.Filter ?? "{}")
                              ?? new Dictionary<string, string>();
 
+            // Cap the number of year columns/values to a sensible maximum (10)
+            var yearCount = Math.Min(pivot.Years.Count, 10);
+
             var rows = pivot.Rows.Select(r =>
             {
-                var row = new ProjectCostsPivotRow
-                {
-                    Project  = r.Project,
-                    Category = r.Category,
-                    Total    = Fmt(r.Total)
-                };
+                var row = ProjectCostsPivotRow.Create(yearCount);
+                row.Project = r.Project;
+                row.Category = r.Category;
+                row.Total = Fmt(r.Total);
 
-                for (int i = 0; i < pivot.Years.Count && i < 10; i++)
+                for (int i = 0; i < yearCount; i++)
                 {
                     int year = pivot.Years[i];
                     decimal? value = r.YearlyAmounts.TryGetValue(year, out double v)
                         ? Fmt(v)
                         : null;
-                    switch (i)
-                    {
-                        case 0: row.Y1  = value; break;
-                        case 1: row.Y2  = value; break;
-                        case 2: row.Y3  = value; break;
-                        case 3: row.Y4  = value; break;
-                        case 4: row.Y5  = value; break;
-                        case 5: row.Y6  = value; break;
-                        case 6: row.Y7  = value; break;
-                        case 7: row.Y8  = value; break;
-                        case 8: row.Y9  = value; break;
-                        case 9: row.Y10 = value; break;
-                    }
+
+                    row.SetYearValue(i + 1, value);
                 }
 
                 return row;
@@ -111,7 +101,7 @@ namespace Apha.FPSApps.Web.Areas.CostBook.Controllers
                 new() { PropertyName = "Total",    DisplayName = "Total",    ColumnType = GridColumnType.GbpValue, IsFilterable = false, Width = 100 }
             };
 
-            for (int i = 0; i < pivot.Years.Count && i < 10; i++)
+            for (int i = 0; i < yearCount; i++)
             {
                 columns.Add(new DataGridColumn
                 {

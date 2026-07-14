@@ -11,6 +11,10 @@ namespace Apha.FPSApps.Infrastructure.Mappings
     {
         public CostbookApiDtoMapper()
         {
+            CreateMap(typeof(ApiResponse<>), typeof(ApiResponseDto<>)).ReverseMap();
+            CreateMap<ApiError, ApiErrorDto>().ReverseMap();
+            CreateMap<ApiMeta, ApiMetaDto>().ReverseMap();
+
             // ── Existing project mappings ─────────────────────────────────────
             CreateMap<ProjectDto, ProjectRes>().ReverseMap();
             CreateMap<ProjectDto, ProjectReq>().ReverseMap();
@@ -46,6 +50,16 @@ namespace Apha.FPSApps.Infrastructure.Mappings
             CreateMap<ProjectCostsRowRes, ProjectCostsRowDto>().ReverseMap();
             CreateMap<ProjectCostsPivotRes, ProjectCostsPivotDto>().ReverseMap();
             CreateMap<ProjectYearCostSummaryRes, ProjectYearCostSummaryDto>().ReverseMap();
+
+            
+            CreateMap<MaintenanceSettingsRes, MaintenanceSettingsDto>().ReverseMap();
+            CreateMap<MaintenanceSettingsDto, MaintenanceSettingsReq>().ReverseMap();
+            CreateMap<StaffRes, StaffDto>().ReverseMap();
+            CreateMap<StaffDto, StaffReq>().ReverseMap();
+            CreateMap<AccountGroupRes, AccountGroupDto>().ReverseMap();
+            CreateMap<AccountGroupDto, AccountGroupReq>().ReverseMap();
+            CreateMap<AccountCategoryMaintenanceRes, AccountCategoryMaintenanceDto>().ReverseMap();
+            CreateMap<AccountCategoryMaintenanceDto, AccountCategoryMaintenanceReq>().ReverseMap();
         }
     }
 }

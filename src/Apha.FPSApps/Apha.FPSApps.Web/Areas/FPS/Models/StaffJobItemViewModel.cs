@@ -33,7 +33,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Models
        
         [Display(Name = "Hrs")]
         [Range(0, int.MaxValue, ErrorMessage = "Hours must be 0 or greater")]
-        [GridColumn(Width = 69, Type = GridColumnType.Number, IsFilterable = true)]
+        [GridColumn(Width = 69, Type = GridColumnType.Number, IsFilterable = false)]
         public double PlannedHours { get; set; } 
         
         

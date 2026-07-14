@@ -1,0 +1,99 @@
+@model Apha.FPSApps.Web.Areas.FPS.Models.ContributionSummaryViewModel
+
+@{
+    ViewData["Title"] = "Income/Contribution from Time Sales";
+}
+
+@* ── Header row ── *@
+<div class="govuk-grid-row sup_margin_left_right_0 sup_padding_bottom_10 sup_border-bottom" style="margin-top:10px; align-items:flex-end;">
+
+    <div class="govuk-grid-column-one-third">
+        <h1 class="govuk-heading-s sup_margin_bottom_0">Income / Contribution from Time Sales</h1>
+    </div>
+
+    @* Resource Center dropdown *@
+    <div class="govuk-grid-column-two-thirds" style="display:flex; justify-content:flex-end;">
+        <div style="display:flex; align-items:center; gap:8px;">
+            <label class="govuk-label govuk-!-font-size-16 govuk-!-font-weight-bold govuk-!-margin-bottom-0" for="sellingPcSelect">
+                Resource Center:
+            </label>
+            <select id="sellingPcSelect"
+                    class="govuk-select govuk-!-font-size-16"
+                    style="width:auto; min-width:260px;"
+                    onchange="loadContributionData(this.value)">
+                <option value="">-- Select Resource Center --</option>
+                @foreach (var pc in Model.SellingProfitCentres)
+                {
+                    <option value="@pc.Value">@pc.Text</option>
+                }
+            </select>
+        </div>
+    </div>
+</div>
+
+@* ── Prompt shown before any PC is selected ── *@
+<div id="contributionSummaryPrompt" style="margin-top:16px;">
+    <div class="govuk-inset-text">
+        <p class="govuk-body">Select a Resource Center above to view the Income / Contribution from Time Sales data.</p>
+    </div>
+</div>
+
+@* ── Grid + totals — both inside the same column, matching the reference panel layout ── *@
+<div id="contributionSummaryGridArea" style="display:none; margin-top:16px;">
+    <div class="govuk-grid-row sup_margin_left_right_0">
+        <div class="govuk-grid-column-full">
+            <section class="fps-dg-panel sup_border" aria-label="Income contribution summary panel">
+                <div id="gridContainer_contributionSummaryGrid"></div>
+                <div id="contributionSummaryTotalsArea"></div>
+            </section>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var currentSellingPc = null;
+        var contributionGridId = 'contributionSummaryGrid';
+
+        // Called by the DataGrid component on every page/sort/filter reload
+        function getContributionSummaryExtraFilters() {
+            return {};  // sellingPc is baked into BindGridUrl by the controller
+        }
+
+        // ── Grid + totals load ─────────────────────────────────────────────
+
+        function loadContributionData(sellingPc) {
+            if (!sellingPc) {
+                $('#contributionSummaryGridArea').hide();
+                $('#contributionSummaryPrompt').show();
+                return;
+            }
+            currentSellingPc = sellingPc;
+            $('#contributionSummaryPrompt').hide();
+            $('#contributionSummaryGridArea').show();
+            $('#contributionSummaryTotalsArea').empty();
+
+            $.ajax({
+                url: '@Url.Action("LoadData", "ContributionSummary", new { area = "FPS" })',
+                type: 'POST',
+                data: { sellingPc: sellingPc, Filter: '{}', SortBy: '', Descending: false, Page: 1, PageSize: 10 },
+                success: function (html) {
+                    $('#gridContainer_' + contributionGridId).html(html);
+                    refreshTotals(sellingPc);
+                },
+                error: function () {
+                    $('#gridContainer_' + contributionGridId).html(
+                        '<div class="govuk-error-message" style="padding:12px;">Failed to load data. Please try again.</div>'
+                    );
+                }
+            });
+        }
+
+        function refreshTotals(sellingPc) {
+            $.get('@Url.Action("LoadTotals", "ContributionSummary", new { area = "FPS" })',
+                { sellingPc: sellingPc || currentSellingPc },
+                function (html) { $('#contributionSummaryTotalsArea').html(html); }
+            );
+        }
+    </script>
+}

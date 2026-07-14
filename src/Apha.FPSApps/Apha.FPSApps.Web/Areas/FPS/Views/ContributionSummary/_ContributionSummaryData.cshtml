@@ -1,0 +1,6 @@
+@model Apha.FPSApps.Web.Models.Components.DataGrid.DataGridConfig<Apha.FPSApps.Web.Areas.FPS.Models.ContributionSummaryRowItem>
+
+@* Row grid — rendered via the standard _DataGrid partial for pagination, sort, filter *@
+<div id="gridContainer_@Model.GridId">
+    @await Html.PartialAsync("_DataGrid", Model)
+</div>
