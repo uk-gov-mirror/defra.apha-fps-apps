@@ -1,0 +1,150 @@
+@{
+    ViewData["Title"] = "Update Staff Rates Process";
+}
+
+<main class="govuk-main-wrapper govuk-!-padding-top-0" id="main-content" role="main">
+    <div class="container-fluid">
+
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <h1 class="govuk-grid-row govuk-heading-s sup_border-bottom govuk-!-margin-top-2 govuk-!-padding-bottom-2 govuk-!-padding-left-4">
+                    Update Staff Rates Process
+                </h1>
+            </div>
+        </div>
+
+        <div class="govuk-grid-row">
+            <div class="cc-container-fluid">
+                <div class="cc-layout-row">
+
+                    @await Html.PartialAsync("_BulkRatesSideNav", "BulkRatesStaff")
+
+                    <div class="cc-content-column">
+                        <div class="govuk-grid-row">
+                            <div class="govuk-grid-column-full">
+
+                                <div class="govuk-grid-row sup_margin_left_right_10 sup_margin_bottom_10">
+
+                                    <div class="govuk-grid-column-full sup_p_0">
+                                        <section class="sup_border govuk-!-padding-3" aria-labelledby="process-rules-title">
+                                            <h2 class="govuk-heading-s govuk-!-margin-bottom-2" id="process-rules-title">Process Rules</h2>
+                                            <ul class="govuk-list govuk-list--bullet govuk-!-font-size-16 govuk-!-margin-bottom-0">
+                                                <li>Only FPS Admin can perform FEC process.</li>
+                                                <li>Only uploader can edit or release data.</li>
+                                                <li>Second Admin must approve changes.</li>
+                                            </ul>
+                                        </section>
+                                    </div>
+
+                                    <div class="govuk-grid-column-full sup_p_0">
+                                        <section class="sup_border govuk-!-padding-3" aria-labelledby="fec-process-tracker-title">
+                                            <h2 class="govuk-heading-s govuk-!-margin-bottom-2" id="fec-process-tracker-title">Staff Rate Process Tracker</h2>
+
+                                            <div class="govuk-button-group sup_margin_0 govuk-!-margin-bottom-2">
+                                                <span class="govuk-body-s govuk-!-margin-bottom-0 govuk-!-margin-right-2">
+                                                    Note : Data will be downloaded for current year.
+                                                </span>
+                                                <button type="button"
+                                                        class="govuk-button govuk-!-margin-bottom-0 govuk-!-margin-left-1"
+                                                        data-module="govuk-button"
+                                                        id="btnDownloadTestData">
+                                                    Download Staff Data (Excel)
+                                                </button>
+                                                <button type="button"
+                                                        class="govuk-button govuk-!-margin-left-2 govuk-!-margin-bottom-0"
+                                                        data-module="govuk-button"
+                                                        id="btnUploadUpdatedData">
+                                                    Upload Updated Data
+                                                </button>
+                                            </div>
+
+                                            <table class="editable-grid-table govuk-table custom-table govuk-!-margin-bottom-0 govuk-!-margin-top-3 govuk-!-width-one-half">
+                                                <thead class="govuk-table__head">
+                                                    <tr class="govuk-table__row">
+                                                        <th scope="col" class="govuk-table__header govuk-!-font-size-16 govuk-!-text-align-left">Status</th>
+                                                        <th scope="col" class="govuk-table__header govuk-!-font-size-16 govuk-!-text-align-left">Upload Time</th>
+                                                        <th scope="col" class="govuk-table__header govuk-!-font-size-16 govuk-!-text-align-left">Uploaded By</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="govuk-table__body">
+                                                    <tr class="govuk-table__row">
+                                                        <td class="govuk-table__cell govuk-!-font-size-16" id="tracker-status">Initiated</td>
+                                                        <td class="govuk-table__cell govuk-!-font-size-16" id="tracker-upload-time">20-Mar-2026 10:20</td>
+                                                        <td class="govuk-table__cell govuk-!-font-size-16" id="tracker-uploaded-by">Lara</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </section>
+                                    </div>
+
+                                </div>
+
+                                <div class="govuk-grid-row sup_margin_left_right_10 sup_margin_bottom_10 govuk-!-margin-top-2">
+                                    <div class="govuk-grid-column-one-half govuk-!-padding-left-0">
+                                        <div class="govuk-form-group sup_margin_bottom_10 fps-inline-search-row">
+                                            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16 fps-inline-search-label"
+                                                   for="searchTestCode">
+                                                Search
+                                            </label>
+                                            <input class="govuk-input govuk-input--width-10 govuk-!-font-size-16"
+                                                   id="searchTestCode" name="searchTestCode" type="text" autocomplete="off">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="govuk-grid-row sup_margin_left_right_10 sup_margin_bottom_10">
+                                    <div class="govuk-grid-column-full sup_p_0">
+                                        <div id="gridContainer_fecStaging"></div>
+                                    </div>
+                                </div>
+
+                                <div class="govuk-grid-row sup_margin_left_right_10">
+                                    <div class="govuk-grid-column-full govuk-!-padding-left-0 govuk-!-padding-right-0 govuk-!-margin-top-2">
+                                        <p class="govuk-body-s govuk-!-margin-bottom-4">Note: Only records which are New, Updated, Deleted are shown.</p>
+                                    </div>
+                                </div>
+
+                                <div class="govuk-grid-row sup_margin_left_right_10 govuk-!-margin-top-2">
+                                    <div class="govuk-grid-column-full govuk-!-padding-left-0 govuk-!-padding-right-0">
+                                        <div class="govuk-form-group govuk-!-margin-bottom-4 govuk-grid-column-one-third govuk-!-padding-left-0">
+                                            <label class="govuk-label" for="approvalComments">Comments</label>
+                                            <textarea class="govuk-textarea approval-comments-textarea" id="approvalComments" name="approvalComments" rows="3"></textarea>
+                                        </div>
+                                        <div class="approval-buttons-row">
+                                            <div class="govuk-button-group sup_flex_end_center approval-buttons-group">
+                                                <button type="button" class="govuk-button" data-module="govuk-button" id="btnReleaseForApproval">
+                                                    Release for Approval
+                                                </button>
+                                                <button type="button" class="govuk-button govuk-button--warning" data-module="govuk-button" id="btnCancelProcess">
+                                                    Cancel Process
+                                                </button>
+                                                <button type="button" class="govuk-button" data-module="govuk-button" id="btnApprove">
+                                                    Approve
+                                                </button>
+                                                <button type="button" class="govuk-button govuk-button--warning" data-module="govuk-button" id="btnReject">
+                                                    Reject
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<div id="govuk-popup-overlay">
+    <div id="govuk-popup"></div>
+</div>
+
+@section Scripts {
+    <script src="~/js/fps_js/update_staff_rates.js"></script>
+    <script src="~/js/common/_govuk_alert.js"></script>
+}

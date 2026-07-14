@@ -1,0 +1,30 @@
+@model string
+@* activeItem: controller name of the currently active page (e.g. "BulkRates", "BulkRatesAnimal", "BulkRatesStaff") *@
+<style>
+    .sidenav {
+        margin-bottom: 0;
+        align-self: flex-start;
+    }
+</style>
+<nav class="sidenav flex-column flex-shrink-0 govuk-!-padding-left-2" id="shortnav" aria-label="Bulk Rates navigation">
+    <ul>
+        <li>
+            <a class="dropdown-item@(Model == "BulkRates" ? " sidenav-title" : "")"
+               asp-area="FPS" asp-controller="BulkRates" asp-action="Index">
+                FEC Test Management
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item@(Model == "BulkRatesAnimal" ? " sidenav-title" : "")"
+               asp-area="FPS" asp-controller="UpdateAnimalRates" asp-action="Index">
+                Update Animal Rates
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item@(Model == "BulkRatesStaff" ? " sidenav-title" : "")"
+               asp-area="FPS" asp-controller="UpdateStaffRates" asp-action="Index">
+                Update Staff Rates
+            </a>
+        </li>
+    </ul>
+</nav>
