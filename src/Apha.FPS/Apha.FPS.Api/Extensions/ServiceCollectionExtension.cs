@@ -55,6 +55,13 @@ namespace Apha.FPS.Api.Extensions
             services.AddScoped<IProjectAuditTrailService, ProjectAuditTrailService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<ITotalBusinessOverheadsService, TotalBusinessOverheadsService>();
+
+            // Bulk Rates
+            services.AddScoped<IBulkRatesRequestService, BulkRatesRequestService>();
+            services.AddScoped<BulkRatesExcelParser>();
+            services.AddScoped<BulkRatesValidator>();
+            services.AddScoped<IEventBridgePublisher, NullEventBridgePublisher>();
+            services.AddScoped<IBulkRatesNotificationService, LogOnlyBulkRatesNotificationService>();
             return services;
         }
         public static IServiceCollection AddRepositories(this IServiceCollection services)
@@ -96,6 +103,9 @@ namespace Apha.FPS.Api.Extensions
             services.AddScoped<IProjectAuditTrailRepository, ProjectAuditTrailRepository>();
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<ITotalBusinessOverheadsRepository, TotalBusinessOverheadsRepository>();
+
+            // Bulk Rates
+            services.AddScoped<IBulkRatesRepository, BulkRatesRepository>();
             return services;
 
         }
