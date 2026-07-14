@@ -44,7 +44,9 @@ public sealed class JobOrchestratorTests
     {
         // Arrange â€” capture argument state at call time (not at assertion time)
         // because JobExecutionRecord is a mutable reference type that gets updated
-        // between CreateExecutionRecordAsync and UpdateExecutionRecordAsync.        SetupInitiatedExecution("TestJob");        var capturedCreateStatus = new List<JobStatus>();
+        // between CreateExecutionRecordAsync and UpdateExecutionRecordAsync.
+        SetupInitiatedExecution("TestJob");
+        var capturedCreateStatus = new List<JobStatus>();
         var capturedUpdateStatus = new List<JobStatus>();
 
         var job = Substitute.For<IBatchJob>();
@@ -468,7 +470,9 @@ public sealed class JobOrchestratorTests
     [Fact]
     public async Task RunAsync_WhenTwoConcurrentCallsForSameJob_OnlyOneExecutesAndOtherIsSkipped()
     {
-        // Arrange â€” first call acquires lock, second call gets false (DB unique constraint)        SetupInitiatedExecution("ConcurrentJob");        var lockCallCount = 0;
+        // Arrange — first call acquires lock, second call gets false (DB unique constraint)
+        SetupInitiatedExecution("ConcurrentJob");
+        var lockCallCount = 0;
         _lockRepo.TryAcquireLockAsync("ConcurrentJob", Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
                  .Returns(_ => ++lockCallCount == 1);  // first true, subsequent false
 
