@@ -100,6 +100,7 @@ namespace Apha.FPSApps.Web.Extensions
             services.AddScoped<IContributionSummaryService, ContributionSummaryService>();
             services.AddScoped<IProjectAuditTrailService, ProjectAuditTrailService>();
             services.AddScoped<IBosworthInterfaceService, BosworthInterfaceService>();
+            services.AddScoped<IBulkRatesService, BulkRatesService>();
             return services;
         }
         public static IServiceCollection AddRepositories(this IServiceCollection services)

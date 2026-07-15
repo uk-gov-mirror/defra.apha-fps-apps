@@ -1,0 +1,32 @@
+{{!--
+    _RejectModal.cshtml — US-UI-06: Rejection modal with mandatory reason.
+    Toggled by BulkRates.showRejectModal() / BulkRates.closeRejectModal().
+    BulkRates.confirmReject() validates the reason and POSTs to /FPS/BulkRates/Reject.
+--}}
+<div id="rejectModalOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:9999;"
+     role="dialog" aria-modal="true" aria-labelledby="rejectModalTitle">
+    <div style="background:#fff; max-width:480px; margin:10vh auto; padding:2rem; border:2px solid #0b0c0c;">
+        <h2 class="govuk-heading-m" id="rejectModalTitle">Reject request</h2>
+        <p class="govuk-body-s">You must enter a reason before confirming rejection.</p>
+
+        <div class="govuk-form-group govuk-!-margin-bottom-4" id="rejectReasonGroup">
+            <label class="govuk-label govuk-!-font-weight-bold" for="rejectReason">Rejection reason</label>
+            <div id="rejectReasonError" class="govuk-error-message" style="display:none;">
+                <span class="govuk-visually-hidden">Error:</span> Enter a rejection reason.
+            </div>
+            <textarea class="govuk-textarea" id="rejectReason" name="rejectReason" rows="4"
+                      aria-describedby="rejectReasonError" maxlength="500"></textarea>
+        </div>
+
+        <div class="govuk-button-group govuk-!-margin-bottom-0">
+            <button type="button" class="govuk-button govuk-button--warning govuk-!-margin-bottom-0"
+                    id="btnConfirmReject" onclick="BulkRates.confirmReject()">
+                Confirm Rejection
+            </button>
+            <button type="button" class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0 govuk-!-margin-left-2"
+                    onclick="BulkRates.closeRejectModal()">
+                Cancel
+            </button>
+        </div>
+    </div>
+</div>

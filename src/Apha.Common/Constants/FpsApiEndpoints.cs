@@ -252,5 +252,16 @@ namespace Apha.Common.Constants
         public const string GetUserPermissions = "api/v1/user/{0}/permissions";
         public const string SaveUserPermissions = "api/v1/user/{0}/permissions";
         public const string GetPermissionOptions = "api/v1/user/options";
+
+        // Bulk Rates Update (FEC Phase 3 — US-API-01 through US-API-14)
+        public const string CreateBulkRatesRequest = "api/v1/bulk-rates/requests";
+        public const string GetBulkRatesRequests = "api/v1/bulk-rates/requests";
+        public const string GetBulkRatesRequest = "api/v1/bulk-rates/requests/{0}";
+        public const string UploadBulkRatesFile = "api/v1/bulk-rates/requests/{0}/upload";
+        public const string GetBulkRatesValidation = "api/v1/bulk-rates/requests/{0}/validation";
+        public const string ReleaseBulkRatesRequest = "api/v1/bulk-rates/requests/{0}/release";
+        public const string ApproveBulkRatesRequest = "api/v1/bulk-rates/requests/{0}/approve";
+        public const string RejectBulkRatesRequest = "api/v1/bulk-rates/requests/{0}/reject";
+        public const string CancelBulkRatesRequest = "api/v1/bulk-rates/requests/{0}/cancel";
     }
 }

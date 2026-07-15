@@ -24,8 +24,9 @@ public static class ProgramExtension
                 : $@"{srvpath}\Logsample.log";
 
             Log.Logger = new LoggerConfiguration()
+                .ReadFrom.Configuration(builder.Configuration)
                 .Enrich.FromLogContext()
-                .Enrich.WithProperty("ApplicationName", "Apha.BatchJobs")
+                .Enrich.WithProperty("Application", "FPSBatchJobs")
                 .Enrich.WithProperty("Environment", builder.Environment.EnvironmentName)
                 .Enrich.WithProperty("LogStreamPrefix", SerilogExtensions.ResolveLogStreamPrefix(builder.Configuration))
                 .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{LogStreamPrefix}] {Message:lj} {Properties:j}{NewLine}{Exception}")

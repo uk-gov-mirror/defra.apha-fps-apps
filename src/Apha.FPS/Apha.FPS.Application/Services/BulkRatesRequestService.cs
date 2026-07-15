@@ -71,8 +71,8 @@ namespace Apha.FPS.Application.Services
                 requestedBy, ct);
 
             _logger.LogInformation(
-                "Bulk Rates request {JobQueueId} created by {RequestedBy} for {JobName} year {FpsYear}.",
-                jobQueueId, requestedBy, jobName, fpsYear);
+                "[BulkRates.RequestCreated] JobQueueId={JobQueueId} | JobName={JobName} | FpsYear={FpsYear} | Actor={Actor}",
+                jobQueueId, jobName, fpsYear, requestedBy);
 
             return await BuildRequestDtoAsync(entry, ct);
         }
@@ -98,6 +98,9 @@ namespace Apha.FPS.Application.Services
 
                 await _repository.TransitionStatusAsync(jobQueueId, rejectedStatusId, initiatedStatusId, ct);
                 await _repository.WriteJobQueueLogAsync(jobQueueId, "Request re-opened for correction via re-upload.", requestedBy, ct);
+                _logger.LogInformation(
+                    "[BulkRates.RequestReopened] JobQueueId={JobQueueId} | JobName={JobName} | FpsYear={FpsYear} | Actor={Actor} | FromStatus={FromStatus} | ToStatus={ToStatus}",
+                    jobQueueId, entry.JobName, entry.FpsYear, requestedBy, StatusRejected, StatusInitiated);
                 entry.StatusId = initiatedStatusId;
                 entry.Status = StatusInitiated;
             }
@@ -142,8 +145,8 @@ namespace Apha.FPS.Application.Services
                 requestedBy, ct);
 
             _logger.LogInformation(
-                "Upload v{Version} for request {JobQueueId}: {Total} rows, {Invalid} invalid.",
-                newVersion, jobQueueId, counts.Total, counts.Invalid);
+                "[BulkRates.FileUploaded] JobQueueId={JobQueueId} | JobName={JobName} | FpsYear={FpsYear} | Actor={Actor} | UploadVersion={UploadVersion} | TotalRows={TotalRows} | InvalidRows={InvalidRows}",
+                jobQueueId, entry.JobName, entry.FpsYear, requestedBy, newVersion, counts.Total, counts.Invalid);
 
             return new BulkRatesUploadResultDto
             {
@@ -225,7 +228,9 @@ namespace Apha.FPS.Application.Services
                     RowCounts = metadata.RowCounts
                 }, ct);
 
-            _logger.LogInformation("Request {JobQueueId} released for approval by {RequestedBy}.", jobQueueId, requestedBy);
+            _logger.LogInformation(
+                "[BulkRates.ReleasedForApproval] JobQueueId={JobQueueId} | JobName={JobName} | FpsYear={FpsYear} | Actor={Actor} | FromStatus={FromStatus} | ToStatus={ToStatus}",
+                jobQueueId, entry.JobName, entry.FpsYear, requestedBy, StatusInitiated, StatusReleasedForApproval);
 
             entry.StatusId = releasedStatusId;
             entry.Status = StatusReleasedForApproval;
@@ -281,8 +286,8 @@ namespace Apha.FPS.Application.Services
             await _eventBridgePublisher.PublishApprovalEventAsync(payload, ct);
 
             _logger.LogInformation(
-                "Request {JobQueueId} approved by {ApprovedBy}. EventBridge event published for execution {JobExecutionId}.",
-                jobQueueId, approvedBy, entry.JobExecutionId);
+                "[BulkRates.Approved] JobQueueId={JobQueueId} | JobName={JobName} | FpsYear={FpsYear} | Actor={Actor} | JobExecutionId={JobExecutionId} | FromStatus={FromStatus} | ToStatus={ToStatus}",
+                jobQueueId, entry.JobName, entry.FpsYear, approvedBy, entry.JobExecutionId, StatusReleasedForApproval, StatusApproved);
 
             entry.ApprovedBy = approvedBy;
             entry.ApprovedAtUtc = now;
@@ -331,7 +336,9 @@ namespace Apha.FPS.Application.Services
                     Reason = reason
                 }, ct);
 
-            _logger.LogInformation("Request {JobQueueId} rejected by {RejectedBy}.", jobQueueId, rejectedBy);
+            _logger.LogInformation(
+                "[BulkRates.Rejected] JobQueueId={JobQueueId} | JobName={JobName} | FpsYear={FpsYear} | Actor={Actor} | FromStatus={FromStatus} | ToStatus={ToStatus}",
+                jobQueueId, entry.JobName, entry.FpsYear, rejectedBy, StatusReleasedForApproval, StatusRejected);
 
             entry.RejectedBy = rejectedBy;
             entry.RejectionReason = reason;
@@ -385,7 +392,9 @@ namespace Apha.FPS.Application.Services
                     Reason = reason
                 }, ct);
 
-            _logger.LogInformation("Request {JobQueueId} cancelled by {CancelledBy}.", jobQueueId, cancelledBy);
+            _logger.LogInformation(
+                "[BulkRates.Cancelled] JobQueueId={JobQueueId} | JobName={JobName} | FpsYear={FpsYear} | Actor={Actor} | FromStatus={FromStatus} | ToStatus={ToStatus}",
+                jobQueueId, entry.JobName, entry.FpsYear, cancelledBy, entry.Status, StatusCancelled);
 
             entry.CancelledBy = cancelledBy;
             entry.CancelledAtUtc = now;

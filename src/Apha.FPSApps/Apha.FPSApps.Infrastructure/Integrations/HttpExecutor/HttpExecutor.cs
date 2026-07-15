@@ -68,5 +68,11 @@ namespace Apha.FPSApps.Infrastructure.Integrations.HttpExecutor
             var response = await _http.SendAsync(request);
             return await response.ToApiResponse<T>();
         }
+
+        public async Task<ApiResponse<T>> PostMultipartAsync<T>(string url, MultipartFormDataContent content)
+        {
+            var response = await _http.PostAsync(url, content);
+            return await response.ToApiResponse<T>();
+        }
     }
 }

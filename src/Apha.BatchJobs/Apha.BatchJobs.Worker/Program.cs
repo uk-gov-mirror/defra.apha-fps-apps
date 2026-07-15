@@ -1,6 +1,8 @@
 ﻿using Apha.BatchJobs.Application.Interfaces;
+using Apha.BatchJobs.Domain;
 using Apha.BatchJobs.Domain.Constants;
 using Apha.BatchJobs.Domain.Enums;
+using Apha.BatchJobs.Domain.Exceptions;
 using Apha.BatchJobs.Application.DependencyInjection;
 using Apha.BatchJobs.Worker.Extensions;
 using Microsoft.EntityFrameworkCore;
@@ -10,11 +12,12 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using Serilog;
-using System.Globalization;
 
-var requestedJobArg = args.Length > 0
-    ? args[0]
-    : Environment.GetEnvironmentVariable("BATCH_JOB_NAME");
+// Propagate CLI arg to env var so BatchExecutionContext.FromEnvironment() picks it up.
+if (args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]))
+    Environment.SetEnvironmentVariable("BATCH_JOB_NAME", args[0]);
+
+var requestedJobArg = Environment.GetEnvironmentVariable("BATCH_JOB_NAME");
 
 // A null/empty BATCH_JOB_NAME means the ECS container override did not inject the env var —
 // most likely an EventBridge input transformer misconfiguration (e.g. PascalCase JSON keys
@@ -26,7 +29,7 @@ if (string.IsNullOrWhiteSpace(requestedJobArg))
         "ERROR [ConfigurationError]: BATCH_JOB_NAME is not set. " +
         "Cannot determine which job to run. " +
         "Verify the EventBridge input transformer maps $.detail.jobName → BATCH_JOB_NAME.");
-    return 2; // ExitCodeConfigurationError
+    return BatchExitCodes.ConfigurationFailure;
 }
 
 // HealthCheck is a pure process liveness probe — no DB, no orchestrator, no execution contract.
@@ -46,11 +49,6 @@ builder.Configuration
     .AddEnvironmentVariables();
 
 var startedAt = DateTime.UtcNow;
-const int ExitCodeSuccess = 0;
-const int ExitCodeBusinessFailure = 1;
-const int ExitCodeConfigurationError = 2;
-const int ExitCodeCancelled = 3;
-const int ExitCodeDependencyOutage = 5;
 
 // ECS SIGTERM → forced-stop window is typically 30 s.
 // We allow 25 s for graceful cleanup before the host forces termination.
@@ -75,7 +73,7 @@ string requestedRunMode = "Manual";
 string? capturedJobExecutionId = null;
 string? capturedJobQueueId = null;
 int? capturedExecutionId = null;
-var exitCode = ExitCodeBusinessFailure;
+var exitCode = BatchExitCodes.UnhandledFailure;
 bool gracefulShutdownCompleted = true;
 
 try
@@ -103,52 +101,19 @@ try
         "Runtime tolerance | GracefulShutdownWindowSeconds={GracefulShutdownWindowSeconds} | DbCommandTimeoutSeconds={DbCommandTimeoutSeconds} | LockTimeoutSeconds={LockTimeoutSeconds} | JobTimeoutSeconds={JobTimeoutSeconds}",
         gracefulShutdownWindowSeconds, dbCommandTimeoutSeconds, lockTimeoutSeconds, jobTimeoutSeconds);
 
-    // Resolve execution inputs from environment — entry-point responsibility only.
-    var jobName = requestedJobArg;
-    var runModeEnv = Environment.GetEnvironmentVariable("BATCH_RUN_MODE") ?? "Manual";
-    var runMode = Enum.TryParse<RunMode>(runModeEnv, ignoreCase: true, out var parsedMode) ? parsedMode : RunMode.Manual;
-    var jobExecutionIdEnv = Environment.GetEnvironmentVariable("BATCH_JOB_EXECUTION_ID")
-        ?? Environment.GetEnvironmentVariable("BATCH_EXECUTION_ID");
-    var requestedAtUtcEnv = Environment.GetEnvironmentVariable("BATCH_REQUESTED_AT_UTC");
-    var requestedAtUtc = ParseRequestedAtUtc(requestedAtUtcEnv, logger);
-    var userId = Environment.GetEnvironmentVariable("BATCH_REQUESTED_BY") ?? "system";
-
-    // For scheduled jobs, default to current UTC time if BATCH_REQUESTED_AT_UTC was not provided.
-    if (requestedAtUtc == null && runMode == RunMode.Scheduled)
-    {
-        requestedAtUtc = DateTime.UtcNow;
-        logger.LogInformation(
-            "BATCH_REQUESTED_AT_UTC not provided for scheduled job; defaulting to worker startup time | DefaultRequestedAtUtc={DefaultRequestedAtUtc}",
-            requestedAtUtc);
-    }
+    // Resolve and validate all execution inputs via BatchExecutionContext.
+    var execContext = BatchExecutionContext.FromEnvironment();
+    var jobName = execContext.JobName;
+    var runMode = execContext.RunMode;
+    var jobExecutionId = execContext.JobExecutionId;
+    var userId = execContext.RequestedBy;
+    var requestedAtUtc = execContext.RequestedAtUtc?.UtcDateTime;
 
     if (LooksLikeTemplatePlaceholder(jobName))
-        throw new InvalidOperationException($"BATCH_JOB_NAME resolved to template placeholder '{jobName}'. Provide a real registered job name.");
+        throw new JobValidationException($"BATCH_JOB_NAME resolved to template placeholder '{jobName}'. Provide a real registered job name.");
 
     if (LooksLikeTemplatePlaceholder(userId))
-        throw new InvalidOperationException($"BATCH_REQUESTED_BY resolved to template placeholder '{userId}'. Provide a real requester identity.");
-
-    // Resolve job execution ID. Scheduled MABArchive may self-generate when the trigger does not
-    // supply one; all other jobs require a pre-assigned GUID from the API.
-    Guid jobExecutionId;
-    if (string.IsNullOrWhiteSpace(jobExecutionIdEnv))
-    {
-        if (runMode == RunMode.Scheduled && string.Equals(jobName, BatchJobNames.MabArchive, StringComparison.OrdinalIgnoreCase))
-        {
-            jobExecutionId = Guid.NewGuid();
-            logger.LogInformation(
-                "No BATCH_JOB_EXECUTION_ID supplied; worker generated execution id for scheduled MABArchive | GeneratedJobExecutionId={GeneratedJobExecutionId}",
-                jobExecutionId);
-        }
-        else
-        {
-            throw new InvalidOperationException("BATCH_JOB_EXECUTION_ID is required for non-worker-managed runs.");
-        }
-    }
-    else if (!Guid.TryParse(jobExecutionIdEnv, out jobExecutionId))
-    {
-        throw new InvalidOperationException("BATCH_JOB_EXECUTION_ID must be a valid GUID.");
-    }
+        throw new JobValidationException($"BATCH_REQUESTED_BY resolved to template placeholder '{userId}'. Provide a real requester identity.");
 
     capturedJobExecutionId = jobExecutionId.ToString("D");
     requestedJobName = jobName;
@@ -166,7 +131,7 @@ try
         logger.LogWarning(
             "Host stopping signal was already set before job start — skipping execution | JobName={JobName} | GracefulWindowSeconds={GracefulWindowSeconds}",
             jobName, gracefulShutdownWindowSeconds);
-        exitCode = ExitCodeCancelled;
+        exitCode = BatchExitCodes.Cancelled;
         failureCategory = "Cancellation";
         runOutcome = "Cancelled";
     }
@@ -185,10 +150,22 @@ try
             result.JobName, result.Status, result.JobQueueId, result.ExecutionId);
         logger.LogInformation("===========================================");
 
-        exitCode = ExitCodeSuccess;
+        exitCode = BatchExitCodes.Success;
         failureCategory = "None";
         runOutcome = "Succeeded";
     }
+}
+catch (JobValidationException ex)
+{
+    var logger = loggerFactory?.CreateLogger("BatchJobs.Error");
+    var configExceptionType = builder.Configuration["ExceptionTypes:Configuration"] ?? "FPSBatchJobs.CONFIGURATION_EXCEPTION";
+    logger?.LogError(ex, "{ExceptionType} Configuration/validation error: {ErrorMessage}",
+        $"[[{configExceptionType}]]",
+        ex.Message);
+    Console.Error.WriteLine($"ERROR: {ex.Message}");
+    exitCode = BatchExitCodes.ConfigurationFailure;
+    failureCategory = "ConfigurationError";
+    runOutcome = "Failed";
 }
 catch (InvalidOperationException ex)
 {
@@ -196,7 +173,7 @@ catch (InvalidOperationException ex)
     var exceptionPrefix = GetExceptionTypePrefix(ex, builder.Configuration);
     logger?.LogError(ex, "{ExceptionType} Job factory error: {ErrorMessage}", exceptionPrefix, ex.Message);
     Console.Error.WriteLine($"ERROR: {exceptionPrefix} {ex.Message}");
-    exitCode = ExitCodeConfigurationError;
+    exitCode = BatchExitCodes.ConfigurationFailure;
     failureCategory = "ConfigurationError";
     runOutcome = "Failed";
 }
@@ -209,7 +186,7 @@ catch (OperationCanceledException ex)
         requestedJobName ?? "Unknown", capturedJobQueueId ?? "N/A", capturedJobExecutionId ?? "N/A", remainingWindowMs);
     Console.Error.WriteLine("INTERRUPTED: Job execution was interrupted");
     gracefulShutdownCompleted = remainingWindowMs > 100;
-    exitCode = ExitCodeCancelled;
+    exitCode = BatchExitCodes.Cancelled;
     failureCategory = "Cancellation";
     runOutcome = "Failed";
 }
@@ -220,19 +197,19 @@ catch (Exception ex)
     if (IsTimeoutFailure(ex))
     {
         logger?.LogError(ex, "{ExceptionType} Runtime timeout detected: {ErrorMessage}", exceptionPrefix, ex.Message);
-        exitCode = ExitCodeDependencyOutage;
+        exitCode = BatchExitCodes.DatabaseFailure;
         failureCategory = "Timeout";
     }
     else if (IsDependencyOutage(ex))
     {
         logger?.LogError(ex, "{ExceptionType} Dependency outage detected: {ErrorMessage}", exceptionPrefix, ex.Message);
-        exitCode = ExitCodeDependencyOutage;
+        exitCode = BatchExitCodes.DatabaseFailure;
         failureCategory = "DependencyOutage";
     }
     else
     {
         logger?.LogError(ex, "{ExceptionType} Unhandled exception: {ErrorMessage}", exceptionPrefix, ex.Message);
-        exitCode = ExitCodeBusinessFailure;
+        exitCode = BatchExitCodes.UnhandledFailure;
         failureCategory = "BusinessFailure";
     }
 
@@ -355,21 +332,6 @@ static int ResolveIntSetting(IConfiguration configuration, string configKey, str
         return configValue.Value;
 
     return defaultValue;
-}
-
-static DateTime? ParseRequestedAtUtc(string? requestedAtUtcRaw, Microsoft.Extensions.Logging.ILogger logger)
-{
-    if (string.IsNullOrWhiteSpace(requestedAtUtcRaw))
-        return null;
-
-    if (!DateTimeOffset.TryParse(requestedAtUtcRaw, CultureInfo.InvariantCulture,
-            DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var parsed))
-    {
-        logger.LogWarning("Ignoring invalid BATCH_REQUESTED_AT_UTC value | RequestedAtUtc={RequestedAtUtc}", requestedAtUtcRaw);
-        return null;
-    }
-
-    return parsed.UtcDateTime;
 }
 
 static bool LooksLikeTemplatePlaceholder(string? value)

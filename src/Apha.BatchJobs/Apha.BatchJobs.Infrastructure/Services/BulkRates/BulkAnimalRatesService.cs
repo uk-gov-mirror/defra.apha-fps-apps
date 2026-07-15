@@ -46,7 +46,14 @@ public sealed class BulkAnimalRatesService : IBulkAnimalRatesService
         var jobQueueId = entry.JobQueueId;
         var fpsYear    = entry.FpsYear;
         var appliedAt  = DateTime.UtcNow;
-
+        // ── US-XC-02: Log execution start ─────────────────────────────
+        await _repository.WriteJobQueueLogAsync(
+            jobQueueId,
+            $"Worker execution starting (FPS year {fpsYear}).",
+            entry.ApprovedBy, cancellationToken);
+        _logger.LogInformation(
+            "[BulkRates.ExecutionStarted] JobQueueId={JobQueueId} | JobName={JobName} | FpsYear={FpsYear}",
+            jobQueueId, entry.JobName, fpsYear);
         // ── 2. Load staging ───────────────────────────────────────────────
         var stagingRows = await _repository.GetAnimalStagingRowsAsync(jobQueueId, cancellationToken);
 
@@ -93,6 +100,12 @@ public sealed class BulkAnimalRatesService : IBulkAnimalRatesService
             _logger.LogInformation(
                 "BulkAnimalRatesUpdate committed | JobQueueId={JobQueueId} | Updated={Updated}",
                 jobQueueId, updated);
+
+            // ── US-XC-02: Log commit summary ──────────────────────────────
+            await _repository.WriteJobQueueLogAsync(
+                jobQueueId,
+                $"Rate changes committed: Animal updated={updated}.",
+                entry.ApprovedBy, cancellationToken);
         }
 
         // ── 4. Delete staging post-commit ─────────────────────────────────

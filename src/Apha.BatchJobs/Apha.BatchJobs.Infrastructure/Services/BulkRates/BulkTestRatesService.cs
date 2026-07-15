@@ -53,6 +53,15 @@ public sealed class BulkTestRatesService : IBulkTestRatesService
         var approvedBy    = entry.ApprovedBy;
         var appliedAt     = DateTime.UtcNow;
 
+        // ── US-XC-02: Log execution start ─────────────────────────────
+        await _repository.WriteJobQueueLogAsync(
+            jobQueueId,
+            $"Worker execution starting (FPS year {fpsYear}).",
+            approvedBy, cancellationToken);
+        _logger.LogInformation(
+            "[BulkRates.ExecutionStarted] JobQueueId={JobQueueId} | JobName={JobName} | FpsYear={FpsYear}",
+            jobQueueId, entry.JobName, fpsYear);
+
         // ── 2. Load staging rows ──────────────────────────────────────────
         var fecRows   = await _repository.GetFecStagingRowsAsync(jobQueueId, cancellationToken);
         var agrupRows = await _repository.GetAgrupStagingRowsAsync(jobQueueId, cancellationToken);
@@ -136,6 +145,12 @@ public sealed class BulkTestRatesService : IBulkTestRatesService
             _logger.LogInformation(
                 "BulkTestRatesUpdate committed | JobQueueId={JobQueueId} | FecInserted={FI} | FecUpdated={FU} | FecUnchanged={FC} | AgrupInserted={AI} | AgrupUpdated={AU} | AgrupUnchanged={AC}",
                 jobQueueId, fecInserted, fecUpdated, fecUnchanged, agrupInserted, agrupUpdated, agrupUnchanged);
+
+            // ── US-XC-02: Log commit summary ──────────────────────────────
+            await _repository.WriteJobQueueLogAsync(
+                jobQueueId,
+                $"Rate changes committed: FEC inserted={fecInserted}, updated={fecUpdated}, unchanged={fecUnchanged}; AGRUP inserted={agrupInserted}, updated={agrupUpdated}, unchanged={agrupUnchanged}.",
+                approvedBy, cancellationToken);
         }
 
         // ── 5. Delete staging rows AFTER successful commit (spec §10.6) ──

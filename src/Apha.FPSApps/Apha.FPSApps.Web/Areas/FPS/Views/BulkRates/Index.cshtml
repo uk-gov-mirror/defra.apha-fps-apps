@@ -1,6 +1,169 @@
+@using Apha.FPSApps.Web.Areas.FPS.Models
+@model BulkRatesQueueViewModel
 @{
-    ViewData["Title"] = "FEC Data Upload and Approval Process";
+    ViewData["Title"] = "Bulk Rates Update — Queue";
+
+    var jobOptions = new[]
+    {
+        ("", "All job types"),
+        ("BulkTestRatesUpdate",  "FEC Test Rates"),
+        ("BulkStaffRatesUpdate", "Staff Rates"),
+        ("BulkAnimalRatesUpdate","Animal Rates")
+    };
+
+    var statusOptions = new[]
+    {
+        ("", "All statuses"),
+        ("Initiated",       "Initiated"),
+        ("PendingApproval", "Pending Approval"),
+        ("Approved",        "Approved"),
+        ("Running",         "Running"),
+        ("Completed",       "Completed"),
+        ("Failed",          "Failed"),
+        ("Rejected",        "Rejected"),
+        ("Cancelled",       "Cancelled")
+    };
+
+    string StatusBadgeClass(string s) => s switch
+    {
+        "Initiated"       => "govuk-tag govuk-tag--blue",
+        "PendingApproval" => "govuk-tag govuk-tag--yellow",
+        "Approved"        => "govuk-tag govuk-tag--green",
+        "Running"         => "govuk-tag govuk-tag--purple",
+        "Completed"       => "govuk-tag",
+        "Failed"          => "govuk-tag govuk-tag--red",
+        "Rejected"        => "govuk-tag govuk-tag--orange",
+        "Cancelled"       => "govuk-tag govuk-tag--grey",
+        _                 => "govuk-tag govuk-tag--grey"
+    };
+
+    string FriendlyJobName(string j) => j switch
+    {
+        "BulkTestRatesUpdate"  => "FEC Test Rates",
+        "BulkStaffRatesUpdate" => "Staff Rates",
+        "BulkAnimalRatesUpdate"=> "Animal Rates",
+        _                      => j
+    };
 }
+
+<main class="govuk-main-wrapper govuk-!-padding-top-0" id="main-content" role="main">
+    <div class="container-fluid">
+
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <h1 class="govuk-grid-row govuk-heading-s sup_border-bottom govuk-!-margin-top-2 govuk-!-padding-bottom-2 govuk-!-padding-left-4">
+                    Bulk Rates Update
+                </h1>
+            </div>
+        </div>
+
+        <div class="govuk-grid-row">
+            <div class="cc-container-fluid">
+                <div class="cc-layout-row">
+
+                    @await Html.PartialAsync("_BulkRatesSideNav", "BulkRates")
+
+                    <div class="cc-content-column">
+
+                        {{! Filter bar }}
+                        <form method="get" asp-area="FPS" asp-controller="BulkRates" asp-action="Index"
+                              class="govuk-grid-row sup_margin_left_right_10 govuk-!-margin-bottom-4">
+
+                            <div class="govuk-grid-column-one-quarter govuk-!-padding-left-0">
+                                <label class="govuk-label govuk-!-font-size-16 govuk-!-font-weight-bold" for="jobNameFilter">Job type</label>
+                                <select class="govuk-select govuk-!-font-size-16 govuk-!-width-full" id="jobNameFilter" name="jobName">
+                                    @foreach (var (val, label) in jobOptions)
+                                    {
+                                        <option value="@val" selected="@(Model.JobNameFilter == val ? "selected" : null)">@label</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="govuk-grid-column-one-quarter">
+                                <label class="govuk-label govuk-!-font-size-16 govuk-!-font-weight-bold" for="fpsYearFilter">FPS year</label>
+                                <input class="govuk-input govuk-input--width-5 govuk-!-font-size-16"
+                                       id="fpsYearFilter" name="fpsYear" type="number" min="2000" max="2100"
+                                       value="@(Model.FpsYearFilter?.ToString() ?? "")">
+                            </div>
+
+                            <div class="govuk-grid-column-one-quarter">
+                                <label class="govuk-label govuk-!-font-size-16 govuk-!-font-weight-bold" for="statusFilter">Status</label>
+                                <select class="govuk-select govuk-!-font-size-16 govuk-!-width-full" id="statusFilter" name="status">
+                                    @foreach (var (val, label) in statusOptions)
+                                    {
+                                        <option value="@val" selected="@(Model.StatusFilter == val ? "selected" : null)">@label</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="govuk-grid-column-one-quarter govuk-!-padding-right-0 govuk-!-display-flex" style="align-items:flex-end;">
+                                <div class="govuk-button-group govuk-!-margin-bottom-0">
+                                    <button type="submit" class="govuk-button govuk-!-margin-bottom-0" data-module="govuk-button">Filter</button>
+                                    <a asp-area="FPS" asp-controller="BulkRates" asp-action="Create"
+                                       class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0 govuk-!-margin-left-2">
+                                        New Request
+                                    </a>
+                                </div>
+                            </div>
+
+                        </form>
+
+                        {{! Results table }}
+                        @if (!Model.Entries.Any())
+                        {
+                            <p class="govuk-body govuk-!-margin-left-3">No requests match the selected filters.</p>
+                        }
+                        else
+                        {
+                            <div class="govuk-grid-row sup_margin_left_right_10">
+                                <div class="govuk-grid-column-full sup_p_0">
+                                    <table class="govuk-table govuk-!-font-size-16 custom-table govuk-!-margin-bottom-0">
+                                        <thead class="govuk-table__head">
+                                            <tr class="govuk-table__row">
+                                                <th scope="col" class="govuk-table__header">Request ID</th>
+                                                <th scope="col" class="govuk-table__header">Job Type</th>
+                                                <th scope="col" class="govuk-table__header">FPS Year</th>
+                                                <th scope="col" class="govuk-table__header">Status</th>
+                                                <th scope="col" class="govuk-table__header">Requested By</th>
+                                                <th scope="col" class="govuk-table__header">Requested At (UTC)</th>
+                                                <th scope="col" class="govuk-table__header">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="govuk-table__body">
+                                            @foreach (var e in Model.Entries)
+                                            {
+                                                <tr class="govuk-table__row">
+                                                    <td class="govuk-table__cell govuk-!-font-size-14" style="font-family:monospace;">
+                                                        @e.JobQueueId.ToString()[..8]&hellip;
+                                                    </td>
+                                                    <td class="govuk-table__cell">@FriendlyJobName(e.JobName)</td>
+                                                    <td class="govuk-table__cell">@e.FpsYear</td>
+                                                    <td class="govuk-table__cell">
+                                                        <strong class="@StatusBadgeClass(e.Status)">@e.Status</strong>
+                                                    </td>
+                                                    <td class="govuk-table__cell">@e.RequestedBy</td>
+                                                    <td class="govuk-table__cell">@e.RequestedAtUtc.ToString("dd MMM yyyy HH:mm")</td>
+                                                    <td class="govuk-table__cell">
+                                                        <a asp-area="FPS" asp-controller="BulkRates" asp-action="Detail"
+                                                           asp-route-id="@e.JobQueueId"
+                                                           class="govuk-link govuk-!-font-size-16">View</a>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        }
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</main>
+
 
 <main class="govuk-main-wrapper govuk-!-padding-top-0" id="main-content" role="main">
     <div class="container-fluid">

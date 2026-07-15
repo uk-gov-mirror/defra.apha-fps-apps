@@ -1,0 +1,83 @@
+@using Apha.FPSApps.Web.Areas.FPS.Models
+@model BulkRatesCreateViewModel
+@{
+    ViewData["Title"] = "New Bulk Rates Request";
+}
+
+<main class="govuk-main-wrapper govuk-!-padding-top-0" id="main-content" role="main">
+    <div class="container-fluid">
+
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <h1 class="govuk-grid-row govuk-heading-s sup_border-bottom govuk-!-margin-top-2 govuk-!-padding-bottom-2 govuk-!-padding-left-4">
+                    Bulk Rates Update
+                </h1>
+            </div>
+        </div>
+
+        <div class="govuk-grid-row">
+            <div class="cc-container-fluid">
+                <div class="cc-layout-row">
+
+                    @await Html.PartialAsync("_BulkRatesSideNav", "BulkRates")
+
+                    <div class="cc-content-column">
+
+                        <div class="govuk-grid-row sup_margin_left_right_10 sup_margin_bottom_10">
+                            <div class="govuk-grid-column-two-thirds govuk-!-padding-left-0">
+
+                                <a asp-area="FPS" asp-controller="BulkRates" asp-action="Index"
+                                   class="govuk-back-link govuk-!-font-size-16">Back to queue</a>
+
+                                <h2 class="govuk-heading-m govuk-!-margin-top-4">New Bulk Rates Request</h2>
+
+                                <div id="createErrorSummary" class="govuk-error-summary" style="display:none;" aria-labelledby="error-summary-title" role="alert" data-module="govuk-error-summary">
+                                    <h2 class="govuk-error-summary__title" id="error-summary-title">There is a problem</h2>
+                                    <div class="govuk-error-summary__body">
+                                        <ul class="govuk-list govuk-error-summary__list">
+                                            <li id="createErrorText"></li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                @Html.AntiForgeryToken()
+
+                                <div class="govuk-form-group govuk-!-margin-bottom-4">
+                                    <label class="govuk-label govuk-!-font-weight-bold" for="jobName">Job type</label>
+                                    <select class="govuk-select" id="jobName" name="jobName">
+                                        <option value="BulkTestRatesUpdate"  selected="@(Model.JobName == "BulkTestRatesUpdate"  ? "selected" : null)">FEC Test Rates (BulkTestRatesUpdate)</option>
+                                        <option value="BulkStaffRatesUpdate" selected="@(Model.JobName == "BulkStaffRatesUpdate" ? "selected" : null)">Staff Rates (BulkStaffRatesUpdate)</option>
+                                        <option value="BulkAnimalRatesUpdate"selected="@(Model.JobName == "BulkAnimalRatesUpdate"? "selected" : null)">Animal Rates (BulkAnimalRatesUpdate)</option>
+                                    </select>
+                                </div>
+
+                                <div class="govuk-form-group govuk-!-margin-bottom-6">
+                                    <label class="govuk-label govuk-!-font-weight-bold" for="fpsYear">FPS year</label>
+                                    <div class="govuk-hint govuk-!-font-size-16">Enter the four-digit FPS financial year (e.g. @DateTime.UtcNow.Year).</div>
+                                    <input class="govuk-input govuk-input--width-5" id="fpsYear" name="fpsYear"
+                                           type="number" min="2000" max="2100" value="@Model.FpsYear">
+                                </div>
+
+                                <div class="govuk-button-group">
+                                    <button type="button" class="govuk-button" data-module="govuk-button" id="btnCreateRequest"
+                                            onclick="BulkRates.submitCreate()">
+                                        Create Request
+                                    </button>
+                                    <a asp-area="FPS" asp-controller="BulkRates" asp-action="Index"
+                                       class="govuk-link govuk-!-font-size-16">Cancel</a>
+                                </div>
+
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+@section Scripts {
+    <script src="~/js/fps_js/fec_testmanagement.js"></script>
+}

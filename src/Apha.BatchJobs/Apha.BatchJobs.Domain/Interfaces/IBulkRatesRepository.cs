@@ -76,4 +76,14 @@ public interface IBulkRatesRepository
     Task DeleteAnimalStagingRowsAsync(
         Guid jobQueueId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Appends a chronology entry to fps.job_queue_log for the given request.
+    /// Resolves the current statusid automatically; skips silently if the row is not found.
+    /// </summary>
+    Task WriteJobQueueLogAsync(
+        Guid jobQueueId,
+        string note,
+        string? actor,
+        CancellationToken cancellationToken = default);
 }

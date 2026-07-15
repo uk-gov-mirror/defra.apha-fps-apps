@@ -28,7 +28,7 @@ public static class SerilogExtensions
         // Enrich logs with context information
         loggerConfiguration = loggerConfiguration
             .Enrich.FromLogContext()
-            .Enrich.WithProperty("ApplicationName", "Apha.BatchJobs")
+            .Enrich.WithProperty("Application", "FPSBatchJobs")
             .Enrich.WithProperty("Environment", GetEnvironment())
             .Enrich.WithProperty("LogStreamPrefix", logStreamPrefix);
 

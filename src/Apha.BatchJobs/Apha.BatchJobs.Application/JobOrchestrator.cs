@@ -3,11 +3,14 @@ using Apha.BatchJobs.Domain.Configuration;
 using Apha.BatchJobs.Domain.Constants;
 using Apha.BatchJobs.Domain.Entities;
 using Apha.BatchJobs.Domain.Enums;
+using Apha.BatchJobs.Domain.Exceptions;
 using Apha.BatchJobs.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Npgsql;
+using System.Runtime.ExceptionServices;
 using System.Text.Json;
 
 namespace Apha.BatchJobs.Application;
@@ -23,6 +26,7 @@ public sealed class JobOrchestrator : IJobOrchestrator
     private readonly IJobExecutionRepository _executionRepository;
     private readonly ICorrelationService _correlationService;
     private readonly ILogger<JobOrchestrator> _logger;
+    private readonly IConfiguration _configuration;
     private readonly int _lockTimeoutSeconds;
     private readonly int _retryAttempts;
     private readonly int _retryDelaySeconds;
@@ -46,6 +50,7 @@ public sealed class JobOrchestrator : IJobOrchestrator
         IJobExecutionRepository executionRepository,
         ICorrelationService correlationService,
         IOptions<BatchJobSettings> settings,
+        IConfiguration configuration,
         ILogger<JobOrchestrator> logger)
     {
         _factory = factory ?? throw new ArgumentNullException(nameof(factory));
@@ -76,6 +81,7 @@ public sealed class JobOrchestrator : IJobOrchestrator
                 .ToDictionary(kv => kv.Key.Trim(), kv => kv.Value, StringComparer.OrdinalIgnoreCase)
             : new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
     }
 
     /// <inheritdoc />
@@ -434,17 +440,7 @@ public sealed class JobOrchestrator : IJobOrchestrator
             record.ErrorMessage = jobException?.Message;
             record.StackTrace = jobException?.StackTrace;
 
-            try
-            {
-                await _executionRepository.UpdateExecutionRecordAsync(record, CancellationToken.None);
-                _logger.LogInformation(
-                    "Execution record updated | Status={Status} | Duration={DurationSeconds}s",
-                    finalStatus, record.DurationSeconds);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Could not write execution completion record — job result may not be persisted");
-            }
+            await MarkFailedSafelyAsync(record, finalStatus, jobException, jobQueueId);
 
             // Step 5 — Release lock (always)
             try
@@ -484,9 +480,65 @@ public sealed class JobOrchestrator : IJobOrchestrator
             throw cancelEx;
 
         if (jobException != null)
-            throw jobException;
+            ThrowWithStructuredLog(jobException, jobName, jobQueueId, jobExecutionId);
 
         return new JobExecutionResult(jobQueueId, jobName, status, finalDuration, executionId);
+    }
+
+    /// <summary>
+    /// Persists the final execution record status. If the update itself fails (e.g. DB is down),
+    /// logs both the persistence failure and the original exception type at Critical level so
+    /// CloudWatch metric filters can still fire, then swallows the persistence error so the
+    /// container exits with the correct non-zero code.
+    /// </summary>
+    private async Task MarkFailedSafelyAsync(
+        JobExecutionRecord record,
+        JobStatus finalStatus,
+        Exception? originalException,
+        Guid jobQueueId)
+    {
+        try
+        {
+            await _executionRepository.UpdateExecutionRecordAsync(record, CancellationToken.None);
+            _logger.LogInformation(
+                "Execution record updated | Status={Status} | Duration={DurationSeconds}s",
+                finalStatus, record.DurationSeconds);
+        }
+        catch (Exception ex)
+        {
+            var originalType = originalException?.GetType().Name ?? "None";
+            var sqlType = _configuration["ExceptionTypes:Sql"] ?? "FPSBatchJobs.SQL_EXCEPTION";
+            _logger.LogCritical(ex,
+                "[{ErrorType}] Could not write execution completion record — job result may not be persisted | OriginalExceptionType={OriginalExceptionType} | JobQueueId={JobQueueId}",
+                sqlType, originalType, jobQueueId);
+        }
+    }
+
+    /// <summary>
+    /// Logs a structured error with the correct <c>[{ErrorType}]</c> token for the given exception type,
+    /// then re-throws the exception preserving the original stack trace.
+    /// </summary>
+    private void ThrowWithStructuredLog(Exception exception, string jobName, Guid jobQueueId, Guid jobExecutionId)
+    {
+        var errorType = exception switch
+        {
+            JobValidationException => _configuration["ExceptionTypes:Validation"] ?? "FPSBatchJobs.VALIDATION_EXCEPTION",
+            PostgresException => _configuration["ExceptionTypes:Sql"] ?? "FPSBatchJobs.SQL_EXCEPTION",
+            NpgsqlException => _configuration["ExceptionTypes:Sql"] ?? "FPSBatchJobs.SQL_EXCEPTION",
+            JobLockException => _configuration["ExceptionTypes:Concurrency"] ?? "FPSBatchJobs.CONCURRENCY_EXCEPTION",
+            BusinessEmailException => _configuration["ExceptionTypes:Email"] ?? "FPSBatchJobs.EMAIL_EXCEPTION",
+            _ => _configuration["ExceptionTypes:General"] ?? "FPSBatchJobs.GENERAL_EXCEPTION"
+        };
+
+        _logger.LogError(
+            exception,
+            "[{ErrorType}] Batch job failed | JobName={JobName} | JobQueueId={JobQueueId} | JobExecutionId={JobExecutionId}",
+            errorType,
+            jobName,
+            jobQueueId,
+            jobExecutionId);
+
+        ExceptionDispatchInfo.Capture(exception).Throw();
     }
 
     private static string ResolveLockName(string jobName)

@@ -40,12 +40,19 @@ public sealed class YearEndCutoverJobHandler : IBatchJob
     {
         var context = YearEndExecutionContext.FromEnvironment(_correlationService.GetCorrelationId());
 
+        using var scope = _logger.BeginScope(new Dictionary<string, object?>
+        {
+            ["JobExecutionId"] = context.CorrelationId,
+            ["JobName"] = Name
+        });
+
         _logger.LogInformation(
-            "YearEndCutover handler invoked | CorrelationId={CorrelationId} | TargetFpsYear={TargetFpsYear} | CurrentFpsYear={CurrentFpsYear}",
+            "YearEndCutover handler invoked | JobExecutionId={JobExecutionId} | TargetFpsYear={TargetFpsYear} | CurrentFpsYear={CurrentFpsYear}",
             context.CorrelationId,
             context.TargetFpsYear,
             context.CurrentFpsYear);
 
+        using var stepScope = _logger.BeginScope(new Dictionary<string, object?> { ["StepName"] = "ExecuteYearEndCutover" });
         await _service.ExecuteAsync(context, cancellationToken);
     }
 }

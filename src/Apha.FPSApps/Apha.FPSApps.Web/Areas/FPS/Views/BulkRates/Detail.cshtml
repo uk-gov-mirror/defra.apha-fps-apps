@@ -1,0 +1,293 @@
+@using Apha.FPSApps.Web.Areas.FPS.Models
+@model BulkRatesDetailViewModel
+@{
+    var entry = Model.Request.Entry;
+    var uploadResult = Model.UploadResult;
+
+    ViewData["Title"] = $"Bulk Rates — {entry.JobName} {entry.FpsYear}";
+
+    string StatusBadgeClass(string s) => s switch
+    {
+        "Initiated"       => "govuk-tag govuk-tag--blue",
+        "PendingApproval" => "govuk-tag govuk-tag--yellow",
+        "Approved"        => "govuk-tag govuk-tag--green",
+        "Running"         => "govuk-tag govuk-tag--purple",
+        "Completed"       => "govuk-tag",
+        "Failed"          => "govuk-tag govuk-tag--red",
+        "Rejected"        => "govuk-tag govuk-tag--orange",
+        "Cancelled"       => "govuk-tag govuk-tag--grey",
+        _                 => "govuk-tag govuk-tag--grey"
+    };
+
+    string FriendlyJobName(string j) => j switch
+    {
+        "BulkTestRatesUpdate"   => "FEC Test Rates",
+        "BulkStaffRatesUpdate"  => "Staff Rates",
+        "BulkAnimalRatesUpdate" => "Animal Rates",
+        _                       => j
+    };
+}
+
+<main class="govuk-main-wrapper govuk-!-padding-top-0" id="main-content" role="main">
+    <div class="container-fluid">
+
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <h1 class="govuk-grid-row govuk-heading-s sup_border-bottom govuk-!-margin-top-2 govuk-!-padding-bottom-2 govuk-!-padding-left-4">
+                    Bulk Rates Update
+                </h1>
+            </div>
+        </div>
+
+        <div class="govuk-grid-row">
+            <div class="cc-container-fluid">
+                <div class="cc-layout-row">
+
+                    @await Html.PartialAsync("_BulkRatesSideNav", "BulkRates")
+
+                    <div class="cc-content-column">
+
+                        <div class="govuk-grid-row sup_margin_left_right_10">
+                            <div class="govuk-grid-column-full govuk-!-padding-left-0 govuk-!-padding-right-0">
+
+                                <a asp-area="FPS" asp-controller="BulkRates" asp-action="Index"
+                                   class="govuk-back-link govuk-!-font-size-16">Back to queue</a>
+
+                                {{! Anti-forgery token — referenced by all AJAX calls on this page }}
+                                @Html.AntiForgeryToken()
+
+                                {{! ── Request header ── }}
+                                <div class="govuk-grid-row govuk-!-margin-top-4 govuk-!-margin-bottom-4">
+                                    <div class="govuk-grid-column-full">
+                                        <h2 class="govuk-heading-m govuk-!-margin-bottom-2">
+                                            @FriendlyJobName(entry.JobName) — FPS Year @entry.FpsYear
+                                            <strong class="@StatusBadgeClass(entry.Status) govuk-!-margin-left-2">@entry.Status</strong>
+                                        </h2>
+                                        <dl class="govuk-summary-list govuk-summary-list--no-border govuk-!-font-size-16 govuk-!-margin-bottom-0">
+                                            <div class="govuk-summary-list__row">
+                                                <dt class="govuk-summary-list__key">Request ID</dt>
+                                                <dd class="govuk-summary-list__value" style="font-family:monospace; font-size:13px;">@entry.JobQueueId</dd>
+                                            </div>
+                                            <div class="govuk-summary-list__row">
+                                                <dt class="govuk-summary-list__key">Requested by</dt>
+                                                <dd class="govuk-summary-list__value">@entry.RequestedBy</dd>
+                                            </div>
+                                            <div class="govuk-summary-list__row">
+                                                <dt class="govuk-summary-list__key">Requested at (UTC)</dt>
+                                                <dd class="govuk-summary-list__value">@entry.RequestedAtUtc.ToString("dd MMM yyyy HH:mm:ss")</dd>
+                                            </div>
+                                            @if (!string.IsNullOrEmpty(entry.ApprovedBy))
+                                            {
+                                                <div class="govuk-summary-list__row">
+                                                    <dt class="govuk-summary-list__key">Approved by</dt>
+                                                    <dd class="govuk-summary-list__value">@entry.ApprovedBy at @entry.ApprovedAtUtc?.ToString("dd MMM yyyy HH:mm")</dd>
+                                                </div>
+                                            }
+                                            @if (!string.IsNullOrEmpty(entry.RejectedBy))
+                                            {
+                                                <div class="govuk-summary-list__row">
+                                                    <dt class="govuk-summary-list__key">Rejected by</dt>
+                                                    <dd class="govuk-summary-list__value">@entry.RejectedBy at @entry.RejectedAtUtc?.ToString("dd MMM yyyy HH:mm")</dd>
+                                                </div>
+                                                <div class="govuk-summary-list__row">
+                                                    <dt class="govuk-summary-list__key">Rejection reason</dt>
+                                                    <dd class="govuk-summary-list__value govuk-!-color-red">@entry.RejectionReason</dd>
+                                                </div>
+                                            }
+                                            @if (!string.IsNullOrEmpty(entry.CancelledBy))
+                                            {
+                                                <div class="govuk-summary-list__row">
+                                                    <dt class="govuk-summary-list__key">Cancelled by</dt>
+                                                    <dd class="govuk-summary-list__value">@entry.CancelledBy at @entry.CancelledAtUtc?.ToString("dd MMM yyyy HH:mm")</dd>
+                                                </div>
+                                            }
+                                            @if (!string.IsNullOrEmpty(entry.ErrorMessage))
+                                            {
+                                                <div class="govuk-summary-list__row">
+                                                    <dt class="govuk-summary-list__key">Error</dt>
+                                                    <dd class="govuk-summary-list__value govuk-!-color-red">@entry.ErrorMessage</dd>
+                                                </div>
+                                            }
+                                        </dl>
+                                    </div>
+                                </div>
+
+                                {{! ── Upload section (US-UI-02) — shown only to initiator on Initiated/Rejected ── }}
+                                @if (Model.CanUpload)
+                                {
+                                    <section class="sup_border govuk-!-padding-3 govuk-!-margin-bottom-4" aria-labelledby="upload-section-title">
+                                        <h3 class="govuk-heading-s govuk-!-margin-bottom-2" id="upload-section-title">Upload rates file</h3>
+                                        <div class="govuk-hint govuk-!-font-size-16 govuk-!-margin-bottom-2">
+                                            Select an Excel (.xlsx) file. Uploading a new file replaces any previously uploaded data and re-runs validation.
+                                        </div>
+                                        <div class="govuk-form-group govuk-!-margin-bottom-2">
+                                            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" for="ratesFile">File</label>
+                                            <input class="govuk-file-upload" id="ratesFile" name="ratesFile" type="file" accept=".xlsx">
+                                        </div>
+                                        <div class="govuk-button-group govuk-!-margin-bottom-0">
+                                            <button type="button" class="govuk-button govuk-!-margin-bottom-0" id="btnUpload"
+                                                    onclick="BulkRates.uploadFile('@entry.JobQueueId')">
+                                                Upload and Validate
+                                            </button>
+                                        </div>
+                                        <div id="uploadProgress" style="display:none;" class="govuk-!-margin-top-2">
+                                            <p class="govuk-body-s govuk-!-margin-bottom-0">Uploading and validating&hellip;</p>
+                                        </div>
+                                    </section>
+                                }
+
+                                {{! ── Upload metadata + validation results (US-UI-03) ── }}
+                                @if (uploadResult != null)
+                                {
+                                    var rc = uploadResult.RowCounts;
+                                    var errors = uploadResult.ValidationErrors.Where(e => e.Severity == "Error").ToList();
+                                    var warnings = uploadResult.ValidationErrors.Where(e => e.Severity == "Warning").ToList();
+
+                                    <section class="sup_border govuk-!-padding-3 govuk-!-margin-bottom-4" aria-labelledby="validation-section-title">
+                                        <h3 class="govuk-heading-s govuk-!-margin-bottom-2" id="validation-section-title">
+                                            Validation results
+                                            @if (errors.Count == 0)
+                                            {
+                                                <strong class="govuk-tag govuk-tag--green govuk-!-margin-left-2">Passed</strong>
+                                            }
+                                            else
+                                            {
+                                                <strong class="govuk-tag govuk-tag--red govuk-!-margin-left-2">@errors.Count error(s)</strong>
+                                            }
+                                        </h3>
+
+                                        <p class="govuk-body-s govuk-!-margin-bottom-2">
+                                            File: <strong>@uploadResult.Filename</strong> &mdash;
+                                            Upload v@uploadResult.UploadVersion &mdash;
+                                            Total rows: @rc.Total, Valid: @rc.Valid, Invalid: @rc.Invalid,
+                                            Insert: @rc.Insert, Update: @rc.Update, Unchanged: @rc.Unchanged
+                                        </p>
+
+                                        @if (uploadResult.ValidationErrors.Any())
+                                        {
+                                            <table class="govuk-table govuk-!-font-size-14 govuk-!-margin-bottom-0" id="validationErrorsTable">
+                                                <thead class="govuk-table__head">
+                                                    <tr class="govuk-table__row">
+                                                        <th scope="col" class="govuk-table__header govuk-!-width-one-eighth">Row</th>
+                                                        <th scope="col" class="govuk-table__header govuk-!-width-one-quarter">Field</th>
+                                                        <th scope="col" class="govuk-table__header govuk-!-width-one-eighth">Severity</th>
+                                                        <th scope="col" class="govuk-table__header">Message</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="govuk-table__body">
+                                                    @foreach (var ve in uploadResult.ValidationErrors.OrderBy(v => v.Severity == "Error" ? 0 : 1).ThenBy(v => v.SourceRowNumber))
+                                                    {
+                                                        <tr class="govuk-table__row">
+                                                            <td class="govuk-table__cell">@ve.SourceRowNumber</td>
+                                                            <td class="govuk-table__cell">@ve.FieldName</td>
+                                                            <td class="govuk-table__cell">
+                                                                <strong class="govuk-tag @(ve.Severity == "Error" ? "govuk-tag--red" : "govuk-tag--yellow")">@ve.Severity</strong>
+                                                            </td>
+                                                            <td class="govuk-table__cell">@ve.ValidationMessage</td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        }
+                                        else
+                                        {
+                                            <p class="govuk-body-s govuk-!-margin-bottom-0">All rows passed validation.</p>
+                                        }
+                                    </section>
+                                }
+
+                                {{! ── Action buttons (US-UI-04, 05, 06, 08) ── }}
+                                @if (Model.CanRelease || Model.CanApprove || Model.CanReject || Model.CanCancel)
+                                {
+                                    <div id="actionErrorBanner" class="govuk-error-summary" style="display:none;" aria-labelledby="action-error-title" role="alert">
+                                        <h2 class="govuk-error-summary__title" id="action-error-title">There is a problem</h2>
+                                        <div class="govuk-error-summary__body">
+                                            <ul class="govuk-list govuk-error-summary__list"><li id="actionErrorText"></li></ul>
+                                        </div>
+                                    </div>
+
+                                    <div class="govuk-button-group govuk-!-margin-bottom-4">
+
+                                        @* US-UI-04: Release — initiator + Initiated + no blocking errors *@
+                                        @if (Model.CanRelease)
+                                        {
+                                            <button type="button" class="govuk-button" data-module="govuk-button" id="btnRelease"
+                                                    onclick="BulkRates.release('@entry.JobQueueId')">
+                                                Release for Approval
+                                            </button>
+                                        }
+
+                                        @* US-UI-05: Approve — approver + PendingApproval *@
+                                        @if (Model.CanApprove)
+                                        {
+                                            <button type="button" class="govuk-button" data-module="govuk-button" id="btnApprove"
+                                                    onclick="BulkRates.approve('@entry.JobQueueId')">
+                                                Approve
+                                            </button>
+                                        }
+
+                                        @* US-UI-06: Reject — approver + PendingApproval *@
+                                        @if (Model.CanReject)
+                                        {
+                                            <button type="button" class="govuk-button govuk-button--warning" data-module="govuk-button" id="btnReject"
+                                                    onclick="BulkRates.showRejectModal('@entry.JobQueueId')">
+                                                Reject
+                                            </button>
+                                        }
+
+                                        @* US-UI-08: Cancel — initiator + Initiated/Rejected *@
+                                        @if (Model.CanCancel)
+                                        {
+                                            <button type="button" class="govuk-button govuk-button--warning" data-module="govuk-button" id="btnCancel"
+                                                    onclick="BulkRates.cancel('@entry.JobQueueId')">
+                                                Cancel Request
+                                            </button>
+                                        }
+
+                                    </div>
+                                }
+
+                                {{! ── Status history (US-UI-07) ── }}
+                                @if (Model.Request.Log.Any())
+                                {
+                                    <section class="sup_border govuk-!-padding-3 govuk-!-margin-bottom-4" aria-labelledby="history-section-title">
+                                        <h3 class="govuk-heading-s govuk-!-margin-bottom-2" id="history-section-title">Status history</h3>
+                                        <table class="govuk-table govuk-!-font-size-14 govuk-!-margin-bottom-0">
+                                            <thead class="govuk-table__head">
+                                                <tr class="govuk-table__row">
+                                                    <th scope="col" class="govuk-table__header">Timestamp (UTC)</th>
+                                                    <th scope="col" class="govuk-table__header">Actor</th>
+                                                    <th scope="col" class="govuk-table__header">Note</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="govuk-table__body">
+                                                @foreach (var log in Model.Request.Log.OrderByDescending(l => l.CreatedAtUtc))
+                                                {
+                                                    <tr class="govuk-table__row">
+                                                        <td class="govuk-table__cell">@log.CreatedAtUtc.ToString("dd MMM yyyy HH:mm:ss")</td>
+                                                        <td class="govuk-table__cell">@(log.Actor ?? "—")</td>
+                                                        <td class="govuk-table__cell">@log.Note</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </section>
+                                }
+
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+@* US-UI-06: Rejection modal (rendered at body end, toggled by JS) *@
+@await Html.PartialAsync("_RejectModal")
+
+@section Scripts {
+    <script src="~/js/fps_js/fec_testmanagement.js"></script>
+}

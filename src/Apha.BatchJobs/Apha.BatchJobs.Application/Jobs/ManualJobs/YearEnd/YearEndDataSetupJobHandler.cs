@@ -40,12 +40,19 @@ public sealed class YearEndDataSetupJobHandler : IBatchJob
     {
         var context = YearEndExecutionContext.FromEnvironment(_correlationService.GetCorrelationId());
 
+        using var scope = _logger.BeginScope(new Dictionary<string, object?>
+        {
+            ["JobExecutionId"] = context.CorrelationId,
+            ["JobName"] = Name
+        });
+
         _logger.LogInformation(
-            "YearEndDataSetup handler invoked | CorrelationId={CorrelationId} | TargetFpsYear={TargetFpsYear} | CurrentFpsYear={CurrentFpsYear}",
+            "YearEndDataSetup handler invoked | JobExecutionId={JobExecutionId} | TargetFpsYear={TargetFpsYear} | CurrentFpsYear={CurrentFpsYear}",
             context.CorrelationId,
             context.TargetFpsYear,
             context.CurrentFpsYear);
 
+        using var stepScope = _logger.BeginScope(new Dictionary<string, object?> { ["StepName"] = "ExecuteYearEndDataSetup" });
         await _service.ExecuteAsync(context, cancellationToken);
     }
 }

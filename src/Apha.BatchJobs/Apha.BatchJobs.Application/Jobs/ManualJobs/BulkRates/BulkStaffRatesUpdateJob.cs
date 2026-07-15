@@ -38,12 +38,18 @@ public sealed class BulkStaffRatesUpdateJob : IBatchJob
     {
         var context = BulkRatesExecutionContext.FromEnvironment(_correlationService.GetCorrelationId());
 
+        using var scope = _logger.BeginScope(new Dictionary<string, object?>
+        {
+            ["JobExecutionId"] = context.JobExecutionId,
+            ["JobName"] = context.JobName
+        });
+
         _logger.LogInformation(
-            "BulkStaffRatesUpdate handler invoked | CorrelationId={CorrelationId} | JobExecutionId={JobExecutionId} | TriggerYear={TriggerYear}",
-            context.CorrelationId,
+            "BulkStaffRatesUpdate handler invoked | JobExecutionId={JobExecutionId} | TriggerYear={TriggerYear}",
             context.JobExecutionId,
             context.TriggerYear);
 
+        using var stepScope = _logger.BeginScope(new Dictionary<string, object?> { ["StepName"] = "ExecuteBulkStaffRatesUpdate" });
         await _service.ExecuteAsync(context, cancellationToken);
     }
 }

@@ -32,5 +32,6 @@ namespace Apha.FPSApps.Application.Interfaces.FpsApiClients
         IFpsContributionSummaryApiClient FpsContributionSummary { get; }
         IFpsProjectAuditTrailApiClient FpsProjectAuditTrail { get; }
         IFpsTotalBusinessOverheadsApiClient FpsTotalBusinessOverheads { get; }
+        IFpsBulkRatesApiClient FpsBulkRates { get; }
     }
 }

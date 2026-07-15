@@ -37,12 +37,18 @@ public sealed class BulkAnimalRatesUpdateJob : IBatchJob
     {
         var context = BulkRatesExecutionContext.FromEnvironment(_correlationService.GetCorrelationId());
 
+        using var scope = _logger.BeginScope(new Dictionary<string, object?>
+        {
+            ["JobExecutionId"] = context.JobExecutionId,
+            ["JobName"] = context.JobName
+        });
+
         _logger.LogInformation(
-            "BulkAnimalRatesUpdate handler invoked | CorrelationId={CorrelationId} | JobExecutionId={JobExecutionId} | TriggerYear={TriggerYear}",
-            context.CorrelationId,
+            "BulkAnimalRatesUpdate handler invoked | JobExecutionId={JobExecutionId} | TriggerYear={TriggerYear}",
             context.JobExecutionId,
             context.TriggerYear);
 
+        using var stepScope = _logger.BeginScope(new Dictionary<string, object?> { ["StepName"] = "ExecuteBulkAnimalRatesUpdate" });
         await _service.ExecuteAsync(context, cancellationToken);
     }
 }
