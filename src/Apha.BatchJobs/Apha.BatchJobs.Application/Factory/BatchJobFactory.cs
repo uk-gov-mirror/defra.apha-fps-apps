@@ -84,6 +84,8 @@ public sealed class BatchJobFactory : IBatchJobFactory
             name = name[..^"JobHandler".Length];
         else if (name.EndsWith("Handler", StringComparison.Ordinal))
             name = name[..^"Handler".Length];
+        else if (name.EndsWith("Job", StringComparison.Ordinal))
+            name = name[..^"Job".Length];
 
         // Keep historical capitalization used by callers.
         if (string.Equals(name, nameof(BatchJobNames.MabArchive), StringComparison.Ordinal))

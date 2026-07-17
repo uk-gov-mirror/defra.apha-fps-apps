@@ -18,10 +18,17 @@ namespace Apha.FPS.Core.Interfaces
             string requestedBy, DateTime requestedAtUtc, int fpsYear,
             CancellationToken ct = default);
 
-        Task<BulkRatesQueueEntry?> GetRequestAsync(Guid jobQueueId, CancellationToken ct = default);
+        Task<BulkRatesQueueEntry?> GetRequestAsync(Guid jobExecutionId, CancellationToken ct = default);
 
         Task<IReadOnlyList<BulkRatesQueueEntry>> GetRequestsAsync(
             string? jobName, int? fpsYear, string? status, CancellationToken ct = default);
+
+        /// <summary>
+        /// Returns the most recent request for <paramref name="jobName"/> that is still in a
+        /// blocking status (Initiated, ReleasedForApproval, Approved, Running, or Failed), or
+        /// null if none exists. Used to enforce the single-active-request-per-job-type rule.
+        /// </summary>
+        Task<BulkRatesQueueEntry?> GetActiveRequestAsync(string jobName, CancellationToken ct = default);
 
         // ── Status transitions ───────────────────────────────────────────────────
         /// <summary>
@@ -49,9 +56,10 @@ namespace Apha.FPS.Core.Interfaces
             string? reason, int cancelledStatusId,
             CancellationToken ct = default);
 
-        // ── configuration_json ───────────────────────────────────────────────────
-        Task UpdateConfigurationJsonAsync(
-            Guid jobQueueId, string configurationJson, CancellationToken ct = default);
+        // ── Upload metadata ──────────────────────────────────────────────────────
+        Task UpdateUploadMetadataAsync(
+            Guid jobQueueId, string filename, string checksumSha256, int uploadVersion,
+            DateTime validatedAtUtc, string rowCountsJson, CancellationToken ct = default);
 
         // ── Audit log ────────────────────────────────────────────────────────────
         Task WriteJobQueueLogAsync(
@@ -115,5 +123,11 @@ namespace Apha.FPS.Core.Interfaces
         /// <summary>Bulk check: returns the subset of (testCode, buyer) pairs that already exist for the given year.</summary>
         Task<IReadOnlySet<(string TestCode, string Buyer)>> GetExistingAgrupKeysAsync(
             IEnumerable<(string TestCode, string Buyer)> keys, int fpsYear, CancellationToken ct = default);
+
+        // ── Export (live table reads for Excel download) ──────────────────────────
+        Task<IReadOnlyList<FecStagingRow>> GetFecRowsForExportAsync(int fpsYear, CancellationToken ct = default);
+        Task<IReadOnlyList<AgrupStagingRow>> GetAgrupRowsForExportAsync(int fpsYear, CancellationToken ct = default);
+        Task<IReadOnlyList<StaffStagingRow>> GetStaffRowsForExportAsync(int fpsYear, CancellationToken ct = default);
+        Task<IReadOnlyList<AnimalStagingRow>> GetAnimalRowsForExportAsync(int fpsYear, CancellationToken ct = default);
     }
 }

@@ -161,6 +161,10 @@ public class BulkRatesValidatorTests
     [Fact]
     public async Task ValidateAgrup_WhenAgrupNewIsNull_CountedAsUnchanged()
     {
+        // An AGRUP key can only pre-exist (existingAgrupKeys) if its TestCode already
+        // exists too (spec §12.3) — existingTestCodes must be stubbed accordingly, or the
+        // TestCode-existence check spuriously raises TEST_CODE_NOT_FOUND on this row.
+        var existingTestCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "TC001" };
         var existingAgrup = new HashSet<(string, string)> { ("TC001", "BUYER1") };
         var parse = AgrupParse(new AgrupStagingRow
         {
@@ -170,6 +174,7 @@ public class BulkRatesValidatorTests
         });
 
         var result = await CreateValidator(
+                existingTestCodes: existingTestCodes,
                 existingAgrupKeys: existingAgrup)
             .ValidateAsync(parse, FpsYear, "BulkTestRatesUpdate");
 
@@ -199,17 +204,21 @@ public class BulkRatesValidatorTests
     [Fact]
     public async Task ValidateFec_RowCountsReflectInsertUpdateUnchanged()
     {
+        // Insert/Update classification (spec §15.2) is based purely on whether the TestCode
+        // already exists — independent of whether the row also carries a blocking error.
+        // TC_EXISTING2 is not a known TestCode, so it classifies as Insert even though its
+        // missing FecNewRate also makes it Invalid; the two counts are orthogonal.
         var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "TC_EXISTING" };
         var parse = FecParse(
             new FecStagingRow { TestCode = "TC_NEW", FecNewRate = 10m, ItemDescription = "d", ShortDescription = "s", Owner = "o" },
             new FecStagingRow { TestCode = "TC_EXISTING", FecNewRate = 20m },
-            new FecStagingRow { TestCode = "TC_EXISTING2", FecNewRate = null }   // error row
+            new FecStagingRow { TestCode = "TC_EXISTING2", FecNewRate = null }   // unknown TestCode + error row
         );
 
         var result = await CreateValidator(existingTestCodes: existing)
             .ValidateAsync(parse, FpsYear, "BulkTestRatesUpdate");
 
-        result.RowCounts.Insert.Should().Be(1);
+        result.RowCounts.Insert.Should().Be(2);
         result.RowCounts.Update.Should().Be(1);
         result.RowCounts.Total.Should().Be(3);
     }

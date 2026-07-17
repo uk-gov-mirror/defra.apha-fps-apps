@@ -47,10 +47,10 @@ public sealed class JobExecutionRepositoryApprovalMetadataIntegrationTests : IAs
                     WHERE table_schema = 'fps'
                       AND table_name = 'job_queue'
                       AND column_name IN
-                          ('configuration_json', 'approved_by', 'approved_at_utc',
+                          ('approved_by', 'approved_at_utc',
                            'rejected_by', 'rejected_at_utc', 'rejection_reason',
                            'triggered_by', 'triggered_at_utc')")
-                .SingleAsync() == 8;
+                .SingleAsync() == 7;
 
             _yearEndApprovedCatalogAvailable = await context.Database
                 .SqlQuery<int>($@"
@@ -109,10 +109,10 @@ public sealed class JobExecutionRepositoryApprovalMetadataIntegrationTests : IAs
             await context.Database.ExecuteSqlInterpolatedAsync($@"
                 INSERT INTO fps.job_queue
                     (jobqueueid, jobexecutionid, jobid, statusid, requestedby, requested_at_utc, startdatetime,
-                     configuration_json, approved_by, approved_at_utc)
+                     approved_by, approved_at_utc)
                 VALUES
                     ({jobQueueId}, {jobExecutionId}, {jobId}, {statusId}, 'integration-test-requester', NOW(), NOW(),
-                     '{{""targetFpsYear"":2099}}'::jsonb, 'integration-test-approver', NOW());");
+                     'integration-test-approver', NOW());");
         }
 
         try
@@ -124,8 +124,6 @@ public sealed class JobExecutionRepositoryApprovalMetadataIntegrationTests : IAs
             Assert.NotNull(metadata);
             Assert.Equal("integration-test-approver", metadata!.ApprovedBy);
             Assert.NotNull(metadata.ApprovedAtUtc);
-            Assert.NotNull(metadata.ConfigurationJson);
-            Assert.Contains("2099", metadata.ConfigurationJson!);
             Assert.Null(metadata.RejectedBy);
         }
         finally

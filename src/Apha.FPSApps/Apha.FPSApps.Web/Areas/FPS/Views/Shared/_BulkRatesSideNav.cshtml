@@ -10,19 +10,19 @@
     <ul>
         <li>
             <a class="dropdown-item@(Model == "BulkRates" ? " sidenav-title" : "")"
-               asp-area="FPS" asp-controller="BulkRates" asp-action="Index">
+               asp-area="FPS" asp-controller="BulkRates" asp-action="Fec">
                 FEC Test Management
             </a>
         </li>
         <li>
             <a class="dropdown-item@(Model == "BulkRatesAnimal" ? " sidenav-title" : "")"
-               asp-area="FPS" asp-controller="UpdateAnimalRates" asp-action="Index">
+               asp-area="FPS" asp-controller="BulkRates" asp-action="Animal">
                 Update Animal Rates
             </a>
         </li>
         <li>
             <a class="dropdown-item@(Model == "BulkRatesStaff" ? " sidenav-title" : "")"
-               asp-area="FPS" asp-controller="UpdateStaffRates" asp-action="Index">
+               asp-area="FPS" asp-controller="BulkRates" asp-action="Staff">
                 Update Staff Rates
             </a>
         </li>

@@ -28,7 +28,11 @@ namespace Apha.FPSApps.Application.Dtos.FPS.BulkRates
         public string RequestedBy { get; set; } = string.Empty;
         public DateTime RequestedAtUtc { get; set; }
         public int FpsYear { get; set; }
-        public string? ConfigurationJson { get; set; }
+        public string? UploadFilename { get; set; }
+        public string? UploadChecksumSha256 { get; set; }
+        public int? UploadVersion { get; set; }
+        public DateTime? UploadValidatedAtUtc { get; set; }
+        public string? UploadRowCountsJson { get; set; }
         public string? ApprovedBy { get; set; }
         public DateTime? ApprovedAtUtc { get; set; }
         public string? RejectedBy { get; set; }
@@ -77,5 +81,69 @@ namespace Apha.FPSApps.Application.Dtos.FPS.BulkRates
         public string Note { get; set; } = string.Empty;
         public string? Actor { get; set; }
         public DateTime CreatedAtUtc { get; set; }
+    }
+
+    /// <summary>Mirrors <c>BulkRatesStagingDataDto</c> (Apha.FPS.Application) as serialised over the wire.</summary>
+    public class BulkRatesStagingDataDto
+    {
+        public List<BulkRatesStagingFecRowDto> FecRows { get; set; } = [];
+        public List<BulkRatesStagingAgrupRowDto> AgrupRows { get; set; } = [];
+        public List<BulkRatesStagingStaffRowDto> StaffRows { get; set; } = [];
+        public List<BulkRatesStagingAnimalRowDto> AnimalRows { get; set; } = [];
+    }
+
+    /// <summary>Mirrors <c>BulkRatesStagingFecRowDto</c> (Apha.FPS.Application) as serialised over the wire.</summary>
+    public class BulkRatesStagingFecRowDto
+    {
+        public string Status { get; set; } = string.Empty;
+        public string TestCode { get; set; } = string.Empty;
+        public decimal? UnitPriceVla { get; set; }
+        public decimal? DefraUnitPrice { get; set; }
+        public decimal? FecNewRate { get; set; }
+        public string? ItemDescription { get; set; }
+        public string? ShortDescription { get; set; }
+        public string? Owner { get; set; }
+        public string? Comments { get; set; }
+    }
+
+    /// <summary>Mirrors <c>BulkRatesStagingAgrupRowDto</c> (Apha.FPS.Application) as serialised over the wire.</summary>
+    public class BulkRatesStagingAgrupRowDto
+    {
+        public string Status { get; set; } = string.Empty;
+        public string TestCode { get; set; } = string.Empty;
+        public string Buyer { get; set; } = string.Empty;
+        public decimal? Agrup { get; set; }
+        public decimal? AgrupNew { get; set; }
+        public double? NoRequired { get; set; }
+        public DateTime? DateCreated { get; set; }
+        public short? Active { get; set; }
+        public string? Comments { get; set; }
+    }
+
+    /// <summary>Mirrors <c>BulkRatesStagingStaffRowDto</c> (Apha.FPS.Application) as serialised over the wire.</summary>
+    public class BulkRatesStagingStaffRowDto
+    {
+        public string Status { get; set; } = string.Empty;
+        public string PcGrade { get; set; } = string.Empty;
+        public decimal? PayRate { get; set; }
+        public decimal? PayRateNew { get; set; }
+        public decimal? Npr { get; set; }
+        public decimal? NprNew { get; set; }
+        public decimal? Ohr { get; set; }
+        public decimal? OhrNew { get; set; }
+    }
+
+    /// <summary>Mirrors <c>BulkRatesStagingAnimalRowDto</c> (Apha.FPS.Application) as serialised over the wire.</summary>
+    public class BulkRatesStagingAnimalRowDto
+    {
+        public string Status { get; set; } = string.Empty;
+        public string AnimalType { get; set; } = string.Empty;
+        public string? Species { get; set; }
+        public string? SecurityLevel { get; set; }
+        public decimal? DailyRate { get; set; }
+        public decimal? DailyRateNew { get; set; }
+        public decimal? DefraDailyRate { get; set; }
+        public decimal? DefraDailyRateNew { get; set; }
+        public bool? PlanByWeek { get; set; }
     }
 }

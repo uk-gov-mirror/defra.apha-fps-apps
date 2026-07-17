@@ -1,5 +1,7 @@
 using System.Security.Cryptography;
 using System.Text.Json;
+using Apha.Common.Constants;
+using Apha.Common.Utilities.ExcelExport;
 using Apha.FPS.Application.Dtos.BulkRates;
 using Apha.FPS.Application.Interfaces;
 using Apha.FPS.Application.Validation;
@@ -17,12 +19,14 @@ namespace Apha.FPS.Application.Services
         private const string StatusRejected = "Rejected";
         private const string StatusApproved = "Approved";
         private const string StatusCancelled = "Cancelled";
+        private const string StatusFailed = "Failed";
 
         private readonly IBulkRatesRepository _repository;
         private readonly BulkRatesExcelParser _parser;
         private readonly BulkRatesValidator _validator;
         private readonly IEventBridgePublisher _eventBridgePublisher;
         private readonly IBulkRatesNotificationService _notificationService;
+        private readonly IExcelExportService _excelExportService;
         private readonly ILogger<BulkRatesRequestService> _logger;
 
         public BulkRatesRequestService(
@@ -31,6 +35,7 @@ namespace Apha.FPS.Application.Services
             BulkRatesValidator validator,
             IEventBridgePublisher eventBridgePublisher,
             IBulkRatesNotificationService notificationService,
+            IExcelExportService excelExportService,
             ILogger<BulkRatesRequestService> logger)
         {
             _repository = repository;
@@ -38,6 +43,7 @@ namespace Apha.FPS.Application.Services
             _validator = validator;
             _eventBridgePublisher = eventBridgePublisher;
             _notificationService = notificationService;
+            _excelExportService = excelExportService;
             _logger = logger;
         }
 
@@ -49,6 +55,13 @@ namespace Apha.FPS.Application.Services
             var jobId = await _repository.GetJobIdByNameAsync(jobName, ct)
                 ?? throw new BusinessValidationErrorException([
                     new($"Job name '{jobName}' is not a registered Bulk Rates job.", "INVALID_JOB_NAME")]);
+
+            var active = await _repository.GetActiveRequestAsync(jobName, ct);
+            if (active != null)
+                throw new BusinessValidationErrorException([
+                    new($"An active {jobName} request already exists (JobExecutionId={active.JobExecutionId}, " +
+                        $"Status={active.Status}, Requested by {active.RequestedBy}). Complete, reject, " +
+                        "or cancel it before creating a new one.", "ACTIVE_REQUEST_EXISTS")]);
 
             if (!await _repository.FpsYearExistsAsync(fpsYear, ct))
                 throw new BusinessValidationErrorException([
@@ -80,12 +93,13 @@ namespace Apha.FPS.Application.Services
         // ── US-API-02/03/05: Upload file ─────────────────────────────────────────
 
         public async Task<BulkRatesUploadResultDto> UploadFileAsync(
-            Guid jobQueueId, byte[] fileBytes, string filename,
+            Guid jobExecutionId, byte[] fileBytes, string filename,
             string requestedBy, CancellationToken ct = default)
         {
-            var entry = await RequireRequestAsync(jobQueueId, ct);
+            var entry = await RequireRequestAsync(jobExecutionId, ct);
+            var jobQueueId = entry.JobQueueId;
 
-            if (entry.RequestedBy != requestedBy)
+            if (!string.Equals(entry.RequestedBy, requestedBy, StringComparison.OrdinalIgnoreCase))
                 throw new BusinessValidationErrorException([
                     new("Only the original initiator may upload files for this request.", "NOT_INITIATOR")]);
 
@@ -119,25 +133,19 @@ namespace Apha.FPS.Application.Services
             var validationResult = await _validator.ValidateAsync(parseResult, entry.FpsYear, entry.JobName, ct);
 
             // Determine upload version
-            var existing = DeserializeMetadata(entry.ConfigurationJson);
-            var newVersion = (existing?.UploadVersion ?? 0) + 1;
+            var newVersion = (entry.UploadVersion ?? 0) + 1;
 
-            // Replace staging and validation errors
+            // Staging always holds every parsed row — valid and invalid alike — so the user can
+            // review and correct invalid rows in place; only Release is gated on zero blocking
+            // errors (see ReleaseForApprovalAsync). Validation errors are stored per staged row.
             await ReplaceStagingAsync(entry.JobName, jobQueueId, parseResult, ct);
             await _repository.ReplaceValidationErrorsAsync(jobQueueId, validationResult.Errors, ct);
 
-            // Build and persist updated configuration_json
+            // Persist upload metadata as typed columns (CR051 — configuration_json retired)
             var counts = validationResult.RowCounts;
-            var metadata = new BulkRatesUploadMetadata
-            {
-                Filename = filename,
-                ChecksumSha256 = checksum,
-                UploadVersion = newVersion,
-                ValidationCompletedAtUtc = DateTime.UtcNow,
-                RowCounts = counts
-            };
-            await _repository.UpdateConfigurationJsonAsync(
-                jobQueueId, JsonSerializer.Serialize(metadata, JsonOptions), ct);
+            await _repository.UpdateUploadMetadataAsync(
+                jobQueueId, filename, checksum, newVersion, DateTime.UtcNow,
+                JsonSerializer.Serialize(counts, JsonOptions), ct);
 
             await _repository.WriteJobQueueLogAsync(
                 jobQueueId,
@@ -162,16 +170,17 @@ namespace Apha.FPS.Application.Services
         // ── US-API-04: Get validation results ────────────────────────────────────
 
         public async Task<BulkRatesUploadResultDto> GetValidationResultsAsync(
-            Guid jobQueueId, string requestedBy, CancellationToken ct = default)
+            Guid jobExecutionId, string requestedBy, CancellationToken ct = default)
         {
-            var entry = await RequireRequestAsync(jobQueueId, ct);
+            var entry = await RequireRequestAsync(jobExecutionId, ct);
+            var jobQueueId = entry.JobQueueId;
 
-            if (entry.RequestedBy != requestedBy)
+            if (!string.Equals(entry.RequestedBy, requestedBy, StringComparison.OrdinalIgnoreCase))
                 throw new BusinessValidationErrorException([
                     new("Only the original initiator may view validation results.", "NOT_INITIATOR")]);
 
             var errors = await _repository.GetValidationErrorsAsync(jobQueueId, ct);
-            var metadata = DeserializeMetadata(entry.ConfigurationJson);
+            var metadata = BuildUploadMetadata(entry);
 
             return new BulkRatesUploadResultDto
             {
@@ -187,21 +196,31 @@ namespace Apha.FPS.Application.Services
         // ── US-API-06/12/13: Release for approval ────────────────────────────────
 
         public async Task<BulkRatesRequestDto> ReleaseForApprovalAsync(
-            Guid jobQueueId, string requestedBy, CancellationToken ct = default)
+            Guid jobExecutionId, string requestedBy, CancellationToken ct = default)
         {
-            var entry = await RequireRequestAsync(jobQueueId, ct);
+            var entry = await RequireRequestAsync(jobExecutionId, ct);
+            var jobQueueId = entry.JobQueueId;
 
-            if (entry.RequestedBy != requestedBy)
+            if (!string.Equals(entry.RequestedBy, requestedBy, StringComparison.OrdinalIgnoreCase))
                 throw new BusinessValidationErrorException([
                     new("Only the original initiator may release this request.", "NOT_INITIATOR")]);
 
             RequireStatus(entry, StatusInitiated, "release for approval");
 
             // US-API-12: Verify upload metadata (checksum) exists
-            var metadata = DeserializeMetadata(entry.ConfigurationJson);
-            if (metadata?.ChecksumSha256 == null)
+            if (entry.UploadChecksumSha256 == null)
                 throw new BusinessValidationErrorException([
                     new("No file has been uploaded for this request. Upload a valid file before releasing.", "NO_UPLOAD")]);
+            // BuildUploadMetadata only returns null when both UploadChecksumSha256 and
+            // UploadFilename are null — already ruled out by the check above.
+            var metadata = BuildUploadMetadata(entry)
+                ?? throw new InvalidOperationException("Upload metadata missing despite checksum present.");
+
+            // A checksum can exist for a file that parsed to zero data rows — releasing that
+            // would approve/run a no-op bulk update, which makes no business sense.
+            if (metadata.RowCounts.Total == 0)
+                throw new BusinessValidationErrorException([
+                    new("The uploaded file contains no data rows. Upload a file with at least one row before releasing.", "NO_ROWS")]);
 
             // US-API-06: All blocking errors must be resolved
             var errors = await _repository.GetValidationErrorsAsync(jobQueueId, ct);
@@ -240,20 +259,19 @@ namespace Apha.FPS.Application.Services
         // ── US-API-07/09/10/12/13: Approve ──────────────────────────────────────
 
         public async Task<BulkRatesRequestDto> ApproveAsync(
-            Guid jobQueueId, string approvedBy, CancellationToken ct = default)
+            Guid jobExecutionId, string approvedBy, CancellationToken ct = default)
         {
-            var entry = await RequireRequestAsync(jobQueueId, ct);
+            var entry = await RequireRequestAsync(jobExecutionId, ct);
+            var jobQueueId = entry.JobQueueId;
 
             RequireStatus(entry, StatusReleasedForApproval, "approve");
 
-            // US-API-09: Maker-checker — approver must differ from initiator
-            if (string.Equals(entry.RequestedBy, approvedBy, StringComparison.OrdinalIgnoreCase))
-                throw new BusinessValidationErrorException([
-                    new("The approver cannot be the same person as the initiator (maker-checker rule).", "MAKER_CHECKER_VIOLATION")]);
+            // US-API-09: Maker-checker — approver must differ from initiator.
+            // TEMPORARILY DISABLED at the requester's request so a single admin can
+            // self-approve during testing. Restore this check before release.
 
             // US-API-12: Verify checksum is stored (immutability of frozen upload)
-            var metadata = DeserializeMetadata(entry.ConfigurationJson);
-            if (metadata?.ChecksumSha256 == null)
+            if (entry.UploadChecksumSha256 == null)
                 throw new BusinessValidationErrorException([
                     new("Upload metadata is missing. The request cannot be approved.", "MISSING_CHECKSUM")]);
 
@@ -299,13 +317,14 @@ namespace Apha.FPS.Application.Services
         // ── US-API-08/13: Reject ─────────────────────────────────────────────────
 
         public async Task<BulkRatesRequestDto> RejectAsync(
-            Guid jobQueueId, string rejectedBy, string reason, CancellationToken ct = default)
+            Guid jobExecutionId, string rejectedBy, string reason, CancellationToken ct = default)
         {
             if (string.IsNullOrWhiteSpace(reason))
                 throw new BusinessValidationErrorException([
                     new("Rejection reason is mandatory.", "REASON_REQUIRED")]);
 
-            var entry = await RequireRequestAsync(jobQueueId, ct);
+            var entry = await RequireRequestAsync(jobExecutionId, ct);
+            var jobQueueId = entry.JobQueueId;
 
             RequireStatus(entry, StatusReleasedForApproval, "reject");
 
@@ -350,9 +369,10 @@ namespace Apha.FPS.Application.Services
         // ── US-API-14/13: Cancel ─────────────────────────────────────────────────
 
         public async Task<BulkRatesRequestDto> CancelAsync(
-            Guid jobQueueId, string cancelledBy, string? reason, CancellationToken ct = default)
+            Guid jobExecutionId, string cancelledBy, string? reason, CancellationToken ct = default)
         {
-            var entry = await RequireRequestAsync(jobQueueId, ct);
+            var entry = await RequireRequestAsync(jobExecutionId, ct);
+            var jobQueueId = entry.JobQueueId;
 
             // Only original initiator may cancel
             if (!string.Equals(entry.RequestedBy, cancelledBy, StringComparison.OrdinalIgnoreCase))
@@ -360,9 +380,10 @@ namespace Apha.FPS.Application.Services
                     new("Only the original initiator may cancel this request.", "NOT_INITIATOR")]);
 
             if (!string.Equals(entry.Status, StatusInitiated, StringComparison.OrdinalIgnoreCase) &&
-                !string.Equals(entry.Status, StatusRejected, StringComparison.OrdinalIgnoreCase))
+                !string.Equals(entry.Status, StatusRejected, StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(entry.Status, StatusFailed, StringComparison.OrdinalIgnoreCase))
                 throw new BusinessValidationErrorException([
-                    new($"Cancellation is only permitted for '{StatusInitiated}' or '{StatusRejected}' requests. Current status: {entry.Status}.", "INVALID_STATUS_FOR_CANCEL")]);
+                    new($"Cancellation is only permitted for '{StatusInitiated}', '{StatusRejected}', or '{StatusFailed}' requests. Current status: {entry.Status}.", "INVALID_STATUS_FOR_CANCEL")]);
 
             var cancelledStatusId = await _repository.GetStatusIdByNameAsync(entry.JobId, StatusCancelled, ct)
                 ?? throw new InvalidOperationException($"Status '{StatusCancelled}' not found.");
@@ -406,9 +427,9 @@ namespace Apha.FPS.Application.Services
 
         // ── US-API-11: Query ─────────────────────────────────────────────────────
 
-        public async Task<BulkRatesRequestDto?> GetRequestAsync(Guid jobQueueId, CancellationToken ct = default)
+        public async Task<BulkRatesRequestDto?> GetRequestAsync(Guid jobExecutionId, CancellationToken ct = default)
         {
-            var entry = await _repository.GetRequestAsync(jobQueueId, ct);
+            var entry = await _repository.GetRequestAsync(jobExecutionId, ct);
             if (entry == null) return null;
             return await BuildRequestDtoAsync(entry, ct);
         }
@@ -419,14 +440,352 @@ namespace Apha.FPS.Application.Services
             return await _repository.GetRequestsAsync(jobName, fpsYear, status, ct);
         }
 
+        public async Task<BulkRatesQueueEntry?> GetActiveRequestAsync(string jobName, CancellationToken ct = default)
+        {
+            return await _repository.GetActiveRequestAsync(jobName, ct);
+        }
+
+        // ── Export ───────────────────────────────────────────────────────────────
+
+        public async Task<byte[]> ExportFecTestDataAsync(int fpsYear, CancellationToken ct = default)
+        {
+            var fecRows = await _repository.GetFecRowsForExportAsync(fpsYear, ct);
+            var agrupRows = await _repository.GetAgrupRowsForExportAsync(fpsYear, ct);
+
+            _logger.LogInformation(
+                "[BulkRates.ExportFecTestData] FpsYear={FpsYear} | FecRows={FecRows} | AgrupRows={AgrupRows}",
+                fpsYear, fecRows.Count, agrupRows.Count);
+
+            return _excelExportService.ExportToExcelMultiSheet(BuildFecAgrupSheets(fecRows, agrupRows));
+        }
+
+        public async Task<byte[]> ExportStaffTestDataAsync(int fpsYear, CancellationToken ct = default)
+        {
+            var staffRows = await _repository.GetStaffRowsForExportAsync(fpsYear, ct);
+
+            _logger.LogInformation(
+                "[BulkRates.ExportStaffTestData] FpsYear={FpsYear} | StaffRows={StaffRows}",
+                fpsYear, staffRows.Count);
+
+            return _excelExportService.ExportToExcelMultiSheet(BuildStaffSheet(staffRows));
+        }
+
+        public async Task<byte[]> ExportAnimalTestDataAsync(int fpsYear, CancellationToken ct = default)
+        {
+            var animalRows = await _repository.GetAnimalRowsForExportAsync(fpsYear, ct);
+
+            _logger.LogInformation(
+                "[BulkRates.ExportAnimalTestData] FpsYear={FpsYear} | AnimalRows={AnimalRows}",
+                fpsYear, animalRows.Count);
+
+            return _excelExportService.ExportToExcelMultiSheet(BuildAnimalSheet(animalRows));
+        }
+
+        // ── Staging grid (Detail page — "FEC Data (Staging)" / "Agrup Details") ────
+
+        public async Task<BulkRatesStagingDataDto> GetStagingDataAsync(Guid jobExecutionId, CancellationToken ct = default)
+        {
+            var entry = await RequireRequestAsync(jobExecutionId, ct);
+
+            // No file uploaded yet — there is nothing staged to diff against live data, so every
+            // live row would otherwise look "Deleted"/"Not Found". Return no rows until an upload exists.
+            if (entry.UploadChecksumSha256 == null)
+                return new BulkRatesStagingDataDto();
+
+            if (string.Equals(entry.JobName, BulkRatesJobNames.Staff, StringComparison.OrdinalIgnoreCase))
+                return await GetStaffStagingDataAsync(entry, ct);
+
+            if (string.Equals(entry.JobName, BulkRatesJobNames.Animal, StringComparison.OrdinalIgnoreCase))
+                return await GetAnimalStagingDataAsync(entry, ct);
+
+            if (!string.Equals(entry.JobName, BulkRatesJobNames.Fec, StringComparison.OrdinalIgnoreCase))
+                return new BulkRatesStagingDataDto();
+
+            var stagedFec = await _repository.GetFecStagingRowsAsync(entry.JobQueueId, ct);
+            var stagedAgrup = await _repository.GetAgrupStagingRowsAsync(entry.JobQueueId, ct);
+            var liveFec = await _repository.GetFecRowsForExportAsync(entry.FpsYear, ct);
+
+            var liveByTestCode = liveFec.ToDictionary(r => r.TestCode, StringComparer.OrdinalIgnoreCase);
+            var stagedTestCodes = stagedFec.Select(r => r.TestCode).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var fecRows = new List<BulkRatesStagingFecRowDto>();
+            foreach (var row in stagedFec)
+            {
+                var isNew = !liveByTestCode.TryGetValue(row.TestCode, out var live);
+                if (!isNew && row.FecNewRate == live!.DefraUnitPrice)
+                    continue; // Unchanged — spec says only New/Updated/Deleted are shown
+
+                fecRows.Add(new BulkRatesStagingFecRowDto
+                {
+                    Status = isNew ? "Inserted" : "Updated",
+                    TestCode = row.TestCode,
+                    UnitPriceVla = row.UnitPriceVla,
+                    DefraUnitPrice = row.DefraUnitPrice,
+                    FecNewRate = row.FecNewRate,
+                    ItemDescription = row.ItemDescription,
+                    ShortDescription = row.ShortDescription,
+                    Owner = row.Owner,
+                    Comments = row.Comments
+                });
+            }
+
+            foreach (var live in liveFec)
+            {
+                if (stagedTestCodes.Contains(live.TestCode))
+                    continue;
+
+                fecRows.Add(new BulkRatesStagingFecRowDto
+                {
+                    Status = "Deleted",
+                    TestCode = live.TestCode,
+                    UnitPriceVla = live.UnitPriceVla,
+                    DefraUnitPrice = live.DefraUnitPrice,
+                    ItemDescription = live.ItemDescription,
+                    ShortDescription = live.ShortDescription,
+                    Owner = live.Owner,
+                    Comments = live.Comments
+                });
+            }
+
+            var liveAgrup = await _repository.GetAgrupRowsForExportAsync(entry.FpsYear, ct);
+            var liveAgrupByKey = liveAgrup.ToDictionary(r => AgrupKey(r.TestCode, r.Buyer));
+            var stagedAgrupKeys = stagedAgrup.Select(r => AgrupKey(r.TestCode, r.Buyer)).ToHashSet();
+
+            var agrupRows = new List<BulkRatesStagingAgrupRowDto>();
+            foreach (var row in stagedAgrup)
+            {
+                var isNew = !liveAgrupByKey.TryGetValue(AgrupKey(row.TestCode, row.Buyer), out var live);
+                if (!isNew && row.AgrupNew == live!.Agrup)
+                    continue; // Unchanged — same rule as FEC: only New/Updated/Deleted are shown
+
+                agrupRows.Add(new BulkRatesStagingAgrupRowDto
+                {
+                    Status = isNew ? "Inserted" : "Updated",
+                    TestCode = row.TestCode,
+                    Buyer = row.Buyer,
+                    Agrup = row.Agrup,
+                    AgrupNew = row.AgrupNew,
+                    NoRequired = row.NoRequired,
+                    DateCreated = row.DateCreated,
+                    Active = row.Active,
+                    Comments = row.Comments
+                });
+            }
+
+            foreach (var live in liveAgrup)
+            {
+                if (stagedAgrupKeys.Contains(AgrupKey(live.TestCode, live.Buyer)))
+                    continue;
+
+                agrupRows.Add(new BulkRatesStagingAgrupRowDto
+                {
+                    Status = "Deleted",
+                    TestCode = live.TestCode,
+                    Buyer = live.Buyer,
+                    Agrup = live.Agrup,
+                    NoRequired = live.NoRequired,
+                    DateCreated = live.DateCreated,
+                    Active = live.Active,
+                    Comments = live.Comments
+                });
+            }
+
+            return new BulkRatesStagingDataDto { FecRows = fecRows, AgrupRows = agrupRows };
+        }
+
+        private static (string TestCode, string Buyer) AgrupKey(string testCode, string buyer) =>
+            (testCode.ToUpperInvariant(), buyer.ToUpperInvariant());
+
+        // Staff/Animal are update-only (see BulkStaffRatesService/BulkAnimalRatesService in the
+        // worker): a staged row whose key doesn't exist live is skipped, never inserted, and a
+        // live row absent from the upload is left untouched, never deleted. So unlike FEC/AGRUP,
+        // there is no "Inserted"/"Deleted" status here — only "Updated" (will be applied) and
+        // "Not Found" (won't be — surfaced so the initiator can catch a typo'd grade/animal type
+        // before release, matching exactly what the worker will do).
+
+        private async Task<BulkRatesStagingDataDto> GetStaffStagingDataAsync(BulkRatesQueueEntry entry, CancellationToken ct)
+        {
+            var stagedStaff = await _repository.GetStaffStagingRowsAsync(entry.JobQueueId, ct);
+            var liveStaff = await _repository.GetStaffRowsForExportAsync(entry.FpsYear, ct);
+            var liveByGrade = liveStaff.ToDictionary(r => r.PcGrade, StringComparer.OrdinalIgnoreCase);
+
+            var rows = new List<BulkRatesStagingStaffRowDto>();
+            foreach (var row in stagedStaff)
+            {
+                if (!liveByGrade.TryGetValue(row.PcGrade, out var live))
+                {
+                    rows.Add(new BulkRatesStagingStaffRowDto
+                    {
+                        Status = "Not Found",
+                        PcGrade = row.PcGrade,
+                        PayRateNew = row.PayRate,
+                        NprNew = row.Npr,
+                        OhrNew = row.Ohr
+                    });
+                    continue;
+                }
+
+                var payRateChanged = row.PayRate.HasValue && row.PayRate.Value != live.PayRate;
+                var nprChanged = row.Npr.HasValue && row.Npr.Value != live.Npr;
+                var ohrChanged = row.Ohr.HasValue && row.Ohr.Value != live.Ohr;
+                if (!payRateChanged && !nprChanged && !ohrChanged)
+                    continue; // Unchanged — the worker will skip this row too
+
+                rows.Add(new BulkRatesStagingStaffRowDto
+                {
+                    Status = "Updated",
+                    PcGrade = row.PcGrade,
+                    PayRate = live.PayRate,
+                    PayRateNew = row.PayRate,
+                    Npr = live.Npr,
+                    NprNew = row.Npr,
+                    Ohr = live.Ohr,
+                    OhrNew = row.Ohr
+                });
+            }
+
+            return new BulkRatesStagingDataDto { StaffRows = rows };
+        }
+
+        private async Task<BulkRatesStagingDataDto> GetAnimalStagingDataAsync(BulkRatesQueueEntry entry, CancellationToken ct)
+        {
+            var stagedAnimal = await _repository.GetAnimalStagingRowsAsync(entry.JobQueueId, ct);
+            var liveAnimal = await _repository.GetAnimalRowsForExportAsync(entry.FpsYear, ct);
+            var liveByType = liveAnimal.ToDictionary(r => r.AnimalType, StringComparer.OrdinalIgnoreCase);
+
+            var rows = new List<BulkRatesStagingAnimalRowDto>();
+            foreach (var row in stagedAnimal)
+            {
+                if (!liveByType.TryGetValue(row.AnimalType, out var live))
+                {
+                    rows.Add(new BulkRatesStagingAnimalRowDto
+                    {
+                        Status = "Not Found",
+                        AnimalType = row.AnimalType,
+                        Species = row.Species,
+                        SecurityLevel = row.SecurityLevel,
+                        DailyRateNew = row.DailyRate,
+                        DefraDailyRateNew = row.DefraDailyRate,
+                        PlanByWeek = row.PlanByWeek
+                    });
+                    continue;
+                }
+
+                var dailyRateChanged = row.DailyRate.HasValue && row.DailyRate.Value != live.DailyRate;
+                var defraDailyRateChanged = row.DefraDailyRate.HasValue && row.DefraDailyRate.Value != live.DefraDailyRate;
+                var planByWeekChanged = row.PlanByWeek.HasValue && row.PlanByWeek.Value != live.PlanByWeek;
+                var speciesChanged = row.Species is not null && row.Species != live.Species;
+                var securityLevelChanged = row.SecurityLevel is not null && row.SecurityLevel != live.SecurityLevel;
+                if (!dailyRateChanged && !defraDailyRateChanged && !planByWeekChanged && !speciesChanged && !securityLevelChanged)
+                    continue; // Unchanged — the worker will skip this row too
+
+                rows.Add(new BulkRatesStagingAnimalRowDto
+                {
+                    Status = "Updated",
+                    AnimalType = row.AnimalType,
+                    Species = row.Species ?? live.Species,
+                    SecurityLevel = row.SecurityLevel ?? live.SecurityLevel,
+                    DailyRate = live.DailyRate,
+                    DailyRateNew = row.DailyRate,
+                    DefraDailyRate = live.DefraDailyRate,
+                    DefraDailyRateNew = row.DefraDailyRate,
+                    PlanByWeek = row.PlanByWeek ?? live.PlanByWeek
+                });
+            }
+
+            return new BulkRatesStagingDataDto { AnimalRows = rows };
+        }
+
+        public async Task<byte[]> ExportStagingDataAsync(Guid jobExecutionId, CancellationToken ct = default)
+        {
+            var entry = await RequireRequestAsync(jobExecutionId, ct);
+
+            var stagedFec = await _repository.GetFecStagingRowsAsync(entry.JobQueueId, ct);
+            var stagedAgrup = await _repository.GetAgrupStagingRowsAsync(entry.JobQueueId, ct);
+
+            _logger.LogInformation(
+                "[BulkRates.ExportStagingData] JobExecutionId={JobExecutionId} | FecRows={FecRows} | AgrupRows={AgrupRows}",
+                jobExecutionId, stagedFec.Count, stagedAgrup.Count);
+
+            return _excelExportService.ExportToExcelMultiSheet(BuildFecAgrupSheets(stagedFec, stagedAgrup));
+        }
+
+        private static List<ExcelSheetDefinition> BuildFecAgrupSheets(
+            IReadOnlyList<FecStagingRow> fecRows, IReadOnlyList<AgrupStagingRow> agrupRows)
+        {
+            var fecExportRows = fecRows.Select(r => new FecExportRow
+            {
+                TestCode         = r.TestCode,
+                UnitPriceVla     = r.UnitPriceVla,
+                DefraUnitPrice   = r.DefraUnitPrice,
+                FecNew           = r.FecNewRate,
+                Change           = r.Change,
+                ItemDescription  = r.ItemDescription,
+                ShortDescription = r.ShortDescription,
+                Owner            = r.Owner,
+                Comments         = r.Comments
+            }).ToList();
+
+            var agrupExportRows = agrupRows.Select(r => new AgrupExportRow
+            {
+                TestCode    = r.TestCode,
+                Buyer       = r.Buyer,
+                Agrup       = r.Agrup,
+                AgrupNew    = r.AgrupNew,
+                Change      = r.Change,
+                NoRequired  = r.NoRequired,
+                DateCreated = r.DateCreated,
+                Active      = r.Active,
+                Comments    = r.Comments
+            }).ToList();
+
+            return
+            [
+                new() { SheetName = "FEC",   Data = fecExportRows.Cast<object>(),   DataType = typeof(FecExportRow) },
+                new() { SheetName = "AGRUP", Data = agrupExportRows.Cast<object>(), DataType = typeof(AgrupExportRow) }
+            ];
+        }
+
+        // Sheet name matches BulkRatesExcelParser's StaffSheet ("Staff") so a downloaded
+        // template re-uploads without modification.
+        private static List<ExcelSheetDefinition> BuildStaffSheet(IReadOnlyList<StaffStagingRow> rows)
+        {
+            var exportRows = rows.Select(r => new StaffExportRow
+            {
+                PcGrade = r.PcGrade,
+                PayRate = r.PayRate,
+                Npr     = r.Npr,
+                Ohr     = r.Ohr
+            }).ToList();
+
+            return [new() { SheetName = "Staff", Data = exportRows.Cast<object>(), DataType = typeof(StaffExportRow) }];
+        }
+
+        // Sheet name matches BulkRatesExcelParser's AnimalSheet ("Animals") so a downloaded
+        // template re-uploads without modification.
+        private static List<ExcelSheetDefinition> BuildAnimalSheet(IReadOnlyList<AnimalStagingRow> rows)
+        {
+            var exportRows = rows.Select(r => new AnimalExportRow
+            {
+                AnimalType     = r.AnimalType,
+                Species        = r.Species,
+                SecurityLevel  = r.SecurityLevel,
+                DailyRate      = r.DailyRate,
+                DefraDailyRate = r.DefraDailyRate,
+                PlanByWeek     = r.PlanByWeek
+            }).ToList();
+
+            return [new() { SheetName = "Animals", Data = exportRows.Cast<object>(), DataType = typeof(AnimalExportRow) }];
+        }
+
         // ── Helpers ──────────────────────────────────────────────────────────────
 
-        private async Task<BulkRatesQueueEntry> RequireRequestAsync(Guid jobQueueId, CancellationToken ct)
+        private async Task<BulkRatesQueueEntry> RequireRequestAsync(Guid jobExecutionId, CancellationToken ct)
         {
-            var entry = await _repository.GetRequestAsync(jobQueueId, ct);
+            var entry = await _repository.GetRequestAsync(jobExecutionId, ct);
             if (entry == null)
                 throw new BusinessValidationErrorException([
-                    new($"Bulk Rates request {jobQueueId} not found.", "NOT_FOUND")]);
+                    new($"Bulk Rates request with JobExecutionId {jobExecutionId} not found.", "NOT_FOUND")]);
             return entry;
         }
 
@@ -441,7 +800,7 @@ namespace Apha.FPS.Application.Services
         {
             var logs = await _repository.GetJobQueueLogsAsync(entry.JobQueueId, ct);
             var errors = await _repository.GetValidationErrorsAsync(entry.JobQueueId, ct);
-            var metadata = DeserializeMetadata(entry.ConfigurationJson);
+            var metadata = BuildUploadMetadata(entry);
 
             return new BulkRatesRequestDto
             {
@@ -458,19 +817,34 @@ namespace Apha.FPS.Application.Services
             BulkRatesParseResult parseResult,
             CancellationToken ct)
         {
-            if (jobName == "BulkTestRatesUpdate")
+            if (jobName == BulkRatesJobNames.Fec)
                 await _repository.ReplaceStagingFecAsync(jobQueueId, parseResult.FecRows, parseResult.AgrupRows, ct);
-            else if (jobName == "BulkStaffRatesUpdate")
+            else if (jobName == BulkRatesJobNames.Staff)
                 await _repository.ReplaceStagingStaffAsync(jobQueueId, parseResult.StaffRows, ct);
-            else if (jobName == "BulkAnimalRatesUpdate")
+            else if (jobName == BulkRatesJobNames.Animal)
                 await _repository.ReplaceStagingAnimalAsync(jobQueueId, parseResult.AnimalRows, ct);
         }
 
-        private static BulkRatesUploadMetadata? DeserializeMetadata(string? json)
+        private static BulkRatesUploadMetadata? BuildUploadMetadata(BulkRatesQueueEntry entry)
         {
-            if (string.IsNullOrWhiteSpace(json)) return null;
-            try { return JsonSerializer.Deserialize<BulkRatesUploadMetadata>(json, JsonOptions); }
-            catch { return null; }
+            if (entry.UploadChecksumSha256 == null && entry.UploadFilename == null)
+                return null;
+
+            return new BulkRatesUploadMetadata
+            {
+                Filename = entry.UploadFilename,
+                ChecksumSha256 = entry.UploadChecksumSha256,
+                UploadVersion = entry.UploadVersion ?? 0,
+                ValidationCompletedAtUtc = entry.UploadValidatedAtUtc,
+                RowCounts = DeserializeRowCounts(entry.UploadRowCountsJson)
+            };
+        }
+
+        private static BulkRatesRowCounts DeserializeRowCounts(string? json)
+        {
+            if (string.IsNullOrWhiteSpace(json)) return new();
+            try { return JsonSerializer.Deserialize<BulkRatesRowCounts>(json, JsonOptions) ?? new(); }
+            catch { return new(); }
         }
 
         private static string ComputeSha256(byte[] data)

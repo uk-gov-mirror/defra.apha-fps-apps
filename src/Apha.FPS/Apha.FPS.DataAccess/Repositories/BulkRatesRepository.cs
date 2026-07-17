@@ -81,18 +81,19 @@ namespace Apha.FPS.DataAccess.Repositories
             _logger.LogInformation("Created job_queue row | JobQueueId={JobQueueId} | JobId={JobId} | FpsYear={FpsYear}",
                 jobQueueId, jobId, fpsYear);
 
-            return await GetRequestAsync(jobQueueId, ct)
-                ?? throw new InvalidOperationException($"Row just inserted for {jobQueueId} could not be read back.");
+            return await GetRequestAsync(jobExecutionId, ct)
+                ?? throw new InvalidOperationException($"Row just inserted (jobExecutionId={jobExecutionId}) could not be read back.");
         }
 
-        public async Task<BulkRatesQueueEntry?> GetRequestAsync(Guid jobQueueId, CancellationToken ct = default)
+        public async Task<BulkRatesQueueEntry?> GetRequestAsync(Guid jobExecutionId, CancellationToken ct = default)
         {
             var conn = await OpenAsync(ct);
             await using var cmd = conn.CreateCommand();
             cmd.CommandText = @"
                 SELECT q.jobqueueid, q.jobid, m.jobname, q.statusid, s.status,
                        q.jobexecutionid, q.requestedby, q.requested_at_utc, q.fpsyear,
-                       q.configuration_json,
+                       q.upload_filename, q.upload_checksum_sha256, q.upload_version,
+                       q.upload_validated_at_utc, q.upload_row_counts_json,
                        q.approved_by, q.approved_at_utc,
                        q.rejected_by, q.rejected_at_utc, q.rejection_reason,
                        q.cancelled_by, q.cancelled_at_utc, q.cancellation_reason,
@@ -101,8 +102,8 @@ namespace Apha.FPS.DataAccess.Repositories
                 FROM fps.job_queue q
                 JOIN fps.job_master m ON m.jobid = q.jobid
                 JOIN fps.job_status s ON s.statusid = q.statusid AND s.jobid = q.jobid
-                WHERE q.jobqueueid = @jobqueueid;";
-            cmd.Parameters.AddWithValue("jobqueueid", jobQueueId);
+                WHERE q.jobexecutionid = @jobexecutionid;";
+            cmd.Parameters.AddWithValue("jobexecutionid", jobExecutionId);
 
             await using var reader = await cmd.ExecuteReaderAsync(ct);
             if (!await reader.ReadAsync(ct))
@@ -119,7 +120,8 @@ namespace Apha.FPS.DataAccess.Repositories
             var sql = new StringBuilder(@"
                 SELECT q.jobqueueid, q.jobid, m.jobname, q.statusid, s.status,
                        q.jobexecutionid, q.requestedby, q.requested_at_utc, q.fpsyear,
-                       q.configuration_json,
+                       q.upload_filename, q.upload_checksum_sha256, q.upload_version,
+                       q.upload_validated_at_utc, q.upload_row_counts_json,
                        q.approved_by, q.approved_at_utc,
                        q.rejected_by, q.rejected_at_utc, q.rejection_reason,
                        q.cancelled_by, q.cancelled_at_utc, q.cancellation_reason,
@@ -154,6 +156,36 @@ namespace Apha.FPS.DataAccess.Repositories
                 results.Add(ReadQueueEntry(reader));
 
             return results;
+        }
+
+        public async Task<BulkRatesQueueEntry?> GetActiveRequestAsync(string jobName, CancellationToken ct = default)
+        {
+            var conn = await OpenAsync(ct);
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+                SELECT q.jobqueueid, q.jobid, m.jobname, q.statusid, s.status,
+                       q.jobexecutionid, q.requestedby, q.requested_at_utc, q.fpsyear,
+                       q.upload_filename, q.upload_checksum_sha256, q.upload_version,
+                       q.upload_validated_at_utc, q.upload_row_counts_json,
+                       q.approved_by, q.approved_at_utc,
+                       q.rejected_by, q.rejected_at_utc, q.rejection_reason,
+                       q.cancelled_by, q.cancelled_at_utc, q.cancellation_reason,
+                       q.triggered_by, q.triggered_at_utc,
+                       q.startdatetime, q.enddatetime, q.errormessage
+                FROM fps.job_queue q
+                JOIN fps.job_master m ON m.jobid = q.jobid
+                JOIN fps.job_status s ON s.statusid = q.statusid AND s.jobid = q.jobid
+                WHERE m.jobname = @jobname
+                  AND s.status IN ('Initiated','ReleasedForApproval','Approved','Running','Failed','Rejected')
+                ORDER BY q.requested_at_utc DESC
+                LIMIT 1;";
+            cmd.Parameters.AddWithValue("jobname", jobName);
+
+            await using var reader = await cmd.ExecuteReaderAsync(ct);
+            if (!await reader.ReadAsync(ct))
+                return null;
+
+            return ReadQueueEntry(reader);
         }
 
         // ── Status transitions ───────────────────────────────────────────────────
@@ -248,20 +280,29 @@ namespace Apha.FPS.DataAccess.Repositories
             await cmd.ExecuteNonQueryAsync(ct);
         }
 
-        // ── configuration_json ───────────────────────────────────────────────────
+        // ── Upload metadata ──────────────────────────────────────────────────────
 
-        public async Task UpdateConfigurationJsonAsync(
-            Guid jobQueueId, string configurationJson, CancellationToken ct = default)
+        public async Task UpdateUploadMetadataAsync(
+            Guid jobQueueId, string filename, string checksumSha256, int uploadVersion,
+            DateTime validatedAtUtc, string rowCountsJson, CancellationToken ct = default)
         {
             var conn = await OpenAsync(ct);
             await using var cmd = conn.CreateCommand();
             cmd.CommandText = @"
                 UPDATE fps.job_queue
-                SET configuration_json = @configuration_json::jsonb,
-                    updated_at         = NOW()
+                SET upload_filename        = @upload_filename,
+                    upload_checksum_sha256 = @upload_checksum_sha256,
+                    upload_version          = @upload_version,
+                    upload_validated_at_utc = @upload_validated_at_utc,
+                    upload_row_counts_json  = @upload_row_counts_json::jsonb,
+                    updated_at              = NOW()
                 WHERE jobqueueid = @jobqueueid;";
-            cmd.Parameters.AddWithValue("configuration_json", configurationJson);
-            cmd.Parameters.AddWithValue("jobqueueid",         jobQueueId);
+            cmd.Parameters.AddWithValue("upload_filename",        filename);
+            cmd.Parameters.AddWithValue("upload_checksum_sha256", checksumSha256);
+            cmd.Parameters.AddWithValue("upload_version",         uploadVersion);
+            cmd.Parameters.AddWithValue("upload_validated_at_utc", validatedAtUtc);
+            cmd.Parameters.AddWithValue("upload_row_counts_json", rowCountsJson);
+            cmd.Parameters.AddWithValue("jobqueueid",             jobQueueId);
             await cmd.ExecuteNonQueryAsync(ct);
         }
 
@@ -665,18 +706,25 @@ namespace Apha.FPS.DataAccess.Repositories
                 ins.Transaction = tx;
                 ins.CommandText = @"
                     INSERT INTO fps.staging_validation_error
-                        (jobqueueid, upload_version, source_row_number, field_name,
-                         validation_code, severity, validation_message)
+                        (jobqueueid, uploadversion, sourcerownumber, fieldname,
+                         validationcode, severity, validationmessage,
+                         sheetname, testcode, buyer, currentvalue, expectedvalue)
                     VALUES
-                        (@jobqueueid, @upload_version, @source_row_number, @field_name,
-                         @validation_code, @severity, @validation_message);";
-                ins.Parameters.AddWithValue("jobqueueid",        jobQueueId);
-                ins.Parameters.AddWithValue("upload_version",    err.UploadVersion);
-                ins.Parameters.AddWithValue("source_row_number", err.SourceRowNumber);
-                ins.Parameters.AddWithValue("field_name",        (object?)err.FieldName ?? DBNull.Value);
-                ins.Parameters.AddWithValue("validation_code",   (object?)err.ValidationCode ?? DBNull.Value);
-                ins.Parameters.AddWithValue("severity",          err.Severity);
-                ins.Parameters.AddWithValue("validation_message",err.ValidationMessage);
+                        (@jobqueueid, @uploadversion, @sourcerownumber, @fieldname,
+                         @validationcode, @severity, @validationmessage,
+                         @sheetname, @testcode, @buyer, @currentvalue, @expectedvalue);";
+                ins.Parameters.AddWithValue("jobqueueid",       jobQueueId);
+                ins.Parameters.AddWithValue("uploadversion",    err.UploadVersion);
+                ins.Parameters.AddWithValue("sourcerownumber",  err.SourceRowNumber);
+                ins.Parameters.AddWithValue("fieldname",        (object?)err.FieldName ?? DBNull.Value);
+                ins.Parameters.AddWithValue("validationcode",   (object?)err.ValidationCode ?? DBNull.Value);
+                ins.Parameters.AddWithValue("severity",         err.Severity);
+                ins.Parameters.AddWithValue("validationmessage",err.ValidationMessage);
+                ins.Parameters.AddWithValue("sheetname",        (object?)err.SheetName ?? DBNull.Value);
+                ins.Parameters.AddWithValue("testcode",         (object?)err.TestCode ?? DBNull.Value);
+                ins.Parameters.AddWithValue("buyer",            (object?)err.Buyer ?? DBNull.Value);
+                ins.Parameters.AddWithValue("currentvalue",     (object?)err.CurrentValue ?? DBNull.Value);
+                ins.Parameters.AddWithValue("expectedvalue",    (object?)err.ExpectedValue ?? DBNull.Value);
                 await ins.ExecuteNonQueryAsync(ct);
             }
 
@@ -693,11 +741,12 @@ namespace Apha.FPS.DataAccess.Repositories
             var conn = await OpenAsync(ct);
             await using var cmd = conn.CreateCommand();
             cmd.CommandText = @"
-                SELECT id, jobqueueid, upload_version, source_row_number, field_name,
-                       validation_code, severity, validation_message
+                SELECT id, jobqueueid, uploadversion, sourcerownumber, fieldname,
+                       validationcode, severity, validationmessage,
+                       sheetname, testcode, buyer, currentvalue, expectedvalue
                 FROM fps.staging_validation_error
                 WHERE jobqueueid = @jobqueueid
-                ORDER BY source_row_number, id;";
+                ORDER BY sourcerownumber, id;";
             cmd.Parameters.AddWithValue("jobqueueid", jobQueueId);
 
             var results = new List<StagingValidationError>();
@@ -713,7 +762,12 @@ namespace Apha.FPS.DataAccess.Repositories
                     FieldName         = reader.IsDBNull(4) ? null : reader.GetString(4),
                     ValidationCode    = reader.IsDBNull(5) ? null : reader.GetString(5),
                     Severity          = reader.GetString(6),
-                    ValidationMessage = reader.GetString(7)
+                    ValidationMessage = reader.GetString(7),
+                    SheetName         = reader.IsDBNull(8) ? null : reader.GetString(8),
+                    TestCode          = reader.IsDBNull(9) ? null : reader.GetString(9),
+                    Buyer             = reader.IsDBNull(10) ? null : reader.GetString(10),
+                    CurrentValue      = reader.IsDBNull(11) ? null : reader.GetString(11),
+                    ExpectedValue     = reader.IsDBNull(12) ? null : reader.GetString(12)
                 });
             }
             return results;
@@ -845,6 +899,137 @@ namespace Apha.FPS.DataAccess.Repositories
             return result;
         }
 
+        // ── Export: live table reads ──────────────────────────────────────────────
+
+        public async Task<IReadOnlyList<FecStagingRow>> GetFecRowsForExportAsync(
+            int fpsYear, CancellationToken ct = default)
+        {
+            var conn = await OpenAsync(ct);
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+                SELECT itemcode, unitpricevla::numeric, defraunitprice::numeric,
+                       NULL::numeric AS fecnewrate, NULL::numeric AS change,
+                       itemdescription, shortdescription, owner, NULL::text AS comments
+                FROM fps.testorproduct
+                WHERE fpsyear = @fpsyear
+                ORDER BY itemcode;";
+            cmd.Parameters.AddWithValue("fpsyear", fpsYear);
+
+            var rows = new List<FecStagingRow>();
+            await using var reader = await cmd.ExecuteReaderAsync(ct);
+            while (await reader.ReadAsync(ct))
+            {
+                rows.Add(new FecStagingRow
+                {
+                    JobQueueId       = Guid.Empty,
+                    TestCode         = reader.GetString(0),
+                    UnitPriceVla     = reader.IsDBNull(1) ? null : reader.GetDecimal(1),
+                    DefraUnitPrice   = reader.IsDBNull(2) ? null : reader.GetDecimal(2),
+                    FecNewRate       = reader.IsDBNull(3) ? null : reader.GetDecimal(3),
+                    Change           = null,
+                    ItemDescription  = reader.IsDBNull(5) ? null : reader.GetString(5),
+                    ShortDescription = reader.IsDBNull(6) ? null : reader.GetString(6),
+                    Owner            = reader.IsDBNull(7) ? null : reader.GetString(7),
+                    Comments         = reader.IsDBNull(8) ? null : reader.GetString(8)
+                });
+            }
+            return rows;
+        }
+
+        public async Task<IReadOnlyList<AgrupStagingRow>> GetAgrupRowsForExportAsync(
+            int fpsYear, CancellationToken ct = default)
+        {
+            var conn = await OpenAsync(ct);
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+                SELECT testcode, buyer,
+                       unitprice::numeric AS agrup, NULL::numeric AS agrupnew, NULL::numeric AS change,
+                       norequired, datecreated, active, NULL::text AS comments
+                FROM fps.tlkptestreqmt
+                WHERE fpsyear = @fpsyear
+                ORDER BY testcode, buyer;";
+            cmd.Parameters.AddWithValue("fpsyear", fpsYear);
+
+            var rows = new List<AgrupStagingRow>();
+            await using var reader = await cmd.ExecuteReaderAsync(ct);
+            while (await reader.ReadAsync(ct))
+            {
+                rows.Add(new AgrupStagingRow
+                {
+                    JobQueueId  = Guid.Empty,
+                    TestCode    = reader.GetString(0),
+                    Buyer       = reader.GetString(1),
+                    Agrup       = reader.IsDBNull(2) ? null : reader.GetDecimal(2),
+                    AgrupNew    = null,
+                    Change      = null,
+                    NoRequired  = reader.IsDBNull(5) ? null : reader.GetDouble(5),
+                    DateCreated = reader.IsDBNull(6) ? null : reader.GetDateTime(6),
+                    Active      = reader.IsDBNull(7) ? null : reader.GetInt16(7),
+                    Comments    = reader.IsDBNull(8) ? null : reader.GetString(8)
+                });
+            }
+            return rows;
+        }
+
+        public async Task<IReadOnlyList<StaffStagingRow>> GetStaffRowsForExportAsync(
+            int fpsYear, CancellationToken ct = default)
+        {
+            var conn = await OpenAsync(ct);
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+                SELECT pcgrade, payrate::numeric, npr::numeric, ohr::numeric
+                FROM fps.profitcentregrade
+                WHERE fpsyear = @fpsyear
+                ORDER BY pcgrade;";
+            cmd.Parameters.AddWithValue("fpsyear", fpsYear);
+
+            var rows = new List<StaffStagingRow>();
+            await using var reader = await cmd.ExecuteReaderAsync(ct);
+            while (await reader.ReadAsync(ct))
+            {
+                rows.Add(new StaffStagingRow
+                {
+                    JobQueueId = Guid.Empty,
+                    PcGrade    = reader.GetString(0),
+                    PayRate    = reader.IsDBNull(1) ? null : reader.GetDecimal(1),
+                    Npr        = reader.IsDBNull(2) ? null : reader.GetDecimal(2),
+                    Ohr        = reader.IsDBNull(3) ? null : reader.GetDecimal(3)
+                });
+            }
+            return rows;
+        }
+
+        public async Task<IReadOnlyList<AnimalStagingRow>> GetAnimalRowsForExportAsync(
+            int fpsYear, CancellationToken ct = default)
+        {
+            var conn = await OpenAsync(ct);
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+                SELECT animaltype, species, security_level,
+                       dailyrate::numeric, defradailyrate::numeric, planbyweek
+                FROM fps.tblanimals
+                WHERE fpsyear = @fpsyear
+                ORDER BY animaltype;";
+            cmd.Parameters.AddWithValue("fpsyear", fpsYear);
+
+            var rows = new List<AnimalStagingRow>();
+            await using var reader = await cmd.ExecuteReaderAsync(ct);
+            while (await reader.ReadAsync(ct))
+            {
+                rows.Add(new AnimalStagingRow
+                {
+                    JobQueueId     = Guid.Empty,
+                    AnimalType     = reader.GetString(0),
+                    Species        = reader.IsDBNull(1) ? null : reader.GetString(1),
+                    SecurityLevel  = reader.IsDBNull(2) ? null : reader.GetString(2),
+                    DailyRate      = reader.IsDBNull(3) ? null : reader.GetDecimal(3),
+                    DefraDailyRate = reader.IsDBNull(4) ? null : reader.GetDecimal(4),
+                    PlanByWeek     = reader.IsDBNull(5) ? null : reader.GetBoolean(5)
+                });
+            }
+            return rows;
+        }
+
         // ── Private helpers ──────────────────────────────────────────────────────
 
         private static BulkRatesQueueEntry ReadQueueEntry(NpgsqlDataReader reader) =>
@@ -859,20 +1044,24 @@ namespace Apha.FPS.DataAccess.Repositories
                 RequestedBy      = reader.IsDBNull(6) ? string.Empty : reader.GetString(6),
                 RequestedAtUtc   = reader.IsDBNull(7) ? default : reader.GetDateTime(7),
                 FpsYear          = reader.IsDBNull(8) ? 0 : reader.GetInt32(8),
-                ConfigurationJson= reader.IsDBNull(9) ? null : reader.GetString(9),
-                ApprovedBy       = reader.IsDBNull(10) ? null : reader.GetString(10),
-                ApprovedAtUtc    = reader.IsDBNull(11) ? null : reader.GetDateTime(11),
-                RejectedBy       = reader.IsDBNull(12) ? null : reader.GetString(12),
-                RejectedAtUtc    = reader.IsDBNull(13) ? null : reader.GetDateTime(13),
-                RejectionReason  = reader.IsDBNull(14) ? null : reader.GetString(14),
-                CancelledBy      = reader.IsDBNull(15) ? null : reader.GetString(15),
-                CancelledAtUtc   = reader.IsDBNull(16) ? null : reader.GetDateTime(16),
-                CancellationReason = reader.IsDBNull(17) ? null : reader.GetString(17),
-                TriggeredBy      = reader.IsDBNull(18) ? null : reader.GetString(18),
-                TriggeredAtUtc   = reader.IsDBNull(19) ? null : reader.GetDateTime(19),
-                StartDateTime    = reader.IsDBNull(20) ? null : reader.GetDateTime(20),
-                EndDateTime      = reader.IsDBNull(21) ? null : reader.GetDateTime(21),
-                FailureReason    = reader.IsDBNull(22) ? null : reader.GetString(22)
+                UploadFilename       = reader.IsDBNull(9) ? null : reader.GetString(9),
+                UploadChecksumSha256 = reader.IsDBNull(10) ? null : reader.GetString(10),
+                UploadVersion        = reader.IsDBNull(11) ? null : reader.GetInt32(11),
+                UploadValidatedAtUtc = reader.IsDBNull(12) ? null : reader.GetDateTime(12),
+                UploadRowCountsJson  = reader.IsDBNull(13) ? null : reader.GetString(13),
+                ApprovedBy       = reader.IsDBNull(14) ? null : reader.GetString(14),
+                ApprovedAtUtc    = reader.IsDBNull(15) ? null : reader.GetDateTime(15),
+                RejectedBy       = reader.IsDBNull(16) ? null : reader.GetString(16),
+                RejectedAtUtc    = reader.IsDBNull(17) ? null : reader.GetDateTime(17),
+                RejectionReason  = reader.IsDBNull(18) ? null : reader.GetString(18),
+                CancelledBy      = reader.IsDBNull(19) ? null : reader.GetString(19),
+                CancelledAtUtc   = reader.IsDBNull(20) ? null : reader.GetDateTime(20),
+                CancellationReason = reader.IsDBNull(21) ? null : reader.GetString(21),
+                TriggeredBy      = reader.IsDBNull(22) ? null : reader.GetString(22),
+                TriggeredAtUtc   = reader.IsDBNull(23) ? null : reader.GetDateTime(23),
+                StartDateTime    = reader.IsDBNull(24) ? null : reader.GetDateTime(24),
+                EndDateTime      = reader.IsDBNull(25) ? null : reader.GetDateTime(25),
+                FailureReason    = reader.IsDBNull(26) ? null : reader.GetString(26)
             };
 
         private static async Task DeleteFromAsync(

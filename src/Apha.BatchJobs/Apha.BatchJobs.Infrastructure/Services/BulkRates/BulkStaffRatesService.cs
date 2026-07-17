@@ -68,7 +68,7 @@ public sealed class BulkStaffRatesService : IBulkStaffRatesService
             jobQueueId, stagingRows.Count);
 
         // ── 3. Execute mutations + write history in one transaction ───────
-        int updated = 0;
+        int updated = 0, unchanged = 0;
 
         await using var dbContext = _dbContextFactory.CreateDbContext();
         await dbContext.Database.OpenConnectionAsync(cancellationToken);
@@ -89,6 +89,16 @@ public sealed class BulkStaffRatesService : IBulkStaffRatesService
                     continue;
                 }
 
+                var payRateChanged = row.PayRate.HasValue && row.PayRate.Value != before.Value.PayRate;
+                var nprChanged     = row.Npr.HasValue     && row.Npr.Value     != before.Value.Npr;
+                var ohrChanged     = row.Ohr.HasValue     && row.Ohr.Value     != before.Value.Ohr;
+
+                if (!payRateChanged && !nprChanged && !ohrChanged)
+                {
+                    unchanged++;
+                    continue;
+                }
+
                 await UpdateStaffRowAsync(conn, tx, row, fpsYear, cancellationToken);
                 historyRows.AddRange(BuildHistory(row, before.Value, entry, appliedAt));
                 updated++;
@@ -98,13 +108,13 @@ public sealed class BulkStaffRatesService : IBulkStaffRatesService
             await tx.CommitAsync(cancellationToken);
 
             _logger.LogInformation(
-                "BulkStaffRatesUpdate committed | JobQueueId={JobQueueId} | Updated={Updated}",
-                jobQueueId, updated);
+                "BulkStaffRatesUpdate committed | JobQueueId={JobQueueId} | Updated={Updated} | Unchanged={Unchanged}",
+                jobQueueId, updated, unchanged);
 
             // ── US-XC-02: Log commit summary ──────────────────────────────
             await _repository.WriteJobQueueLogAsync(
                 jobQueueId,
-                $"Rate changes committed: Staff updated={updated}.",
+                $"Rate changes committed: Staff updated={updated}, unchanged={unchanged}.",
                 entry.ApprovedBy, cancellationToken);
         }
 
@@ -118,9 +128,12 @@ public sealed class BulkStaffRatesService : IBulkStaffRatesService
 
     private static void ValidatePreconditions(BulkRatesJobQueueEntry entry, BulkRatesExecutionContext context)
     {
-        if (!string.Equals(entry.Status, "Approved", StringComparison.OrdinalIgnoreCase))
+        // The orchestrator transitions Approved -> Running before invoking ExecuteAsync
+        // (see JobOrchestrator.RunAsync), so by the time this runs the persisted status
+        // is always 'Running' — checking for 'Approved' here would always fail.
+        if (!string.Equals(entry.Status, "Running", StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException(
-                $"BulkStaffRatesUpdate: request {entry.JobQueueId:D} is in status '{entry.Status}', expected 'Approved'.");
+                $"BulkStaffRatesUpdate: request {entry.JobQueueId:D} is in status '{entry.Status}', expected 'Running'.");
 
         if (!string.Equals(entry.JobName, BatchJobNames.BulkStaffRatesUpdate, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException(
@@ -168,9 +181,13 @@ public sealed class BulkStaffRatesService : IBulkStaffRatesService
     {
         await using var cmd = conn.CreateCommand();
         cmd.Transaction = tx;
+        // payrate/npr/ohr are `money` columns; COALESCE requires an explicit cast to
+        // match — a bare numeric-typed parameter has no implicit cast to/from money.
         cmd.CommandText = @"
             UPDATE fps.profitcentregrade
-            SET payrate = @payrate, npr = @npr, ohr = @ohr
+            SET payrate = COALESCE(@payrate::money, payrate),
+                npr     = COALESCE(@npr::money, npr),
+                ohr     = COALESCE(@ohr::money, ohr)
             WHERE pcgrade = @pcgrade AND fpsyear = @fpsyear;";
         cmd.Parameters.AddWithValue("payrate", (object?)row.PayRate ?? DBNull.Value);
         cmd.Parameters.AddWithValue("npr",     (object?)row.Npr     ?? DBNull.Value);
@@ -189,9 +206,14 @@ public sealed class BulkStaffRatesService : IBulkStaffRatesService
         var c = (entry.JobQueueId, entry.JobExecutionId, entry.JobId, entry.FpsYear,
                  "Staff", key, entry.RequestedBy, entry.ApprovedBy, appliedAt);
 
-        yield return MakeRow(c, "payrate", before.PayRate.ToString(), row.PayRate?.ToString(), "Update");
-        yield return MakeRow(c, "npr",     before.Npr.ToString(),     row.Npr?.ToString(),     "Update");
-        yield return MakeRow(c, "ohr",     before.Ohr.ToString(),     row.Ohr?.ToString(),     "Update");
+        if (row.PayRate.HasValue && row.PayRate.Value != before.PayRate)
+            yield return MakeRow(c, "payrate", before.PayRate.ToString(), row.PayRate.Value.ToString(), "Update");
+
+        if (row.Npr.HasValue && row.Npr.Value != before.Npr)
+            yield return MakeRow(c, "npr", before.Npr.ToString(), row.Npr.Value.ToString(), "Update");
+
+        if (row.Ohr.HasValue && row.Ohr.Value != before.Ohr)
+            yield return MakeRow(c, "ohr", before.Ohr.ToString(), row.Ohr.Value.ToString(), "Update");
     }
 
     private static RateChangeHistoryRow MakeRow(

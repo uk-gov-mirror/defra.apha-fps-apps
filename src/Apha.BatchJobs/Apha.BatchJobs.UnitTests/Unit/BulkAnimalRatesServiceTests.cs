@@ -31,8 +31,7 @@ public sealed class BulkAnimalRatesServiceTests
             FpsYear:          fpsYear,
             RequestedBy:      "requester@test",
             ApprovedBy:       approvedBy,
-            ApprovedAtUtc:    DateTime.UtcNow,
-            ConfigurationJson: null);
+            ApprovedAtUtc:    DateTime.UtcNow);
 
     private static BulkAnimalRatesService CreateService(IBulkRatesRepository? repo = null)
         => new(

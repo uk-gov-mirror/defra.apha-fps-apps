@@ -494,7 +494,7 @@ public class JobExecutionRepository : IJobExecutionRepository
 
         await using var command = connection.CreateCommand();
         command.CommandText = @"
-            SELECT configuration_json, approved_by, approved_at_utc,
+            SELECT approved_by, approved_at_utc,
                    rejected_by, rejected_at_utc, rejection_reason,
                    triggered_by, triggered_at_utc
             FROM fps.job_queue
@@ -509,18 +509,16 @@ public class JobExecutionRepository : IJobExecutionRepository
 
         return new JobQueueApprovalMetadata(
             reader.IsDBNull(0) ? null : reader.GetString(0),
-            reader.IsDBNull(1) ? null : reader.GetString(1),
-            reader.IsDBNull(2) ? null : reader.GetDateTime(2),
-            reader.IsDBNull(3) ? null : reader.GetString(3),
-            reader.IsDBNull(4) ? null : reader.GetDateTime(4),
+            reader.IsDBNull(1) ? null : reader.GetDateTime(1),
+            reader.IsDBNull(2) ? null : reader.GetString(2),
+            reader.IsDBNull(3) ? null : reader.GetDateTime(3),
+            reader.IsDBNull(4) ? null : reader.GetString(4),
             reader.IsDBNull(5) ? null : reader.GetString(5),
-            reader.IsDBNull(6) ? null : reader.GetString(6),
-            reader.IsDBNull(7) ? null : reader.GetDateTime(7));
+            reader.IsDBNull(6) ? null : reader.GetDateTime(6));
     }
 
     private static readonly string[] ApprovalMetadataColumns =
     {
-        "configuration_json",
         "approved_by",
         "approved_at_utc",
         "rejected_by",

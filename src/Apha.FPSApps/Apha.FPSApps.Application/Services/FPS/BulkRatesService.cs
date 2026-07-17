@@ -17,29 +17,47 @@ namespace Apha.FPSApps.Application.Services.FPS
         public Task<ApiResponseDto<BulkRatesRequestDetailDto>> CreateRequestAsync(string jobName, int fpsYear)
             => _fpsClient.FpsBulkRates.CreateRequestAsync(jobName, fpsYear);
 
-        public Task<ApiResponseDto<BulkRatesUploadResultDto>> UploadFileAsync(Guid id, byte[] fileBytes, string fileName)
-            => _fpsClient.FpsBulkRates.UploadFileAsync(id, fileBytes, fileName);
+        public Task<ApiResponseDto<BulkRatesUploadResultDto>> UploadFileAsync(Guid jobExecutionId, byte[] fileBytes, string fileName)
+            => _fpsClient.FpsBulkRates.UploadFileAsync(jobExecutionId, fileBytes, fileName);
 
-        public Task<ApiResponseDto<BulkRatesUploadResultDto>> GetValidationResultsAsync(Guid id)
-            => _fpsClient.FpsBulkRates.GetValidationResultsAsync(id);
+        public Task<ApiResponseDto<BulkRatesUploadResultDto>> GetValidationResultsAsync(Guid jobExecutionId)
+            => _fpsClient.FpsBulkRates.GetValidationResultsAsync(jobExecutionId);
 
-        public Task<ApiResponseDto<BulkRatesRequestDetailDto>> ReleaseForApprovalAsync(Guid id)
-            => _fpsClient.FpsBulkRates.ReleaseForApprovalAsync(id);
+        public Task<ApiResponseDto<BulkRatesRequestDetailDto>> ReleaseForApprovalAsync(Guid jobExecutionId)
+            => _fpsClient.FpsBulkRates.ReleaseForApprovalAsync(jobExecutionId);
 
-        public Task<ApiResponseDto<BulkRatesRequestDetailDto>> ApproveAsync(Guid id)
-            => _fpsClient.FpsBulkRates.ApproveAsync(id);
+        public Task<ApiResponseDto<BulkRatesRequestDetailDto>> ApproveAsync(Guid jobExecutionId)
+            => _fpsClient.FpsBulkRates.ApproveAsync(jobExecutionId);
 
-        public Task<ApiResponseDto<BulkRatesRequestDetailDto>> RejectAsync(Guid id, string reason)
-            => _fpsClient.FpsBulkRates.RejectAsync(id, reason);
+        public Task<ApiResponseDto<BulkRatesRequestDetailDto>> RejectAsync(Guid jobExecutionId, string reason)
+            => _fpsClient.FpsBulkRates.RejectAsync(jobExecutionId, reason);
 
-        public Task<ApiResponseDto<BulkRatesRequestDetailDto>> CancelAsync(Guid id, string? reason)
-            => _fpsClient.FpsBulkRates.CancelAsync(id, reason);
+        public Task<ApiResponseDto<BulkRatesRequestDetailDto>> CancelAsync(Guid jobExecutionId, string? reason)
+            => _fpsClient.FpsBulkRates.CancelAsync(jobExecutionId, reason);
 
-        public Task<ApiResponseDto<BulkRatesRequestDetailDto?>> GetRequestAsync(Guid id)
-            => _fpsClient.FpsBulkRates.GetRequestAsync(id);
+        public Task<ApiResponseDto<BulkRatesRequestDetailDto?>> GetRequestAsync(Guid jobExecutionId)
+            => _fpsClient.FpsBulkRates.GetRequestAsync(jobExecutionId);
 
         public Task<ApiResponseDto<List<BulkRatesQueueEntryDto>>> GetRequestsAsync(
             string? jobName = null, int? fpsYear = null, string? status = null)
             => _fpsClient.FpsBulkRates.GetRequestsAsync(jobName, fpsYear, status);
+
+        public Task<byte[]> DownloadFecTestDataAsync(int fpsYear)
+            => _fpsClient.FpsBulkRates.DownloadFecTestDataAsync(fpsYear);
+
+        public Task<byte[]> DownloadStaffTestDataAsync(int fpsYear)
+            => _fpsClient.FpsBulkRates.DownloadStaffTestDataAsync(fpsYear);
+
+        public Task<byte[]> DownloadAnimalTestDataAsync(int fpsYear)
+            => _fpsClient.FpsBulkRates.DownloadAnimalTestDataAsync(fpsYear);
+
+        public Task<ApiResponseDto<BulkRatesQueueEntryDto?>> GetActiveRequestAsync(string jobName)
+            => _fpsClient.FpsBulkRates.GetActiveRequestAsync(jobName);
+
+        public Task<ApiResponseDto<BulkRatesStagingDataDto>> GetStagingDataAsync(Guid jobExecutionId)
+            => _fpsClient.FpsBulkRates.GetStagingDataAsync(jobExecutionId);
+
+        public Task<byte[]> DownloadStagingDataAsync(Guid jobExecutionId)
+            => _fpsClient.FpsBulkRates.DownloadStagingDataAsync(jobExecutionId);
     }
 }

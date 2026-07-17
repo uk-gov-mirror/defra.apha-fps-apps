@@ -21,6 +21,22 @@ namespace Apha.FPSApps.Infrastructure.Integrations.HttpExecutor
                 throw new KeyNotFoundException("The requested resource was not found.");
             }
 
+            // ASP.NET Core's Ok(null) is auto-converted to 204 No Content by MVC's default
+            // output formatter — the body is empty, so there is nothing to deserialize.
+            if (response.StatusCode == System.Net.HttpStatusCode.NoContent)
+            {
+                return new ApiResponse<T>
+                {
+                    Success = true,
+                    Data = default,
+                    Meta = new ApiMeta
+                    {
+                        CorrelationId = Guid.NewGuid().ToString(),
+                        TimestampUtc = DateTime.UtcNow
+                    }
+                };
+            }
+
             try
             {
                 var apiResponse =

@@ -15,5 +15,10 @@ namespace Apha.FPS.Core.Entities.BulkRates
         public string? ValidationCode { get; set; }
         public string Severity { get; set; } = "Error";
         public string ValidationMessage { get; set; } = string.Empty;
+        public string? SheetName { get; set; }
+        public string? TestCode { get; set; }
+        public string? Buyer { get; set; }
+        public string? CurrentValue { get; set; }
+        public string? ExpectedValue { get; set; }
     }
 }

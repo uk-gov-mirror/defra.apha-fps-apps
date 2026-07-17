@@ -42,8 +42,7 @@ public sealed class BulkRatesRepository : IBulkRatesRepository
                 q.fpsyear,
                 q.requestedby,
                 q.approved_by,
-                q.approved_at_utc,
-                q.configuration_json
+                q.approved_at_utc
             FROM fps.job_queue q
             JOIN fps.job_master m ON m.jobid = q.jobid
             JOIN fps.job_status s ON s.statusid = q.statusid AND s.jobid = q.jobid
@@ -63,8 +62,7 @@ public sealed class BulkRatesRepository : IBulkRatesRepository
             FpsYear:          reader.IsDBNull(5) ? 0 : reader.GetInt32(5),
             RequestedBy:      reader.IsDBNull(6) ? string.Empty : reader.GetString(6),
             ApprovedBy:       reader.IsDBNull(7) ? null : reader.GetString(7),
-            ApprovedAtUtc:    reader.IsDBNull(8) ? null : reader.GetDateTime(8),
-            ConfigurationJson: reader.IsDBNull(9) ? null : reader.GetString(9));
+            ApprovedAtUtc:    reader.IsDBNull(8) ? null : reader.GetDateTime(8));
     }
 
     /// <inheritdoc />

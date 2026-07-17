@@ -33,8 +33,7 @@ public sealed class BulkTestRatesServiceTests
             FpsYear:          fpsYear,
             RequestedBy:      "requester@test",
             ApprovedBy:       approvedBy,
-            ApprovedAtUtc:    DateTime.UtcNow,
-            ConfigurationJson: null);
+            ApprovedAtUtc:    DateTime.UtcNow);
 
     private static BulkTestRatesService CreateService(IBulkRatesRepository? repo = null)
         => new(

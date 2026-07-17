@@ -68,7 +68,7 @@ public sealed class BulkAnimalRatesService : IBulkAnimalRatesService
             jobQueueId, stagingRows.Count);
 
         // ── 3. Execute mutations + write history in one transaction ───────
-        int updated = 0;
+        int updated = 0, unchanged = 0;
 
         await using var dbContext = _dbContextFactory.CreateDbContext();
         await dbContext.Database.OpenConnectionAsync(cancellationToken);
@@ -89,6 +89,18 @@ public sealed class BulkAnimalRatesService : IBulkAnimalRatesService
                     continue;
                 }
 
+                var dailyRateChanged      = row.DailyRate.HasValue      && row.DailyRate.Value      != before.Value.DailyRate;
+                var defraDailyRateChanged = row.DefraDailyRate.HasValue && row.DefraDailyRate.Value != before.Value.DefraDailyRate;
+                var planByWeekChanged     = row.PlanByWeek.HasValue     && row.PlanByWeek.Value     != before.Value.PlanByWeek;
+                var speciesChanged        = row.Species is not null       && row.Species       != before.Value.Species;
+                var securityLevelChanged  = row.SecurityLevel is not null && row.SecurityLevel != before.Value.SecurityLevel;
+
+                if (!dailyRateChanged && !defraDailyRateChanged && !planByWeekChanged && !speciesChanged && !securityLevelChanged)
+                {
+                    unchanged++;
+                    continue;
+                }
+
                 await UpdateAnimalRowAsync(conn, tx, row, fpsYear, cancellationToken);
                 historyRows.AddRange(BuildHistory(row, before.Value, entry, appliedAt));
                 updated++;
@@ -98,13 +110,13 @@ public sealed class BulkAnimalRatesService : IBulkAnimalRatesService
             await tx.CommitAsync(cancellationToken);
 
             _logger.LogInformation(
-                "BulkAnimalRatesUpdate committed | JobQueueId={JobQueueId} | Updated={Updated}",
-                jobQueueId, updated);
+                "BulkAnimalRatesUpdate committed | JobQueueId={JobQueueId} | Updated={Updated} | Unchanged={Unchanged}",
+                jobQueueId, updated, unchanged);
 
             // ── US-XC-02: Log commit summary ──────────────────────────────
             await _repository.WriteJobQueueLogAsync(
                 jobQueueId,
-                $"Rate changes committed: Animal updated={updated}.",
+                $"Rate changes committed: Animal updated={updated}, unchanged={unchanged}.",
                 entry.ApprovedBy, cancellationToken);
         }
 
@@ -118,9 +130,12 @@ public sealed class BulkAnimalRatesService : IBulkAnimalRatesService
 
     private static void ValidatePreconditions(BulkRatesJobQueueEntry entry, BulkRatesExecutionContext context)
     {
-        if (!string.Equals(entry.Status, "Approved", StringComparison.OrdinalIgnoreCase))
+        // The orchestrator transitions Approved -> Running before invoking ExecuteAsync
+        // (see JobOrchestrator.RunAsync), so by the time this runs the persisted status
+        // is always 'Running' — checking for 'Approved' here would always fail.
+        if (!string.Equals(entry.Status, "Running", StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException(
-                $"BulkAnimalRatesUpdate: request {entry.JobQueueId:D} is in status '{entry.Status}', expected 'Approved'.");
+                $"BulkAnimalRatesUpdate: request {entry.JobQueueId:D} is in status '{entry.Status}', expected 'Running'.");
 
         if (!string.Equals(entry.JobName, BatchJobNames.BulkAnimalRatesUpdate, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException(
@@ -170,13 +185,15 @@ public sealed class BulkAnimalRatesService : IBulkAnimalRatesService
     {
         await using var cmd = conn.CreateCommand();
         cmd.Transaction = tx;
+        // dailyrate/defradailyrate are `money` columns; COALESCE requires an explicit
+        // cast to match — a bare numeric-typed parameter has no implicit cast to/from money.
         cmd.CommandText = @"
             UPDATE fps.tblanimals
-            SET dailyrate    = @dailyrate,
-                defradailyrate = @defradailyrate,
-                planbyweek   = @planbyweek,
-                species      = @species,
-                security_level = @security_level
+            SET dailyrate      = COALESCE(@dailyrate::money, dailyrate),
+                defradailyrate = COALESCE(@defradailyrate::money, defradailyrate),
+                planbyweek     = COALESCE(@planbyweek, planbyweek),
+                species        = COALESCE(@species, species),
+                security_level = COALESCE(@security_level, security_level)
             WHERE animaltype = @animaltype AND fpsyear = @fpsyear;";
         cmd.Parameters.AddWithValue("dailyrate",      (object?)row.DailyRate      ?? DBNull.Value);
         cmd.Parameters.AddWithValue("defradailyrate", (object?)row.DefraDailyRate ?? DBNull.Value);
@@ -197,14 +214,19 @@ public sealed class BulkAnimalRatesService : IBulkAnimalRatesService
         var c = (entry.JobQueueId, entry.JobExecutionId, entry.JobId, entry.FpsYear,
                  "Animal", key, entry.RequestedBy, entry.ApprovedBy, appliedAt);
 
-        yield return MakeRow(c, "dailyrate",     before.DailyRate.ToString(),      row.DailyRate?.ToString(),      "Update");
-        yield return MakeRow(c, "defradailyrate", before.DefraDailyRate.ToString(), row.DefraDailyRate?.ToString(), "Update");
-        yield return MakeRow(c, "planbyweek",    before.PlanByWeek.ToString(),     row.PlanByWeek?.ToString(),     "Update");
+        if (row.DailyRate.HasValue && row.DailyRate.Value != before.DailyRate)
+            yield return MakeRow(c, "dailyrate", before.DailyRate.ToString(), row.DailyRate.Value.ToString(), "Update");
 
-        if (row.Species is not null)
+        if (row.DefraDailyRate.HasValue && row.DefraDailyRate.Value != before.DefraDailyRate)
+            yield return MakeRow(c, "defradailyrate", before.DefraDailyRate.ToString(), row.DefraDailyRate.Value.ToString(), "Update");
+
+        if (row.PlanByWeek.HasValue && row.PlanByWeek.Value != before.PlanByWeek)
+            yield return MakeRow(c, "planbyweek", before.PlanByWeek.ToString(), row.PlanByWeek.Value.ToString(), "Update");
+
+        if (row.Species is not null && row.Species != before.Species)
             yield return MakeRow(c, "species", before.Species, row.Species, "Update");
 
-        if (row.SecurityLevel is not null)
+        if (row.SecurityLevel is not null && row.SecurityLevel != before.SecurityLevel)
             yield return MakeRow(c, "security_level", before.SecurityLevel, row.SecurityLevel, "Update");
     }
 

@@ -238,7 +238,7 @@ public class BatchJobsDbContext : DbContext
             entity.Property(e => e.RequestedBy).HasColumnName("requestedby").IsRequired().HasMaxLength(100);
             entity.Property(e => e.RequestedAtUtc).HasColumnName("requested_at_utc");
             entity.Property(e => e.FpsYear).HasColumnName("fpsyear");
-            entity.Property(e => e.StartDateTime).HasColumnName("startdatetime").IsRequired();
+            entity.Property(e => e.StartDateTime).HasColumnName("startdatetime");
             entity.Property(e => e.EndDateTime).HasColumnName("enddatetime");
             entity.Property(e => e.ErrorMessage).HasColumnName("errormessage").HasMaxLength(1000);
             entity.Property(e => e.CreatedAt).HasColumnName("created_at").IsRequired().HasDefaultValueSql("NOW()");

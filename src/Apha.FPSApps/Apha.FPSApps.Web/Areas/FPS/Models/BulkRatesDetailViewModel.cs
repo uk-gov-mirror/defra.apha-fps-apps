@@ -10,6 +10,9 @@ namespace Apha.FPSApps.Web.Areas.FPS.Models
         /// <summary>Populated from GetValidationResultsAsync on page load; null if no file uploaded yet.</summary>
         public BulkRatesUploadResultDto? UploadResult { get; set; }
 
+        /// <summary>Populated from GetStagingDataAsync on page load; null on load failure. Empty (not null) for non-FEC requests.</summary>
+        public BulkRatesStagingDataDto? StagingData { get; set; }
+
         // ── Derived permission flags used by the view ──────────────────────
 
         public bool IsInitiator =>
@@ -21,16 +24,19 @@ namespace Apha.FPSApps.Web.Areas.FPS.Models
         public bool CanRelease =>
             IsInitiator
             && Request.Entry.Status == "Initiated"
-            && UploadResult != null
-            && !UploadResult.ValidationErrors.Any(e => e.Severity == "Error");
+            && !string.IsNullOrEmpty(UploadResult?.Filename)
+            && UploadResult.RowCounts.Total > 0
+            && !UploadResult.ValidationErrors.Any(e => string.Equals(e.Severity, "Error", StringComparison.OrdinalIgnoreCase));
 
+        // TEMPORARILY DISABLED the maker-checker (!IsInitiator) restriction so a single
+        // admin can self-approve during testing. Restore before release.
         public bool CanApprove =>
-            !IsInitiator && Request.Entry.Status == "PendingApproval";
+            Request.Entry.Status == "ReleasedForApproval";
 
         public bool CanReject =>
-            !IsInitiator && Request.Entry.Status == "PendingApproval";
+            !IsInitiator && Request.Entry.Status == "ReleasedForApproval";
 
         public bool CanCancel =>
-            IsInitiator && Request.Entry.Status is "Initiated" or "Rejected";
+            IsInitiator && Request.Entry.Status is "Initiated" or "Rejected" or "Failed";
     }
 }

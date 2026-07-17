@@ -13,5 +13,4 @@ public sealed record BulkRatesJobQueueEntry(
     int FpsYear,
     string RequestedBy,
     string? ApprovedBy,
-    DateTime? ApprovedAtUtc,
-    string? ConfigurationJson);
+    DateTime? ApprovedAtUtc);

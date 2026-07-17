@@ -1,8 +1,10 @@
 namespace Apha.FPS.Core.Entities.BulkRates
 {
     /// <summary>
-    /// POCO that maps to the JSON stored in fps.job_queue.configuration_json for Bulk Rates requests.
-    /// JSON schema: { filename, checksum_sha256, upload_version, validation_completed_at_utc, row_counts:{...} }
+    /// Upload/validation summary for a Bulk Rates request, assembled from the typed
+    /// upload_* columns on fps.job_queue (see CR051 — configuration_json retired).
+    /// RowCounts is the one field still backed by jsonb (upload_row_counts_json),
+    /// since it's a purely descriptive nested breakdown with no business-gating role.
     /// </summary>
     public class BulkRatesUploadMetadata
     {

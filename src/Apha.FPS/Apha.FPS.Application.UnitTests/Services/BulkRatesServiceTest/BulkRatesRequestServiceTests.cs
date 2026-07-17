@@ -1,5 +1,7 @@
+using Apha.Common.Utilities.ExcelExport;
 using Apha.FPS.Application.Services;
 using Apha.FPS.Application.Dtos.BulkRates;
+using Apha.FPS.Application.Validation;
 using Apha.FPS.Core.Entities.BulkRates;
 using Apha.FPS.Core.Interfaces;
 using FluentAssertions;
@@ -34,7 +36,7 @@ public class BulkRatesRequestServiceTests
         string? approvedBy = null,
         string? rejectedBy = null,
         string? cancelledBy = null,
-        string? configJson = null)
+        string? uploadChecksum = null)
         => new()
         {
             JobQueueId        = QueueId,
@@ -49,7 +51,14 @@ public class BulkRatesRequestServiceTests
             ApprovedBy        = approvedBy,
             ApprovedAtUtc     = approvedBy != null ? DateTime.UtcNow : null,
             RejectedBy        = rejectedBy,
-            ConfigurationJson = configJson
+            UploadFilename       = uploadChecksum != null ? "test.xlsx" : null,
+            UploadChecksumSha256 = uploadChecksum,
+            UploadVersion        = uploadChecksum != null ? 1 : null,
+            // A real upload always has row counts recorded alongside the checksum
+            // (see UploadFileAsync's ReplaceStaging + UpdateUploadMetadata pairing) —
+            // default to a non-zero total so callers testing post-upload behaviour
+            // don't also need to fake this separately.
+            UploadRowCountsJson  = uploadChecksum != null ? """{"total":1}""" : null
         };
 
     // SUT factory
@@ -67,6 +76,7 @@ public class BulkRatesRequestServiceTests
             new BulkRatesExcelParser(),
             new BulkRatesValidator(r),
             e, n,
+            Substitute.For<IExcelExportService>(),
             NullLogger<BulkRatesRequestService>.Instance);
     }
 
@@ -140,7 +150,7 @@ public class BulkRatesRequestServiceTests
     [Fact]
     public async Task Release_WhenNoFileUploaded_ThrowsBusinessValidation()
     {
-        var repo = RepoReturning(Entry(status: "Initiated", configJson: null));
+        var repo = RepoReturning(Entry(status: "Initiated", uploadChecksum: null));
         var svc  = CreateService(repo);
 
         await svc.Invoking(s => s.ReleaseForApprovalAsync(QueueId, Initiator))
@@ -151,8 +161,7 @@ public class BulkRatesRequestServiceTests
     [Fact]
     public async Task Release_WhenBlockingValidationErrors_ThrowsBusinessValidation()
     {
-        var configWithChecksum = """{"filename":"test.xlsx","checksum_sha256":"abc","upload_version":1}""";
-        var repo  = RepoReturning(Entry(status: "Initiated", configJson: configWithChecksum));
+        var repo  = RepoReturning(Entry(status: "Initiated", uploadChecksum: "abc"));
         var errors = new[] { new StagingValidationError { Severity = "Error", ValidationMessage = "bad row" } };
         repo.GetValidationErrorsAsync(QueueId, Arg.Any<CancellationToken>()).Returns(errors as IReadOnlyList<StagingValidationError>);
         var svc = CreateService(repo);
@@ -165,15 +174,19 @@ public class BulkRatesRequestServiceTests
     // ── ApproveAsync maker-checker ───────────────────────────────────────────
 
     [Fact]
-    public async Task Approve_WhenApproverIsInitiator_ThrowsMakerCheckerViolation()
+    public async Task Approve_WhenApproverIsInitiator_Succeeds()
     {
-        var configWithChecksum = """{"filename":"test.xlsx","checksum_sha256":"abc","upload_version":1}""";
-        var repo = RepoReturning(Entry(status: "ReleasedForApproval", configJson: configWithChecksum));
+        // Maker-checker enforcement is temporarily disabled — see BulkRatesRequestService.ApproveAsync.
+        var repo = RepoReturning(Entry(status: "ReleasedForApproval", uploadChecksum: "abc"));
         var svc  = CreateService(repo);
 
-        var ex = await svc.Invoking(s => s.ApproveAsync(QueueId, Initiator))
-            .Should().ThrowAsync<BusinessValidationErrorException>();
-        ex.Which.Errors.Should().Contain(e => e.Code == "MAKER_CHECKER_VIOLATION");
+        await svc.ApproveAsync(QueueId, Initiator);
+
+        await repo.Received(1).SetApprovalAsync(
+            QueueId, ExecId,
+            Initiator, Arg.Any<DateTime>(),
+            Initiator, Arg.Any<DateTime>(),
+            42, Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -190,7 +203,7 @@ public class BulkRatesRequestServiceTests
     [Fact]
     public async Task Approve_WhenChecksumMissing_ThrowsBusinessValidation()
     {
-        var repo = RepoReturning(Entry(status: "ReleasedForApproval", configJson: null));
+        var repo = RepoReturning(Entry(status: "ReleasedForApproval", uploadChecksum: null));
         var svc  = CreateService(repo);
 
         await svc.Invoking(s => s.ApproveAsync(QueueId, Approver))
@@ -260,6 +273,7 @@ public class BulkRatesRequestServiceTests
     [Theory]
     [InlineData("Initiated")]
     [InlineData("Rejected")]
+    [InlineData("Failed")]
     public async Task Cancel_WhenStatusIsInitiatedOrRejected_CallsCancelAndClearStaging(string status)
     {
         var repo = RepoReturning(Entry(status: status));
@@ -315,6 +329,94 @@ public class BulkRatesRequestServiceTests
         await svc.Invoking(s => s.UploadFileAsync(QueueId, [1, 2], "rates.xlsx", Approver))
             .Should().ThrowAsync<BusinessValidationErrorException>()
             .WithMessage("*initiator*");
+    }
+
+    // ── GetStagingDataAsync classification (Inserted/Updated/Deleted vs live data) ──
+
+    [Fact]
+    public async Task GetStagingData_WhenJobNameIsUnrecognised_ReturnsEmpty()
+    {
+        // Staff/Animal are "not Fec" too, but have their own real staging diff (see the
+        // GetStaffStagingData/GetAnimalStagingData tests) — this covers the defensive
+        // fallback for a job name that is none of the three known ones.
+        var unknownJobEntry = Entry(status: "Initiated", uploadChecksum: "abc");
+        unknownJobEntry.JobName = "SomeUnrecognisedJob";
+        var repo = RepoReturning(unknownJobEntry);
+        var svc = CreateService(repo);
+
+        var result = await svc.GetStagingDataAsync(QueueId);
+
+        result.FecRows.Should().BeEmpty();
+        result.AgrupRows.Should().BeEmpty();
+        await repo.DidNotReceive().GetFecStagingRowsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task GetStagingData_ClassifiesNewTestCodeAsInserted()
+    {
+        var repo = RepoReturning(Entry(status: "Initiated", uploadChecksum: "abc"));
+        repo.GetFecStagingRowsAsync(QueueId, Arg.Any<CancellationToken>())
+            .Returns(new[] { new FecStagingRow { TestCode = "T001", FecNewRate = 10.1m } } as IReadOnlyList<FecStagingRow>);
+        repo.GetAgrupStagingRowsAsync(QueueId, Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<AgrupStagingRow>() as IReadOnlyList<AgrupStagingRow>);
+        repo.GetFecRowsForExportAsync(FpsYear, Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<FecStagingRow>() as IReadOnlyList<FecStagingRow>);
+        var svc = CreateService(repo);
+
+        var result = await svc.GetStagingDataAsync(QueueId);
+
+        result.FecRows.Should().ContainSingle(r => r.TestCode == "T001" && r.Status == "Inserted");
+    }
+
+    [Fact]
+    public async Task GetStagingData_ClassifiesChangedRateAsUpdated()
+    {
+        var repo = RepoReturning(Entry(status: "Initiated", uploadChecksum: "abc"));
+        repo.GetFecStagingRowsAsync(QueueId, Arg.Any<CancellationToken>())
+            .Returns(new[] { new FecStagingRow { TestCode = "T002", FecNewRate = 20.2m } } as IReadOnlyList<FecStagingRow>);
+        repo.GetAgrupStagingRowsAsync(QueueId, Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<AgrupStagingRow>() as IReadOnlyList<AgrupStagingRow>);
+        repo.GetFecRowsForExportAsync(FpsYear, Arg.Any<CancellationToken>())
+            .Returns(new[] { new FecStagingRow { TestCode = "T002", DefraUnitPrice = 15.0m } } as IReadOnlyList<FecStagingRow>);
+        var svc = CreateService(repo);
+
+        var result = await svc.GetStagingDataAsync(QueueId);
+
+        result.FecRows.Should().ContainSingle(r => r.TestCode == "T002" && r.Status == "Updated");
+    }
+
+    [Fact]
+    public async Task GetStagingData_ExcludesRowsWhereStagedRateMatchesLivePrice()
+    {
+        var repo = RepoReturning(Entry(status: "Initiated", uploadChecksum: "abc"));
+        repo.GetFecStagingRowsAsync(QueueId, Arg.Any<CancellationToken>())
+            .Returns(new[] { new FecStagingRow { TestCode = "T003", FecNewRate = 30.0m } } as IReadOnlyList<FecStagingRow>);
+        repo.GetAgrupStagingRowsAsync(QueueId, Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<AgrupStagingRow>() as IReadOnlyList<AgrupStagingRow>);
+        repo.GetFecRowsForExportAsync(FpsYear, Arg.Any<CancellationToken>())
+            .Returns(new[] { new FecStagingRow { TestCode = "T003", DefraUnitPrice = 30.0m } } as IReadOnlyList<FecStagingRow>);
+        var svc = CreateService(repo);
+
+        var result = await svc.GetStagingDataAsync(QueueId);
+
+        result.FecRows.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetStagingData_ClassifiesLiveTestCodeMissingFromUploadAsDeleted()
+    {
+        var repo = RepoReturning(Entry(status: "Initiated", uploadChecksum: "abc"));
+        repo.GetFecStagingRowsAsync(QueueId, Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<FecStagingRow>() as IReadOnlyList<FecStagingRow>);
+        repo.GetAgrupStagingRowsAsync(QueueId, Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<AgrupStagingRow>() as IReadOnlyList<AgrupStagingRow>);
+        repo.GetFecRowsForExportAsync(FpsYear, Arg.Any<CancellationToken>())
+            .Returns(new[] { new FecStagingRow { TestCode = "T004", DefraUnitPrice = 40.0m } } as IReadOnlyList<FecStagingRow>);
+        var svc = CreateService(repo);
+
+        var result = await svc.GetStagingDataAsync(QueueId);
+
+        result.FecRows.Should().ContainSingle(r => r.TestCode == "T004" && r.Status == "Deleted");
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

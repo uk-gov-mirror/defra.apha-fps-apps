@@ -1,5 +1,6 @@
 using Apha.FPS.Application.Dtos.BulkRates;
 using Apha.FPS.Application.Interfaces;
+using Apha.FPS.Core.Entities.BulkRates;
 using Apha.FPS.Core.Interfaces;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
@@ -39,10 +40,10 @@ namespace Apha.FPS.Api.Controllers
         }
 
         /// <summary>US-API-02/03/05: Upload (or re-upload) an Excel file, replacing previous staging and re-running validation.</summary>
-        [HttpPost("requests/{id:guid}/upload")]
+        [HttpPost("requests/{jobExecutionId:guid}/upload")]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<BulkRatesUploadResultDto>> UploadFileAsync(
-            Guid id, IFormFile file, CancellationToken ct)
+            Guid jobExecutionId, IFormFile file, CancellationToken ct)
         {
             if (file == null || file.Length == 0)
                 return BadRequest("A non-empty file is required.");
@@ -51,68 +52,68 @@ namespace Apha.FPS.Api.Controllers
             await file.CopyToAsync(ms, ct);
 
             var result = await _service.UploadFileAsync(
-                id, ms.ToArray(), file.FileName, _requestContext.UserEmailId, ct);
+                jobExecutionId, ms.ToArray(), file.FileName, _requestContext.UserEmailId, ct);
             return Ok(result);
         }
 
         /// <summary>US-API-04: Retrieve structured validation results for a request.</summary>
-        [HttpGet("requests/{id:guid}/validation")]
+        [HttpGet("requests/{jobExecutionId:guid}/validation")]
         public async Task<ActionResult<BulkRatesUploadResultDto>> GetValidationResultsAsync(
-            Guid id, CancellationToken ct)
+            Guid jobExecutionId, CancellationToken ct)
         {
             var result = await _service.GetValidationResultsAsync(
-                id, _requestContext.UserEmailId, ct);
+                jobExecutionId, _requestContext.UserEmailId, ct);
             return Ok(result);
         }
 
         /// <summary>US-API-06/12/13: Release a fully-valid request for approval.</summary>
-        [HttpPost("requests/{id:guid}/release")]
+        [HttpPost("requests/{jobExecutionId:guid}/release")]
         public async Task<ActionResult<BulkRatesRequestDto>> ReleaseForApprovalAsync(
-            Guid id, CancellationToken ct)
+            Guid jobExecutionId, CancellationToken ct)
         {
             var result = await _service.ReleaseForApprovalAsync(
-                id, _requestContext.UserEmailId, ct);
+                jobExecutionId, _requestContext.UserEmailId, ct);
             return Ok(result);
         }
 
         /// <summary>US-API-07/09/10/12/13: Approve and publish EventBridge trigger.</summary>
-        [HttpPost("requests/{id:guid}/approve")]
+        [HttpPost("requests/{jobExecutionId:guid}/approve")]
         public async Task<ActionResult<BulkRatesRequestDto>> ApproveAsync(
-            Guid id, CancellationToken ct)
+            Guid jobExecutionId, CancellationToken ct)
         {
             var result = await _service.ApproveAsync(
-                id, _requestContext.UserEmailId, ct);
+                jobExecutionId, _requestContext.UserEmailId, ct);
             return Ok(result);
         }
 
         /// <summary>US-API-08/13: Reject with mandatory reason.</summary>
-        [HttpPost("requests/{id:guid}/reject")]
+        [HttpPost("requests/{jobExecutionId:guid}/reject")]
         public async Task<ActionResult<BulkRatesRequestDto>> RejectAsync(
-            Guid id, [FromBody] RejectBulkRatesReq req, CancellationToken ct)
+            Guid jobExecutionId, [FromBody] RejectBulkRatesReq req, CancellationToken ct)
         {
             var result = await _service.RejectAsync(
-                id, _requestContext.UserEmailId, req.Reason, ct);
+                jobExecutionId, _requestContext.UserEmailId, req.Reason, ct);
             return Ok(result);
         }
 
         /// <summary>US-API-14/13: Cancel an Initiated or Rejected request (initiator only).</summary>
-        [HttpPost("requests/{id:guid}/cancel")]
+        [HttpPost("requests/{jobExecutionId:guid}/cancel")]
         public async Task<ActionResult<BulkRatesRequestDto>> CancelAsync(
-            Guid id, [FromBody] CancelBulkRatesReq req, CancellationToken ct)
+            Guid jobExecutionId, [FromBody] CancelBulkRatesReq req, CancellationToken ct)
         {
             var result = await _service.CancelAsync(
-                id, _requestContext.UserEmailId, req.Reason, ct);
+                jobExecutionId, _requestContext.UserEmailId, req.Reason, ct);
             return Ok(result);
         }
 
         /// <summary>US-API-11: Get full request detail including log history.</summary>
-        [HttpGet("requests/{id:guid}")]
+        [HttpGet("requests/{jobExecutionId:guid}")]
         public async Task<ActionResult<BulkRatesRequestDto>> GetRequestAsync(
-            Guid id, CancellationToken ct)
+            Guid jobExecutionId, CancellationToken ct)
         {
-            var result = await _service.GetRequestAsync(id, ct);
+            var result = await _service.GetRequestAsync(jobExecutionId, ct);
             if (result == null)
-                return NotFound($"Bulk Rates request {id} not found.");
+                return NotFound($"Bulk Rates request {jobExecutionId} not found.");
             return Ok(result);
         }
 
@@ -126,6 +127,70 @@ namespace Apha.FPS.Api.Controllers
         {
             var result = await _service.GetRequestsAsync(jobName, fpsYear, status, ct);
             return Ok(result);
+        }
+
+        /// <summary>Returns the currently active (blocking-status) request for a job name, or null if none exists.</summary>
+        [HttpGet("requests/active")]
+        public async Task<ActionResult<BulkRatesQueueEntry?>> GetActiveRequestAsync(
+            [FromQuery] string jobName, CancellationToken ct)
+        {
+            var result = await _service.GetActiveRequestAsync(jobName, ct);
+            return Ok(result);
+        }
+
+        /// <summary>Returns the staged FEC/AGRUP rows for a request's staging grids, classified against live data.</summary>
+        [HttpGet("requests/{jobExecutionId:guid}/staging")]
+        public async Task<ActionResult<BulkRatesStagingDataDto>> GetStagingDataAsync(
+            Guid jobExecutionId, CancellationToken ct)
+        {
+            var result = await _service.GetStagingDataAsync(jobExecutionId, ct);
+            return Ok(result);
+        }
+
+        /// <summary>Exports the staged (not-yet-approved) FEC/AGRUP rows for a request as an Excel file.</summary>
+        [HttpGet("requests/{jobExecutionId:guid}/staging/export")]
+        public async Task<IActionResult> ExportStagingDataAsync(Guid jobExecutionId, CancellationToken ct)
+        {
+            var bytes = await _service.ExportStagingDataAsync(jobExecutionId, ct);
+            return File(bytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"BulkRates_Staging_{jobExecutionId}.xlsx");
+        }
+
+        /// <summary>Export current FEC test rates for a given FPS year as an Excel file.</summary>
+        [HttpGet("export")]
+        public async Task<IActionResult> ExportFecTestDataAsync(
+            [FromQuery] int fpsYear, CancellationToken ct)
+        {
+            var bytes = await _service.ExportFecTestDataAsync(fpsYear, ct);
+            var fileName = $"FEC_TestRates_{fpsYear}.xlsx";
+            return File(bytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                fileName);
+        }
+
+        /// <summary>Export current Staff rates for a given FPS year as an Excel file.</summary>
+        [HttpGet("export/staff")]
+        public async Task<IActionResult> ExportStaffTestDataAsync(
+            [FromQuery] int fpsYear, CancellationToken ct)
+        {
+            var bytes = await _service.ExportStaffTestDataAsync(fpsYear, ct);
+            var fileName = $"Staff_TestRates_{fpsYear}.xlsx";
+            return File(bytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                fileName);
+        }
+
+        /// <summary>Export current Animal rates for a given FPS year as an Excel file.</summary>
+        [HttpGet("export/animal")]
+        public async Task<IActionResult> ExportAnimalTestDataAsync(
+            [FromQuery] int fpsYear, CancellationToken ct)
+        {
+            var bytes = await _service.ExportAnimalTestDataAsync(fpsYear, ct);
+            var fileName = $"Animal_TestRates_{fpsYear}.xlsx";
+            return File(bytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                fileName);
         }
     }
 

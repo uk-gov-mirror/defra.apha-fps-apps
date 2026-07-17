@@ -1,3 +1,4 @@
+using Apha.Common.Constants;
 using Apha.FPS.Core.Entities.BulkRates;
 using Apha.FPS.Core.Interfaces;
 
@@ -42,9 +43,9 @@ namespace Apha.FPS.Application.Services
 
             return jobName switch
             {
-                "BulkTestRatesUpdate" => await ValidateFecAsync(parseResult, fpsYear, ct),
-                "BulkStaffRatesUpdate" => ValidateStaff(parseResult),
-                "BulkAnimalRatesUpdate" => ValidateAnimal(parseResult),
+                BulkRatesJobNames.Fec => await ValidateFecAsync(parseResult, fpsYear, ct),
+                BulkRatesJobNames.Staff => ValidateStaff(parseResult),
+                BulkRatesJobNames.Animal => ValidateAnimal(parseResult),
                 _ => new BulkRatesValidationResult
                 {
                     Errors =
@@ -88,15 +89,18 @@ namespace Apha.FPS.Application.Services
 
                 if (fecDuplicates.Contains(row.TestCode))
                     AddError(errors, jobQueueId, sourceRow, "testcode", "DUPLICATE_TEST_CODE",
-                        $"TestCode '{row.TestCode}' appears more than once in the FEC worksheet.");
+                        $"TestCode '{row.TestCode}' appears more than once in the FEC worksheet.",
+                        sheetName: "FEC", testCode: row.TestCode);
 
                 if (row.FecNewRate == null)
                     AddError(errors, jobQueueId, sourceRow, "fecnewrate", "MISSING_FEC_NEW_RATE",
-                        "FEC New rate is mandatory for every row.");
+                        "FEC New rate is mandatory for every row.",
+                        sheetName: "FEC", testCode: row.TestCode);
 
                 if (row.FecNewRate.HasValue && row.FecNewRate.Value < 0)
                     AddError(errors, jobQueueId, sourceRow, "fecnewrate", "NEGATIVE_RATE",
-                        "Negative rates are not permitted.");
+                        "Negative rates are not permitted.",
+                        sheetName: "FEC", testCode: row.TestCode);
 
                 var isNew = !existingTestCodes.Contains(row.TestCode);
                 if (isNew)
@@ -104,20 +108,24 @@ namespace Apha.FPS.Application.Services
                     fecInsert++;
                     if (string.IsNullOrWhiteSpace(row.ItemDescription))
                         AddError(errors, jobQueueId, sourceRow, "itemdescription", "MISSING_FOR_INSERT",
-                            "Item Description is required for new Test Code inserts.");
+                            "Item Description is required for new Test Code inserts.",
+                            sheetName: "FEC", testCode: row.TestCode);
                     if (string.IsNullOrWhiteSpace(row.ShortDescription))
                         AddError(errors, jobQueueId, sourceRow, "shortdescription", "MISSING_FOR_INSERT",
-                            "Short Description is required for new Test Code inserts.");
+                            "Short Description is required for new Test Code inserts.",
+                            sheetName: "FEC", testCode: row.TestCode);
                     if (string.IsNullOrWhiteSpace(row.Owner))
                         AddError(errors, jobQueueId, sourceRow, "owner", "MISSING_FOR_INSERT",
-                            "Owner is required for new Test Code inserts.");
+                            "Owner is required for new Test Code inserts.",
+                            sheetName: "FEC", testCode: row.TestCode);
                 }
                 else
                 {
                     // Existing row: changes to description/owner are ignored (add warning if materially different)
                     if (!string.IsNullOrWhiteSpace(row.ItemDescription))
                         AddWarning(errors, jobQueueId, sourceRow, "itemdescription", "IGNORED_ON_UPDATE",
-                            "Item Description changes are ignored for existing Test Codes (update-only modifies price columns).");
+                            "Item Description changes are ignored for existing Test Codes (update-only modifies price columns).",
+                            sheetName: "FEC", testCode: row.TestCode);
 
                     // Classify: unchanged if FEC New == existing DefraUnitPrice
                     // We don't have the existing price here, so we classify as Update
@@ -142,12 +150,14 @@ namespace Apha.FPS.Application.Services
 
                 if (agrupDuplicates.Contains((row.TestCode.ToUpperInvariant(), row.Buyer.ToUpperInvariant())))
                     AddError(errors, jobQueueId, sourceRow, "testcode+buyer", "DUPLICATE_AGRUP_KEY",
-                        $"TestCode+Buyer combination '{row.TestCode}/{row.Buyer}' appears more than once.");
+                        $"TestCode+Buyer combination '{row.TestCode}/{row.Buyer}' appears more than once.",
+                        sheetName: "AGRUP", testCode: row.TestCode, buyer: row.Buyer);
 
                 // Test Code must exist in current year OR be a new insert in the same FEC upload
                 if (!existingTestCodes.Contains(row.TestCode) && !fecTestCodesInUpload.Contains(row.TestCode))
                     AddError(errors, jobQueueId, sourceRow, "testcode", "TEST_CODE_NOT_FOUND",
-                        $"TestCode '{row.TestCode}' does not exist in FPS year {fpsYear} and is not being inserted by this FEC upload.");
+                        $"TestCode '{row.TestCode}' does not exist in FPS year {fpsYear} and is not being inserted by this FEC upload.",
+                        sheetName: "AGRUP", testCode: row.TestCode, buyer: row.Buyer);
 
                 var isNew = !existingAgrupKeys.Contains((row.TestCode, row.Buyer));
                 if (isNew)
@@ -155,7 +165,8 @@ namespace Apha.FPS.Application.Services
                     agrupInsert++;
                     if (row.AgrupNew == null)
                         AddError(errors, jobQueueId, sourceRow, "agrupnew", "MISSING_FOR_INSERT",
-                            "Agrup New is required for new TestCode+Buyer inserts.");
+                            "Agrup New is required for new TestCode+Buyer inserts.",
+                            sheetName: "AGRUP", testCode: row.TestCode, buyer: row.Buyer);
                 }
                 else
                 {
@@ -169,7 +180,8 @@ namespace Apha.FPS.Application.Services
 
                 if (row.AgrupNew.HasValue && row.AgrupNew.Value < 0)
                     AddError(errors, jobQueueId, sourceRow, "agrupnew", "NEGATIVE_RATE",
-                        "Negative rates are not permitted.");
+                        "Negative rates are not permitted.",
+                        sheetName: "AGRUP", testCode: row.TestCode, buyer: row.Buyer);
 
                 // "Same as FEC" comments validation
                 if (string.Equals(row.Comments, "Same as FEC", StringComparison.OrdinalIgnoreCase))
@@ -179,7 +191,8 @@ namespace Apha.FPS.Application.Services
                     if (fecMatch != null && row.AgrupNew.HasValue && fecMatch.FecNewRate.HasValue
                         && row.AgrupNew.Value != fecMatch.FecNewRate.Value)
                         AddError(errors, jobQueueId, sourceRow, "agrupnew", "SAME_AS_FEC_MISMATCH",
-                            $"Comments is 'Same as FEC' but Agrup New ({row.AgrupNew}) does not equal FEC New ({fecMatch.FecNewRate}) for TestCode '{row.TestCode}'.");
+                            $"Comments is 'Same as FEC' but Agrup New ({row.AgrupNew}) does not equal FEC New ({fecMatch.FecNewRate}) for TestCode '{row.TestCode}'.",
+                            sheetName: "AGRUP", testCode: row.TestCode, buyer: row.Buyer);
                 }
             }
 
@@ -215,17 +228,21 @@ namespace Apha.FPS.Application.Services
                 var sourceRow = i + 2;
 
                 if (string.IsNullOrWhiteSpace(row.PcGrade))
-                    AddError(errors, jobQueueId, sourceRow, "pcgrade", "MISSING_GRADE", "PcGrade is required.");
+                    AddError(errors, jobQueueId, sourceRow, "pcgrade", "MISSING_GRADE", "PcGrade is required.",
+                        sheetName: "Staff");
                 else if (duplicates.Contains(row.PcGrade))
                     AddError(errors, jobQueueId, sourceRow, "pcgrade", "DUPLICATE_GRADE",
-                        $"Grade '{row.PcGrade}' appears more than once.");
+                        $"Grade '{row.PcGrade}' appears more than once.", sheetName: "Staff");
 
                 if (row.PayRate.HasValue && row.PayRate.Value < 0)
-                    AddError(errors, jobQueueId, sourceRow, "payrate", "NEGATIVE_RATE", "Negative rates are not permitted.");
+                    AddError(errors, jobQueueId, sourceRow, "payrate", "NEGATIVE_RATE", "Negative rates are not permitted.",
+                        sheetName: "Staff");
                 if (row.Npr.HasValue && row.Npr.Value < 0)
-                    AddError(errors, jobQueueId, sourceRow, "npr", "NEGATIVE_RATE", "Negative rates are not permitted.");
+                    AddError(errors, jobQueueId, sourceRow, "npr", "NEGATIVE_RATE", "Negative rates are not permitted.",
+                        sheetName: "Staff");
                 if (row.Ohr.HasValue && row.Ohr.Value < 0)
-                    AddError(errors, jobQueueId, sourceRow, "ohr", "NEGATIVE_RATE", "Negative rates are not permitted.");
+                    AddError(errors, jobQueueId, sourceRow, "ohr", "NEGATIVE_RATE", "Negative rates are not permitted.",
+                        sheetName: "Staff");
             }
 
             return new BulkRatesValidationResult
@@ -258,15 +275,18 @@ namespace Apha.FPS.Application.Services
                 var sourceRow = i + 2;
 
                 if (string.IsNullOrWhiteSpace(row.AnimalType))
-                    AddError(errors, jobQueueId, sourceRow, "animaltype", "MISSING_ANIMAL_TYPE", "AnimalType is required.");
+                    AddError(errors, jobQueueId, sourceRow, "animaltype", "MISSING_ANIMAL_TYPE", "AnimalType is required.",
+                        sheetName: "Animal");
                 else if (duplicates.Contains(row.AnimalType))
                     AddError(errors, jobQueueId, sourceRow, "animaltype", "DUPLICATE_ANIMAL_TYPE",
-                        $"AnimalType '{row.AnimalType}' appears more than once.");
+                        $"AnimalType '{row.AnimalType}' appears more than once.", sheetName: "Animal");
 
                 if (row.DailyRate.HasValue && row.DailyRate.Value < 0)
-                    AddError(errors, jobQueueId, sourceRow, "dailyrate", "NEGATIVE_RATE", "Negative rates are not permitted.");
+                    AddError(errors, jobQueueId, sourceRow, "dailyrate", "NEGATIVE_RATE", "Negative rates are not permitted.",
+                        sheetName: "Animal");
                 if (row.DefraDailyRate.HasValue && row.DefraDailyRate.Value < 0)
-                    AddError(errors, jobQueueId, sourceRow, "defradailyrate", "NEGATIVE_RATE", "Negative rates are not permitted.");
+                    AddError(errors, jobQueueId, sourceRow, "defradailyrate", "NEGATIVE_RATE", "Negative rates are not permitted.",
+                        sheetName: "Animal");
             }
 
             return new BulkRatesValidationResult
@@ -286,7 +306,8 @@ namespace Apha.FPS.Application.Services
 
         private static void AddError(
             List<StagingValidationError> list, Guid jobQueueId,
-            int sourceRowNumber, string? fieldName, string code, string message)
+            int sourceRowNumber, string? fieldName, string code, string message,
+            string? sheetName = null, string? testCode = null, string? buyer = null)
         {
             list.Add(new StagingValidationError
             {
@@ -296,13 +317,17 @@ namespace Apha.FPS.Application.Services
                 FieldName = fieldName,
                 ValidationCode = code,
                 Severity = "Error",
-                ValidationMessage = message
+                ValidationMessage = message,
+                SheetName = sheetName,
+                TestCode = testCode,
+                Buyer = buyer
             });
         }
 
         private static void AddWarning(
             List<StagingValidationError> list, Guid jobQueueId,
-            int sourceRowNumber, string? fieldName, string code, string message)
+            int sourceRowNumber, string? fieldName, string code, string message,
+            string? sheetName = null, string? testCode = null, string? buyer = null)
         {
             list.Add(new StagingValidationError
             {
@@ -312,7 +337,10 @@ namespace Apha.FPS.Application.Services
                 FieldName = fieldName,
                 ValidationCode = code,
                 Severity = "Warning",
-                ValidationMessage = message
+                ValidationMessage = message,
+                SheetName = sheetName,
+                TestCode = testCode,
+                Buyer = buyer
             });
         }
     }

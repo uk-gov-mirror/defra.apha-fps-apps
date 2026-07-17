@@ -170,6 +170,35 @@ public sealed class JobOrchestratorTests
         await _lockRepo.Received(1).ReleaseLockAsync(BatchJobNames.YearEndLock, Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
+    [Theory]
+    [InlineData(BatchJobNames.BulkTestRatesUpdate)]
+    [InlineData(BatchJobNames.BulkStaffRatesUpdate)]
+    [InlineData(BatchJobNames.BulkAnimalRatesUpdate)]
+    public async Task RunAsync_WhenBulkRatesJob_UsesJobNameAsOwnDistinctLockName(string jobName)
+    {
+        // Arrange — Bulk Rates jobs must NOT share a lock (unlike YearEnd's shared YearEndLock):
+        // FEC, Staff, and Animal requests may run concurrently; only two runs of the *same*
+        // rate-type job must be mutually exclusive.
+        SetupApprovedExecution(jobName);
+        var job = Substitute.For<IBatchJob>();
+        job.Name.Returns(jobName);
+
+        _factory.Create(jobName).Returns(job);
+        _lockRepo.TryAcquireLockAsync(jobName, Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+                 .Returns(true);
+        _execRepo.CreateExecutionRecordAsync(Arg.Any<JobExecutionRecord>(), Arg.Any<CancellationToken>())
+                 .Returns(42);
+        _execRepo.UpdateExecutionRecordAsync(Arg.Any<JobExecutionRecord>(), Arg.Any<CancellationToken>())
+                 .Returns(Task.CompletedTask);
+
+        // Act
+        await _orchestrator.RunAsync(jobName, RunMode.Manual, Guid.NewGuid(), "test-user");
+
+        // Assert — lock is keyed by the job's own name, not a shared constant
+        await _lockRepo.Received(1).TryAcquireLockAsync(jobName, Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
+        await _lockRepo.Received(1).ReleaseLockAsync(jobName, Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
     [Fact]
     public async Task RunAsync_WhenScheduledMabArchiveAndInitiatedMissing_CreatesInitiatedAndContinues()
     {

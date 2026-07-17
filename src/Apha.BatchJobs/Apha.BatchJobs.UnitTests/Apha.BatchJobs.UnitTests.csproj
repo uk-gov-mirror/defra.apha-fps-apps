@@ -29,6 +29,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Apha.BatchJobs.csproj" />
+    <ProjectReference Include="..\..\Apha.Common\Apha.Common.csproj" />
   </ItemGroup>
 
   <ItemGroup>

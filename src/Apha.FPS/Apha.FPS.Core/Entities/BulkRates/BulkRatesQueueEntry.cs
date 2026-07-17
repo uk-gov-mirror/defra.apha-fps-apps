@@ -15,7 +15,11 @@ namespace Apha.FPS.Core.Entities.BulkRates
         public string RequestedBy { get; set; } = string.Empty;
         public DateTime RequestedAtUtc { get; set; }
         public int FpsYear { get; set; }
-        public string? ConfigurationJson { get; set; }
+        public string? UploadFilename { get; set; }
+        public string? UploadChecksumSha256 { get; set; }
+        public int? UploadVersion { get; set; }
+        public DateTime? UploadValidatedAtUtc { get; set; }
+        public string? UploadRowCountsJson { get; set; }
         public string? ApprovedBy { get; set; }
         public DateTime? ApprovedAtUtc { get; set; }
         public string? RejectedBy { get; set; }
