@@ -20,7 +20,7 @@ public sealed class BulkTestRatesServiceTests
     private static BulkRatesJobQueueEntry ApprovedEntry(
         Guid? jobQueueId = null,
         Guid? jobExecutionId = null,
-        string? status = "Approved",
+        string? status = "Running",
         string? jobName = null,
         int fpsYear = 2027,
         string? approvedBy = "approver@test")
@@ -29,7 +29,7 @@ public sealed class BulkTestRatesServiceTests
             JobExecutionId:   jobExecutionId ?? Guid.NewGuid(),
             JobId:            10,
             JobName:          jobName ?? BatchJobNames.BulkTestRatesUpdate,
-            Status:           status ?? "Approved",
+            Status:           status ?? "Running",
             FpsYear:          fpsYear,
             RequestedBy:      "requester@test",
             ApprovedBy:       approvedBy,
@@ -62,7 +62,7 @@ public sealed class BulkTestRatesServiceTests
     // ── Precondition: Status ─────────────────────────────────────────────────
 
     [Fact]
-    public async Task ExecuteAsync_WhenStatusNotApproved_ShouldThrow()
+    public async Task ExecuteAsync_WhenStatusNotRunning_ShouldThrow()
     {
         var repo = Substitute.For<IBulkRatesRepository>();
         repo.GetApprovedRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
@@ -72,7 +72,7 @@ public sealed class BulkTestRatesServiceTests
             () => CreateService(repo).ExecuteAsync(ValidContext()));
 
         Assert.Contains("Submitted", ex.Message, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("Approved", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Running", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     // ── Precondition: JobName ─────────────────────────────────────────────────

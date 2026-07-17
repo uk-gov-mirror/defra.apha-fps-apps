@@ -18,7 +18,7 @@ public sealed class BulkAnimalRatesServiceTests
         => new("corr", Guid.NewGuid(), BatchJobNames.BulkAnimalRatesUpdate, triggerYear);
 
     private static BulkRatesJobQueueEntry ApprovedEntry(
-        string? status = "Approved",
+        string? status = "Running",
         string? jobName = null,
         int fpsYear = 2027,
         string? approvedBy = "approver@test")
@@ -27,7 +27,7 @@ public sealed class BulkAnimalRatesServiceTests
             JobExecutionId:   Guid.NewGuid(),
             JobId:            12,
             JobName:          jobName ?? BatchJobNames.BulkAnimalRatesUpdate,
-            Status:           status ?? "Approved",
+            Status:           status ?? "Running",
             FpsYear:          fpsYear,
             RequestedBy:      "requester@test",
             ApprovedBy:       approvedBy,
@@ -57,7 +57,7 @@ public sealed class BulkAnimalRatesServiceTests
     // ── Precondition: Status ─────────────────────────────────────────────────
 
     [Fact]
-    public async Task ExecuteAsync_WhenStatusNotApproved_ShouldThrow()
+    public async Task ExecuteAsync_WhenStatusNotRunning_ShouldThrow()
     {
         var repo = Substitute.For<IBulkRatesRepository>();
         repo.GetApprovedRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
@@ -67,7 +67,7 @@ public sealed class BulkAnimalRatesServiceTests
             () => CreateService(repo).ExecuteAsync(ValidContext()));
 
         Assert.Contains("Pending", ex.Message, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("Approved", ex.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Running", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     // ── Precondition: JobName ─────────────────────────────────────────────────
