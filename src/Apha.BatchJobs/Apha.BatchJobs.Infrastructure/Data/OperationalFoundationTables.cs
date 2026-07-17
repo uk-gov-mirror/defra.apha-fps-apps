@@ -30,7 +30,16 @@ internal sealed class TblJobStatus
 /// </summary>
 internal sealed class TblJobQueue
 {
+    /// <summary>
+    /// Primary key. Internal, worker-owned relational key — job_queue_log, job_lock, Bulk Rates
+    /// staging tables, and rate_change_history all FK to this, not to JobExecutionId.
+    /// </summary>
     public Guid JobQueueId { get; set; }
+
+    /// <summary>
+    /// External, caller/API-facing correlation ID for status polling. Unique but not the PK;
+    /// used to look up this row once when a worker picks up a triggered run.
+    /// </summary>
     public Guid JobExecutionId { get; set; }
     public int JobId { get; set; }
     public int StatusId { get; set; }

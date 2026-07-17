@@ -230,6 +230,9 @@ public class BatchJobsDbContext : DbContext
         modelBuilder.Entity<TblJobQueue>(entity =>
         {
             entity.ToTable("job_queue", schema: "fps");
+            // jobqueueid (PK) is the internal relational key: job_queue_log, job_lock, Bulk Rates
+            // staging tables, and rate_change_history all FK to it. jobexecutionid is the external
+            // API-facing correlation ID (unique, not PK) used to look up this row once per run.
             entity.HasKey(e => e.JobQueueId);
             entity.Property(e => e.JobQueueId).HasColumnName("jobqueueid").HasDefaultValueSql("gen_random_uuid()");
             entity.Property(e => e.JobExecutionId).HasColumnName("jobexecutionid").IsRequired();
