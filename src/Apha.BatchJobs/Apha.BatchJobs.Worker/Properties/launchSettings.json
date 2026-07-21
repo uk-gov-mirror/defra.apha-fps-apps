@@ -1,0 +1,16 @@
+{
+  "profiles": {
+    "MABArchive": {
+      "commandName": "Project",
+      "commandLineArgs": "MABArchive",
+      "environmentVariables": {
+        "BATCH_RUN_MODE": "Scheduled",
+        "DOTNET_ENVIRONMENT": "local"
+      }
+    },
+    "HealthCheck": {
+      "commandName": "Project",
+      "commandLineArgs": "HealthCheck"
+    }
+  }
+}

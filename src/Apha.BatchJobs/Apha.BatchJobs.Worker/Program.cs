@@ -42,10 +42,11 @@ if (string.Equals(requestedJobArg, BatchJobNames.HealthCheck, StringComparison.O
 
 var builder = Host.CreateApplicationBuilder(args);
 
+// appsettings.json, appsettings.{Environment}.json, and environment variables are already
+// loaded by Host.CreateApplicationBuilder above. Layer in the local-only override file, then
+// re-assert environment variables so they retain top precedence (required for ECS/container
+// config overrides in deployed environments).
 builder.Configuration
-    .SetBasePath(builder.Environment.ContentRootPath)
-    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
     .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false)
     .AddEnvironmentVariables();
 

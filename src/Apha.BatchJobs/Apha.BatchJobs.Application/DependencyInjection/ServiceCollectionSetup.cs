@@ -5,6 +5,7 @@ using Apha.BatchJobs.Application.Jobs.ManualJobs.YearEnd.Services;
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive;
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Services;
+using Apha.BatchJobs.Domain;
 using Apha.BatchJobs.Domain.Configuration;
 using Apha.BatchJobs.Domain.Entities;
 using Apha.BatchJobs.Domain.Enums;
@@ -38,7 +39,7 @@ public static class ServiceCollectionSetup
     /// <returns>A populated <see cref="IServiceCollection"/> ready for the host to build.</returns>
     public static IServiceCollection CreateDefaultServices(string? configurationBasePath = null)
     {
-        var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
+        var environment = EnvironmentResolver.GetEnvironmentName("Development");
         var basePath = configurationBasePath ?? Directory.GetCurrentDirectory();
 
         // Build configuration from appsettings.json and environment variables

@@ -1,4 +1,5 @@
 using Apha.BatchJobs.Application.Interfaces;
+using Apha.BatchJobs.Domain;
 using Apha.BatchJobs.Domain.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -69,7 +70,7 @@ public sealed class HealthCheckJobHandler : IBatchJob
         {
             // Phase 1: Validate configuration
             _logger.LogInformation("Phase 1: Validating configuration...");
-            var envName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Not Set";
+            var envName = EnvironmentResolver.GetEnvironmentName("Not Set");
             var executionMode = "LivenessOnly (NoDbDependency)";
             _logger.LogInformation("  Environment: {Environment}", envName);
             _logger.LogInformation("  Execution Mode: {ExecutionMode}", executionMode);

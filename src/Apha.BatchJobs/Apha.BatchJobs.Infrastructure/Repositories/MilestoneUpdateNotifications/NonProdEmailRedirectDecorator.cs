@@ -1,4 +1,5 @@
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Services;
+using Apha.BatchJobs.Domain;
 using Apha.BatchJobs.Domain.Configuration;
 using Apha.BatchJobs.Domain.Entities.MilestoneUpdateNotifications;
 using Microsoft.Extensions.Logging;
@@ -29,7 +30,7 @@ public sealed class NonProdEmailRedirectDecorator : IEmailService
         _inner = inner ?? throw new ArgumentNullException(nameof(inner));
         _settings = settings?.Value ?? new MilestoneNotificationsSettings();
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _environmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
+        _environmentName = EnvironmentResolver.GetEnvironmentName("Development");
     }
 
     /// <inheritdoc />
