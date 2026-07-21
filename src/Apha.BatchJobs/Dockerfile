@@ -9,10 +9,13 @@ LABEL uk.gov.defra.parent-image=defra-dotnetcore-development:${PARENT_VERSION}
 
 WORKDIR /home/dotnet/src
 
-# Build context is repository root; copy only BatchJobs solution tree.
+# Build context is repository root; copy the BatchJobs solution tree plus Apha.Common,
+# which Apha.BatchJobs.csproj references via a sibling ProjectReference
+# (..\Apha.Common\Apha.Common.csproj, i.e. /home/dotnet/Apha.Common relative to here).
 COPY --chown=root:dotnet --chmod=640 src/Apha.BatchJobs/ ./
+COPY --chown=root:dotnet --chmod=640 src/Apha.Common/ ../Apha.Common/
 USER root
-RUN find . -type d -exec chmod g+wx {} \;
+RUN find . ../Apha.Common -type d -exec chmod g+wx {} \;
 USER dotnet
 
 # Restore, build and publish the worker project.

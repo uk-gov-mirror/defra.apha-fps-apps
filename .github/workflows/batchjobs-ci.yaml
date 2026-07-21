@@ -8,6 +8,7 @@ on:
       - main
     paths:
       - 'src/Apha.BatchJobs/**'
+      - 'src/Apha.Common/**'
       - '.github/workflows/batchjobs-ci.yaml'
       - '.github/workflows/push-image-template.yaml'
 
