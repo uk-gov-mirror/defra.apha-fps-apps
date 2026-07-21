@@ -149,6 +149,7 @@ public static class ServiceCollectionSetup
         RegisterMabArchiveLoaders(services);
         services.AddScoped<IReloadFpsTotalsService, ReloadFpsTotalsService>();
         services.AddScoped<IMyFpsYearlyDataService, MyFpsYearlyDataService>();
+        services.AddScoped<IMabArchiveYearSelectionService, MabArchiveYearSelectionService>();
         services.AddScoped<IEmailNotificationService, EmailNotificationService>();
         services.AddScoped<MabArchiveLoadOrchestrator>();
 

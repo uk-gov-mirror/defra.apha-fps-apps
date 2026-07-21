@@ -14,6 +14,7 @@ public sealed class MabArchiveLoadOrchestrator
     private readonly IReloadFpsTotalsService _totalsService;
     private readonly IMyFpsYearlyDataService _dataService;
     private readonly IExecutionYearContext _executionYearContext;
+    private readonly IMabArchiveYearSelectionService _yearSelectionService;
     private readonly IEmailNotificationService _notificationService;
     private readonly ILogger<MabArchiveLoadOrchestrator> _logger;
 
@@ -22,57 +23,32 @@ public sealed class MabArchiveLoadOrchestrator
     /// </summary>
     /// <param name="totalsService">Service for rebuilding FPS source totals.</param>
     /// <param name="dataService">Service for archive delete/load/refresh operations.</param>
+    /// <param name="yearSelectionService">Service that resolves Open/Planned years from fps.tblyearmaster.</param>
     /// <param name="notificationService">Service used to send failure notifications.</param>
     /// <param name="logger">Logger instance.</param>
     public MabArchiveLoadOrchestrator(
         IReloadFpsTotalsService totalsService,
         IMyFpsYearlyDataService dataService,
         IExecutionYearContext executionYearContext,
+        IMabArchiveYearSelectionService yearSelectionService,
         IEmailNotificationService notificationService,
         ILogger<MabArchiveLoadOrchestrator> logger)
     {
         _totalsService = totalsService ?? throw new ArgumentNullException(nameof(totalsService));
         _dataService = dataService ?? throw new ArgumentNullException(nameof(dataService));
         _executionYearContext = executionYearContext ?? throw new ArgumentNullException(nameof(executionYearContext));
+        _yearSelectionService = yearSelectionService ?? throw new ArgumentNullException(nameof(yearSelectionService));
         _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>
-    /// Builds the execution context from the current execution date.
+    /// Resolves the execution context from fps.tblyearmaster (Open/Planned years).
     /// </summary>
-    /// <returns>Computed execution context for the current run window.</returns>
-    public MabArchiveExecutionContext BuildExecutionContext()
-    {
-        var utcNow = DateTime.UtcNow;
-
-        // Optional test hook for deterministic local verification of month-branch behavior.
-        var overrideUtcNow = Environment.GetEnvironmentVariable("MABARCHIVE_TEST_UTCNOW");
-        if (!string.IsNullOrWhiteSpace(overrideUtcNow)
-            && DateTime.TryParse(
-                overrideUtcNow,
-                System.Globalization.CultureInfo.InvariantCulture,
-                System.Globalization.DateTimeStyles.AdjustToUniversal | System.Globalization.DateTimeStyles.AssumeUniversal,
-                out var parsedUtcNow))
-        {
-            utcNow = parsedUtcNow;
-        }
-
-        var currentYear = utcNow.Year;
-        var currentMonth = utcNow.Month;
-        var previousYear = currentYear - 1;
-
-        // Month > 4 (after April): primary year is current year.
-        // Month <= 4 (April or earlier): primary year is previous year, with current-year partial refresh.
-        var primaryYear = currentMonth > 4 ? currentYear : previousYear;
-
-        return new MabArchiveExecutionContext(
-            CurrentYear: currentYear,
-            PreviousYear: previousYear,
-            CurrentMonth: currentMonth,
-            PrimaryYear: primaryYear,
-            IncludePartialRefreshYear: currentMonth <= 4);
-    }
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Resolved execution context for this run.</returns>
+    public Task<MabArchiveExecutionContext> ResolveExecutionContextAsync(CancellationToken cancellationToken)
+        => _yearSelectionService.GetProcessableYearsAsync(cancellationToken);
 
     /// <summary>
     /// Executes the MABArchive load orchestration within a single transaction.
@@ -90,46 +66,36 @@ public sealed class MabArchiveLoadOrchestrator
         using var scope = _logger.BeginScope(new Dictionary<string, object>
         {
             ["CorrelationId"] = correlationId,
-            ["PrimaryYear"] = context.PrimaryYear,
-            ["CurrentMonth"] = context.CurrentMonth,
-            ["IncludePartialRefresh"] = context.IncludePartialRefreshYear
+            ["OpenYear"] = context.OpenYear,
+            ["PlannedYear"] = context.PlannedYear ?? (object)"none"
         });
 
         _logger.LogInformation(
-            "MABArchive orchestration start | PrimaryYear={PrimaryYear} | CurrentMonth={CurrentMonth} | PartialRefreshIncluded={PartialRefresh}",
-            context.PrimaryYear,
-            context.CurrentMonth,
-            context.IncludePartialRefreshYear);
+            "MABArchive orchestration start | OpenYear={OpenYear} | PlannedYear={PlannedYear} | SelectionSource=fps.tblyearmaster",
+            context.OpenYear,
+            context.PlannedYear);
 
         try
         {
             await transactionWrapper(async () =>
             {
-                // Legacy parity: previous year full cycle is always attempted first.
-                await ExecuteFullYearCycleAsync(context.PreviousYear, cancellationToken);
+                _logger.LogInformation(
+                    "Starting MABArchive full processing | FpsYear={FpsYear} | YearStatus=Open",
+                    context.OpenYear);
+                await ExecuteFullYearCycleAsync(context.OpenYear, cancellationToken);
+                _logger.LogInformation(
+                    "Completed MABArchive full processing | FpsYear={FpsYear}",
+                    context.OpenYear);
 
-                if (context.CurrentMonth > 4)
+                if (context.PlannedYear.HasValue)
                 {
-                    // Legacy parity: after April, current year also runs full cycle.
-                    await ExecuteFullYearCycleAsync(context.CurrentYear, cancellationToken);
-                }
-                else
-                {
-                    // Legacy parity: before May, current year runs project-all-only refresh.
-                    _executionYearContext.FpsYear = context.CurrentYear;
-                    _executionYearContext.YearSource = "MABArchive.PartialRefresh";
-
-                    var currentYearAvailable = await _dataService.IsYearAvailableAsync(context.CurrentYear, cancellationToken);
-                    if (!currentYearAvailable)
-                    {
-                        _logger.LogInformation("Skipping current-year partial refresh because year {Year} is not available", context.CurrentYear);
-                    }
-                    else
-                    {
-                        _logger.LogInformation("Executing partial refresh for current year {CurrentYear}", context.CurrentYear);
-                        var refreshedRows = await _dataService.RefreshProjectAllOnlyAsync(context.CurrentYear, cancellationToken);
-                        _logger.LogInformation("Refreshed project all for year {CurrentYear} | RowsRefreshed={RowsRefreshed}", context.CurrentYear, refreshedRows);
-                    }
+                    _logger.LogInformation(
+                        "Starting MABArchive project-only processing | FpsYear={FpsYear} | YearStatus=Planned",
+                        context.PlannedYear.Value);
+                    await ExecuteProjectOnlyRefreshAsync(context.PlannedYear.Value, cancellationToken);
+                    _logger.LogInformation(
+                        "Completed MABArchive project-only processing | FpsYear={FpsYear}",
+                        context.PlannedYear.Value);
                 }
 
                 _logger.LogInformation("MABArchive orchestration completed successfully");
@@ -166,16 +132,9 @@ public sealed class MabArchiveLoadOrchestrator
     private async Task ExecuteFullYearCycleAsync(int year, CancellationToken cancellationToken)
     {
         _executionYearContext.FpsYear = year;
-        _executionYearContext.YearSource = "MABArchive.FullYearCycle";
+        _executionYearContext.YearSource = "MABArchive.OpenYearFullCycle";
 
-        var isAvailable = await _dataService.IsYearAvailableAsync(year, cancellationToken);
-        if (!isAvailable)
-        {
-            _logger.LogInformation("Skipping year {Year} full cycle because year is not available", year);
-            return;
-        }
-
-        _logger.LogInformation("Executing full cycle for year {Year}", year);
+        _logger.LogInformation("Executing full cycle for Open year {Year}", year);
 
         var totalsRows = await _totalsService.RebuildSourceTotalsAsync(year, cancellationToken);
         _logger.LogInformation("Rebuilt source totals for year {Year} | RowsInserted={RowsInserted}", year, totalsRows);
@@ -185,5 +144,16 @@ public sealed class MabArchiveLoadOrchestrator
 
         var loadedRows = await _dataService.LoadYearDataAsync(year, cancellationToken);
         _logger.LogInformation("Loaded archive data for year {Year} | RowsLoaded={RowsLoaded}", year, loadedRows);
+    }
+
+    private async Task ExecuteProjectOnlyRefreshAsync(int year, CancellationToken cancellationToken)
+    {
+        _executionYearContext.FpsYear = year;
+        _executionYearContext.YearSource = "MABArchive.PlannedYearProjectRefresh";
+
+        _logger.LogInformation("Executing project-only refresh for Planned year {Year}", year);
+
+        var refreshedRows = await _dataService.RefreshProjectsOnlyAsync(year, cancellationToken);
+        _logger.LogInformation("Refreshed projects for year {Year} | RowsRefreshed={RowsRefreshed}", year, refreshedRows);
     }
 }

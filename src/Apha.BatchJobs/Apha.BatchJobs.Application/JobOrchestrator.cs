@@ -519,13 +519,16 @@ public sealed class JobOrchestrator : IJobOrchestrator
     /// </summary>
     private void ThrowWithStructuredLog(Exception exception, string jobName, Guid jobQueueId, Guid jobExecutionId)
     {
+        // Only Sql and General have a CloudWatch alarm wired up for the initial implementation.
+        // Configuration and email failures (BusinessEmailException) intentionally roll up into
+        // General rather than getting their own unwatched alarm channel; email may be split out
+        // later if the monthly notification job needs a dedicated alert once live sending ships.
         var errorType = exception switch
         {
             JobValidationException => _configuration["ExceptionTypes:Validation"] ?? "FPSBatchJobs.VALIDATION_EXCEPTION",
             PostgresException => _configuration["ExceptionTypes:Sql"] ?? "FPSBatchJobs.SQL_EXCEPTION",
             NpgsqlException => _configuration["ExceptionTypes:Sql"] ?? "FPSBatchJobs.SQL_EXCEPTION",
             JobLockException => _configuration["ExceptionTypes:Concurrency"] ?? "FPSBatchJobs.CONCURRENCY_EXCEPTION",
-            BusinessEmailException => _configuration["ExceptionTypes:Email"] ?? "FPSBatchJobs.EMAIL_EXCEPTION",
             _ => _configuration["ExceptionTypes:General"] ?? "FPSBatchJobs.GENERAL_EXCEPTION"
         };
 

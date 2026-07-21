@@ -7,13 +7,15 @@ using NSubstitute;
 namespace Apha.BatchJobs.UnitTests;
 
 /// <summary>
-/// Task 7 parity tests for baseline sp_LoadFromFPS sequencing behavior.
+/// Orchestration tests for status-driven Open/Planned year processing
+/// (docs/mabarchive-year-selection-processing-spec.md).
 /// </summary>
 public sealed class MabArchiveLoadOrchestratorParityTests
 {
     private readonly IReloadFpsTotalsService _totalsService = Substitute.For<IReloadFpsTotalsService>();
     private readonly IMyFpsYearlyDataService _dataService = Substitute.For<IMyFpsYearlyDataService>();
     private readonly IExecutionYearContext _executionYearContext = Substitute.For<IExecutionYearContext>();
+    private readonly IMabArchiveYearSelectionService _yearSelectionService = Substitute.For<IMabArchiveYearSelectionService>();
     private readonly IEmailNotificationService _emailNotificationService = Substitute.For<IEmailNotificationService>();
 
     private MabArchiveLoadOrchestrator CreateSubject()
@@ -22,140 +24,57 @@ public sealed class MabArchiveLoadOrchestratorParityTests
             _totalsService,
             _dataService,
             _executionYearContext,
+            _yearSelectionService,
             _emailNotificationService,
             NullLogger<MabArchiveLoadOrchestrator>.Instance);
     }
 
     [Fact]
-    public async Task ExecuteAsync_WhenMonthGreaterThan4_RunsPreviousYearThenCurrentYearFullCycle()
+    public async Task ExecuteAsync_WhenPlannedYearPresent_RunsOpenYearFullCycleThenPlannedYearProjectOnly()
     {
         var subject = CreateSubject();
         var ct = CancellationToken.None;
 
-        var previousYear = 2025;
-        var currentYear = 2026;
-        var context = new MabArchiveExecutionContext(
-            CurrentYear: currentYear,
-            PreviousYear: previousYear,
-            CurrentMonth: 5,
-            PrimaryYear: currentYear,
-            IncludePartialRefreshYear: false);
-
-        _dataService.IsYearAvailableAsync(Arg.Any<int>(), ct).Returns(true, true);
+        var openYear = 2026;
+        var plannedYear = 2027;
+        var context = new MabArchiveExecutionContext(openYear, plannedYear);
 
         Func<Func<Task>, Task> transactionWrapper = work => work();
 
-        await subject.ExecuteAsync("run-gt4", context, transactionWrapper, ct);
+        await subject.ExecuteAsync("run-open-planned", context, transactionWrapper, ct);
 
         Received.InOrder(() =>
         {
-            _ = _dataService.IsYearAvailableAsync(previousYear, ct);
-            _ = _totalsService.RebuildSourceTotalsAsync(previousYear, ct);
-            _ = _dataService.DeleteYearDataAsync(previousYear, ct);
-            _ = _dataService.LoadYearDataAsync(previousYear, ct);
-
-            _ = _dataService.IsYearAvailableAsync(currentYear, ct);
-            _ = _totalsService.RebuildSourceTotalsAsync(currentYear, ct);
-            _ = _dataService.DeleteYearDataAsync(currentYear, ct);
-            _ = _dataService.LoadYearDataAsync(currentYear, ct);
+            _ = _totalsService.RebuildSourceTotalsAsync(openYear, ct);
+            _ = _dataService.DeleteYearDataAsync(openYear, ct);
+            _ = _dataService.LoadYearDataAsync(openYear, ct);
+            _ = _dataService.RefreshProjectsOnlyAsync(plannedYear, ct);
         });
 
-        await _dataService.DidNotReceive().RefreshProjectAllOnlyAsync(Arg.Any<int>(), ct);
+        // Spec §22 scenario 8: Planned-year transactional data must never be touched.
+        await _totalsService.DidNotReceive().RebuildSourceTotalsAsync(plannedYear, ct);
+        await _dataService.DidNotReceive().DeleteYearDataAsync(plannedYear, ct);
+        await _dataService.DidNotReceive().LoadYearDataAsync(plannedYear, ct);
     }
 
     [Fact]
-    public async Task ExecuteAsync_WhenMonthLessOrEqual4_RunsPreviousYearFullCycleThenCurrentYearProjectAllOnly()
+    public async Task ExecuteAsync_WhenNoPlannedYear_RunsOpenYearOnlyAndSkipsProjectOnlyRefresh()
     {
         var subject = CreateSubject();
         var ct = CancellationToken.None;
 
-        var previousYear = 2025;
-        var currentYear = 2026;
-        var context = new MabArchiveExecutionContext(
-            CurrentYear: currentYear,
-            PreviousYear: previousYear,
-            CurrentMonth: 4,
-            PrimaryYear: previousYear,
-            IncludePartialRefreshYear: true);
-
-        _dataService.IsYearAvailableAsync(Arg.Any<int>(), ct).Returns(true, true);
+        var openYear = 2026;
+        var context = new MabArchiveExecutionContext(openYear, null);
 
         Func<Func<Task>, Task> transactionWrapper = work => work();
 
-        await subject.ExecuteAsync("run-le4", context, transactionWrapper, ct);
+        await subject.ExecuteAsync("run-open-only", context, transactionWrapper, ct);
 
-        Received.InOrder(() =>
-        {
-            _ = _dataService.IsYearAvailableAsync(previousYear, ct);
-            _ = _totalsService.RebuildSourceTotalsAsync(previousYear, ct);
-            _ = _dataService.DeleteYearDataAsync(previousYear, ct);
-            _ = _dataService.LoadYearDataAsync(previousYear, ct);
+        await _totalsService.Received(1).RebuildSourceTotalsAsync(openYear, ct);
+        await _dataService.Received(1).DeleteYearDataAsync(openYear, ct);
+        await _dataService.Received(1).LoadYearDataAsync(openYear, ct);
 
-            _ = _dataService.IsYearAvailableAsync(currentYear, ct);
-            _ = _dataService.RefreshProjectAllOnlyAsync(currentYear, ct);
-        });
-
-        await _totalsService.Received(1).RebuildSourceTotalsAsync(previousYear, ct);
-        await _dataService.Received(1).DeleteYearDataAsync(previousYear, ct);
-        await _dataService.Received(1).LoadYearDataAsync(previousYear, ct);
-    }
-
-    [Fact]
-    public async Task ExecuteAsync_WhenPreviousYearUnavailable_SkipsPreviousYearAndStillProcessesCurrentBranch()
-    {
-        var subject = CreateSubject();
-        var ct = CancellationToken.None;
-
-        var previousYear = 2025;
-        var currentYear = 2026;
-        var context = new MabArchiveExecutionContext(
-            CurrentYear: currentYear,
-            PreviousYear: previousYear,
-            CurrentMonth: 5,
-            PrimaryYear: currentYear,
-            IncludePartialRefreshYear: false);
-
-        _dataService.IsYearAvailableAsync(Arg.Any<int>(), ct).Returns(false, true);
-
-        Func<Func<Task>, Task> transactionWrapper = work => work();
-
-        await subject.ExecuteAsync("run-prev-missing", context, transactionWrapper, ct);
-
-        await _totalsService.Received(1).RebuildSourceTotalsAsync(currentYear, ct);
-        await _dataService.Received(1).DeleteYearDataAsync(currentYear, ct);
-        await _dataService.Received(1).LoadYearDataAsync(currentYear, ct);
-
-        await _totalsService.DidNotReceive().RebuildSourceTotalsAsync(previousYear, ct);
-        await _dataService.DidNotReceive().DeleteYearDataAsync(previousYear, ct);
-        await _dataService.DidNotReceive().LoadYearDataAsync(previousYear, ct);
-    }
-
-    [Fact]
-    public async Task ExecuteAsync_WhenCurrentYearUnavailableInPartialRefresh_SkipsProjectAllRefresh()
-    {
-        var subject = CreateSubject();
-        var ct = CancellationToken.None;
-
-        var previousYear = 2025;
-        var currentYear = 2026;
-        var context = new MabArchiveExecutionContext(
-            CurrentYear: currentYear,
-            PreviousYear: previousYear,
-            CurrentMonth: 3,
-            PrimaryYear: previousYear,
-            IncludePartialRefreshYear: true);
-
-        _dataService.IsYearAvailableAsync(Arg.Any<int>(), ct).Returns(true, false);
-
-        Func<Func<Task>, Task> transactionWrapper = work => work();
-
-        await subject.ExecuteAsync("run-current-missing", context, transactionWrapper, ct);
-
-        await _totalsService.Received(1).RebuildSourceTotalsAsync(previousYear, ct);
-        await _dataService.Received(1).DeleteYearDataAsync(previousYear, ct);
-        await _dataService.Received(1).LoadYearDataAsync(previousYear, ct);
-
-        await _dataService.DidNotReceive().RefreshProjectAllOnlyAsync(currentYear, ct);
+        await _dataService.DidNotReceiveWithAnyArgs().RefreshProjectsOnlyAsync(default, default);
     }
 
     [Fact]
@@ -164,15 +83,9 @@ public sealed class MabArchiveLoadOrchestratorParityTests
         var subject = CreateSubject();
         var ct = CancellationToken.None;
 
-        var context = new MabArchiveExecutionContext(
-            CurrentYear: 2026,
-            PreviousYear: 2025,
-            CurrentMonth: 6,
-            PrimaryYear: 2026,
-            IncludePartialRefreshYear: false);
+        var context = new MabArchiveExecutionContext(2026, 2027);
 
-        _dataService.IsYearAvailableAsync(Arg.Any<int>(), ct).Returns(true);
-        _totalsService.RebuildSourceTotalsAsync(2025, ct)
+        _totalsService.RebuildSourceTotalsAsync(2026, ct)
             .Returns(Task.FromException<int>(new InvalidOperationException("boom")));
 
         Func<Func<Task>, Task> transactionWrapper = work => work();
@@ -188,5 +101,21 @@ public sealed class MabArchiveLoadOrchestratorParityTests
                 Arg.Is<string>(m => m.Contains("boom")),
                 Arg.Any<DateTime>(),
                 ct);
+
+        // The Planned year must never be reached once the Open year cycle fails.
+        await _dataService.DidNotReceiveWithAnyArgs().RefreshProjectsOnlyAsync(default, default);
+    }
+
+    [Fact]
+    public async Task ResolveExecutionContextAsync_DelegatesToYearSelectionService()
+    {
+        var subject = CreateSubject();
+        var ct = CancellationToken.None;
+        var expected = new MabArchiveExecutionContext(2026, 2027);
+        _yearSelectionService.GetProcessableYearsAsync(ct).Returns(expected);
+
+        var actual = await subject.ResolveExecutionContextAsync(ct);
+
+        Assert.Equal(expected, actual);
     }
 }

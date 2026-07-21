@@ -6,14 +6,6 @@ namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
 public interface IMyFpsYearlyDataService
 {
     /// <summary>
-    /// Checks whether the specified FPS year is registered and available for processing.
-    /// </summary>
-    /// <param name="year">The FPS year to check.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>True when the year is available; otherwise false.</returns>
-    Task<bool> IsYearAvailableAsync(int year, CancellationToken cancellationToken);
-
-    /// <summary>
     /// Deletes all archive data for the specified year in dependency order.
     /// </summary>
     /// <param name="year">The year to delete archive data for.</param>
@@ -30,11 +22,13 @@ public interface IMyFpsYearlyDataService
     Task<int> LoadYearDataAsync(int year, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Refreshes only the my_tlkpproject_all cross-reference table for the specified year.
-    /// Used for partial refresh when month ≤ 4.
+    /// Refreshes project master (g_tlkpproject), project lookup (my_tlkpproject), and
+    /// project cross-reference (my_tlkpproject_all) data for the specified year, without
+    /// touching FPS totals or MABArchive transactional archive data. Used for the
+    /// Planned-year project-only refresh.
     /// </summary>
-    /// <param name="year">The year to refresh project all for.</param>
+    /// <param name="year">The year to refresh project data for.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Number of rows affected.</returns>
-    Task<int> RefreshProjectAllOnlyAsync(int year, CancellationToken cancellationToken);
+    Task<int> RefreshProjectsOnlyAsync(int year, CancellationToken cancellationToken);
 }

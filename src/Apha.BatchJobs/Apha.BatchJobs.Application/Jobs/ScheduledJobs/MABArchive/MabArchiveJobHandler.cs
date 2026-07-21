@@ -11,8 +11,9 @@ namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive;
 
 /// <summary>
 /// MABArchive scheduled batch job handler.
-/// Loads FPS data from the current and previous calendar years to support financial year reporting
-/// into the MABArchive schema within PostgreSQL database.
+/// Loads FPS data into the MABArchive schema within PostgreSQL database. The FPS year(s)
+/// processed are resolved from fps.tblyearmaster (Open/Planned status), never from the
+/// system date - see docs/mabarchive-year-selection-processing-spec.md.
 /// Runs weekly on weekdays at 8:00 PM UTC.
 ///
 /// Lock lifecycle is owned exclusively by JobOrchestrator. This handler must not
@@ -73,11 +74,11 @@ public sealed class MabArchiveJobHandler : IBatchJob
         try
         {
             var orchestrator = _serviceProvider.GetRequiredService<MabArchiveLoadOrchestrator>();
-            var context = orchestrator.BuildExecutionContext();
+            var context = await orchestrator.ResolveExecutionContextAsync(cancellationToken);
             _logger.LogInformation(
-                "Execution context built | PrimaryYear={PrimaryYear} | CurrentMonth={CurrentMonth}",
-                context.PrimaryYear,
-                context.CurrentMonth);
+                "Execution context resolved from fps.tblyearmaster | OpenYear={OpenYear} | PlannedYear={PlannedYear}",
+                context.OpenYear,
+                context.PlannedYear);
 
             // Transaction wrapper using the provided context
             async Task TransactionWrapper(Func<Task> action)

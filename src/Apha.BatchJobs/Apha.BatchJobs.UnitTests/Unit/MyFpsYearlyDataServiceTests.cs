@@ -133,35 +133,6 @@ public sealed class MyFpsYearlyDataServiceTests
     }
 
     [Fact]
-    public async Task IsYearAvailableAsync_WhenYearClearlyInvalid_ShouldReturnFalse()
-    {
-        await using var context = CreatePostgresContext(GetConnectionString());
-        await AssertCanConnectAsync(context);
-
-        var subject = new MyFpsYearlyDataService(
-            context,
-            NullLogger<MyFpsYearlyDataService>.Instance,
-            CreateSequentialLoaders(1, 24));
-
-        var exists = await subject.IsYearAvailableAsync(-9999, CancellationToken.None);
-
-        Assert.False(exists);
-    }
-
-    [Fact]
-    public async Task IsYearAvailableAsync_WhenProviderDoesNotSupportSqlQuery_ShouldRethrow()
-    {
-        await using var context = CreateContext();
-
-        var subject = new MyFpsYearlyDataService(
-            context,
-            NullLogger<MyFpsYearlyDataService>.Instance,
-            CreateSequentialLoaders(1, 24));
-
-        await Assert.ThrowsAsync<InvalidOperationException>(() => subject.IsYearAvailableAsync(2026, CancellationToken.None));
-    }
-
-    [Fact]
     public async Task DeleteYearDataAsync_WhenYearHasNoRows_ShouldReturnZero_AndRollback()
     {
         await using var context = CreatePostgresContext(GetConnectionString());
@@ -193,20 +164,20 @@ public sealed class MyFpsYearlyDataServiceTests
     }
 
     [Fact]
-    public async Task RefreshProjectAllOnlyAsync_WhenLoader24ReturnsRows_ShouldReturnLoaderRows_AndRollback()
+    public async Task RefreshProjectsOnlyAsync_WhenLoaders2And3And24ReturnRows_ShouldAggregateRows_AndRollback()
     {
         await using var context = CreatePostgresContext(GetConnectionString());
         await AssertCanConnectAsync(context);
 
-        var invokedYears = new List<int>();
+        var invokedSequenceYears = new Dictionary<int, int>();
 
         var loaders = Enumerable.Range(1, 24)
             .Select(i => CreateLoader(i, $"Loader-{i}", (_, year, _) =>
             {
-                if (i == 24)
+                if (i is 2 or 3 or 24)
                 {
-                    invokedYears.Add(year);
-                    return Task.FromResult(7);
+                    invokedSequenceYears[i] = year;
+                    return Task.FromResult(i);
                 }
 
                 return Task.FromResult(0);
@@ -219,15 +190,18 @@ public sealed class MyFpsYearlyDataServiceTests
             loaders);
 
         await using var transaction = await context.Database.BeginTransactionAsync();
-        var rows = await subject.RefreshProjectAllOnlyAsync(1900, CancellationToken.None);
+        var rows = await subject.RefreshProjectsOnlyAsync(1900, CancellationToken.None);
         await transaction.RollbackAsync();
 
-        Assert.Equal(7, rows);
-        Assert.Equal(new[] { 1900 }, invokedYears);
+        Assert.Equal(2 + 3 + 24, rows);
+        Assert.Equal(new Dictionary<int, int> { [2] = 1900, [3] = 1900, [24] = 1900 }, invokedSequenceYears);
+
+        // Only loaders 2, 3, and 24 (project master/lookup/cross-reference) run; nothing else does.
+        Assert.Equal(3, invokedSequenceYears.Count);
     }
 
     [Fact]
-    public async Task RefreshProjectAllOnlyAsync_WhenProviderDoesNotSupportExecuteDelete_ShouldRethrow()
+    public async Task RefreshProjectsOnlyAsync_WhenProviderDoesNotSupportExecuteDelete_ShouldRethrow()
     {
         await using var context = CreateContext();
 
@@ -236,7 +210,7 @@ public sealed class MyFpsYearlyDataServiceTests
             NullLogger<MyFpsYearlyDataService>.Instance,
             CreateSequentialLoaders(1, 24));
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => subject.RefreshProjectAllOnlyAsync(2026, CancellationToken.None));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => subject.RefreshProjectsOnlyAsync(2026, CancellationToken.None));
     }
 
     [Fact]

@@ -159,7 +159,9 @@ try
 catch (JobValidationException ex)
 {
     var logger = loggerFactory?.CreateLogger("BatchJobs.Error");
-    var configExceptionType = builder.Configuration["ExceptionTypes:Configuration"] ?? "FPSBatchJobs.CONFIGURATION_EXCEPTION";
+    // Configuration failures are classified under General for the initial alarm implementation —
+    // only Sql and General have a CloudWatch alarm wired up (see batch-worker-logging-implementation-spec.md).
+    var configExceptionType = builder.Configuration["ExceptionTypes:General"] ?? "FPSBatchJobs.GENERAL_EXCEPTION";
     logger?.LogError(ex, "{ExceptionType} Configuration/validation error: {ErrorMessage}",
         $"[[{configExceptionType}]]",
         ex.Message);

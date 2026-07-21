@@ -122,172 +122,160 @@ public sealed class MabArchiveJobHandlerTests
     [Fact]
     public async Task ExecuteAsync_WhenRunSucceeds_ShouldGenerateCorrelationAndExecuteOrchestrator()
     {
-        var originalOverride = Environment.GetEnvironmentVariable("MABARCHIVE_TEST_UTCNOW");
-        Environment.SetEnvironmentVariable("MABARCHIVE_TEST_UTCNOW", "2026-05-20T00:00:00Z");
+        var dataService = Substitute.For<IMyFpsYearlyDataService>();
+        dataService.DeleteYearDataAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(0);
+        dataService.LoadYearDataAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(0);
+        dataService.RefreshProjectsOnlyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(0);
 
-        try
-        {
-            var dataService = Substitute.For<IMyFpsYearlyDataService>();
-            dataService.IsYearAvailableAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(true);
-            dataService.DeleteYearDataAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(0);
-            dataService.LoadYearDataAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(0);
+        var totalsService = Substitute.For<IReloadFpsTotalsService>();
+        totalsService.RebuildSourceTotalsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(0);
 
-            var totalsService = Substitute.For<IReloadFpsTotalsService>();
-            totalsService.RebuildSourceTotalsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(0);
+        var yearSelectionService = Substitute.For<IMabArchiveYearSelectionService>();
+        yearSelectionService.GetProcessableYearsAsync(Arg.Any<CancellationToken>())
+            .Returns(new MabArchiveExecutionContext(2026, 2027));
 
-            var notificationService = Substitute.For<IEmailNotificationService>();
-            var executionYearContext = new ExecutionYearContext();
+        var notificationService = Substitute.For<IEmailNotificationService>();
+        var executionYearContext = new ExecutionYearContext();
 
-            var orchestrator = new MabArchiveLoadOrchestrator(
-                totalsService,
-                dataService,
-                executionYearContext,
-                notificationService,
-                NullLogger<MabArchiveLoadOrchestrator>.Instance);
+        var orchestrator = new MabArchiveLoadOrchestrator(
+            totalsService,
+            dataService,
+            executionYearContext,
+            yearSelectionService,
+            notificationService,
+            NullLogger<MabArchiveLoadOrchestrator>.Instance);
 
-            var serviceProvider = new ServiceCollection()
-                .AddSingleton(orchestrator)
-                .BuildServiceProvider();
+        var serviceProvider = new ServiceCollection()
+            .AddSingleton(orchestrator)
+            .BuildServiceProvider();
 
-            var correlationService = Substitute.For<ICorrelationService>();
-            correlationService.GetCorrelationId().Returns((string?)null);
-            correlationService.GenerateCorrelationId().Returns("cid-wave1-success");
+        var correlationService = Substitute.For<ICorrelationService>();
+        correlationService.GetCorrelationId().Returns((string?)null);
+        correlationService.GenerateCorrelationId().Returns("cid-wave1-success");
 
-            var dbContextFactory = CreateDbContextFactory(GetConnectionString());
-            await AssertCanConnectAsync(dbContextFactory);
+        var dbContextFactory = CreateDbContextFactory(GetConnectionString());
+        await AssertCanConnectAsync(dbContextFactory);
 
-            var subject = new MabArchiveJobHandler(
-                dbContextFactory,
-                serviceProvider,
-                correlationService,
-                NullLogger<MabArchiveJobHandler>.Instance,
-                Options.Create(new MabArchiveSettings()));
+        var subject = new MabArchiveJobHandler(
+            dbContextFactory,
+            serviceProvider,
+            correlationService,
+            NullLogger<MabArchiveJobHandler>.Instance,
+            Options.Create(new MabArchiveSettings()));
 
-            await subject.ExecuteAsync(CancellationToken.None);
+        await subject.ExecuteAsync(CancellationToken.None);
 
-            correlationService.Received(1).GenerateCorrelationId();
+        correlationService.Received(1).GenerateCorrelationId();
 
-            await dataService.Received(1).IsYearAvailableAsync(2025, Arg.Any<CancellationToken>());
-            await dataService.Received(1).IsYearAvailableAsync(2026, Arg.Any<CancellationToken>());
-            await dataService.Received(1).DeleteYearDataAsync(2025, Arg.Any<CancellationToken>());
-            await dataService.Received(1).DeleteYearDataAsync(2026, Arg.Any<CancellationToken>());
-            await dataService.Received(1).LoadYearDataAsync(2025, Arg.Any<CancellationToken>());
-            await dataService.Received(1).LoadYearDataAsync(2026, Arg.Any<CancellationToken>());
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable("MABARCHIVE_TEST_UTCNOW", originalOverride);
-        }
+        await totalsService.Received(1).RebuildSourceTotalsAsync(2026, Arg.Any<CancellationToken>());
+        await dataService.Received(1).DeleteYearDataAsync(2026, Arg.Any<CancellationToken>());
+        await dataService.Received(1).LoadYearDataAsync(2026, Arg.Any<CancellationToken>());
+        await dataService.Received(1).RefreshProjectsOnlyAsync(2027, Arg.Any<CancellationToken>());
+        await totalsService.DidNotReceive().RebuildSourceTotalsAsync(2027, Arg.Any<CancellationToken>());
+        await dataService.DidNotReceive().DeleteYearDataAsync(2027, Arg.Any<CancellationToken>());
+        await dataService.DidNotReceive().LoadYearDataAsync(2027, Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task ExecuteAsync_WhenOrchestratorWorkFails_ShouldRethrow()
     {
-        var originalOverride = Environment.GetEnvironmentVariable("MABARCHIVE_TEST_UTCNOW");
-        Environment.SetEnvironmentVariable("MABARCHIVE_TEST_UTCNOW", "2026-05-20T00:00:00Z");
+        var dataService = Substitute.For<IMyFpsYearlyDataService>();
 
-        try
-        {
-            var dataService = Substitute.For<IMyFpsYearlyDataService>();
-            dataService
-                .IsYearAvailableAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
-                .Returns(Task.FromException<bool>(new InvalidOperationException("boom")));
+        var totalsService = Substitute.For<IReloadFpsTotalsService>();
+        totalsService
+            .RebuildSourceTotalsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromException<int>(new InvalidOperationException("boom")));
 
-            var totalsService = Substitute.For<IReloadFpsTotalsService>();
-            var notificationService = Substitute.For<IEmailNotificationService>();
-            var executionYearContext = new ExecutionYearContext();
+        var yearSelectionService = Substitute.For<IMabArchiveYearSelectionService>();
+        yearSelectionService.GetProcessableYearsAsync(Arg.Any<CancellationToken>())
+            .Returns(new MabArchiveExecutionContext(2026, null));
 
-            var orchestrator = new MabArchiveLoadOrchestrator(
-                totalsService,
-                dataService,
-                executionYearContext,
-                notificationService,
-                NullLogger<MabArchiveLoadOrchestrator>.Instance);
+        var notificationService = Substitute.For<IEmailNotificationService>();
+        var executionYearContext = new ExecutionYearContext();
 
-            var serviceProvider = new ServiceCollection()
-                .AddSingleton(orchestrator)
-                .BuildServiceProvider();
+        var orchestrator = new MabArchiveLoadOrchestrator(
+            totalsService,
+            dataService,
+            executionYearContext,
+            yearSelectionService,
+            notificationService,
+            NullLogger<MabArchiveLoadOrchestrator>.Instance);
 
-            var correlationService = Substitute.For<ICorrelationService>();
-            correlationService.GetCorrelationId().Returns("cid-wave1-fail");
+        var serviceProvider = new ServiceCollection()
+            .AddSingleton(orchestrator)
+            .BuildServiceProvider();
 
-            var dbContextFactory = CreateDbContextFactory(GetConnectionString());
-            await AssertCanConnectAsync(dbContextFactory);
+        var correlationService = Substitute.For<ICorrelationService>();
+        correlationService.GetCorrelationId().Returns("cid-wave1-fail");
 
-            var subject = new MabArchiveJobHandler(
-                dbContextFactory,
-                serviceProvider,
-                correlationService,
-                NullLogger<MabArchiveJobHandler>.Instance,
-                Options.Create(new MabArchiveSettings()));
+        var dbContextFactory = CreateDbContextFactory(GetConnectionString());
+        await AssertCanConnectAsync(dbContextFactory);
 
-            var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => subject.ExecuteAsync(CancellationToken.None));
+        var subject = new MabArchiveJobHandler(
+            dbContextFactory,
+            serviceProvider,
+            correlationService,
+            NullLogger<MabArchiveJobHandler>.Instance,
+            Options.Create(new MabArchiveSettings()));
 
-            Assert.Equal("boom", ex.Message);
-            await notificationService.Received(1)
-                .SendFailureNotificationAsync(
-                    "cid-wave1-fail",
-                    "MABArchive",
-                    "boom",
-                    Arg.Any<DateTime>(),
-                    CancellationToken.None);
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable("MABARCHIVE_TEST_UTCNOW", originalOverride);
-        }
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => subject.ExecuteAsync(CancellationToken.None));
+
+        Assert.Equal("boom", ex.Message);
+        await notificationService.Received(1)
+            .SendFailureNotificationAsync(
+                "cid-wave1-fail",
+                "MABArchive",
+                "boom",
+                Arg.Any<DateTime>(),
+                CancellationToken.None);
     }
 
     [Fact]
     public async Task ExecuteAsync_WhenCancellationRequested_ShouldRethrowOperationCanceledException()
     {
-        var originalOverride = Environment.GetEnvironmentVariable("MABARCHIVE_TEST_UTCNOW");
-        Environment.SetEnvironmentVariable("MABARCHIVE_TEST_UTCNOW", "2026-05-20T00:00:00Z");
+        var dataService = Substitute.For<IMyFpsYearlyDataService>();
 
-        try
-        {
-            var dataService = Substitute.For<IMyFpsYearlyDataService>();
-            dataService
-                .IsYearAvailableAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
-                .Returns(callInfo => Task.FromCanceled<bool>((CancellationToken)callInfo[1]));
+        var totalsService = Substitute.For<IReloadFpsTotalsService>();
+        totalsService
+            .RebuildSourceTotalsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo => Task.FromCanceled<int>((CancellationToken)callInfo[1]));
 
-            var totalsService = Substitute.For<IReloadFpsTotalsService>();
-            var notificationService = Substitute.For<IEmailNotificationService>();
-            var executionYearContext = new ExecutionYearContext();
+        var yearSelectionService = Substitute.For<IMabArchiveYearSelectionService>();
+        yearSelectionService.GetProcessableYearsAsync(Arg.Any<CancellationToken>())
+            .Returns(new MabArchiveExecutionContext(2026, null));
 
-            var orchestrator = new MabArchiveLoadOrchestrator(
-                totalsService,
-                dataService,
-                executionYearContext,
-                notificationService,
-                NullLogger<MabArchiveLoadOrchestrator>.Instance);
+        var notificationService = Substitute.For<IEmailNotificationService>();
+        var executionYearContext = new ExecutionYearContext();
 
-            var serviceProvider = new ServiceCollection()
-                .AddSingleton(orchestrator)
-                .BuildServiceProvider();
+        var orchestrator = new MabArchiveLoadOrchestrator(
+            totalsService,
+            dataService,
+            executionYearContext,
+            yearSelectionService,
+            notificationService,
+            NullLogger<MabArchiveLoadOrchestrator>.Instance);
 
-            var correlationService = Substitute.For<ICorrelationService>();
-            correlationService.GetCorrelationId().Returns("cid-wave2-cancel");
+        var serviceProvider = new ServiceCollection()
+            .AddSingleton(orchestrator)
+            .BuildServiceProvider();
 
-            var dbContextFactory = CreateDbContextFactory(GetConnectionString());
-            await AssertCanConnectAsync(dbContextFactory);
+        var correlationService = Substitute.For<ICorrelationService>();
+        correlationService.GetCorrelationId().Returns("cid-wave2-cancel");
 
-            var subject = new MabArchiveJobHandler(
-                dbContextFactory,
-                serviceProvider,
-                correlationService,
-                NullLogger<MabArchiveJobHandler>.Instance,
-                Options.Create(new MabArchiveSettings()));
+        var dbContextFactory = CreateDbContextFactory(GetConnectionString());
+        await AssertCanConnectAsync(dbContextFactory);
 
-            using var cts = new CancellationTokenSource();
-            cts.Cancel();
+        var subject = new MabArchiveJobHandler(
+            dbContextFactory,
+            serviceProvider,
+            correlationService,
+            NullLogger<MabArchiveJobHandler>.Instance,
+            Options.Create(new MabArchiveSettings()));
 
-            await Assert.ThrowsAsync<OperationCanceledException>(() => subject.ExecuteAsync(cts.Token));
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable("MABARCHIVE_TEST_UTCNOW", originalOverride);
-        }
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => subject.ExecuteAsync(cts.Token));
     }
 
     private static string GetConnectionString()
