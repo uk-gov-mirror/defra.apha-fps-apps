@@ -2,6 +2,7 @@ using Apha.BatchJobs.Application.Interfaces;
 using Apha.BatchJobs.Application.DependencyInjection;
 using Apha.BatchJobs.Application.Jobs.ManualJobs.YearEnd.Services;
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
+using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -189,6 +190,47 @@ public sealed class ServiceCollectionSetupTests
                 "FinalValidationStep"
             },
             steps.Select(s => s.Name));
+    }
+
+    [Fact]
+    public void ConfigureBatchJobServices_ShouldRegisterEmailTemplateRenderer()
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:FPSConnectionString"] = "Host=localhost;Port=5432;Database=batch_jobs_foundation_db;Username=postgres;Password=LOCAL_DB_PASSWORD"
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+        ServiceCollectionSetup.ConfigureBatchJobServices(services, config);
+
+        using var serviceProvider = services.BuildServiceProvider();
+
+        Assert.NotNull(serviceProvider.GetRequiredService<IEmailTemplateRenderer>());
+    }
+
+    [Fact]
+    public void ConfigureBatchJobServices_WhenGraphEmailSettingsMissing_RegistrationSucceeds_ButResolvingEmailServiceThrows()
+    {
+        // No GraphEmailSettings section — matches every environment today, since no live
+        // Graph send has been authorised for this job yet. Registration/BuildServiceProvider
+        // must not throw (that would break every other job's host startup); only resolving
+        // IEmailService itself should fail, and only at that point.
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:FPSConnectionString"] = "Host=localhost;Port=5432;Database=batch_jobs_foundation_db;Username=postgres;Password=LOCAL_DB_PASSWORD"
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+        ServiceCollectionSetup.ConfigureBatchJobServices(services, config);
+
+        using var serviceProvider = services.BuildServiceProvider();
+
+        var ex = Assert.Throws<InvalidOperationException>(() => serviceProvider.GetRequiredService<IEmailService>());
+        Assert.Contains("GraphEmailSettings", ex.Message);
     }
 
     private static string GetBatchJobsRoot()

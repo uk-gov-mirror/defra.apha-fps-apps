@@ -16,4 +16,6 @@ public static class BatchJobNames
     public const string BulkAnimalRatesUpdate = "BulkAnimalRatesUpdate";
 
     public const string YearEndLock = "YearEnd";
+
+    public const string MilestoneUpdateNotifications = "MilestoneUpdateNotifications";
 }

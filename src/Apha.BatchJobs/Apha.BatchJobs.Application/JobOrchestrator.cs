@@ -106,9 +106,8 @@ public sealed class JobOrchestrator : IJobOrchestrator
 
         var shouldAutoCreateInitiated =
             runMode == RunMode.Scheduled
-            && string.Equals(jobName, BatchJobNames.MabArchive, StringComparison.OrdinalIgnoreCase);
-
-        // Validate the execution contract for all non-worker-managed runs.
+        && (string.Equals(jobName, BatchJobNames.MabArchive, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(jobName, BatchJobNames.MilestoneUpdateNotifications, StringComparison.OrdinalIgnoreCase));
         // Worker-managed MABArchive Scheduled runs may self-create their initiated record below.
         if (!shouldAutoCreateInitiated)
         {
@@ -146,7 +145,7 @@ public sealed class JobOrchestrator : IJobOrchestrator
                 };
 
                 _logger.LogWarning(
-                    "Initiated record was missing for scheduled MABArchive run. Created worker-managed Initiated row in worker | JobName={JobName} | JobExecutionId={JobExecutionId} | JobQueueId={JobQueueId} | RunMode={RunMode}",
+                    "Initiated record was missing for scheduled worker-managed run. Created worker-managed Initiated row in worker | JobName={JobName} | JobExecutionId={JobExecutionId} | JobQueueId={JobQueueId} | RunMode={RunMode}",
                     jobName,
                     jobExecutionId,
                     createdJobQueueId,

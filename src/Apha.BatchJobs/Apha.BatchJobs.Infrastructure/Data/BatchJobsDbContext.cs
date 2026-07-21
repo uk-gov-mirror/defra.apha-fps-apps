@@ -169,6 +169,11 @@ public class BatchJobsDbContext : DbContext
     internal DbSet<MaDstMyTblAnimals> MaDstMyTblAnimals { get; set; }
     internal DbSet<MaDstMyTlkpProjectAll> MaDstMyTlkpProjectAll { get; set; }
 
+    // MilestoneUpdateNotifications read-only sources (mabarchive schema)
+    internal DbSet<MaVLatestMonthYear> MaVLatestMonthYear { get; set; }
+    internal DbSet<MaVProjectReportsPmMilestoneEmail> MaVProjectReportsPmMilestoneEmail { get; set; }
+    internal DbSet<MaTblSettings> MaTblSettings { get; set; }
+
     /// <summary>
     /// Configures the model for the database context.
     /// </summary>
@@ -1066,6 +1071,41 @@ public class BatchJobsDbContext : DbContext
             entity.HasKey(e => e.Year);
             entity.Property(e => e.Year).HasColumnName("year");
             entity.Property(e => e.LatestMonthReleased).HasColumnName("latestmonthreleased");
+        });
+
+        // MilestoneUpdateNotifications read-only sources — see MilestoneNotificationsTables.cs
+        modelBuilder.Entity<MaVLatestMonthYear>(entity =>
+        {
+            entity.ToView("vlatestmonthyear", schema: "mabarchive");
+            entity.HasNoKey();
+            entity.Property(e => e.Year).HasColumnName("year");
+            entity.Property(e => e.LatestMonthReleased).HasColumnName("latestmonthreleased");
+            entity.Property(e => e.Period).HasColumnName("period");
+        });
+
+        modelBuilder.Entity<MaVProjectReportsPmMilestoneEmail>(entity =>
+        {
+            entity.ToView("vprojectreports_pmmilestoneemail", schema: "mabarchive");
+            entity.HasNoKey();
+            entity.Property(e => e.HLink).HasColumnName("hlink");
+            entity.Property(e => e.ProjectManager).HasColumnName("projectmanager");
+            entity.Property(e => e.MNumber).HasColumnName("mnumber");
+            entity.Property(e => e.ParentProject).HasColumnName("parentproject");
+            entity.Property(e => e.Email).HasColumnName("email");
+            entity.Property(e => e.EditLink).HasColumnName("editlink");
+            entity.Property(e => e.Year).HasColumnName("year");
+            entity.Property(e => e.Disable).HasColumnName("disable");
+        });
+
+        modelBuilder.Entity<MaTblSettings>(entity =>
+        {
+            entity.ToTable("tbl_settings", schema: "mabarchive");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Setting).HasColumnName("setting");
+            entity.Property(e => e.Notes).HasColumnName("notes");
+            entity.Property(e => e.TestSetting).HasColumnName("testsetting");
+            entity.Property(e => e.UserUpdateable).HasColumnName("userupdateable");
         });
 
         modelBuilder.Entity<MaSrcWorkGroupGrade>(entity =>

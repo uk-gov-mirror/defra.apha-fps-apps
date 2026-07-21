@@ -4,6 +4,7 @@ using Apha.BatchJobs.Application.Jobs.ManualJobs.BulkRates.Services;
 using Apha.BatchJobs.Application.Jobs.ManualJobs.YearEnd.Services;
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive;
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
+using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Services;
 using Apha.BatchJobs.Domain.Configuration;
 using Apha.BatchJobs.Domain.Entities;
 using Apha.BatchJobs.Domain.Enums;
@@ -14,13 +15,19 @@ using Apha.BatchJobs.Infrastructure.Repositories;
 using Apha.BatchJobs.Infrastructure.Repositories.BulkRates;
 using Apha.BatchJobs.Infrastructure.Repositories.MabArchive;
 using Apha.BatchJobs.Infrastructure.Repositories.MabArchive.Loaders;
+using Apha.BatchJobs.Infrastructure.Repositories.MilestoneUpdateNotifications;
 using Apha.BatchJobs.Infrastructure.Repositories.RecreateSummaries;
 using Apha.BatchJobs.Infrastructure.Services;
 using Apha.BatchJobs.Infrastructure.Services.BulkRates;
+using Apha.Common.Contracts.Email;
+using Apha.Common.Utilities.Email;
+using Azure.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Microsoft.Graph;
 
 namespace Apha.BatchJobs.Application.DependencyInjection;
 
@@ -145,10 +152,68 @@ public static class ServiceCollectionSetup
         services.AddScoped<IEmailNotificationService, EmailNotificationService>();
         services.AddScoped<MabArchiveLoadOrchestrator>();
 
+        // MilestoneUpdateNotifications — read-only sources, preflight, and pure grouping/identity services
+        services.AddScoped<IMilestoneNotificationReadRepository, MilestoneNotificationReadRepository>();
+        services.AddScoped<INotificationSettingsPreflight, NotificationSettingsPreflight>();
+        services.AddScoped<IReportingYearResolver, ReportingYearResolver>();
+        services.AddSingleton<IRecipientIdentityBuilder, RecipientIdentityBuilder>();
+        services.AddSingleton<INotificationGroupingService, NotificationGroupingService>();
+
+        // MilestoneUpdateNotifications — email integration (plan §21 step 4). GraphServiceClient and
+        // IGraphEmailService are registered with lazy factories: nothing below runs until something
+        // actually resolves IEmailService, so a Worker host with no GraphEmailSettings configured yet
+        // (true everywhere right now — no live send has been authorised) still starts and runs every
+        // other job normally. This deliberately differs from Apha.PACT's eager GetRequiredSection
+        // validation at registration time, which would abort the whole host at startup instead of only
+        // failing when this job actually tries to send.
+        services.Configure<MilestoneNotificationsSettings>(config.GetSection("MilestoneNotifications"));
+        services.AddSingleton(_ => CreateGraphServiceClient(config));
+        services.AddSingleton<IGraphEmailService, GraphEmailService>();
+        services.AddScoped<IEmailTemplateRenderer, EmailTemplateRenderer>();
+        services.AddScoped<IEmailService>(sp => new NonProdEmailRedirectDecorator(
+            new GraphBackedEmailService(
+                sp.GetRequiredService<IGraphEmailService>(),
+                sp.GetRequiredService<ILogger<GraphBackedEmailService>>()),
+            sp.GetRequiredService<IOptions<MilestoneNotificationsSettings>>(),
+            sp.GetRequiredService<ILogger<NonProdEmailRedirectDecorator>>()));
+
+        // MilestoneUpdateNotifications — write-path audit repository and CAPS summary service.
+        // NotificationDeliveryRepository uses raw Npgsql (not EF) for explicit transaction
+        // boundaries — connection string is captured from the already-resolved local variable.
+        services.AddScoped<INotificationDeliveryRepository>(sp =>
+            new NotificationDeliveryRepository(
+                connectionString,
+                sp.GetRequiredService<ILogger<NotificationDeliveryRepository>>()));
+        services.AddScoped<ICapsSummaryService, CapsSummaryService>();
+
         // RecreateSummaries Configuration and Services
         services.AddScoped<IRecreateSummariesContext, RecreateSummariesContext>();
         // SQL-backed step catalogs are retired; LINQ is the only active implementation.
         services.AddScoped<IRecreateSummariesStepCatalog>(sp => new RecreateSummariesStepCatalog(sp.GetRequiredService<ILoggerFactory>()));
+    }
+
+    private static readonly string[] GraphEmailScopes = ["https://graph.microsoft.com/.default"];
+
+    /// <summary>
+    /// Builds the <see cref="GraphServiceClient"/> used for milestone notification email.
+    /// Only invoked when something actually resolves it (see the registration comment above) —
+    /// validation failures surface as an <see cref="InvalidOperationException"/> at that point,
+    /// not at Worker host startup.
+    /// </summary>
+    private static GraphServiceClient CreateGraphServiceClient(IConfiguration config)
+    {
+        var graphSettings = config.GetSection("GraphEmailSettings").Get<GraphEmailSettings>()
+            ?? throw new InvalidOperationException("GraphEmailSettings configuration section is missing or could not be bound.");
+
+        if (string.IsNullOrWhiteSpace(graphSettings.TenantId))
+            throw new InvalidOperationException("GraphEmailSettings:TenantId is required but was not configured.");
+        if (string.IsNullOrWhiteSpace(graphSettings.ClientId))
+            throw new InvalidOperationException("GraphEmailSettings:ClientId is required but was not configured.");
+        if (string.IsNullOrWhiteSpace(graphSettings.ClientSecret))
+            throw new InvalidOperationException("GraphEmailSettings:ClientSecret is required but was not configured.");
+
+        var credential = new ClientSecretCredential(graphSettings.TenantId, graphSettings.ClientId, graphSettings.ClientSecret);
+        return new GraphServiceClient(credential, GraphEmailScopes);
     }
 
     private static void RegisterMabArchiveLoaders(IServiceCollection services)

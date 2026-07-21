@@ -57,11 +57,16 @@ public sealed record BatchExecutionContext
         Guid jobExecutionId;
         if (string.IsNullOrWhiteSpace(jobExecutionIdRaw))
         {
-            // Scheduled MABArchive is permitted to self-generate an execution ID.
+            // Scheduled MABArchive and MilestoneUpdateNotifications are permitted to self-generate an execution ID.
             if (runMode == RunMode.Scheduled &&
-                string.Equals(jobName, Constants.BatchJobNames.MabArchive, StringComparison.OrdinalIgnoreCase))
+                (string.Equals(jobName, Constants.BatchJobNames.MabArchive, StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(jobName, Constants.BatchJobNames.MilestoneUpdateNotifications, StringComparison.OrdinalIgnoreCase)))
             {
                 jobExecutionId = Guid.NewGuid();
+                // Publish the self-generated ID back to the process environment so that
+                // downstream components (e.g. MilestoneUpdateNotificationsJobHandler.ResolveJobQueueIdAsync)
+                // can look up the corresponding fps.job_queue row via IJobExecutionRepository.
+                Environment.SetEnvironmentVariable("BATCH_JOB_EXECUTION_ID", jobExecutionId.ToString("D"));
             }
             else
             {

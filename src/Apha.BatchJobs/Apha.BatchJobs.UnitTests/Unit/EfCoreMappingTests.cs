@@ -21,6 +21,10 @@ public sealed class EfCoreMappingTests
         ctx.Model.GetEntityTypes()
                  .Single(e => e.GetTableName() == table);
 
+    private static IEntityType GetEntityByView(BatchJobsDbContext ctx, string view) =>
+        ctx.Model.GetEntityTypes()
+                 .Single(e => e.GetViewName() == view);
+
     // ─────────────────────────────────────────────────────────────
     // job_lock
     // ─────────────────────────────────────────────────────────────
@@ -330,6 +334,44 @@ public sealed class EfCoreMappingTests
     }
 
     // ─────────────────────────────────────────────────────────────
+    // MilestoneUpdateNotifications read-only sources (mabarchive)
+    // ─────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void VLatestMonthYear_Is_Keyless_View_In_Mabarchive_Schema()
+    {
+        using var ctx = new BatchJobsDbContext(_options);
+        var entity = GetEntityByView(ctx, "vlatestmonthyear");
+        Assert.Equal("mabarchive", entity.GetViewSchema());
+        Assert.Null(entity.FindPrimaryKey());
+    }
+
+    [Fact]
+    public void VProjectReportsPmMilestoneEmail_Is_Keyless_View_With_Expected_Columns()
+    {
+        using var ctx = new BatchJobsDbContext(_options);
+        var entity = GetEntityByView(ctx, "vprojectreports_pmmilestoneemail");
+        Assert.Equal("mabarchive", entity.GetViewSchema());
+        Assert.Null(entity.FindPrimaryKey());
+
+        var storeObject = StoreObjectIdentifier.View("vprojectreports_pmmilestoneemail", "mabarchive");
+        Assert.Equal("mnumber", entity.FindProperty("MNumber")!.GetColumnName(storeObject));
+        Assert.Equal("parentproject", entity.FindProperty("ParentProject")!.GetColumnName(storeObject));
+        Assert.Equal("editlink", entity.FindProperty("EditLink")!.GetColumnName(storeObject));
+        Assert.Equal("disable", entity.FindProperty("Disable")!.GetColumnName(storeObject));
+    }
+
+    [Fact]
+    public void TblSettings_Table_Has_Id_PrimaryKey_In_Mabarchive_Schema()
+    {
+        using var ctx = new BatchJobsDbContext(_options);
+        var entity = GetEntityByTable(ctx, "tbl_settings");
+        Assert.Equal("mabarchive", entity.GetSchema());
+        var keyProps = entity.FindPrimaryKey()!.Properties.Select(p => p.Name).ToArray();
+        Assert.Equal(new[] { "Id" }, keyProps);
+    }
+
+    // ─────────────────────────────────────────────────────────────
     // single-db / schema guardrails
     // ─────────────────────────────────────────────────────────────
 
@@ -360,7 +402,8 @@ public sealed class EfCoreMappingTests
 
         var approvedGlobalMasterTables = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            "g_tlkpproject"
+            "g_tlkpproject",
+            "tbl_settings" // global config lookup (id-keyed), not year-scoped — see MilestoneNotificationsTables.cs
         };
 
         var invalid = ctx.Model.GetEntityTypes()
