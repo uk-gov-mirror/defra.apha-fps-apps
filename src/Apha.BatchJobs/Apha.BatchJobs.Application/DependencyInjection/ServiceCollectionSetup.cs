@@ -145,6 +145,10 @@ public static class ServiceCollectionSetup
             };
         });
 
+        // Shared, job-agnostic settings — not nested under any single job's config.
+        services.Configure<BatchAlertingSettings>(config.GetSection("BatchAlerting"));
+        services.Configure<AwsLoggingSettings>(config.GetSection("AwsLogging"));
+
         // MABArchive Configuration and Services
         services.Configure<MabArchiveSettings>(config.GetSection("MabArchive"));
         RegisterMabArchiveLoaders(services);
@@ -178,6 +182,11 @@ public static class ServiceCollectionSetup
                 sp.GetRequiredService<ILogger<GraphBackedEmailService>>()),
             sp.GetRequiredService<IOptions<MilestoneNotificationsSettings>>(),
             sp.GetRequiredService<ILogger<NonProdEmailRedirectDecorator>>()));
+
+        // EmailNotificationService (used for batch failure alerts, see above) depends on this
+        // factory rather than IEmailService directly, so constructing it never eagerly triggers
+        // the GraphServiceClient chain above — only actually sending a notification does.
+        services.AddScoped<Func<IEmailService>>(sp => sp.GetRequiredService<IEmailService>);
 
         // MilestoneUpdateNotifications — write-path audit repository and CAPS summary service.
         // NotificationDeliveryRepository uses raw Npgsql (not EF) for explicit transaction

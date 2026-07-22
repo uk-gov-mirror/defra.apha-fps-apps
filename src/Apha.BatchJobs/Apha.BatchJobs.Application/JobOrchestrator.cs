@@ -1,3 +1,4 @@
+using Apha.BatchJobs.Application.FailureHandling;
 using Apha.BatchJobs.Application.Interfaces;
 using Apha.BatchJobs.Domain.Configuration;
 using Apha.BatchJobs.Domain.Constants;
@@ -34,6 +35,7 @@ public sealed class JobOrchestrator : IJobOrchestrator
     private readonly int _defaultJobTimeoutSeconds;
     private readonly int _heartbeatIntervalSeconds;
     private readonly Dictionary<string, int> _jobTimeoutOverridesSeconds;
+    private readonly BatchFailureClassifier _failureClassifier;
 
     /// <summary>Default lock timeout in seconds when configuration is missing/invalid.</summary>
     private const int DefaultLockTimeoutSeconds = 0;
@@ -82,6 +84,7 @@ public sealed class JobOrchestrator : IJobOrchestrator
             : new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        _failureClassifier = new BatchFailureClassifier(_configuration);
     }
 
     /// <inheritdoc />
@@ -523,14 +526,7 @@ public sealed class JobOrchestrator : IJobOrchestrator
         // Configuration and email failures (BusinessEmailException) intentionally roll up into
         // General rather than getting their own unwatched alarm channel; email may be split out
         // later if the monthly notification job needs a dedicated alert once live sending ships.
-        var errorType = exception switch
-        {
-            JobValidationException => _configuration["ExceptionTypes:Validation"] ?? "FPSBatchJobs.VALIDATION_EXCEPTION",
-            PostgresException => _configuration["ExceptionTypes:Sql"] ?? "FPSBatchJobs.SQL_EXCEPTION",
-            NpgsqlException => _configuration["ExceptionTypes:Sql"] ?? "FPSBatchJobs.SQL_EXCEPTION",
-            JobLockException => _configuration["ExceptionTypes:Concurrency"] ?? "FPSBatchJobs.CONCURRENCY_EXCEPTION",
-            _ => _configuration["ExceptionTypes:General"] ?? "FPSBatchJobs.GENERAL_EXCEPTION"
-        };
+        var errorType = _failureClassifier.Classify(exception).ErrorType;
 
         _logger.LogError(
             exception,

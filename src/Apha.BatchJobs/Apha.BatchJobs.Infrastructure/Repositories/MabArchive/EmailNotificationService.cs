@@ -1,4 +1,6 @@
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
+using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Services;
+using Apha.BatchJobs.Domain.Entities.MilestoneUpdateNotifications;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Apha.BatchJobs.Domain.Configuration;
@@ -6,26 +8,39 @@ using Apha.BatchJobs.Domain.Configuration;
 namespace Apha.BatchJobs.Infrastructure.Repositories.MabArchive;
 
 /// <summary>
-/// Implementation of IEmailNotificationService.
-/// Sends email notifications on job failure.
-/// Currently a stub; real SMTP integration to be implemented in next phase.
+/// Implementation of IEmailNotificationService. Sends failure-alert emails through the existing
+/// Graph-backed <see cref="IEmailService"/> (the same path MilestoneUpdateNotifications uses) —
+/// no separate SMTP integration needed. Resolves <see cref="IEmailService"/> lazily via a
+/// factory delegate, not as a plain constructor dependency: <c>IEmailService</c>'s DI chain
+/// (GraphBackedEmailService → IGraphEmailService → GraphServiceClient) throws if
+/// GraphEmailSettings isn't configured, which is true everywhere except local dev today. Eagerly
+/// depending on it would break every job that depends on this service (constructor injection
+/// resolves eagerly), even when notifications are disabled or the recipient is unset.
 /// </summary>
 public sealed class EmailNotificationService : IEmailNotificationService
 {
     private readonly ILogger<EmailNotificationService> _logger;
-    private readonly MabArchiveSettings _settings;
+    private readonly BatchAlertingSettings _settings;
+    private readonly AwsLoggingSettings _awsLoggingSettings;
+    private readonly Func<IEmailService> _emailServiceFactory;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EmailNotificationService"/> class.
     /// </summary>
     /// <param name="logger">Logger instance.</param>
-    /// <param name="settings">MABArchive settings options.</param>
+    /// <param name="settings">Shared batch-alerting settings (not MABArchive-specific — this service is invoked with the failing job's name as a parameter).</param>
+    /// <param name="awsLoggingSettings">Shared AWS logging settings (CloudWatch log group referenced in the alert email body).</param>
+    /// <param name="emailServiceFactory">Lazy resolver for <see cref="IEmailService"/> — only invoked once a notification is actually about to send.</param>
     public EmailNotificationService(
         ILogger<EmailNotificationService> logger,
-        IOptions<MabArchiveSettings> settings)
+        IOptions<BatchAlertingSettings> settings,
+        IOptions<AwsLoggingSettings> awsLoggingSettings,
+        Func<IEmailService> emailServiceFactory)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _settings = settings?.Value ?? new MabArchiveSettings();
+        _settings = settings?.Value ?? new BatchAlertingSettings();
+        _awsLoggingSettings = awsLoggingSettings?.Value ?? new AwsLoggingSettings();
+        _emailServiceFactory = emailServiceFactory ?? throw new ArgumentNullException(nameof(emailServiceFactory));
     }
 
     /// <summary>
@@ -73,18 +88,26 @@ Failure Time: {timestamp:yyyy-MM-dd HH:mm:ss} UTC
 Error Message: {errorMessage}
 
 For detailed diagnostics, check:
-- CloudWatch Logs (group: {_settings.CloudWatchLogGroup}) filtered by CorrelationId={correlationId}
+- CloudWatch Logs (group: {_awsLoggingSettings.LogGroupName}) filtered by CorrelationId={correlationId}
 - Database lock table (tbl_job_queue) for lock status
 - Recent batch job execution records
 
 Contact your system administrator for assistance.
 ";
 
-            // TODO: Implement SMTP email sending in next phase
-            // For now, log the notification details
-            _logger.LogInformation("Failure notification prepared | Subject={Subject} | To={Email}", subject, _settings.AdminNotificationEmail);
+            var message = new EmailMessage([_settings.AdminNotificationEmail], subject, body);
+            var result = await _emailServiceFactory().SendAsync(message, cancellationToken);
 
-            await Task.CompletedTask;
+            if (result.Succeeded)
+            {
+                _logger.LogInformation("Failure notification sent | Subject={Subject} | To={Email}", subject, _settings.AdminNotificationEmail);
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "Failure notification could not be sent | Subject={Subject} | To={Email} | Reason={Reason}",
+                    subject, _settings.AdminNotificationEmail, result.FailureMessage);
+            }
         }
         catch (Exception ex)
         {

@@ -92,6 +92,48 @@ public sealed class JobOrchestratorTests
         Assert.Equal(42, result.ExecutionId);
     }
 
+    /// <summary>
+    /// Pins the contract the Worker startup refactor relies on: <c>RunAsync</c> only ever
+    /// <em>returns</em> when the job succeeded (<see cref="JobStatus.Completed"/>) — any failure
+    /// or cancellation is always thrown, never returned as a <see cref="JobStatus.Failed"/> or
+    /// cancelled result. This means <c>BatchWorkerRunner</c> needs no status-mapper branch: a
+    /// normal return from <c>RunAsync</c> can be treated as success without inspecting
+    /// <see cref="JobExecutionResult.Status"/> at all. If this test ever needs to change, the
+    /// worker-side "no status mapper" simplification needs to change with it.
+    /// </summary>
+    [Fact]
+    public async Task RunAsync_OnSuccess_ReturnsCompletedStatus_OnFailure_ThrowsInsteadOfReturningFailedStatus()
+    {
+        // Success path — the only status a normal return can carry is Completed.
+        SetupInitiatedExecution("ContractSuccessJob");
+        var successJob = Substitute.For<IBatchJob>();
+        successJob.Name.Returns("ContractSuccessJob");
+        _factory.Create("ContractSuccessJob").Returns(successJob);
+        _lockRepo.TryAcquireLockAsync("ContractSuccessJob", Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+                 .Returns(true);
+        _execRepo.CreateExecutionRecordAsync(Arg.Any<JobExecutionRecord>(), Arg.Any<CancellationToken>()).Returns(1);
+        _execRepo.UpdateExecutionRecordAsync(Arg.Any<JobExecutionRecord>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+
+        var successResult = await _orchestrator.RunAsync("ContractSuccessJob", RunMode.Manual, Guid.NewGuid(), "test-user");
+
+        Assert.Equal(JobStatus.Completed, successResult.Status);
+
+        // Failure path — the orchestrator never returns a Failed result; it throws instead.
+        SetupInitiatedExecution("ContractFailureJob");
+        var failingJob = Substitute.For<IBatchJob>();
+        failingJob.Name.Returns("ContractFailureJob");
+        failingJob.ExecuteAsync(Arg.Any<CancellationToken>())
+            .Returns(Task.FromException(new InvalidOperationException("Simulated failure")));
+        _factory.Create("ContractFailureJob").Returns(failingJob);
+        _lockRepo.TryAcquireLockAsync("ContractFailureJob", Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+                 .Returns(true);
+        _execRepo.CreateExecutionRecordAsync(Arg.Any<JobExecutionRecord>(), Arg.Any<CancellationToken>()).Returns(2);
+        _execRepo.UpdateExecutionRecordAsync(Arg.Any<JobExecutionRecord>(), Arg.Any<CancellationToken>()).Returns(Task.CompletedTask);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _orchestrator.RunAsync("ContractFailureJob", RunMode.Manual, Guid.NewGuid(), "test-user"));
+    }
+
     [Fact]
     public async Task RunAsync_WhenRequestedAtUtcProvided_PassesRequestedAtUtcToCreateRecord()
     {

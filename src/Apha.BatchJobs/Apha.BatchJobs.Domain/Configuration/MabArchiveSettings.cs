@@ -17,21 +17,6 @@ public class MabArchiveSettings
     public bool StrictYearIsolation { get; set; } = true;
 
     /// <summary>
-    /// When true, failure notification emails are sent to <see cref="AdminNotificationEmail"/>.
-    /// </summary>
-    public bool EnableEmailNotifications { get; set; }
-
-    /// <summary>
-    /// Email recipient for failure notifications.
-    /// </summary>
-    public string? AdminNotificationEmail { get; set; }
-
-    /// <summary>
-    /// CloudWatch log group name for diagnostics.
-    /// </summary>
-    public string? CloudWatchLogGroup { get; set; }
-
-    /// <summary>
     /// CR-028: identity used to reproduce the legacy sp_AddMY_Staff ProfitCentre authorization filter
     /// (originally WGE.WorkGroupGrade IN ... WHERE UPC.[User_ID] IN (SELECT U.[User_ID] FROM tblUsers U
     /// WHERE U.UserName = USER_NAME(1))). Legacy resolved this from the SQL login executing the batch job;

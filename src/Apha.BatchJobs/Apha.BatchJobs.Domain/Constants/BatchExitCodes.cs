@@ -9,7 +9,11 @@ public static class BatchExitCodes
     /// <summary>Job completed without error.</summary>
     public const int Success = 0;
 
-    /// <summary>Input failed validation (<see cref="Exceptions.JobValidationException"/>).</summary>
+    /// <summary>
+    /// Reserved for input validation failures. Currently unused —
+    /// <see cref="Exceptions.JobValidationException"/> maps to <see cref="ConfigurationFailure"/>
+    /// instead, to match existing live behavior (see <c>BatchFailureClassifier</c>).
+    /// </summary>
     public const int ValidationFailure = 10;
 
     /// <summary>PostgreSQL / database error.</summary>
