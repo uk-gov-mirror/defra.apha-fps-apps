@@ -1,5 +1,5 @@
-using Apha.BatchJobs.Application.Interfaces;
 using Apha.BatchJobs.Application.DependencyInjection;
+using Apha.BatchJobs.Application.Interfaces;
 using Apha.BatchJobs.Application.Jobs.ManualJobs.YearEnd.Services;
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Services;
@@ -10,12 +10,111 @@ namespace Apha.BatchJobs.UnitTests;
 
 public sealed class ServiceCollectionSetupTests
 {
+    // ---------------------------------------------------------------------------
+    // Helpers
+    // ---------------------------------------------------------------------------
+
+    /// <summary>
+    /// Builds the same configuration stack that <c>WorkerHostExtensions</c> uses in
+    /// production, then calls <see cref="BatchJobsServiceExtensions.AddBatchJobs"/>.
+    /// Replaces the old <c>ServiceCollectionSetup.CreateDefaultServices</c> helper.
+    /// </summary>
+    private static IServiceCollection CreateServices(string basePath)
+    {
+        var environment = Apha.BatchJobs.Domain.EnvironmentResolver.GetEnvironmentName("Development");
+
+        var config = new ConfigurationBuilder()
+            .SetBasePath(basePath)
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: true)
+            .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true)
+            .AddEnvironmentVariables()
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton<IConfiguration>(config);
+        services.AddBatchJobs(config);
+        return services;
+    }
+
+    /// <summary>
+    /// Builds a minimal in-memory configuration with only the connection string set,
+    /// then registers all batch job services via <see cref="BatchJobsServiceExtensions.AddBatchJobs"/>.
+    /// Replaces <c>ServiceCollectionSetup.ConfigureBatchJobServices(services, config)</c> call sites.
+    /// </summary>
+    private static ServiceProvider BuildServiceProvider(Dictionary<string, string?>? extra = null)
+    {
+        var dict = new Dictionary<string, string?>
+        {
+            ["ConnectionStrings:FPSConnectionString"] =
+                "Host=localhost;Port=5432;Database=batch_jobs_foundation_db;Username=postgres;Password=LOCAL_DB_PASSWORD"
+        };
+
+        if (extra != null)
+            foreach (var (k, v) in extra)
+                dict[k] = v;
+
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(dict)
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton<IConfiguration>(config);
+        services.AddBatchJobs(config);
+        return services.BuildServiceProvider();
+    }
+
+    private static string GetBatchJobsRoot()
+    {
+        var current = new DirectoryInfo(AppContext.BaseDirectory);
+
+        while (current != null)
+        {
+            var workerPath = Path.Combine(current.FullName, "Apha.BatchJobs.Worker");
+            if (Directory.Exists(workerPath) && File.Exists(Path.Combine(workerPath, "appsettings.json")))
+                return workerPath;
+
+            current = current.Parent;
+        }
+
+        var testDir = new DirectoryInfo(AppContext.BaseDirectory);
+        for (int i = 0; i < 6 && testDir?.Parent != null; i++)
+        {
+            testDir = testDir.Parent;
+            var candidate = Path.Combine(testDir.FullName, "src", "Apha.BatchJobs", "Apha.BatchJobs.Worker");
+            if (File.Exists(Path.Combine(candidate, "appsettings.json")))
+                return candidate;
+        }
+
+        throw new DirectoryNotFoundException("Could not locate the Apha.BatchJobs.Worker directory with appsettings.json.");
+    }
+
+    private sealed class EnvironmentVariableScope : IDisposable
+    {
+        private readonly string _name;
+        private readonly string? _originalValue;
+
+        public EnvironmentVariableScope(string name, string value)
+        {
+            _name = name;
+            _originalValue = Environment.GetEnvironmentVariable(name);
+            Environment.SetEnvironmentVariable(name, value);
+        }
+
+        public void Dispose() => Environment.SetEnvironmentVariable(_name, _originalValue);
+    }
+
+    // ---------------------------------------------------------------------------
+    // Tests
+    // ---------------------------------------------------------------------------
+
     [Fact]
-    public void CreateDefaultServices_ShouldRegisterExpectedFoundationServices()
+    public void AddBatchJobs_ShouldRegisterExpectedFoundationServices()
     {
         using var _ = new EnvironmentVariableScope("BATCH_JOB_PARAMETERS_JSON", "{\"month\":\"2026-07\"}");
-        var batchJobsRoot = GetBatchJobsRoot();
-        var services = ServiceCollectionSetup.CreateDefaultServices(batchJobsRoot);
+        var services = CreateServices(GetBatchJobsRoot());
         using var serviceProvider = services.BuildServiceProvider();
 
         Assert.NotNull(serviceProvider.GetRequiredService<IConfiguration>());
@@ -28,11 +127,10 @@ public sealed class ServiceCollectionSetupTests
     }
 
     [Fact]
-    public void CreateDefaultServices_AllRegisteredJobs_ShouldDeclareExplicitIdempotencyStrategy()
+    public void AddBatchJobs_AllRegisteredJobs_ShouldDeclareExplicitIdempotencyStrategy()
     {
         using var _ = new EnvironmentVariableScope("BATCH_JOB_PARAMETERS_JSON", "{\"month\":\"2026-07\"}");
-        var batchJobsRoot = GetBatchJobsRoot();
-        var services = ServiceCollectionSetup.CreateDefaultServices(batchJobsRoot);
+        var services = CreateServices(GetBatchJobsRoot());
         using var serviceProvider = services.BuildServiceProvider();
 
         var jobs = serviceProvider.GetServices<IBatchJob>().ToList();
@@ -47,11 +145,10 @@ public sealed class ServiceCollectionSetupTests
     }
 
     [Fact]
-    public void CreateDefaultServices_ManualAdhocJobs_ShouldHaveNoScheduleExpression()
+    public void AddBatchJobs_ManualAdhocJobs_ShouldHaveNoScheduleExpression()
     {
         using var _ = new EnvironmentVariableScope("BATCH_JOB_PARAMETERS_JSON", "{\"month\":\"2026-07\"}");
-        var batchJobsRoot = GetBatchJobsRoot();
-        var services = ServiceCollectionSetup.CreateDefaultServices(batchJobsRoot);
+        var services = CreateServices(GetBatchJobsRoot());
         using var serviceProvider = services.BuildServiceProvider();
 
         var jobs = serviceProvider.GetServices<IBatchJob>().ToList();
@@ -67,38 +164,17 @@ public sealed class ServiceCollectionSetupTests
     }
 
     [Fact]
-    public void ConfigureBatchJobServices_WhenRecreateSummariesModeIsDotNetLinq_ShouldResolveLinqCatalog()
+    public void AddBatchJobs_WhenRecreateSummariesModeIsDotNetLinq_ShouldResolveLinqCatalog()
     {
-        var config = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["ConnectionStrings:FPSConnectionString"] = "Host=localhost;Port=5432;Database=batch_jobs_foundation_db;Username=postgres;Password=LOCAL_DB_PASSWORD"
-            })
-            .Build();
-
-        var services = new ServiceCollection();
-        ServiceCollectionSetup.ConfigureBatchJobServices(services, config);
-
-        using var serviceProvider = services.BuildServiceProvider();
+        using var serviceProvider = BuildServiceProvider();
         var catalog = serviceProvider.GetRequiredService<Apha.BatchJobs.Infrastructure.Repositories.RecreateSummaries.IRecreateSummariesStepCatalog>();
-
         Assert.Equal("RecreateSummariesStepCatalog", catalog.GetType().Name);
     }
 
     [Fact]
-    public void ConfigureBatchJobServices_DefaultMabArchiveMode_ShouldRegisterMabArchiveLoadersOnly()
+    public void AddBatchJobs_DefaultMabArchiveMode_ShouldRegisterMabArchiveLoadersOnly()
     {
-        var config = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["ConnectionStrings:FPSConnectionString"] = "Host=localhost;Port=5432;Database=batch_jobs_foundation_db;Username=postgres;Password=LOCAL_DB_PASSWORD"
-            })
-            .Build();
-
-        var services = new ServiceCollection();
-        ServiceCollectionSetup.ConfigureBatchJobServices(services, config);
-
-        using var serviceProvider = services.BuildServiceProvider();
+        using var serviceProvider = BuildServiceProvider();
         var loaders = serviceProvider.GetServices<IMabArchiveLoader>().ToList();
 
         Assert.Equal(24, loaders.Count);
@@ -106,22 +182,14 @@ public sealed class ServiceCollectionSetupTests
     }
 
     [Fact]
-    public void ConfigureBatchJobServices_WhenMabArchiveModeIsConfigured_ShouldStillRegisterMabArchiveLoadersOnly()
+    public void AddBatchJobs_WhenMabArchiveModeIsConfigured_ShouldStillRegisterMabArchiveLoadersInExpectedOrder()
     {
-        var config = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["ConnectionStrings:FPSConnectionString"] = "Host=localhost;Port=5432;Database=batch_jobs_foundation_db;Username=postgres;Password=LOCAL_DB_PASSWORD",
-                ["BatchJobs:MabArchiveImplementationMode"] = "Sql"
-            })
-            .Build();
+        using var serviceProvider = BuildServiceProvider(new Dictionary<string, string?>
+        {
+            ["BatchJobs:MabArchiveImplementationMode"] = "Sql"
+        });
 
-        var services = new ServiceCollection();
-        ServiceCollectionSetup.ConfigureBatchJobServices(services, config);
-
-        using var serviceProvider = services.BuildServiceProvider();
         var loaders = serviceProvider.GetServices<IMabArchiveLoader>().ToList();
-
         var ordered = loaders.OrderBy(l => l.Sequence).ToList();
 
         Assert.Equal(24, ordered.Count);
@@ -159,19 +227,9 @@ public sealed class ServiceCollectionSetupTests
     }
 
     [Fact]
-    public void ConfigureBatchJobServices_ShouldRegisterYearEndDataSetupStepsInExpectedOrder()
+    public void AddBatchJobs_ShouldRegisterYearEndDataSetupStepsInExpectedOrder()
     {
-        var config = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["ConnectionStrings:FPSConnectionString"] = "Host=localhost;Port=5432;Database=batch_jobs_foundation_db;Username=postgres;Password=LOCAL_DB_PASSWORD"
-            })
-            .Build();
-
-        var services = new ServiceCollection();
-        ServiceCollectionSetup.ConfigureBatchJobServices(services, config);
-
-        using var serviceProvider = services.BuildServiceProvider();
+        using var serviceProvider = BuildServiceProvider();
         var steps = serviceProvider.GetServices<IYearEndDataSetupStep>().ToList();
 
         Assert.Equal(
@@ -193,93 +251,21 @@ public sealed class ServiceCollectionSetupTests
     }
 
     [Fact]
-    public void ConfigureBatchJobServices_ShouldRegisterEmailTemplateRenderer()
+    public void AddBatchJobs_ShouldRegisterEmailTemplateRenderer()
     {
-        var config = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["ConnectionStrings:FPSConnectionString"] = "Host=localhost;Port=5432;Database=batch_jobs_foundation_db;Username=postgres;Password=LOCAL_DB_PASSWORD"
-            })
-            .Build();
-
-        var services = new ServiceCollection();
-        ServiceCollectionSetup.ConfigureBatchJobServices(services, config);
-
-        using var serviceProvider = services.BuildServiceProvider();
-
+        using var serviceProvider = BuildServiceProvider();
         Assert.NotNull(serviceProvider.GetRequiredService<IEmailTemplateRenderer>());
     }
 
     [Fact]
-    public void ConfigureBatchJobServices_WhenGraphEmailSettingsMissing_RegistrationSucceeds_ButResolvingEmailServiceThrows()
+    public void AddBatchJobs_WhenGraphEmailSettingsMissing_RegistrationSucceeds_ButResolvingEmailServiceThrows()
     {
-        // No GraphEmailSettings section — matches every environment today, since no live
-        // Graph send has been authorised for this job yet. Registration/BuildServiceProvider
-        // must not throw (that would break every other job's host startup); only resolving
+        // No GraphEmailSettings section � expected in every environment until a live Graph send
+        // is authorised. Registration and BuildServiceProvider must not throw; only resolving
         // IEmailService itself should fail, and only at that point.
-        var config = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["ConnectionStrings:FPSConnectionString"] = "Host=localhost;Port=5432;Database=batch_jobs_foundation_db;Username=postgres;Password=LOCAL_DB_PASSWORD"
-            })
-            .Build();
-
-        var services = new ServiceCollection();
-        ServiceCollectionSetup.ConfigureBatchJobServices(services, config);
-
-        using var serviceProvider = services.BuildServiceProvider();
+        using var serviceProvider = BuildServiceProvider();
 
         var ex = Assert.Throws<InvalidOperationException>(() => serviceProvider.GetRequiredService<IEmailService>());
         Assert.Contains("GraphEmailSettings", ex.Message);
     }
-
-    private static string GetBatchJobsRoot()
-    {
-        var current = new DirectoryInfo(AppContext.BaseDirectory);
-
-        while (current != null)
-        {
-            // Look for Worker project directory which contains appsettings.json
-            var workerPath = Path.Combine(current.FullName, "Apha.BatchJobs.Worker");
-            if (Directory.Exists(workerPath) && File.Exists(Path.Combine(workerPath, "appsettings.json")))
-            {
-                return workerPath;
-            }
-
-            current = current.Parent;
-        }
-        
-        // Try relative path from test execution directory
-        var testDir = new DirectoryInfo(AppContext.BaseDirectory);
-        for (int i = 0; i < 6 && testDir?.Parent != null; i++)
-        {
-            testDir = testDir.Parent;
-            var candidate = Path.Combine(testDir.FullName, "src", "Apha.BatchJobs", "Apha.BatchJobs.Worker");
-            if (File.Exists(Path.Combine(candidate, "appsettings.json")))
-            {
-                return candidate;
-            }
-        }
-
-        throw new DirectoryNotFoundException("Could not locate the Apha.BatchJobs.Worker directory with appsettings.json.");
-    }
-
-    private sealed class EnvironmentVariableScope : IDisposable
-    {
-        private readonly string _name;
-        private readonly string? _originalValue;
-
-        public EnvironmentVariableScope(string name, string value)
-        {
-            _name = name;
-            _originalValue = Environment.GetEnvironmentVariable(name);
-            Environment.SetEnvironmentVariable(name, value);
-        }
-
-        public void Dispose()
-        {
-            Environment.SetEnvironmentVariable(_name, _originalValue);
-        }
-    }
 }
-

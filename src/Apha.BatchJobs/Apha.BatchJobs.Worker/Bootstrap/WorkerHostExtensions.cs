@@ -74,7 +74,7 @@ public static class WorkerHostExtensions
     /// </summary>
     public static void ConfigureWorkerServices(this HostApplicationBuilder builder)
     {
-        ServiceCollectionSetup.ConfigureBatchJobServices(builder.Services, builder.Configuration);
+        builder.Services.AddBatchJobs(builder.Configuration);
 
         builder.Services
             .AddOptions<BatchRuntimeOptions>()
