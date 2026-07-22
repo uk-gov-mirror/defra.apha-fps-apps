@@ -90,6 +90,7 @@ public sealed class BatchWorkerRunner : IBatchWorkerRunner
                 request.JobExecutionId,
                 request.RequestedBy,
                 request.RequestedAtUtc,
+                request.ParametersJson,
                 cancellationContext.Token);
 
             result = BatchExecutionResult.Success(request, jobResult);

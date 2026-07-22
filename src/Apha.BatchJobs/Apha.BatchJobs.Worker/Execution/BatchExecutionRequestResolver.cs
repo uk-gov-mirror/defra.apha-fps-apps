@@ -33,7 +33,8 @@ public sealed class BatchExecutionRequestResolver
             context.RunMode,
             context.JobExecutionId,
             context.RequestedBy,
-            context.RequestedAtUtc?.UtcDateTime);
+            context.RequestedAtUtc?.UtcDateTime,
+            context.ParametersJson);
     }
 
     private static bool LooksLikeTemplatePlaceholder(string? value)

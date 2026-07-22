@@ -114,12 +114,12 @@ public sealed class NotificationDeliveryRepositoryIntegrationTests : IAsyncLifet
     // ── Run summary lifecycle ───────────────────────────────────────────────────
 
     [SkippableFact]
-    public async Task InsertRunSummaryAsync_InsertsRowWithPendingStatus()
+    public async Task GetOrCreateRunSummaryAsync_InsertsRowWithPendingStatus()
     {
         Skip.IfNot(CanRun(), _skipReason!);
 
         var repo = CreateRepository();
-        var runSummaryId = await repo.InsertRunSummaryAsync(
+        var runSummaryId = await repo.GetOrCreateRunSummaryAsync(
             _testJobQueueId, "MilestoneUpdate", fpsYear: 2026, monthNumber: 7,
             CancellationToken.None);
 
@@ -133,12 +133,35 @@ public sealed class NotificationDeliveryRepositoryIntegrationTests : IAsyncLifet
     }
 
     [SkippableFact]
+    public async Task GetOrCreateRunSummaryAsync_WhenCalledTwiceForSameJobQueueId_ReturnsSameRowAndDoesNotThrow()
+    {
+        // Simulates a whole-job retry: JobOrchestrator re-invokes the job with the same
+        // jobQueueId after a transient failure. The second call must resume the existing row
+        // (unique constraint on jobqueueid) rather than throw a duplicate-key error that would
+        // mask the original transient failure.
+        Skip.IfNot(CanRun(), _skipReason!);
+
+        var repo = CreateRepository();
+        var firstId = await repo.GetOrCreateRunSummaryAsync(
+            _testJobQueueId, "MilestoneUpdate", fpsYear: 2026, monthNumber: 7, CancellationToken.None);
+
+        var secondId = await repo.GetOrCreateRunSummaryAsync(
+            _testJobQueueId, "MilestoneUpdate", fpsYear: 2026, monthNumber: 8, CancellationToken.None);
+
+        Assert.Equal(firstId, secondId);
+
+        var row = await ReadRunSummaryAsync(firstId);
+        Assert.NotNull(row);
+        Assert.Equal(8, (int)row!["monthnumber"]);
+    }
+
+    [SkippableFact]
     public async Task UpdateRunSummaryCountersAsync_UpdatesAllCounters()
     {
         Skip.IfNot(CanRun(), _skipReason!);
 
         var repo = CreateRepository();
-        var runSummaryId = await repo.InsertRunSummaryAsync(
+        var runSummaryId = await repo.GetOrCreateRunSummaryAsync(
             _testJobQueueId, "MilestoneUpdate", 2026, 7, CancellationToken.None);
 
         var counters = new NotificationRunSummaryCounters
@@ -180,7 +203,7 @@ public sealed class NotificationDeliveryRepositoryIntegrationTests : IAsyncLifet
         Skip.IfNot(CanRun(), _skipReason!);
 
         var repo = CreateRepository();
-        var runSummaryId = await repo.InsertRunSummaryAsync(
+        var runSummaryId = await repo.GetOrCreateRunSummaryAsync(
             _testJobQueueId, "MilestoneUpdate", 2026, 7, CancellationToken.None);
 
         var sentAt = DateTime.UtcNow;
@@ -198,7 +221,7 @@ public sealed class NotificationDeliveryRepositoryIntegrationTests : IAsyncLifet
         Skip.IfNot(CanRun(), _skipReason!);
 
         var repo = CreateRepository();
-        var runSummaryId = await repo.InsertRunSummaryAsync(
+        var runSummaryId = await repo.GetOrCreateRunSummaryAsync(
             _testJobQueueId, "MilestoneUpdate", 2026, 7, CancellationToken.None);
 
         await repo.FinalizeRunSummaryAsync(runSummaryId, "Failed", "SMTP error", null, CancellationToken.None);

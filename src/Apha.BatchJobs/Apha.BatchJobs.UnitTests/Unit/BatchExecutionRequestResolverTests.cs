@@ -51,6 +51,37 @@ public sealed class BatchExecutionRequestResolverTests
     }
 
     [Fact]
+    public void Resolve_WhenParametersJsonSet_ReturnsItOnTheRequest()
+    {
+        using var scope = new EnvScopeSet(
+            jobName: "RecreateSummary",
+            runMode: "Manual",
+            jobExecutionId: Guid.NewGuid().ToString("D"),
+            requestedBy: "arihant",
+            requestedAtUtc: null,
+            parametersJson: "{\"month\":\"2026-07\"}");
+
+        var request = new BatchExecutionRequestResolver().Resolve();
+
+        Assert.Equal("{\"month\":\"2026-07\"}", request.ParametersJson);
+    }
+
+    [Fact]
+    public void Resolve_WhenParametersJsonNotSet_ReturnsNull()
+    {
+        using var scope = new EnvScopeSet(
+            jobName: "RecreateSummary",
+            runMode: "Manual",
+            jobExecutionId: Guid.NewGuid().ToString("D"),
+            requestedBy: "arihant",
+            requestedAtUtc: null);
+
+        var request = new BatchExecutionRequestResolver().Resolve();
+
+        Assert.Null(request.ParametersJson);
+    }
+
+    [Fact]
     public void Resolve_WhenRequestedByMissing_DefaultsToSystem()
     {
         using var scope = new EnvScopeSet(
@@ -101,7 +132,7 @@ public sealed class BatchExecutionRequestResolverTests
     {
         private readonly List<EnvScope> _scopes = [];
 
-        public EnvScopeSet(string? jobName, string? runMode, string? jobExecutionId, string? requestedBy, string? requestedAtUtc)
+        public EnvScopeSet(string? jobName, string? runMode, string? jobExecutionId, string? requestedBy, string? requestedAtUtc, string? parametersJson = null)
         {
             _scopes.Add(new EnvScope("BATCH_JOB_NAME", jobName));
             _scopes.Add(new EnvScope("BATCH_RUN_MODE", runMode));
@@ -109,7 +140,7 @@ public sealed class BatchExecutionRequestResolverTests
             _scopes.Add(new EnvScope("BATCH_EXECUTION_ID", null));
             _scopes.Add(new EnvScope("BATCH_REQUESTED_BY", requestedBy));
             _scopes.Add(new EnvScope("BATCH_REQUESTED_AT_UTC", requestedAtUtc));
-            _scopes.Add(new EnvScope("BATCH_PARAMETERS_JSON", null));
+            _scopes.Add(new EnvScope("BATCH_JOB_PARAMETERS_JSON", parametersJson));
         }
 
         public void Dispose()

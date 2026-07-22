@@ -1,4 +1,5 @@
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Services;
+using Apha.BatchJobs.Domain.Exceptions;
 using Apha.BatchJobs.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -53,7 +54,7 @@ public sealed class NotificationSettingsPreflight : INotificationSettingsPreflig
 
         if (problems.Count > 0)
         {
-            throw new InvalidOperationException(
+            throw new NotificationSettingsConfigurationException(
                 "Milestone notification settings preflight failed against mabarchive.tbl_settings: " +
                 string.Join("; ", problems) +
                 ". vprojectreports_pmmail depends on these rows and would otherwise silently return zero " +

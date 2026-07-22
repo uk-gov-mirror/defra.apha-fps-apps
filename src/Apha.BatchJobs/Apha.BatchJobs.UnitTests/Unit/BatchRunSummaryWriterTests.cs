@@ -18,7 +18,7 @@ public sealed class BatchRunSummaryWriterTests
     {
         var logger = new RecordingLogger();
         var writer = new BatchRunSummaryWriter(logger);
-        var request = new BatchExecutionRequest("RecreateSummary", Apha.BatchJobs.Domain.Enums.RunMode.Manual, Guid.NewGuid(), "arihant", null);
+        var request = new BatchExecutionRequest("RecreateSummary", Apha.BatchJobs.Domain.Enums.RunMode.Manual, Guid.NewGuid(), "arihant", null, null);
         var jobResult = new Apha.BatchJobs.Application.Interfaces.JobExecutionResult(Guid.NewGuid(), "RecreateSummary", Apha.BatchJobs.Domain.Enums.JobStatus.Completed, TimeSpan.FromSeconds(1), 42);
         var result = BatchExecutionResult.Success(request, jobResult);
 

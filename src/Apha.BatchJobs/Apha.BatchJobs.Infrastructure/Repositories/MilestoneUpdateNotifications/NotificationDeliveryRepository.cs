@@ -36,7 +36,7 @@ public sealed class NotificationDeliveryRepository : INotificationDeliveryReposi
     // -----------------------------------------------------------------------
 
     /// <inheritdoc />
-    public async Task<Guid> InsertRunSummaryAsync(
+    public async Task<Guid> GetOrCreateRunSummaryAsync(
         Guid jobQueueId,
         string notificationType,
         int fpsYear,
@@ -46,6 +46,9 @@ public sealed class NotificationDeliveryRepository : INotificationDeliveryReposi
         await using var conn = new NpgsqlConnection(_connectionString);
         await conn.OpenAsync(cancellationToken);
 
+        // ON CONFLICT (jobqueueid) makes this safe for a whole-job retry that re-invokes the job
+        // with the same jobQueueId: the first attempt's row is found and reused instead of a
+        // unique-violation on the jobqueueid constraint masking the original transient failure.
         const string sql = @"
             INSERT INTO fps.notification_run_summary (
                 jobqueueid, notificationtype, fpsyear, monthnumber,
@@ -62,6 +65,10 @@ public sealed class NotificationDeliveryRepository : INotificationDeliveryReposi
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 NULL, NULL, true, 0, 0, 'Pending', now(), now()
             )
+            ON CONFLICT (jobqueueid) DO UPDATE SET
+                fpsyear      = EXCLUDED.fpsyear,
+                monthnumber  = EXCLUDED.monthnumber,
+                updatedatutc = now()
             RETURNING notificationrunsummaryid";
 
         await using var cmd = new NpgsqlCommand(sql, conn);
@@ -74,7 +81,7 @@ public sealed class NotificationDeliveryRepository : INotificationDeliveryReposi
         var id = (Guid)result!;
 
         _logger.LogInformation(
-            "Inserted notification_run_summary | RunSummaryId={RunSummaryId} | JobQueueId={JobQueueId} | Year={Year} | Month={Month}",
+            "notification_run_summary ready | RunSummaryId={RunSummaryId} | JobQueueId={JobQueueId} | Year={Year} | Month={Month}",
             id, jobQueueId, fpsYear, monthNumber);
 
         return id;

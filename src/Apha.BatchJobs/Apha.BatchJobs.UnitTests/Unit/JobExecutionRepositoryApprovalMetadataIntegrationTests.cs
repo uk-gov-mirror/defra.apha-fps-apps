@@ -9,16 +9,14 @@ namespace Apha.BatchJobs.UnitTests;
 
 /// <summary>
 /// PostgreSQL-backed integration tests for <see cref="JobExecutionRepository.GetApprovalMetadataAsync"/>.
-/// CR025 (fps.job_queue approval metadata columns) is additive and rolls out independently of the
-/// worker, so exactly one of the two tests below exercises real assertions depending on whether the
-/// target database has already had CR025 applied; the other skips with a clear reason.
+/// CR025 (fps.job_queue approval metadata columns) is assumed universally deployed — there is no
+/// compatibility path for a database that predates it.
 /// </summary>
 public sealed class JobExecutionRepositoryApprovalMetadataIntegrationTests : IAsyncLifetime
 {
     private const string DefaultConnectionString = "Host=localhost;Port=5432;Database=batch_jobs_foundation_db;Username=postgres;Timeout=30";
     private readonly string _connectionString;
     private string? _skipReason;
-    private bool _columnsProvisioned;
     private bool _yearEndApprovedCatalogAvailable;
 
     public JobExecutionRepositoryApprovalMetadataIntegrationTests()
@@ -40,18 +38,6 @@ public sealed class JobExecutionRepositoryApprovalMetadataIntegrationTests : IAs
                 return;
             }
 
-            _columnsProvisioned = await context.Database
-                .SqlQuery<int>($@"
-                    SELECT COUNT(*)::int AS ""Value""
-                    FROM information_schema.columns
-                    WHERE table_schema = 'fps'
-                      AND table_name = 'job_queue'
-                      AND column_name IN
-                          ('approved_by', 'approved_at_utc',
-                           'rejected_by', 'rejected_at_utc', 'rejection_reason',
-                           'triggered_by', 'triggered_at_utc')")
-                .SingleAsync() == 7;
-
             _yearEndApprovedCatalogAvailable = await context.Database
                 .SqlQuery<int>($@"
                     SELECT COUNT(*)::int AS ""Value""
@@ -70,10 +56,9 @@ public sealed class JobExecutionRepositoryApprovalMetadataIntegrationTests : IAs
     public Task DisposeAsync() => Task.CompletedTask;
 
     [SkippableFact]
-    public async Task GetApprovalMetadataAsync_WhenCr025NotYetApplied_ReturnsNullGracefully()
+    public async Task GetApprovalMetadataAsync_WhenRowNotFound_ReturnsNull()
     {
         Skip.IfNot(CanRunIntegrationTests(), _skipReason ?? "Integration DB unavailable.");
-        Skip.If(_columnsProvisioned, "CR025 is already applied on this database; see the companion happy-path test.");
 
         var repository = CreateRepository();
 
@@ -83,10 +68,9 @@ public sealed class JobExecutionRepositoryApprovalMetadataIntegrationTests : IAs
     }
 
     [SkippableFact]
-    public async Task GetApprovalMetadataAsync_WhenCr025Applied_ReturnsSeededMetadata()
+    public async Task GetApprovalMetadataAsync_WhenRowExists_ReturnsSeededMetadata()
     {
         Skip.IfNot(CanRunIntegrationTests(), _skipReason ?? "Integration DB unavailable.");
-        Skip.IfNot(_columnsProvisioned, "CR025 is not yet applied on this database; see the companion pre-rollout test.");
         Skip.IfNot(
             _yearEndApprovedCatalogAvailable,
             $"job_master/job_status seed for '{BatchJobNames.YearEndDataSetup}' + 'Approved' is not yet provisioned on this database.");

@@ -12,4 +12,5 @@ public sealed record BatchExecutionRequest(
     RunMode RunMode,
     Guid JobExecutionId,
     string RequestedBy,
-    DateTime? RequestedAtUtc);
+    DateTime? RequestedAtUtc,
+    string? ParametersJson);

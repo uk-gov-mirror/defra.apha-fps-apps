@@ -5,126 +5,59 @@ namespace Apha.BatchJobs.UnitTests;
 
 public sealed class BulkRatesExecutionContextTests
 {
-    // ── FromEnvironment — BATCH_JOB_EXECUTION_ID validation ─────────────────
+    // ── Create — identity comes from the caller, not the environment ────────
 
     [Fact]
-    public void FromEnvironment_WhenBatchJobExecutionIdMissing_ShouldThrow()
-    {
-        using var idScope = new EnvScope("BATCH_JOB_EXECUTION_ID", null);
-        using var altScope = new EnvScope("BATCH_EXECUTION_ID", null);
-
-        var ex = Assert.Throws<InvalidOperationException>(
-            () => BulkRatesExecutionContext.FromEnvironment(null));
-
-        Assert.Contains("BATCH_JOB_EXECUTION_ID", ex.Message, StringComparison.OrdinalIgnoreCase);
-    }
-
-    [Fact]
-    public void FromEnvironment_WhenBatchJobExecutionIdNotAGuid_ShouldThrow()
-    {
-        using var idScope = new EnvScope("BATCH_JOB_EXECUTION_ID", "not-a-guid");
-        using var altScope = new EnvScope("BATCH_EXECUTION_ID", null);
-
-        Assert.Throws<InvalidOperationException>(
-            () => BulkRatesExecutionContext.FromEnvironment(null));
-    }
-
-    [Fact]
-    public void FromEnvironment_WhenBatchJobExecutionIdValidGuid_ShouldReturnContextWithThatId()
+    public void Create_ShouldUseSuppliedCorrelationIdAndJobName()
     {
         var id = Guid.NewGuid();
-        using var idScope = new EnvScope("BATCH_JOB_EXECUTION_ID", id.ToString("D"));
-        using var nameScope = new EnvScope("BATCH_JOB_NAME", BatchJobNames.BulkTestRatesUpdate);
-        using var paramScope = new EnvScope("BATCH_JOB_PARAMETERS_JSON", null);
 
-        var ctx = BulkRatesExecutionContext.FromEnvironment(null);
+        var ctx = BulkRatesExecutionContext.Create(id.ToString("D"), BatchJobNames.BulkTestRatesUpdate);
 
         Assert.Equal(id, ctx.JobExecutionId);
         Assert.Equal(BatchJobNames.BulkTestRatesUpdate, ctx.JobName);
     }
 
-    // ── FromEnvironment — BATCH_EXECUTION_ID fallback ───────────────────────
+    // ── Create — TriggerYear ──────────────────────────────────────────────
 
     [Fact]
-    public void FromEnvironment_WhenBatchExecutionIdFallbackSet_ShouldUseIt()
+    public void Create_WhenParametersJsonMissing_ShouldHaveNullTriggerYear()
     {
-        var id = Guid.NewGuid();
-        using var idScope = new EnvScope("BATCH_JOB_EXECUTION_ID", null);
-        using var altScope = new EnvScope("BATCH_EXECUTION_ID", id.ToString("D"));
-        using var nameScope = new EnvScope("BATCH_JOB_NAME", BatchJobNames.BulkStaffRatesUpdate);
-
-        var ctx = BulkRatesExecutionContext.FromEnvironment(null);
-
-        Assert.Equal(id, ctx.JobExecutionId);
-    }
-
-    // ── FromEnvironment — TriggerYear ────────────────────────────────────────
-
-    [Fact]
-    public void FromEnvironment_WhenParametersJsonMissing_ShouldHaveNullTriggerYear()
-    {
-        using var idScope = new EnvScope("BATCH_JOB_EXECUTION_ID", Guid.NewGuid().ToString("D"));
         using var paramScope = new EnvScope("BATCH_JOB_PARAMETERS_JSON", null);
 
-        var ctx = BulkRatesExecutionContext.FromEnvironment(null);
+        var ctx = BulkRatesExecutionContext.Create(Guid.NewGuid().ToString("D"), BatchJobNames.BulkTestRatesUpdate);
 
         Assert.Null(ctx.TriggerYear);
     }
 
     [Fact]
-    public void FromEnvironment_WhenParametersJsonContainsNumericYear_ShouldParseTriggerYear()
+    public void Create_WhenParametersJsonContainsNumericYear_ShouldParseTriggerYear()
     {
-        using var idScope = new EnvScope("BATCH_JOB_EXECUTION_ID", Guid.NewGuid().ToString("D"));
         using var paramScope = new EnvScope("BATCH_JOB_PARAMETERS_JSON", "{\"year\":2027}");
 
-        var ctx = BulkRatesExecutionContext.FromEnvironment(null);
+        var ctx = BulkRatesExecutionContext.Create(Guid.NewGuid().ToString("D"), BatchJobNames.BulkTestRatesUpdate);
 
         Assert.Equal(2027, ctx.TriggerYear);
     }
 
     [Fact]
-    public void FromEnvironment_WhenParametersJsonContainsStringYear_ShouldParseTriggerYear()
+    public void Create_WhenParametersJsonContainsStringYear_ShouldParseTriggerYear()
     {
-        using var idScope = new EnvScope("BATCH_JOB_EXECUTION_ID", Guid.NewGuid().ToString("D"));
         using var paramScope = new EnvScope("BATCH_JOB_PARAMETERS_JSON", "{\"year\":\"2028\"}");
 
-        var ctx = BulkRatesExecutionContext.FromEnvironment(null);
+        var ctx = BulkRatesExecutionContext.Create(Guid.NewGuid().ToString("D"), BatchJobNames.BulkTestRatesUpdate);
 
         Assert.Equal(2028, ctx.TriggerYear);
     }
 
     [Fact]
-    public void FromEnvironment_WhenParametersJsonInvalid_ShouldHaveNullTriggerYear()
+    public void Create_WhenParametersJsonInvalid_ShouldHaveNullTriggerYear()
     {
-        using var idScope = new EnvScope("BATCH_JOB_EXECUTION_ID", Guid.NewGuid().ToString("D"));
         using var paramScope = new EnvScope("BATCH_JOB_PARAMETERS_JSON", "not-json");
 
-        var ctx = BulkRatesExecutionContext.FromEnvironment(null);
+        var ctx = BulkRatesExecutionContext.Create(Guid.NewGuid().ToString("D"), BatchJobNames.BulkTestRatesUpdate);
 
         Assert.Null(ctx.TriggerYear);
-    }
-
-    // ── FromEnvironment — CorrelationId ──────────────────────────────────────
-
-    [Fact]
-    public void FromEnvironment_WhenCorrelationIdProvided_ShouldUseIt()
-    {
-        using var idScope = new EnvScope("BATCH_JOB_EXECUTION_ID", Guid.NewGuid().ToString("D"));
-
-        var ctx = BulkRatesExecutionContext.FromEnvironment("my-trace-id");
-
-        Assert.Equal("my-trace-id", ctx.CorrelationId);
-    }
-
-    [Fact]
-    public void FromEnvironment_WhenCorrelationIdNullOrEmpty_ShouldDefaultToJobExecutionId()
-    {
-        var id = Guid.NewGuid();
-        using var idScope = new EnvScope("BATCH_JOB_EXECUTION_ID", id.ToString("D"));
-
-        var ctx = BulkRatesExecutionContext.FromEnvironment(null);
-
-        Assert.Equal(id.ToString("D"), ctx.CorrelationId);
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────

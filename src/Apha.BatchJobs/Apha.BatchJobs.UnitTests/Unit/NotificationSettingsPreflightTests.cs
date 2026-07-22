@@ -1,3 +1,4 @@
+using Apha.BatchJobs.Domain.Exceptions;
 using Apha.BatchJobs.Infrastructure.Data;
 using Apha.BatchJobs.Infrastructure.Repositories.MilestoneUpdateNotifications;
 using Microsoft.EntityFrameworkCore;
@@ -46,7 +47,7 @@ public sealed class NotificationSettingsPreflightTests
     [InlineData("PIMS_Project_Report_Name")]
     [InlineData("PIMS_Project_Current_Root")]
     [InlineData("PIMS_Project_Edit_Link")]
-    public async Task ValidateAsync_WhenOneRequiredSettingMissing_ShouldThrowInvalidOperationException(string missingId)
+    public async Task ValidateAsync_WhenOneRequiredSettingMissing_ShouldThrowNotificationSettingsConfigurationException(string missingId)
     {
         await using var context = CreateInMemoryDbContext();
 
@@ -59,7 +60,7 @@ public sealed class NotificationSettingsPreflightTests
 
         var preflight = new NotificationSettingsPreflight(context, NullLogger<NotificationSettingsPreflight>.Instance);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => preflight.ValidateAsync(CancellationToken.None));
+        var ex = await Assert.ThrowsAsync<NotificationSettingsConfigurationException>(() => preflight.ValidateAsync(CancellationToken.None));
         Assert.Contains(missingId, ex.Message);
         Assert.Contains("missing", ex.Message);
     }
@@ -68,7 +69,7 @@ public sealed class NotificationSettingsPreflightTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public async Task ValidateAsync_WhenRequiredSettingValueIsBlank_ShouldThrowInvalidOperationException(string? blankValue)
+    public async Task ValidateAsync_WhenRequiredSettingValueIsBlank_ShouldThrowNotificationSettingsConfigurationException(string? blankValue)
     {
         await using var context = CreateInMemoryDbContext();
         SeedSetting(context, "PIMS_Project_Report_Name", blankValue);
@@ -78,7 +79,7 @@ public sealed class NotificationSettingsPreflightTests
 
         var preflight = new NotificationSettingsPreflight(context, NullLogger<NotificationSettingsPreflight>.Instance);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => preflight.ValidateAsync(CancellationToken.None));
+        var ex = await Assert.ThrowsAsync<NotificationSettingsConfigurationException>(() => preflight.ValidateAsync(CancellationToken.None));
         Assert.Contains("PIMS_Project_Report_Name", ex.Message);
         Assert.Contains("blank", ex.Message);
     }
@@ -90,7 +91,7 @@ public sealed class NotificationSettingsPreflightTests
 
         var preflight = new NotificationSettingsPreflight(context, NullLogger<NotificationSettingsPreflight>.Instance);
 
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => preflight.ValidateAsync(CancellationToken.None));
+        var ex = await Assert.ThrowsAsync<NotificationSettingsConfigurationException>(() => preflight.ValidateAsync(CancellationToken.None));
         Assert.Contains("PIMS_Project_Report_Name", ex.Message);
         Assert.Contains("PIMS_Project_Current_Root", ex.Message);
         Assert.Contains("PIMS_Project_Edit_Link", ex.Message);

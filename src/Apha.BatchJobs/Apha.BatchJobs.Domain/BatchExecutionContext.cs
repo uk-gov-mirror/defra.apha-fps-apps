@@ -63,9 +63,12 @@ public sealed record BatchExecutionContext
                  string.Equals(jobName, Constants.BatchJobNames.MilestoneUpdateNotifications, StringComparison.OrdinalIgnoreCase)))
             {
                 jobExecutionId = Guid.NewGuid();
-                // Publish the self-generated ID back to the process environment so that
-                // downstream components (e.g. MilestoneUpdateNotificationsJobHandler.ResolveJobQueueIdAsync)
-                // can look up the corresponding fps.job_queue row via IJobExecutionRepository.
+                // Publish the self-generated ID back to the process environment so that a
+                // second BatchExecutionContext.FromEnvironment() call within the same process
+                // (there is none today, but nothing prevents one) observes the same value —
+                // this BatchExecutionContext instance is itself the single source JobOrchestrator
+                // and, transitively via BatchExecutionRequest/ICurrentJobExecutionContext, every
+                // job read this ID from.
                 Environment.SetEnvironmentVariable("BATCH_JOB_EXECUTION_ID", jobExecutionId.ToString("D"));
             }
             else
@@ -101,7 +104,7 @@ public sealed record BatchExecutionContext
         if (requestedAtUtc == null && runMode == RunMode.Scheduled)
             requestedAtUtc = DateTimeOffset.UtcNow;
 
-        var parametersJson = Environment.GetEnvironmentVariable("BATCH_PARAMETERS_JSON");
+        var parametersJson = Environment.GetEnvironmentVariable("BATCH_JOB_PARAMETERS_JSON");
         if (!string.IsNullOrWhiteSpace(parametersJson))
         {
             // Validate it is parseable JSON to surface misconfiguration early.
@@ -112,7 +115,7 @@ public sealed record BatchExecutionContext
             catch (System.Text.Json.JsonException ex)
             {
                 throw new JobValidationException(
-                    $"BATCH_PARAMETERS_JSON is not valid JSON: {ex.Message}");
+                    $"BATCH_JOB_PARAMETERS_JSON is not valid JSON: {ex.Message}");
             }
         }
 

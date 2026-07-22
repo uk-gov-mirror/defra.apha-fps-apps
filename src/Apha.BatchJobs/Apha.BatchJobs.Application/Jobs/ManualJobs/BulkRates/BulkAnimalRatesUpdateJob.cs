@@ -35,7 +35,8 @@ public sealed class BulkAnimalRatesUpdateJob : IBatchJob
 
     public async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        var context = BulkRatesExecutionContext.FromEnvironment(_correlationService.GetCorrelationId());
+        // GetCorrelationId() is set unconditionally by JobOrchestrator before any job runs.
+        var context = BulkRatesExecutionContext.Create(_correlationService.GetCorrelationId()!, Name);
 
         using var scope = _logger.BeginScope(new Dictionary<string, object?>
         {

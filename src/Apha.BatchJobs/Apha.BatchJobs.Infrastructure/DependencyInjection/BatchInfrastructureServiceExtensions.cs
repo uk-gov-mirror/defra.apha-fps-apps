@@ -23,6 +23,7 @@ public static class BatchInfrastructureServiceExtensions
 
         // Shared execution-context services whose implementations are in Infrastructure.
         services.AddScoped<IExecutionYearContext, ExecutionYearContext>();
+        services.AddScoped<ICurrentJobExecutionContext, CurrentJobExecutionContext>();
         services.AddSingleton<ICorrelationService, CorrelationService>();
 
         return services;

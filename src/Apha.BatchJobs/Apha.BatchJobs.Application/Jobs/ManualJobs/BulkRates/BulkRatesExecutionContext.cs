@@ -4,40 +4,32 @@ namespace Apha.BatchJobs.Application.Jobs.ManualJobs.BulkRates;
 
 /// <summary>
 /// Immutable execution context for BulkRates worker services.
-/// Carries the correlation identity and trigger parameters resolved from environment variables.
-/// The worker uses jobexecutionid to load authoritative data from fps.job_queue;
-/// event-supplied parameters (year) are only used for early mismatch detection.
+/// JobExecutionId and JobName come from the execution request JobOrchestrator already resolved
+/// for this run (the correlation id it set, and the job's own <c>Name</c>) rather than
+/// re-parsing BATCH_JOB_EXECUTION_ID/BATCH_JOB_NAME from the environment a second time.
+/// TriggerYear has no existing scoped source — it is job-specific payload data used only for
+/// early mismatch detection, so it is still read from BATCH_JOB_PARAMETERS_JSON.
 /// </summary>
 public sealed record BulkRatesExecutionContext(
-    string CorrelationId,
     Guid JobExecutionId,
     string JobName,
     int? TriggerYear)
 {
     /// <summary>
-    /// Builds execution context from worker environment variables.
+    /// Builds the execution context from the already-resolved correlation id and job name.
     /// </summary>
-    public static BulkRatesExecutionContext FromEnvironment(string? correlationId)
+    /// <param name="correlationId">
+    /// The current execution's correlation id, set unconditionally by <c>JobOrchestrator</c>
+    /// (as <c>jobExecutionId.ToString("D")</c>) before any job's <c>ExecuteAsync</c> runs.
+    /// </param>
+    /// <param name="jobName">The invoking job's own <c>Name</c>.</param>
+    public static BulkRatesExecutionContext Create(string correlationId, string jobName)
     {
-        var jobExecutionIdEnv = Environment.GetEnvironmentVariable("BATCH_JOB_EXECUTION_ID")
-            ?? Environment.GetEnvironmentVariable("BATCH_EXECUTION_ID");
-
-        if (string.IsNullOrWhiteSpace(jobExecutionIdEnv) || !Guid.TryParse(jobExecutionIdEnv, out var jobExecutionId))
-        {
-            throw new InvalidOperationException(
-                "BATCH_JOB_EXECUTION_ID must be a valid GUID for BulkRates jobs. " +
-                "It is set by the API before publishing the EventBridge trigger.");
-        }
-
-        var jobName = Environment.GetEnvironmentVariable("BATCH_JOB_NAME") ?? string.Empty;
+        var jobExecutionId = Guid.Parse(correlationId);
         var parametersJson = Environment.GetEnvironmentVariable("BATCH_JOB_PARAMETERS_JSON");
         var triggerYear = TryReadInt(parametersJson, "year");
 
-        return new BulkRatesExecutionContext(
-            string.IsNullOrWhiteSpace(correlationId) ? jobExecutionId.ToString("D") : correlationId,
-            jobExecutionId,
-            jobName,
-            triggerYear);
+        return new BulkRatesExecutionContext(jobExecutionId, jobName, triggerYear);
     }
 
     private static int? TryReadInt(string? json, string propertyName)

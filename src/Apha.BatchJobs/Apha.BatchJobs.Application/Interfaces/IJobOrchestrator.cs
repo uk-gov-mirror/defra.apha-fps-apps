@@ -16,9 +16,10 @@ public interface IJobOrchestrator
     /// <param name="jobExecutionId">External execution UUID supplied by caller/API for polling and cross-system correlation.</param>
     /// <param name="userId">The user/system ID requesting the job execution.</param>
     /// <param name="requestedAtUtc">Trigger acceptance timestamp from caller/API when available.</param>
+    /// <param name="parametersJson">Job-specific parameters JSON resolved once by BatchExecutionRequestResolver.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The execution result including JobQueueId, status, and duration.</returns>
-    Task<JobExecutionResult> RunAsync(string jobName, RunMode runMode, Guid jobExecutionId, string userId, DateTime? requestedAtUtc = null, CancellationToken cancellationToken = default);
+    Task<JobExecutionResult> RunAsync(string jobName, RunMode runMode, Guid jobExecutionId, string userId, DateTime? requestedAtUtc = null, string? parametersJson = null, CancellationToken cancellationToken = default);
 }
 
 /// <summary>

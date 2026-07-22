@@ -484,14 +484,6 @@ public class JobExecutionRepository : IJobExecutionRepository
             await connection.OpenAsync(cancellationToken);
         }
 
-        if (!await AllApprovalColumnsExistAsync(connection, cancellationToken))
-        {
-            _logger.LogInformation(
-                "Year End job_queue approval metadata columns are not yet provisioned in this environment (see CR025) | JobExecutionId={JobExecutionId}",
-                jobExecutionId);
-            return null;
-        }
-
         await using var command = connection.CreateCommand();
         command.CommandText = @"
             SELECT approved_by, approved_at_utc,
@@ -515,47 +507,6 @@ public class JobExecutionRepository : IJobExecutionRepository
             reader.IsDBNull(4) ? null : reader.GetString(4),
             reader.IsDBNull(5) ? null : reader.GetString(5),
             reader.IsDBNull(6) ? null : reader.GetDateTime(6));
-    }
-
-    private static readonly string[] ApprovalMetadataColumns =
-    {
-        "approved_by",
-        "approved_at_utc",
-        "rejected_by",
-        "rejected_at_utc",
-        "rejection_reason",
-        "triggered_by",
-        "triggered_at_utc"
-    };
-
-    private static async Task<bool> AllApprovalColumnsExistAsync(DbConnection connection, CancellationToken cancellationToken)
-    {
-        foreach (var column in ApprovalMetadataColumns)
-        {
-            if (!await ColumnExistsAsync(connection, column, cancellationToken))
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private static async Task<bool> ColumnExistsAsync(DbConnection connection, string column, CancellationToken cancellationToken)
-    {
-        await using var command = connection.CreateCommand();
-        command.CommandText = @"
-            SELECT EXISTS (
-                SELECT 1
-                FROM information_schema.columns
-                WHERE table_schema = 'fps'
-                  AND table_name = 'job_queue'
-                  AND column_name = @column
-            );";
-        AddParameter(command, "column", column);
-
-        var result = await command.ExecuteScalarAsync(cancellationToken);
-        return result is bool exists && exists;
     }
 
     private static void AddParameter(DbCommand command, string name, object value)

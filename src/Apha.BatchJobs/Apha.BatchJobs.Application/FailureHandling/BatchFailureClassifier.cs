@@ -33,6 +33,7 @@ public sealed class BatchFailureClassifier
         {
             JobValidationException => Build(BatchExitCodes.ConfigurationFailure, BatchFailureCategory.Configuration, MarkerKey.Validation),
             MabArchiveYearConfigurationException => Build(BatchExitCodes.ConfigurationFailure, BatchFailureCategory.Configuration, MarkerKey.General),
+            NotificationSettingsConfigurationException => Build(BatchExitCodes.ConfigurationFailure, BatchFailureCategory.Configuration, MarkerKey.General),
             JobLockException => Build(BatchExitCodes.LockFailure, BatchFailureCategory.Concurrency, MarkerKey.Concurrency),
             BusinessEmailException => Build(BatchExitCodes.EmailFailure, BatchFailureCategory.Email, MarkerKey.General),
             _ => ClassifyByExceptionChain(exception)

@@ -39,8 +39,8 @@ public sealed class BulkTestRatesService : IBulkTestRatesService
 
     public async Task ExecuteAsync(BulkRatesExecutionContext context, CancellationToken cancellationToken = default)
     {
-        // ── 1. Load and validate the approved request ─────────────────────
-        var entry = await _repository.GetApprovedRequestAsync(context.JobExecutionId, cancellationToken)
+        // ── 1. Load Running, previously approved request ──────────────────
+        var entry = await _repository.GetRunningRequestAsync(context.JobExecutionId, cancellationToken)
             ?? throw new InvalidOperationException(
                 $"BulkTestRatesUpdate: no job_queue row found for JobExecutionId={context.JobExecutionId:D}.");
 
@@ -158,11 +158,23 @@ public sealed class BulkTestRatesService : IBulkTestRatesService
         }
 
         // ── 5. Delete staging rows AFTER successful commit (spec §10.6) ──
-        await _repository.DeleteFecStagingRowsAsync(jobQueueId, cancellationToken);
+        // Best-effort cleanup: the rate change is already committed, so a failure here must not
+        // fail the job or trigger a whole-job retry — that would re-run an already-applied change
+        // against staging rows that (mostly) still need clearing. Log and move on.
+        try
+        {
+            await _repository.DeleteFecStagingRowsAsync(jobQueueId, cancellationToken);
 
-        _logger.LogInformation(
-            "BulkTestRatesUpdate staging cleared | JobQueueId={JobQueueId}",
-            jobQueueId);
+            _logger.LogInformation(
+                "BulkTestRatesUpdate staging cleared | JobQueueId={JobQueueId}",
+                jobQueueId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "BulkTestRatesUpdate staging cleanup failed after commit; rate changes were already applied — staging rows may require manual cleanup | JobQueueId={JobQueueId}",
+                jobQueueId);
+        }
     }
 
     // ── Precondition validation ─────────────────────────────────────────────

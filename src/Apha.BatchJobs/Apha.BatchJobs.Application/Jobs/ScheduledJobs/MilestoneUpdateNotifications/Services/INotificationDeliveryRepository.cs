@@ -17,11 +17,14 @@ public interface INotificationDeliveryRepository
     // -----------------------------------------------------------------------
 
     /// <summary>
-    /// Creates the per-execution run summary row with <c>capssummarystatus = 'Pending'</c>
-    /// and the initial counters at zero. Called once, after reporting-year resolution succeeds.
-    /// Returns the generated <c>notificationrunsummaryid</c>.
+    /// Idempotent by <c>jobqueueid</c>: creates the per-execution run summary row (
+    /// <c>capssummarystatus = 'Pending'</c>, counters at zero) the first time it is called for a
+    /// given <c>jobQueueId</c>, or returns the existing row's id on every subsequent call —
+    /// including a whole-job retry that re-invokes the job with the same jobQueueId. Callers
+    /// must not assume this always inserts a fresh row. Called once per attempt, after
+    /// reporting-year resolution succeeds.
     /// </summary>
-    Task<Guid> InsertRunSummaryAsync(
+    Task<Guid> GetOrCreateRunSummaryAsync(
         Guid jobQueueId,
         string notificationType,
         int fpsYear,

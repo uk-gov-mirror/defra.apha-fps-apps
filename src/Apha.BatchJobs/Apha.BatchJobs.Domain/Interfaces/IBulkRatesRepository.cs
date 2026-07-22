@@ -10,10 +10,12 @@ namespace Apha.BatchJobs.Domain.Interfaces;
 public interface IBulkRatesRepository
 {
     /// <summary>
-    /// Loads the fps.job_queue row for the given jobexecutionid.
-    /// Returns null when no row exists with that identity.
+    /// Loads the fps.job_queue row for the given jobexecutionid. By the time a job's service
+    /// calls this, JobOrchestrator has already transitioned the row from Approved to Running —
+    /// the row's persisted approval metadata (approved_by/approved_at_utc) still reflects the
+    /// earlier approval step. Returns null when no row exists with that identity.
     /// </summary>
-    Task<BulkRatesJobQueueEntry?> GetApprovedRequestAsync(
+    Task<BulkRatesJobQueueEntry?> GetRunningRequestAsync(
         Guid jobExecutionId,
         CancellationToken cancellationToken = default);
 

@@ -62,7 +62,7 @@ public sealed class BatchWorkerRunnerTests
     {
         using var scope = new EnvScopeSet("RecreateSummary", "Manual", Guid.NewGuid().ToString("D"), "arihant");
         var orchestrator = Substitute.For<IJobOrchestrator>();
-        orchestrator.RunAsync(Arg.Any<string>(), Arg.Any<RunMode>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<DateTime?>(), Arg.Any<CancellationToken>())
+        orchestrator.RunAsync(Arg.Any<string>(), Arg.Any<RunMode>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<DateTime?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(new JobExecutionResult(Guid.NewGuid(), "RecreateSummary", JobStatus.Completed, TimeSpan.FromSeconds(1), 1));
         var summaryWriter = new RecordingSummaryWriter();
         var runner = CreateRunner(orchestrator, summaryWriter, hostLifetime: null, overallTimeoutSeconds: 3600);
@@ -88,7 +88,7 @@ public sealed class BatchWorkerRunnerTests
         Assert.Equal(1, summaryWriter.CallCount);
         Assert.Equal(BatchRunOutcome.Failure, summaryWriter.LastResult!.Outcome);
         await orchestrator.DidNotReceive().RunAsync(
-            Arg.Any<string>(), Arg.Any<RunMode>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<DateTime?>(), Arg.Any<CancellationToken>());
+            Arg.Any<string>(), Arg.Any<RunMode>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<DateTime?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -96,7 +96,7 @@ public sealed class BatchWorkerRunnerTests
     {
         using var scope = new EnvScopeSet("RecreateSummary", "Manual", Guid.NewGuid().ToString("D"), "arihant");
         var orchestrator = Substitute.For<IJobOrchestrator>();
-        orchestrator.RunAsync(Arg.Any<string>(), Arg.Any<RunMode>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<DateTime?>(), Arg.Any<CancellationToken>())
+        orchestrator.RunAsync(Arg.Any<string>(), Arg.Any<RunMode>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<DateTime?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromException<JobExecutionResult>(new JobLockException("already running")));
         var summaryWriter = new RecordingSummaryWriter();
         var runner = CreateRunner(orchestrator, summaryWriter, hostLifetime: null, overallTimeoutSeconds: 3600);
@@ -116,7 +116,7 @@ public sealed class BatchWorkerRunnerTests
         lifetimeCts.Cancel();
 
         var orchestrator = Substitute.For<IJobOrchestrator>();
-        orchestrator.RunAsync(Arg.Any<string>(), Arg.Any<RunMode>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<DateTime?>(), Arg.Any<CancellationToken>())
+        orchestrator.RunAsync(Arg.Any<string>(), Arg.Any<RunMode>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<DateTime?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromException<JobExecutionResult>(new OperationCanceledException()));
         var summaryWriter = new RecordingSummaryWriter();
         var runner = CreateRunner(orchestrator, summaryWriter, hostLifetime, overallTimeoutSeconds: 3600);
@@ -133,8 +133,8 @@ public sealed class BatchWorkerRunnerTests
     {
         using var scope = new EnvScopeSet("RecreateSummary", "Manual", Guid.NewGuid().ToString("D"), "arihant");
         var orchestrator = Substitute.For<IJobOrchestrator>();
-        orchestrator.RunAsync(Arg.Any<string>(), Arg.Any<RunMode>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<DateTime?>(), Arg.Any<CancellationToken>())
-            .Returns(callInfo => WaitForCancellationAsync((CancellationToken)callInfo[5]));
+        orchestrator.RunAsync(Arg.Any<string>(), Arg.Any<RunMode>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<DateTime?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo => WaitForCancellationAsync((CancellationToken)callInfo[6]));
         var summaryWriter = new RecordingSummaryWriter();
         var runner = CreateRunner(orchestrator, summaryWriter, hostLifetime: null, overallTimeoutSeconds: 1);
 
@@ -149,7 +149,7 @@ public sealed class BatchWorkerRunnerTests
     {
         using var scope = new EnvScopeSet("RecreateSummary", "Manual", Guid.NewGuid().ToString("D"), "arihant");
         var orchestrator = Substitute.For<IJobOrchestrator>();
-        orchestrator.RunAsync(Arg.Any<string>(), Arg.Any<RunMode>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<DateTime?>(), Arg.Any<CancellationToken>())
+        orchestrator.RunAsync(Arg.Any<string>(), Arg.Any<RunMode>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<DateTime?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromException<JobExecutionResult>(new OperationCanceledException()));
         var summaryWriter = new RecordingSummaryWriter();
         var runner = CreateRunner(orchestrator, summaryWriter, hostLifetime: null, overallTimeoutSeconds: 3600);
@@ -184,7 +184,7 @@ public sealed class BatchWorkerRunnerTests
             _scopes.Add(new EnvScope("BATCH_EXECUTION_ID", null));
             _scopes.Add(new EnvScope("BATCH_REQUESTED_BY", requestedBy));
             _scopes.Add(new EnvScope("BATCH_REQUESTED_AT_UTC", null));
-            _scopes.Add(new EnvScope("BATCH_PARAMETERS_JSON", null));
+            _scopes.Add(new EnvScope("BATCH_JOB_PARAMETERS_JSON", null));
         }
 
         public void Dispose()

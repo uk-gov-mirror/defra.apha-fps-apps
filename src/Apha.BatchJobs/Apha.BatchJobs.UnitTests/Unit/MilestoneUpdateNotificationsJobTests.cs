@@ -3,6 +3,7 @@ using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications
 using Apha.BatchJobs.Domain.Configuration;
 using Apha.BatchJobs.Domain.Constants;
 using Apha.BatchJobs.Domain.Entities.MilestoneUpdateNotifications;
+using Apha.BatchJobs.Domain.Enums;
 using Apha.BatchJobs.Domain.Exceptions;
 using Apha.BatchJobs.Domain.Interfaces;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -11,13 +12,25 @@ using NSubstitute;
 
 namespace Apha.BatchJobs.UnitTests;
 
-public sealed class MilestoneUpdateNotificationsJobHandlerTests
+public sealed class MilestoneUpdateNotificationsJobTests
 {
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
 
-    private static MilestoneUpdateNotificationsJobHandler CreateHandler(
+    private static ICurrentJobExecutionContext DefaultExecutionContext()
+    {
+        var context = Substitute.For<ICurrentJobExecutionContext>();
+        context.JobExecutionId.Returns(Guid.NewGuid());
+        context.JobQueueId.Returns(Guid.NewGuid());
+        context.JobName.Returns(BatchJobNames.MilestoneUpdateNotifications);
+        context.RunMode.Returns(RunMode.Manual);
+        context.RequestedBy.Returns("test-user");
+        context.ParametersJson.Returns((string?)null);
+        return context;
+    }
+
+    private static MilestoneUpdateNotificationsJob CreateHandler(
         IMilestoneNotificationReadRepository? readRepository = null,
         INotificationSettingsPreflight? preflight = null,
         IReportingYearResolver? yearResolver = null,
@@ -26,9 +39,10 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
         IEmailService? emailService = null,
         INotificationDeliveryRepository? deliveryRepository = null,
         ICapsSummaryService? capsSummaryService = null,
+        ICurrentJobExecutionContext? executionContext = null,
         MilestoneNotificationsSettings? settings = null)
     {
-        return new MilestoneUpdateNotificationsJobHandler(
+        return new MilestoneUpdateNotificationsJob(
             readRepository ?? Substitute.For<IMilestoneNotificationReadRepository>(),
             preflight ?? Substitute.For<INotificationSettingsPreflight>(),
             yearResolver ?? Substitute.For<IReportingYearResolver>(),
@@ -37,16 +51,16 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
             emailService ?? Substitute.For<IEmailService>(),
             deliveryRepository ?? Substitute.For<INotificationDeliveryRepository>(),
             capsSummaryService ?? Substitute.For<ICapsSummaryService>(),
-            null, // executionRepository — null in unit tests; jobQueueId defaults to Guid.Empty
+            executionContext ?? DefaultExecutionContext(),
             Options.Create(settings ?? new MilestoneNotificationsSettings()),
-            NullLogger<MilestoneUpdateNotificationsJobHandler>.Instance);
+            NullLogger<MilestoneUpdateNotificationsJob>.Instance);
     }
 
     // Shared delivery repo stub: returns a new RunSummaryId and no-op for other methods.
     private static INotificationDeliveryRepository DefaultDeliveryRepo()
     {
         var repo = Substitute.For<INotificationDeliveryRepository>();
-        repo.InsertRunSummaryAsync(default, default!, default, default, default)
+        repo.GetOrCreateRunSummaryAsync(default, default!, default, default, default)
             .ReturnsForAnyArgs(Guid.NewGuid());
         return repo;
     }
@@ -59,7 +73,7 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
     public void Constructor_WhenReadRepositoryIsNull_ShouldThrow()
     {
         var ex = Assert.Throws<ArgumentNullException>(() =>
-            new MilestoneUpdateNotificationsJobHandler(
+            new MilestoneUpdateNotificationsJob(
                 null!,
                 Substitute.For<INotificationSettingsPreflight>(),
                 Substitute.For<IReportingYearResolver>(),
@@ -68,9 +82,9 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
                 Substitute.For<IEmailService>(),
                 Substitute.For<INotificationDeliveryRepository>(),
                 Substitute.For<ICapsSummaryService>(),
-                null,
+                DefaultExecutionContext(),
                 Options.Create(new MilestoneNotificationsSettings()),
-                NullLogger<MilestoneUpdateNotificationsJobHandler>.Instance));
+                NullLogger<MilestoneUpdateNotificationsJob>.Instance));
         Assert.Equal("readRepository", ex.ParamName);
     }
 
@@ -78,7 +92,7 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
     public void Constructor_WhenPreflightIsNull_ShouldThrow()
     {
         var ex = Assert.Throws<ArgumentNullException>(() =>
-            new MilestoneUpdateNotificationsJobHandler(
+            new MilestoneUpdateNotificationsJob(
                 Substitute.For<IMilestoneNotificationReadRepository>(),
                 null!,
                 Substitute.For<IReportingYearResolver>(),
@@ -87,9 +101,9 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
                 Substitute.For<IEmailService>(),
                 Substitute.For<INotificationDeliveryRepository>(),
                 Substitute.For<ICapsSummaryService>(),
-                null,
+                DefaultExecutionContext(),
                 Options.Create(new MilestoneNotificationsSettings()),
-                NullLogger<MilestoneUpdateNotificationsJobHandler>.Instance));
+                NullLogger<MilestoneUpdateNotificationsJob>.Instance));
         Assert.Equal("preflight", ex.ParamName);
     }
 
@@ -97,7 +111,7 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
     public void Constructor_WhenYearResolverIsNull_ShouldThrow()
     {
         var ex = Assert.Throws<ArgumentNullException>(() =>
-            new MilestoneUpdateNotificationsJobHandler(
+            new MilestoneUpdateNotificationsJob(
                 Substitute.For<IMilestoneNotificationReadRepository>(),
                 Substitute.For<INotificationSettingsPreflight>(),
                 null!,
@@ -106,9 +120,9 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
                 Substitute.For<IEmailService>(),
                 Substitute.For<INotificationDeliveryRepository>(),
                 Substitute.For<ICapsSummaryService>(),
-                null,
+                DefaultExecutionContext(),
                 Options.Create(new MilestoneNotificationsSettings()),
-                NullLogger<MilestoneUpdateNotificationsJobHandler>.Instance));
+                NullLogger<MilestoneUpdateNotificationsJob>.Instance));
         Assert.Equal("yearResolver", ex.ParamName);
     }
 
@@ -116,7 +130,7 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
     public void Constructor_WhenGroupingServiceIsNull_ShouldThrow()
     {
         var ex = Assert.Throws<ArgumentNullException>(() =>
-            new MilestoneUpdateNotificationsJobHandler(
+            new MilestoneUpdateNotificationsJob(
                 Substitute.For<IMilestoneNotificationReadRepository>(),
                 Substitute.For<INotificationSettingsPreflight>(),
                 Substitute.For<IReportingYearResolver>(),
@@ -125,9 +139,9 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
                 Substitute.For<IEmailService>(),
                 Substitute.For<INotificationDeliveryRepository>(),
                 Substitute.For<ICapsSummaryService>(),
-                null,
+                DefaultExecutionContext(),
                 Options.Create(new MilestoneNotificationsSettings()),
-                NullLogger<MilestoneUpdateNotificationsJobHandler>.Instance));
+                NullLogger<MilestoneUpdateNotificationsJob>.Instance));
         Assert.Equal("groupingService", ex.ParamName);
     }
 
@@ -135,7 +149,7 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
     public void Constructor_WhenTemplateRendererIsNull_ShouldThrow()
     {
         var ex = Assert.Throws<ArgumentNullException>(() =>
-            new MilestoneUpdateNotificationsJobHandler(
+            new MilestoneUpdateNotificationsJob(
                 Substitute.For<IMilestoneNotificationReadRepository>(),
                 Substitute.For<INotificationSettingsPreflight>(),
                 Substitute.For<IReportingYearResolver>(),
@@ -144,9 +158,9 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
                 Substitute.For<IEmailService>(),
                 Substitute.For<INotificationDeliveryRepository>(),
                 Substitute.For<ICapsSummaryService>(),
-                null,
+                DefaultExecutionContext(),
                 Options.Create(new MilestoneNotificationsSettings()),
-                NullLogger<MilestoneUpdateNotificationsJobHandler>.Instance));
+                NullLogger<MilestoneUpdateNotificationsJob>.Instance));
         Assert.Equal("templateRenderer", ex.ParamName);
     }
 
@@ -154,7 +168,7 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
     public void Constructor_WhenEmailServiceIsNull_ShouldThrow()
     {
         var ex = Assert.Throws<ArgumentNullException>(() =>
-            new MilestoneUpdateNotificationsJobHandler(
+            new MilestoneUpdateNotificationsJob(
                 Substitute.For<IMilestoneNotificationReadRepository>(),
                 Substitute.For<INotificationSettingsPreflight>(),
                 Substitute.For<IReportingYearResolver>(),
@@ -163,9 +177,9 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
                 null!,
                 Substitute.For<INotificationDeliveryRepository>(),
                 Substitute.For<ICapsSummaryService>(),
-                null,
+                DefaultExecutionContext(),
                 Options.Create(new MilestoneNotificationsSettings()),
-                NullLogger<MilestoneUpdateNotificationsJobHandler>.Instance));
+                NullLogger<MilestoneUpdateNotificationsJob>.Instance));
         Assert.Equal("emailService", ex.ParamName);
     }
 
@@ -173,7 +187,7 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
     public void Constructor_WhenDeliveryRepositoryIsNull_ShouldThrow()
     {
         var ex = Assert.Throws<ArgumentNullException>(() =>
-            new MilestoneUpdateNotificationsJobHandler(
+            new MilestoneUpdateNotificationsJob(
                 Substitute.For<IMilestoneNotificationReadRepository>(),
                 Substitute.For<INotificationSettingsPreflight>(),
                 Substitute.For<IReportingYearResolver>(),
@@ -182,9 +196,9 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
                 Substitute.For<IEmailService>(),
                 null!,
                 Substitute.For<ICapsSummaryService>(),
-                null,
+                DefaultExecutionContext(),
                 Options.Create(new MilestoneNotificationsSettings()),
-                NullLogger<MilestoneUpdateNotificationsJobHandler>.Instance));
+                NullLogger<MilestoneUpdateNotificationsJob>.Instance));
         Assert.Equal("deliveryRepository", ex.ParamName);
     }
 
@@ -192,7 +206,7 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
     public void Constructor_WhenCapsSummaryServiceIsNull_ShouldThrow()
     {
         var ex = Assert.Throws<ArgumentNullException>(() =>
-            new MilestoneUpdateNotificationsJobHandler(
+            new MilestoneUpdateNotificationsJob(
                 Substitute.For<IMilestoneNotificationReadRepository>(),
                 Substitute.For<INotificationSettingsPreflight>(),
                 Substitute.For<IReportingYearResolver>(),
@@ -201,17 +215,17 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
                 Substitute.For<IEmailService>(),
                 Substitute.For<INotificationDeliveryRepository>(),
                 null!,
-                null,
+                DefaultExecutionContext(),
                 Options.Create(new MilestoneNotificationsSettings()),
-                NullLogger<MilestoneUpdateNotificationsJobHandler>.Instance));
+                NullLogger<MilestoneUpdateNotificationsJob>.Instance));
         Assert.Equal("capsSummaryService", ex.ParamName);
     }
 
     [Fact]
-    public void Constructor_WhenSettingsIsNull_ShouldThrow()
+    public void Constructor_WhenExecutionContextIsNull_ShouldThrow()
     {
         var ex = Assert.Throws<ArgumentNullException>(() =>
-            new MilestoneUpdateNotificationsJobHandler(
+            new MilestoneUpdateNotificationsJob(
                 Substitute.For<IMilestoneNotificationReadRepository>(),
                 Substitute.For<INotificationSettingsPreflight>(),
                 Substitute.For<IReportingYearResolver>(),
@@ -220,9 +234,28 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
                 Substitute.For<IEmailService>(),
                 Substitute.For<INotificationDeliveryRepository>(),
                 Substitute.For<ICapsSummaryService>(),
-                null,
                 null!,
-                NullLogger<MilestoneUpdateNotificationsJobHandler>.Instance));
+                Options.Create(new MilestoneNotificationsSettings()),
+                NullLogger<MilestoneUpdateNotificationsJob>.Instance));
+        Assert.Equal("executionContext", ex.ParamName);
+    }
+
+    [Fact]
+    public void Constructor_WhenSettingsIsNull_ShouldThrow()
+    {
+        var ex = Assert.Throws<ArgumentNullException>(() =>
+            new MilestoneUpdateNotificationsJob(
+                Substitute.For<IMilestoneNotificationReadRepository>(),
+                Substitute.For<INotificationSettingsPreflight>(),
+                Substitute.For<IReportingYearResolver>(),
+                Substitute.For<INotificationGroupingService>(),
+                Substitute.For<IEmailTemplateRenderer>(),
+                Substitute.For<IEmailService>(),
+                Substitute.For<INotificationDeliveryRepository>(),
+                Substitute.For<ICapsSummaryService>(),
+                DefaultExecutionContext(),
+                null!,
+                NullLogger<MilestoneUpdateNotificationsJob>.Instance));
         Assert.Equal("settings", ex.ParamName);
     }
 
@@ -230,7 +263,7 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
     public void Constructor_WhenLoggerIsNull_ShouldThrow()
     {
         var ex = Assert.Throws<ArgumentNullException>(() =>
-            new MilestoneUpdateNotificationsJobHandler(
+            new MilestoneUpdateNotificationsJob(
                 Substitute.For<IMilestoneNotificationReadRepository>(),
                 Substitute.For<INotificationSettingsPreflight>(),
                 Substitute.For<IReportingYearResolver>(),
@@ -239,7 +272,7 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
                 Substitute.For<IEmailService>(),
                 Substitute.For<INotificationDeliveryRepository>(),
                 Substitute.For<ICapsSummaryService>(),
-                null,
+                DefaultExecutionContext(),
                 Options.Create(new MilestoneNotificationsSettings()),
                 null!));
         Assert.Equal("logger", ex.ParamName);
@@ -258,32 +291,49 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
     }
 
     // -------------------------------------------------------------------------
+    // Execution contract: JobQueueId must be resolved before anything else runs
+    // -------------------------------------------------------------------------
+
+    [Fact]
+    public async Task ExecuteAsync_WhenJobQueueIdIsEmpty_ShouldThrowBeforeRunningPreflight()
+    {
+        var preflight = Substitute.For<INotificationSettingsPreflight>();
+        var executionContext = Substitute.For<ICurrentJobExecutionContext>();
+        executionContext.JobQueueId.Returns(Guid.Empty);
+
+        var handler = CreateHandler(preflight: preflight, executionContext: executionContext);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => handler.ExecuteAsync());
+        await preflight.DidNotReceiveWithAnyArgs().ValidateAsync(default);
+    }
+
+    // -------------------------------------------------------------------------
     // AC-31: Month-override production guard
     // -------------------------------------------------------------------------
 
     [Fact]
     public void ValidateMonthOverride_WhenNoOverride_ShouldNotThrow()
     {
-        MilestoneUpdateNotificationsJobHandler.ValidateMonthOverride(null, isProduction: true, allowMonthOverrideInProduction: false);
+        MilestoneUpdateNotificationsJob.ValidateMonthOverride(null, isProduction: true, allowMonthOverrideInProduction: false);
     }
 
     [Fact]
     public void ValidateMonthOverride_WhenOverrideInNonProduction_ShouldNotThrow()
     {
-        MilestoneUpdateNotificationsJobHandler.ValidateMonthOverride(6, isProduction: false, allowMonthOverrideInProduction: false);
+        MilestoneUpdateNotificationsJob.ValidateMonthOverride(6, isProduction: false, allowMonthOverrideInProduction: false);
     }
 
     [Fact]
     public void ValidateMonthOverride_WhenOverrideInProductionWithFlagSet_ShouldNotThrow()
     {
-        MilestoneUpdateNotificationsJobHandler.ValidateMonthOverride(6, isProduction: true, allowMonthOverrideInProduction: true);
+        MilestoneUpdateNotificationsJob.ValidateMonthOverride(6, isProduction: true, allowMonthOverrideInProduction: true);
     }
 
     [Fact]
     public void ValidateMonthOverride_WhenOverrideInProductionWithoutFlag_ShouldThrowJobValidationException()
     {
         Assert.Throws<JobValidationException>(() =>
-            MilestoneUpdateNotificationsJobHandler.ValidateMonthOverride(6, isProduction: true, allowMonthOverrideInProduction: false));
+            MilestoneUpdateNotificationsJob.ValidateMonthOverride(6, isProduction: true, allowMonthOverrideInProduction: false));
     }
 
     [Theory]
@@ -293,7 +343,7 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
     public void ValidateMonthOverride_WhenOverrideOutOfRange_ShouldThrowJobValidationException(int month)
     {
         Assert.Throws<JobValidationException>(() =>
-            MilestoneUpdateNotificationsJobHandler.ValidateMonthOverride(month, isProduction: false, allowMonthOverrideInProduction: false));
+            MilestoneUpdateNotificationsJob.ValidateMonthOverride(month, isProduction: false, allowMonthOverrideInProduction: false));
     }
 
     [Theory]
@@ -302,7 +352,7 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
     [InlineData(12)]
     public void ValidateMonthOverride_WhenOverrideInRange_ShouldNotThrow(int month)
     {
-        MilestoneUpdateNotificationsJobHandler.ValidateMonthOverride(month, isProduction: false, allowMonthOverrideInProduction: false);
+        MilestoneUpdateNotificationsJob.ValidateMonthOverride(month, isProduction: false, allowMonthOverrideInProduction: false);
     }
 
     // -------------------------------------------------------------------------
@@ -312,31 +362,31 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
     [Fact]
     public void TryExtractForceResend_WhenNullJson_ShouldReturnFalse()
     {
-        Assert.False(MilestoneUpdateNotificationsJobHandler.TryExtractForceResend(null));
+        Assert.False(MilestoneUpdateNotificationsJob.TryExtractForceResend(null));
     }
 
     [Fact]
     public void TryExtractForceResend_WhenForceResendTrue_ShouldReturnTrue()
     {
-        Assert.True(MilestoneUpdateNotificationsJobHandler.TryExtractForceResend("{\"forceResend\":true}"));
+        Assert.True(MilestoneUpdateNotificationsJob.TryExtractForceResend("{\"forceResend\":true}"));
     }
 
     [Fact]
     public void TryExtractForceResend_WhenForceResendFalse_ShouldReturnFalse()
     {
-        Assert.False(MilestoneUpdateNotificationsJobHandler.TryExtractForceResend("{\"forceResend\":false}"));
+        Assert.False(MilestoneUpdateNotificationsJob.TryExtractForceResend("{\"forceResend\":false}"));
     }
 
     [Fact]
     public void TryExtractForceResend_WhenForceResendAbsent_ShouldReturnFalse()
     {
-        Assert.False(MilestoneUpdateNotificationsJobHandler.TryExtractForceResend("{\"monthOverride\":6}"));
+        Assert.False(MilestoneUpdateNotificationsJob.TryExtractForceResend("{\"monthOverride\":6}"));
     }
 
     [Fact]
     public void TryExtractForceResend_WhenMalformedJson_ShouldReturnFalse()
     {
-        Assert.False(MilestoneUpdateNotificationsJobHandler.TryExtractForceResend("not-json"));
+        Assert.False(MilestoneUpdateNotificationsJob.TryExtractForceResend("not-json"));
     }
 
     // -------------------------------------------------------------------------
@@ -358,7 +408,7 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
     }
 
     // -------------------------------------------------------------------------
-    // AC-19: Successful send — one enabled group with valid links
+    // AC-19: Successful send â€” one enabled group with valid links
     // -------------------------------------------------------------------------
 
     [Fact]
@@ -514,7 +564,7 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
     }
 
     // -------------------------------------------------------------------------
-    // Zero candidates — valid Completed outcome; CAPS still called
+    // Zero candidates â€” valid Completed outcome; CAPS still called
     // -------------------------------------------------------------------------
 
     [Fact]
@@ -547,7 +597,7 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
     }
 
     // -------------------------------------------------------------------------
-    // Preflight failure fails the job (plan §8.1, AC-34 preparation)
+    // Preflight failure fails the job (plan Â§8.1, AC-34 preparation)
     // -------------------------------------------------------------------------
 
     [Fact]
@@ -557,16 +607,16 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
         var preflight = Substitute.For<INotificationSettingsPreflight>();
 
         preflight.ValidateAsync(Arg.Any<CancellationToken>())
-            .Returns(Task.FromException(new InvalidOperationException("Required tbl_settings row missing.")));
+            .Returns(Task.FromException(new NotificationSettingsConfigurationException("Required tbl_settings row missing.")));
 
         var handler = CreateHandler(readRepo, preflight);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => handler.ExecuteAsync());
+        await Assert.ThrowsAsync<NotificationSettingsConfigurationException>(() => handler.ExecuteAsync());
         await readRepo.DidNotReceiveWithAnyArgs().GetNotificationCandidatesAsync(default);
     }
 
     // -------------------------------------------------------------------------
-    // Multi-year invariant check (plan §6.1)
+    // Multi-year invariant check (plan Â§6.1)
     // -------------------------------------------------------------------------
 
     [Fact]
@@ -624,7 +674,7 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
     }
 
     // -------------------------------------------------------------------------
-    // Diagnostic query failure is non-fatal (plan §7.2)
+    // Diagnostic query failure is non-fatal (plan Â§7.2)
     // -------------------------------------------------------------------------
 
     [Fact]
@@ -652,7 +702,7 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
     }
 
     // -------------------------------------------------------------------------
-    // Duplicate delivery prevention — Sent row found, no forceResend (plan §12)
+    // Duplicate delivery prevention â€” Sent row found, no forceResend (plan Â§12)
     // -------------------------------------------------------------------------
 
     [Fact]
@@ -675,7 +725,7 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
         var group = new NotificationGroup("r1", "M001", "Jane Smith", "M001", "jane@example.com", false, [project]);
         groupingService.GroupCandidates(Arg.Any<IReadOnlyList<MilestoneNotificationCandidate>>()).Returns([group]);
 
-        // Existing Sent row — should prevent a new send (forceResend is false by default).
+        // Existing Sent row â€” should prevent a new send (forceResend is false by default).
         deliveryRepo.GetExistingAttemptAsync(Arg.Any<NotificationDeliveryKey>(), Arg.Any<CancellationToken>())
             .Returns(new ExistingDeliveryAttempt(Guid.NewGuid(), "Sent", Guid.NewGuid()));
 
@@ -690,7 +740,7 @@ public sealed class MilestoneUpdateNotificationsJobHandlerTests
     }
 
     // -------------------------------------------------------------------------
-    // OutcomeUnknown: prior Sending row found (plan §11.2)
+    // OutcomeUnknown: prior Sending row found (plan Â§11.2)
     // -------------------------------------------------------------------------
 
     [Fact]

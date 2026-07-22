@@ -36,8 +36,8 @@ public sealed class BulkStaffRatesService : IBulkStaffRatesService
 
     public async Task ExecuteAsync(BulkRatesExecutionContext context, CancellationToken cancellationToken = default)
     {
-        // ── 1. Load and validate ──────────────────────────────────────────
-        var entry = await _repository.GetApprovedRequestAsync(context.JobExecutionId, cancellationToken)
+        // ── 1. Load Running, previously approved request ──────────────────
+        var entry = await _repository.GetRunningRequestAsync(context.JobExecutionId, cancellationToken)
             ?? throw new InvalidOperationException(
                 $"BulkStaffRatesUpdate: no job_queue row found for JobExecutionId={context.JobExecutionId:D}.");
 
@@ -119,11 +119,22 @@ public sealed class BulkStaffRatesService : IBulkStaffRatesService
         }
 
         // ── 4. Delete staging post-commit ─────────────────────────────────
-        await _repository.DeleteStaffStagingRowsAsync(jobQueueId, cancellationToken);
+        // Best-effort cleanup: the rate change is already committed, so a failure here must not
+        // fail the job or trigger a whole-job retry. Log and move on.
+        try
+        {
+            await _repository.DeleteStaffStagingRowsAsync(jobQueueId, cancellationToken);
 
-        _logger.LogInformation(
-            "BulkStaffRatesUpdate staging cleared | JobQueueId={JobQueueId}",
-            jobQueueId);
+            _logger.LogInformation(
+                "BulkStaffRatesUpdate staging cleared | JobQueueId={JobQueueId}",
+                jobQueueId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "BulkStaffRatesUpdate staging cleanup failed after commit; rate changes were already applied — staging rows may require manual cleanup | JobQueueId={JobQueueId}",
+                jobQueueId);
+        }
     }
 
     private static void ValidatePreconditions(BulkRatesJobQueueEntry entry, BulkRatesExecutionContext context)

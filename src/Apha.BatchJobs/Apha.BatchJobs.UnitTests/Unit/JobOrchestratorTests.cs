@@ -22,6 +22,7 @@ public sealed class JobOrchestratorTests
     private readonly IBatchLockRepository _lockRepo = Substitute.For<IBatchLockRepository>();
     private readonly IJobExecutionRepository _execRepo = Substitute.For<IJobExecutionRepository>();
     private readonly ICorrelationService _correlationService = Substitute.For<ICorrelationService>();
+    private readonly ICurrentJobExecutionContext _currentExecutionContext = Substitute.For<ICurrentJobExecutionContext>();
     private readonly IEmailNotificationService _notificationService = Substitute.For<IEmailNotificationService>();
     private readonly IConfiguration _configuration = Substitute.For<IConfiguration>();
     private readonly IOptions<BatchJobSettings> _settings = Options.Create(new BatchJobSettings { JobTimeout = 3600 });
@@ -39,6 +40,7 @@ public sealed class JobOrchestratorTests
             _lockRepo,
             _execRepo,
             _correlationService,
+            _currentExecutionContext,
             _notificationService,
             _alertingSettings,
             _settings,
@@ -249,6 +251,39 @@ public sealed class JobOrchestratorTests
         await _lockRepo.Received(1).ReleaseLockAsync(jobName, Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
+    /// <summary>
+    /// CR025 is assumed universally deployed: a missing/incomplete approval metadata row for an
+    /// Approved-pickup job is now always a contract violation — there is no longer a
+    /// "columns not yet provisioned" bypass that lets the run proceed silently.
+    /// </summary>
+    [Fact]
+    public async Task RunAsync_WhenApprovalMetadataMissing_ThrowsContractViolation()
+    {
+        // Arrange — Approved pickup status, but GetApprovalMetadataAsync left unconfigured
+        // (NSubstitute default is null).
+        var jobName = BatchJobNames.BulkTestRatesUpdate;
+        _execRepo.GetExecutionByJobExecutionIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(args => Task.FromResult<JobExecutionRecord?>(new JobExecutionRecord
+            {
+                ExecutionId = 1,
+                JobExecutionId = (Guid)args[0],
+                JobQueueId = Guid.NewGuid(),
+                JobName = jobName,
+                UserId = "test-user",
+                JobType = JobType.Unknown,
+                RunMode = RunMode.Manual,
+                Status = JobStatus.Approved,
+                StartedAt = DateTime.UtcNow,
+                RetryAttempts = 0
+            }));
+
+        // Act / Assert
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _orchestrator.RunAsync(jobName, RunMode.Manual, Guid.NewGuid(), "test-user"));
+
+        Assert.Contains("approval metadata", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Fact]
     public async Task RunAsync_WhenScheduledMabArchiveAndInitiatedMissing_CreatesInitiatedAndContinues()
     {
@@ -427,6 +462,7 @@ public sealed class JobOrchestratorTests
             _lockRepo,
             _execRepo,
             _correlationService,
+            _currentExecutionContext,
             _notificationService,
             alertingSettings,
             _settings,
@@ -510,7 +546,7 @@ public sealed class JobOrchestratorTests
             EmailEnabledJobs = ["DisabledNotifyJob"]
         });
         var orchestrator = new JobOrchestrator(
-            _factory, _lockRepo, _execRepo, _correlationService, _notificationService,
+            _factory, _lockRepo, _execRepo, _correlationService, _currentExecutionContext, _notificationService,
             alertingSettings, _settings, _configuration, NullLogger<JobOrchestrator>.Instance);
 
         var job = Substitute.For<IBatchJob>();
@@ -820,6 +856,7 @@ public sealed class JobOrchestratorTests
             _lockRepo,
             _execRepo,
             _correlationService,
+            _currentExecutionContext,
             _notificationService,
             _alertingSettings,
             retrySettings,
@@ -866,6 +903,7 @@ public sealed class JobOrchestratorTests
             _lockRepo,
             _execRepo,
             _correlationService,
+            _currentExecutionContext,
             _notificationService,
             _alertingSettings,
             retrySettings,
@@ -918,6 +956,7 @@ public sealed class JobOrchestratorTests
             _lockRepo,
             _execRepo,
             _correlationService,
+            _currentExecutionContext,
             _notificationService,
             _alertingSettings,
             retrySettings,
@@ -974,6 +1013,7 @@ public sealed class JobOrchestratorTests
             _lockRepo,
             _execRepo,
             _correlationService,
+            _currentExecutionContext,
             _notificationService,
             _alertingSettings,
             timeoutSettings,
@@ -1034,6 +1074,7 @@ public sealed class JobOrchestratorTests
             _lockRepo,
             _execRepo,
             _correlationService,
+            _currentExecutionContext,
             _notificationService,
             _alertingSettings,
             timeoutSettings,
@@ -1073,6 +1114,7 @@ public sealed class JobOrchestratorTests
             _lockRepo,
             _execRepo,
             _correlationService,
+            _currentExecutionContext,
             _notificationService,
             _alertingSettings,
             timeoutSettings,
@@ -1130,8 +1172,9 @@ public sealed class JobOrchestratorTests
 
     /// <summary>
     /// Configures GetExecutionByJobExecutionIdAsync to return an Approved record for
-    /// approval-based jobs. GetApprovalMetadataAsync returns null by default (NSubstitute),
-    /// which the orchestrator handles gracefully per the CR025 provisional guard.
+    /// approval-based jobs, and GetApprovalMetadataAsync to return valid approval metadata.
+    /// CR025 is assumed universally deployed — there is no compatibility bypass for a missing
+    /// metadata row, so every approval-based test must configure a real one to pass.
     /// </summary>
     private void SetupApprovedExecution(string jobName)
     {
@@ -1149,6 +1192,16 @@ public sealed class JobOrchestratorTests
                 StartedAt = DateTime.UtcNow,
                 RetryAttempts = 0
             }));
+
+        _execRepo.GetApprovalMetadataAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(new JobQueueApprovalMetadata(
+                ApprovedBy: "test-approver",
+                ApprovedAtUtc: DateTime.UtcNow,
+                RejectedBy: null,
+                RejectedAtUtc: null,
+                RejectionReason: null,
+                TriggeredBy: null,
+                TriggeredAtUtc: null));
     }
 }
 

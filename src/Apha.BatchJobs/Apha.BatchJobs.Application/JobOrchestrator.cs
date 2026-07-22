@@ -26,6 +26,7 @@ public sealed class JobOrchestrator : IJobOrchestrator
     private readonly IBatchLockRepository _lockRepository;
     private readonly IJobExecutionRepository _executionRepository;
     private readonly ICorrelationService _correlationService;
+    private readonly ICurrentJobExecutionContext _currentExecutionContext;
     private readonly IEmailNotificationService _notificationService;
     private readonly BatchAlertingSettings _alertingSettings;
     private readonly ILogger<JobOrchestrator> _logger;
@@ -53,6 +54,7 @@ public sealed class JobOrchestrator : IJobOrchestrator
         IBatchLockRepository lockRepository,
         IJobExecutionRepository executionRepository,
         ICorrelationService correlationService,
+        ICurrentJobExecutionContext currentExecutionContext,
         IEmailNotificationService notificationService,
         IOptions<BatchAlertingSettings> alertingSettings,
         IOptions<BatchJobSettings> settings,
@@ -63,6 +65,7 @@ public sealed class JobOrchestrator : IJobOrchestrator
         _lockRepository = lockRepository ?? throw new ArgumentNullException(nameof(lockRepository));
         _executionRepository = executionRepository ?? throw new ArgumentNullException(nameof(executionRepository));
         _correlationService = correlationService ?? throw new ArgumentNullException(nameof(correlationService));
+        _currentExecutionContext = currentExecutionContext ?? throw new ArgumentNullException(nameof(currentExecutionContext));
         _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
         _alertingSettings = alertingSettings?.Value ?? new BatchAlertingSettings();
         _lockTimeoutSeconds = settings?.Value.LockTimeoutSeconds >= 0
@@ -100,13 +103,14 @@ public sealed class JobOrchestrator : IJobOrchestrator
         Guid jobExecutionId,
         string userId,
         DateTime? requestedAtUtc = null,
+        string? parametersJson = null,
         CancellationToken cancellationToken = default)
     {
         // Set correlation context so all downstream log events carry the execution ID.
         _correlationService.SetCorrelationId(jobExecutionId.ToString("D"));
 
         // Resolve optional FPS year from job parameters (used by year-scoped jobs).
-        var fpsYear = TryExtractFpsYearFromParameters(Environment.GetEnvironmentVariable("BATCH_JOB_PARAMETERS_JSON"));
+        var fpsYear = TryExtractFpsYearFromParameters(parametersJson);
 
         var startedAt = DateTime.UtcNow;
 
@@ -272,6 +276,13 @@ public sealed class JobOrchestrator : IJobOrchestrator
         try
         {
             job = _factory.Create(jobName);
+
+            // Populate the scoped execution context so the job can read its resolved identity
+            // and parameters instead of re-parsing environment variables or querying its own
+            // jobQueueId — everyone in this DI scope (this orchestrator and the job it just
+            // resolved) shares the same instance for the lifetime of this one execution.
+            _currentExecutionContext.Initialize(jobExecutionId, jobQueueId, jobName, runMode, userId, parametersJson);
+
             var runtimeTimeoutSeconds = ResolveRuntimeTimeoutSeconds(job);
 
             _logger.LogInformation(
@@ -754,15 +765,7 @@ public sealed class JobOrchestrator : IJobOrchestrator
     {
         var metadata = await _executionRepository.GetApprovalMetadataAsync(jobExecutionId, cancellationToken);
 
-        if (metadata is null)
-        {
-            _logger.LogWarning(
-                "Skipping approval metadata check because fps.job_queue approval columns are not yet provisioned (see CR025) | JobName={JobName} | JobExecutionId={JobExecutionId}",
-                jobName, jobExecutionId);
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(metadata.ApprovedBy) || !metadata.ApprovedAtUtc.HasValue)
+        if (metadata is null || string.IsNullOrWhiteSpace(metadata.ApprovedBy) || !metadata.ApprovedAtUtc.HasValue)
         {
             throw new InvalidOperationException(
                 $"Execution contract violation: JobExecutionId '{jobExecutionId:D}' for job '{jobName}' is Approved " +

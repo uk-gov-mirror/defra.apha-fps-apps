@@ -15,7 +15,7 @@ public sealed class BulkTestRatesServiceTests
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private static BulkRatesExecutionContext ValidContext(Guid? jobExecutionId = null, int? triggerYear = null)
-        => new("corr", jobExecutionId ?? Guid.NewGuid(), BatchJobNames.BulkTestRatesUpdate, triggerYear);
+        => new(jobExecutionId ?? Guid.NewGuid(), BatchJobNames.BulkTestRatesUpdate, triggerYear);
 
     private static BulkRatesJobQueueEntry ApprovedEntry(
         Guid? jobQueueId = null,
@@ -42,13 +42,13 @@ public sealed class BulkTestRatesServiceTests
             Substitute.For<IJobExecutionRepository>(),
             NullLogger<BulkTestRatesService>.Instance);
 
-    // ── GetApprovedRequestAsync returns null ─────────────────────────────────
+    // ── GetRunningRequestAsync returns null ──────────────────────────────────
 
     [Fact]
     public async Task ExecuteAsync_WhenJobQueueEntryNotFound_ShouldThrow()
     {
         var repo = Substitute.For<IBulkRatesRepository>();
-        repo.GetApprovedRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+        repo.GetRunningRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns((BulkRatesJobQueueEntry?)null);
 
         var svc = CreateService(repo);
@@ -65,7 +65,7 @@ public sealed class BulkTestRatesServiceTests
     public async Task ExecuteAsync_WhenStatusNotRunning_ShouldThrow()
     {
         var repo = Substitute.For<IBulkRatesRepository>();
-        repo.GetApprovedRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+        repo.GetRunningRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(ApprovedEntry(status: "Submitted"));
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
@@ -81,7 +81,7 @@ public sealed class BulkTestRatesServiceTests
     public async Task ExecuteAsync_WhenJobNameMismatch_ShouldThrow()
     {
         var repo = Substitute.For<IBulkRatesRepository>();
-        repo.GetApprovedRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+        repo.GetRunningRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(ApprovedEntry(jobName: BatchJobNames.BulkStaffRatesUpdate));
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
@@ -96,7 +96,7 @@ public sealed class BulkTestRatesServiceTests
     public async Task ExecuteAsync_WhenFpsYearZero_ShouldThrow()
     {
         var repo = Substitute.For<IBulkRatesRepository>();
-        repo.GetApprovedRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+        repo.GetRunningRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(ApprovedEntry(fpsYear: 0));
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
@@ -111,7 +111,7 @@ public sealed class BulkTestRatesServiceTests
     public async Task ExecuteAsync_WhenTriggerYearMismatchesPersistedYear_ShouldThrow()
     {
         var repo = Substitute.For<IBulkRatesRepository>();
-        repo.GetApprovedRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+        repo.GetRunningRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(ApprovedEntry(fpsYear: 2027));
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
@@ -126,7 +126,7 @@ public sealed class BulkTestRatesServiceTests
     {
         // Arrange: matching trigger year — should pass the year check and reach staging guard
         var repo = Substitute.For<IBulkRatesRepository>();
-        repo.GetApprovedRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+        repo.GetRunningRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(ApprovedEntry(fpsYear: 2027));
         repo.GetFecStagingRowsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(new List<FecStagingRow>());
@@ -148,7 +148,7 @@ public sealed class BulkTestRatesServiceTests
     public async Task ExecuteAsync_WhenApprovedByMissing_ShouldThrow()
     {
         var repo = Substitute.For<IBulkRatesRepository>();
-        repo.GetApprovedRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+        repo.GetRunningRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(ApprovedEntry(approvedBy: null));
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
@@ -161,7 +161,7 @@ public sealed class BulkTestRatesServiceTests
     public async Task ExecuteAsync_WhenApprovedAtUtcMissing_ShouldThrow()
     {
         var repo = Substitute.For<IBulkRatesRepository>();
-        repo.GetApprovedRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+        repo.GetRunningRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(ApprovedEntry() with { ApprovedAtUtc = null });
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
@@ -176,7 +176,7 @@ public sealed class BulkTestRatesServiceTests
     public async Task ExecuteAsync_WhenBothFecAndAgrupStagingEmpty_ShouldThrow()
     {
         var repo = Substitute.For<IBulkRatesRepository>();
-        repo.GetApprovedRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+        repo.GetRunningRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(ApprovedEntry());
         repo.GetFecStagingRowsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(new List<FecStagingRow>());

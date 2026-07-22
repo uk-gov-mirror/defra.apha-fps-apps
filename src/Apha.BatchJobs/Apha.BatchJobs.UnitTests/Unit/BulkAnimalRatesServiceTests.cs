@@ -15,7 +15,7 @@ public sealed class BulkAnimalRatesServiceTests
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private static BulkRatesExecutionContext ValidContext(int? triggerYear = null)
-        => new("corr", Guid.NewGuid(), BatchJobNames.BulkAnimalRatesUpdate, triggerYear);
+        => new(Guid.NewGuid(), BatchJobNames.BulkAnimalRatesUpdate, triggerYear);
 
     private static BulkRatesJobQueueEntry ApprovedEntry(
         string? status = "Running",
@@ -39,13 +39,13 @@ public sealed class BulkAnimalRatesServiceTests
             repo ?? Substitute.For<IBulkRatesRepository>(),
             NullLogger<BulkAnimalRatesService>.Instance);
 
-    // ── GetApprovedRequestAsync returns null ─────────────────────────────────
+    // ── GetRunningRequestAsync returns null ──────────────────────────────────
 
     [Fact]
     public async Task ExecuteAsync_WhenJobQueueEntryNotFound_ShouldThrow()
     {
         var repo = Substitute.For<IBulkRatesRepository>();
-        repo.GetApprovedRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+        repo.GetRunningRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns((BulkRatesJobQueueEntry?)null);
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
@@ -60,7 +60,7 @@ public sealed class BulkAnimalRatesServiceTests
     public async Task ExecuteAsync_WhenStatusNotRunning_ShouldThrow()
     {
         var repo = Substitute.For<IBulkRatesRepository>();
-        repo.GetApprovedRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+        repo.GetRunningRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(ApprovedEntry(status: "Pending"));
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
@@ -76,7 +76,7 @@ public sealed class BulkAnimalRatesServiceTests
     public async Task ExecuteAsync_WhenJobNameMismatch_ShouldThrow()
     {
         var repo = Substitute.For<IBulkRatesRepository>();
-        repo.GetApprovedRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+        repo.GetRunningRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(ApprovedEntry(jobName: BatchJobNames.BulkTestRatesUpdate));
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
@@ -91,7 +91,7 @@ public sealed class BulkAnimalRatesServiceTests
     public async Task ExecuteAsync_WhenFpsYearZero_ShouldThrow()
     {
         var repo = Substitute.For<IBulkRatesRepository>();
-        repo.GetApprovedRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+        repo.GetRunningRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(ApprovedEntry(fpsYear: 0));
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
@@ -106,7 +106,7 @@ public sealed class BulkAnimalRatesServiceTests
     public async Task ExecuteAsync_WhenTriggerYearMismatchesPersistedYear_ShouldThrow()
     {
         var repo = Substitute.For<IBulkRatesRepository>();
-        repo.GetApprovedRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+        repo.GetRunningRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(ApprovedEntry(fpsYear: 2027));
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
@@ -122,7 +122,7 @@ public sealed class BulkAnimalRatesServiceTests
     public async Task ExecuteAsync_WhenApprovedByMissing_ShouldThrow()
     {
         var repo = Substitute.For<IBulkRatesRepository>();
-        repo.GetApprovedRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+        repo.GetRunningRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(ApprovedEntry(approvedBy: null));
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
@@ -135,7 +135,7 @@ public sealed class BulkAnimalRatesServiceTests
     public async Task ExecuteAsync_WhenApprovedAtUtcMissing_ShouldThrow()
     {
         var repo = Substitute.For<IBulkRatesRepository>();
-        repo.GetApprovedRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+        repo.GetRunningRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(ApprovedEntry() with { ApprovedAtUtc = null });
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
@@ -150,7 +150,7 @@ public sealed class BulkAnimalRatesServiceTests
     public async Task ExecuteAsync_WhenStagingEmpty_ShouldThrow()
     {
         var repo = Substitute.For<IBulkRatesRepository>();
-        repo.GetApprovedRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+        repo.GetRunningRequestAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(ApprovedEntry());
         repo.GetAnimalStagingRowsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(new List<AnimalStagingRow>());

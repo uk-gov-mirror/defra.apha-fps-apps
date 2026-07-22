@@ -24,7 +24,7 @@ public sealed class BulkRatesRepository : IBulkRatesRepository
     }
 
     /// <inheritdoc />
-    public async Task<BulkRatesJobQueueEntry?> GetApprovedRequestAsync(
+    public async Task<BulkRatesJobQueueEntry?> GetRunningRequestAsync(
         Guid jobExecutionId,
         CancellationToken cancellationToken = default)
     {

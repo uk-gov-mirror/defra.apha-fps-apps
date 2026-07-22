@@ -1,9 +1,10 @@
 using Apha.BatchJobs.Application.Interfaces;
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.RecreateSummaries;
+using Apha.BatchJobs.Domain.Enums;
+using Apha.BatchJobs.Domain.Exceptions;
 using Apha.BatchJobs.Domain.Interfaces;
 using Apha.BatchJobs.Infrastructure.Data;
 using Apha.BatchJobs.Infrastructure.Repositories.RecreateSummaries;
-using Apha.BatchJobs.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
@@ -12,25 +13,24 @@ using Npgsql;
 namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.RecreateSummaries;
 
 /// <summary>
-/// RecreateSummaries scheduled batch job handler.
-/// Rebuilds monthly FPS summary/calculation data by executing 14 ordered SQL steps
-/// and optionally refreshing period snapshot tables when the period is unlocked.
+/// RecreateSummaries batch job. Rebuilds monthly FPS summary/calculation data by executing
+/// 14 ordered SQL steps and optionally refreshing period snapshot tables when the period is
+/// unlocked, all inside one transaction owned by this job.
 ///
 /// Replaces the legacy SQL Server <c>sp_RecreateSummaries</c> orchestration procedure.
 ///
-/// Lock lifecycle is owned exclusively by <see cref="JobOrchestrator"/>.
-/// This handler must not acquire or release the distributed lock.
+/// Lock lifecycle, retry, and final status are owned exclusively by <see cref="JobOrchestrator"/>.
+/// This job must not acquire or release the distributed lock, and performs no heartbeat or lock
+/// renewal of its own — that is a generic capability to be designed separately.
 /// </summary>
 
-public sealed class RecreateSummariesJobHandler : IBatchJob
+public sealed class RecreateSummariesJob : IBatchJob
 {
     private readonly IDbContextFactory<BatchJobsDbContext> _dbContextFactory;
     private readonly IRecreateSummariesStepCatalog _stepCatalog;
     private readonly IRecreateSummariesContext _jobContext;
-    private readonly IJobExecutionRepository? _executionRepository;
-    private readonly IBatchLockRepository? _lockRepository;
     private readonly ICorrelationService _correlationService;
-    private readonly ILogger<RecreateSummariesJobHandler> _logger;
+    private readonly ILogger<RecreateSummariesJob> _logger;
 
     /// <summary>Canonical job name.</summary>
     public string Name => "RecreateSummary";
@@ -52,22 +52,18 @@ public sealed class RecreateSummariesJobHandler : IBatchJob
     public int? MaxExecutionSeconds => 3600;
 
     /// <summary>
-    /// Initializes a new instance of <see cref="RecreateSummariesJobHandler"/>.
+    /// Initializes a new instance of <see cref="RecreateSummariesJob"/>.
     /// </summary>
-    public RecreateSummariesJobHandler(
+    public RecreateSummariesJob(
         IDbContextFactory<BatchJobsDbContext> dbContextFactory,
         IRecreateSummariesStepCatalog stepCatalog,
         IRecreateSummariesContext jobContext,
-        IJobExecutionRepository? executionRepository,
-        IBatchLockRepository? lockRepository,
         ICorrelationService correlationService,
-        ILogger<RecreateSummariesJobHandler> logger)
+        ILogger<RecreateSummariesJob> logger)
     {
         _dbContextFactory = dbContextFactory ?? throw new ArgumentNullException(nameof(dbContextFactory));
         _stepCatalog = stepCatalog ?? throw new ArgumentNullException(nameof(stepCatalog));
         _jobContext = jobContext ?? throw new ArgumentNullException(nameof(jobContext));
-        _executionRepository = executionRepository;
-        _lockRepository = lockRepository;
         _correlationService = correlationService ?? throw new ArgumentNullException(nameof(correlationService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -126,7 +122,7 @@ public sealed class RecreateSummariesJobHandler : IBatchJob
     /// <summary>
     /// Executes steps 1–14 in order, reads the period-lock flag, and
     /// conditionally executes steps 15–17, all within one transaction.
-    /// Includes step-based heartbeat checks and slow-step detection.
+    /// Any failure rolls back the whole transaction exactly once.
     /// </summary>
     private async Task<IReadOnlyList<StepResult>> ExecuteStepsAsync(
         string jobExecutionId,
@@ -163,41 +159,7 @@ public sealed class RecreateSummariesJobHandler : IBatchJob
 
                 foreach (var step in mandatorySteps)
                 {
-                    // Step-based heartbeat: touch execution and renew lock before starting step
-                    await TouchHeartbeatAsync(jobExecutionId, cancellationToken);
-
-                    using var stepScope = _logger.BeginScope(new Dictionary<string, object?> { ["StepName"] = step.StepName });
-                    _logger.LogInformation(
-                        "[{JobExecutionId}] Executing step: {StepName}", jobExecutionId, step.StepName);
-
-                    var result = await step.ExecuteAsync(executionContext, cancellationToken);
-                    results.Add(result);
-
-                    var stepDurationMs = (int)(result.EndTime - result.StartTime).TotalMilliseconds;
-                    _logger.LogInformation(
-                        "[{JobExecutionId}] Step {StepName} -> {Status} | RowsAffected={Rows} | Duration={Ms}ms",
-                        jobExecutionId, result.StepName, result.Status, result.RowsAffected,
-                        stepDurationMs);
-
-                    // Warn if step exceeded 2 minutes (slow-step detection)
-                    if (stepDurationMs > 120_000)
-                    {
-                        _logger.LogInformation(
-                            "[{JobExecutionId}] SLOW STEP DETECTED | StepName={StepName} | Duration={Ms}ms | RowsAffected={Rows}",
-                            jobExecutionId, result.StepName, stepDurationMs, result.RowsAffected);
-                    }
-
-                    if (result.Status == Domain.Enums.StepStatus.Failed)
-                    {
-                        _logger.LogError(
-                            "[{JobExecutionId}] Step {StepName} failed: {Error}. Rolling back.",
-                            jobExecutionId, result.StepName, result.ErrorMessage);
-
-                        await SafeRollbackAsync(transaction, jobExecutionId);
-                        context.ChangeTracker.Clear();
-                        throw new InvalidOperationException(
-                            $"RecreateSummaries step '{result.StepName}' failed: {result.ErrorMessage}");
-                    }
+                    results.Add(await ExecuteStepAsync(step, executionContext, jobExecutionId, cancellationToken));
                 }
 
                 // --- Period-lock check (Phase 6) ---
@@ -214,41 +176,7 @@ public sealed class RecreateSummariesJobHandler : IBatchJob
 
                     foreach (var step in refreshSteps)
                     {
-                        // Step-based heartbeat: touch execution and renew lock before starting step
-                        await TouchHeartbeatAsync(jobExecutionId, cancellationToken);
-
-                        using var stepScope = _logger.BeginScope(new Dictionary<string, object?> { ["StepName"] = step.StepName });
-                        _logger.LogInformation(
-                            "[{JobExecutionId}] Executing refresh step: {StepName}", jobExecutionId, step.StepName);
-
-                        var result = await step.ExecuteAsync(executionContext, cancellationToken);
-                        results.Add(result);
-
-                        var stepDurationMs = (int)(result.EndTime - result.StartTime).TotalMilliseconds;
-                        _logger.LogInformation(
-                            "[{JobExecutionId}] Step {StepName} -> {Status} | RowsAffected={Rows} | Duration={Ms}ms",
-                            jobExecutionId, result.StepName, result.Status, result.RowsAffected,
-                            stepDurationMs);
-
-                        // Warn if step exceeded 2 minutes (slow-step detection)
-                        if (stepDurationMs > 120_000)
-                        {
-                            _logger.LogInformation(
-                                "[{JobExecutionId}] SLOW STEP DETECTED | StepName={StepName} | Duration={Ms}ms | RowsAffected={Rows}",
-                                jobExecutionId, result.StepName, stepDurationMs, result.RowsAffected);
-                        }
-
-                        if (result.Status == Domain.Enums.StepStatus.Failed)
-                        {
-                            _logger.LogError(
-                                "[{JobExecutionId}] Refresh step {StepName} failed: {Error}. Rolling back.",
-                                jobExecutionId, result.StepName, result.ErrorMessage);
-
-                            await SafeRollbackAsync(transaction, jobExecutionId);
-                            context.ChangeTracker.Clear();
-                            throw new InvalidOperationException(
-                                $"RecreateSummaries refresh step '{result.StepName}' failed: {result.ErrorMessage}");
-                        }
+                        results.Add(await ExecuteStepAsync(step, executionContext, jobExecutionId, cancellationToken));
                     }
                 }
                 else
@@ -269,13 +197,11 @@ public sealed class RecreateSummariesJobHandler : IBatchJob
                 _logger.LogInformation("[{JobExecutionId}] Transaction committed. All steps completed.", jobExecutionId);
                 completedResults = results;
             }
-            catch (Exception) when (results.Count > 0 &&
-                                    results[^1].Status != Domain.Enums.StepStatus.Failed)
+            catch (Exception)
             {
-                // Unexpected exception outside a step failure — attempt rollback
+                // Single rollback point for the whole job transaction: a failed step
+                // (RecreateSummariesStepException) or any other unexpected exception.
                 await SafeRollbackAsync(transaction, jobExecutionId);
-
-                // Prevent replay of tracked Added/Modified entities by other repositories sharing this scoped context.
                 context.ChangeTracker.Clear();
                 throw;
             }
@@ -285,51 +211,44 @@ public sealed class RecreateSummariesJobHandler : IBatchJob
     }
 
     /// <summary>
-    /// Step-based heartbeat: touches execution metadata and renews lock before each step.
-    /// Logs success/failure to correlate with step execution for timeout debugging.
+    /// Executes one step and logs its outcome. Throws <see cref="RecreateSummariesStepException"/>
+    /// on failure — the caller's transaction-level catch performs the rollback.
     /// </summary>
-    private async Task TouchHeartbeatAsync(string jobExecutionId, CancellationToken cancellationToken)
+    private async Task<StepResult> ExecuteStepAsync(
+        IRecreateSummariesExecutionStep step,
+        RecreateSummariesExecutionContext executionContext,
+        string jobExecutionId,
+        CancellationToken cancellationToken)
     {
-        try
+        using var stepScope = _logger.BeginScope(new Dictionary<string, object?> { ["StepName"] = step.StepName });
+        _logger.LogInformation("[{JobExecutionId}] Executing step: {StepName}", jobExecutionId, step.StepName);
+
+        var result = await step.ExecuteAsync(executionContext, cancellationToken);
+
+        var stepDurationMs = (int)(result.EndTime - result.StartTime).TotalMilliseconds;
+        _logger.LogInformation(
+            "[{JobExecutionId}] Step {StepName} -> {Status} | RowsAffected={Rows} | Duration={Ms}ms",
+            jobExecutionId, result.StepName, result.Status, result.RowsAffected,
+            stepDurationMs);
+
+        // Warn if step exceeded 2 minutes (slow-step detection)
+        if (stepDurationMs > 120_000)
         {
-            if (_executionRepository is null || !Guid.TryParse(jobExecutionId, out var jobId))
-            {
-                throw new InvalidOperationException($"Heartbeat execution repository unavailable or job execution id invalid for job '{Name}' ({jobExecutionId}).");
-            }
-
-            var execution = await _executionRepository.GetExecutionByJobExecutionIdAsync(jobId, cancellationToken);
-
-            if (execution is null || execution.JobQueueId == Guid.Empty)
-                throw new InvalidOperationException($"Heartbeat execution row missing for job '{Name}' ({jobExecutionId}).");
-
-            var touched = await _executionRepository.TouchRunningExecutionAsync(
-                execution.JobQueueId, cancellationToken);
-
-            if (!touched)
-                throw new InvalidOperationException($"Heartbeat execution touch failed because job '{Name}' is not in Running state ({jobExecutionId}, JobQueueId={execution.JobQueueId}).");
-
-            if (_lockRepository is null)
-                throw new InvalidOperationException($"Heartbeat lock repository is unavailable for job '{Name}' ({jobExecutionId}).");
-
-            // Unlimited timeout (0 seconds) means lock does not expire.
-            var renewed = await _lockRepository.TryRenewLockAsync(
-                Name, execution.JobQueueId, 0, cancellationToken);
-
-            if (!renewed)
-                throw new InvalidOperationException($"Heartbeat lock renewal returned false for job '{Name}' ({jobExecutionId}, JobQueueId={execution.JobQueueId}).");
-
-            _logger.LogDebug(
-                "[{JobExecutionId}] Heartbeat: execution touched & lock renewed | JobName={JobName} | JobQueueId={JobQueueId}",
-                jobExecutionId, Name, execution.JobQueueId);
-        }
-        catch (OperationCanceledException)
-        {
-            // Cancellation during heartbeat is expected during shutdown
             _logger.LogInformation(
-                "[{JobExecutionId}] Heartbeat cancelled | JobName={JobName}",
-                jobExecutionId, Name);
-            throw;
+                "[{JobExecutionId}] SLOW STEP DETECTED | StepName={StepName} | Duration={Ms}ms | RowsAffected={Rows}",
+                jobExecutionId, result.StepName, stepDurationMs, result.RowsAffected);
         }
+
+        if (result.Status == StepStatus.Failed)
+        {
+            _logger.LogError(
+                "[{JobExecutionId}] Step {StepName} failed: {Error}",
+                jobExecutionId, result.StepName, result.ErrorMessage);
+
+            throw new RecreateSummariesStepException(result.StepName, result.ErrorMessage);
+        }
+
+        return result;
     }
 
     private async Task<int> GetPeriodLockedAsync(

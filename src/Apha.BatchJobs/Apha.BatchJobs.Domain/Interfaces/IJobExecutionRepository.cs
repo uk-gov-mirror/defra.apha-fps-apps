@@ -85,9 +85,8 @@ public interface IJobExecutionRepository
     Task<bool> IsExecutionMarkedFailedAsync(Guid jobExecutionId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Reads the Year End approval/configuration audit columns for a job_queue row.
-    /// Returns null when the row does not exist, or when the approval metadata columns
-    /// have not yet been provisioned on fps.job_queue in this environment (see CR025).
+    /// Reads the approval/configuration audit columns (see CR025) for a job_queue row.
+    /// Returns null when the row does not exist.
     /// </summary>
     /// <param name="jobExecutionId">External job execution identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
