@@ -1,3 +1,4 @@
+using Apha.BatchJobs.Application.Interfaces;
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
 using Apha.BatchJobs.Domain.Configuration;
 using Apha.BatchJobs.Infrastructure.Repositories.MabArchive;
@@ -22,7 +23,6 @@ public static class MabArchiveServiceExtensions
         services.AddScoped<IMyFpsYearlyDataService, MyFpsYearlyDataService>();
         services.AddScoped<IMabArchiveYearSelectionService, MabArchiveYearSelectionService>();
         services.AddScoped<IEmailNotificationService, EmailNotificationService>();
-        services.AddScoped<MabArchiveLoadOrchestrator>();
 
         return services;
     }

@@ -17,4 +17,13 @@ public sealed class BatchAlertingSettings
     /// Email recipient for failure notifications.
     /// </summary>
     public string? AdminNotificationEmail { get; set; }
+
+    /// <summary>
+    /// Job names (matched case-insensitively against <c>IBatchJob.Name</c> / the requested job
+    /// name) eligible for failure-notification emails. <c>JobOrchestrator</c> checks membership
+    /// here before sending, on top of <see cref="EnableEmailNotifications"/> — this is what keeps
+    /// the generic, job-agnostic notification hook in JobOrchestrator from silently rolling out
+    /// alert emails to every batch job. Empty by default: a job must be explicitly opted in.
+    /// </summary>
+    public List<string> EmailEnabledJobs { get; set; } = [];
 }

@@ -1,0 +1,183 @@
+using Apha.BatchJobs.Application.Interfaces;
+using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
+using Apha.BatchJobs.Domain.Configuration;
+using Apha.BatchJobs.Domain.Interfaces;
+using Apha.BatchJobs.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+
+namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive;
+
+/// <summary>
+/// MABArchive scheduled batch job.
+/// Loads FPS data into the MABArchive schema within PostgreSQL database. The FPS year(s)
+/// processed are resolved from fps.tblyearmaster (Open/Planned status), never from the
+/// system date - see docs/mabarchive-year-selection-processing-spec.md.
+/// Runs weekly on weekdays at 8:00 PM UTC.
+///
+/// Lock lifecycle and failure notification are owned exclusively by JobOrchestrator: this job
+/// must not acquire/release the distributed lock, and must not send its own failure notification
+/// - JobOrchestrator sends one, best-effort, once retries are exhausted.
+///
+/// Totals rebuild, archive delete/load, and project refresh all run against the same
+/// constructor-injected scoped <see cref="BatchJobsDbContext"/> that owns the transaction below,
+/// so the whole Open+Planned cycle commits or rolls back atomically.
+/// </summary>
+public sealed class MabArchiveJob : IBatchJob
+{
+    private readonly BatchJobsDbContext _dbContext;
+    private readonly IMabArchiveYearSelectionService _yearSelectionService;
+    private readonly IReloadFpsTotalsService _totalsService;
+    private readonly IMyFpsYearlyDataService _dataService;
+    private readonly IExecutionYearContext _executionYearContext;
+    private readonly ICorrelationService _correlationService;
+    private readonly ILogger<MabArchiveJob> _logger;
+    private readonly MabArchiveSettings _settings;
+
+    public string Name => "MABArchive";
+    public string IdempotencyStrategy => "YearScopedRebuildWithDeterministicOrdering";
+    public string? ScheduleExpression => "cron(0 20 ? * MON-FRI *)";
+    public string? ScheduleDescription => "Weekdays (Monday to Friday) at 8:00 PM UTC";
+    public int? MaxExecutionSeconds => null;
+
+    public MabArchiveJob(
+        BatchJobsDbContext dbContext,
+        IMabArchiveYearSelectionService yearSelectionService,
+        IReloadFpsTotalsService totalsService,
+        IMyFpsYearlyDataService dataService,
+        IExecutionYearContext executionYearContext,
+        ICorrelationService correlationService,
+        ILogger<MabArchiveJob> logger,
+        IOptions<MabArchiveSettings> settings)
+    {
+        _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+        _yearSelectionService = yearSelectionService ?? throw new ArgumentNullException(nameof(yearSelectionService));
+        _totalsService = totalsService ?? throw new ArgumentNullException(nameof(totalsService));
+        _dataService = dataService ?? throw new ArgumentNullException(nameof(dataService));
+        _executionYearContext = executionYearContext ?? throw new ArgumentNullException(nameof(executionYearContext));
+        _correlationService = correlationService ?? throw new ArgumentNullException(nameof(correlationService));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _settings = settings?.Value ?? new MabArchiveSettings();
+    }
+
+    /// <summary>
+    /// Executes the MABArchive load job.
+    /// Lock acquisition/release and failure notification are handled by JobOrchestrator.
+    /// </summary>
+    public async Task ExecuteAsync(CancellationToken cancellationToken = default)
+    {
+        var startedAt = DateTime.UtcNow;
+        var jobExecutionId = _correlationService.GetCorrelationId() ?? _correlationService.GenerateCorrelationId();
+
+        using var scope = _logger.BeginScope(new Dictionary<string, object>
+        {
+            ["JobExecutionId"] = jobExecutionId,
+            ["JobName"] = Name
+        });
+
+        _logger.LogInformation("===========================================");
+        _logger.LogInformation("MABArchive Job - Starting");
+        _logger.LogInformation("===========================================");
+        _logger.LogInformation("JobExecutionId: {JobExecutionId} | Timestamp: {StartTime:yyyy-MM-dd HH:mm:ss.fff} | ProcessId: {ProcessId}",
+            jobExecutionId, startedAt, Environment.ProcessId);
+
+        try
+        {
+            var context = await _yearSelectionService.GetProcessableYearsAsync(cancellationToken);
+            _logger.LogInformation(
+                "Execution context resolved from fps.tblyearmaster | OpenYear={OpenYear} | PlannedYear={PlannedYear}",
+                context.OpenYear,
+                context.PlannedYear);
+
+            using var orchestrationScope = _logger.BeginScope(new Dictionary<string, object>
+            {
+                ["CorrelationId"] = jobExecutionId,
+                ["OpenYear"] = context.OpenYear,
+                ["PlannedYear"] = context.PlannedYear ?? (object)"none"
+            });
+
+            _logger.LogInformation(
+                "MABArchive orchestration start | OpenYear={OpenYear} | PlannedYear={PlannedYear} | SelectionSource=fps.tblyearmaster",
+                context.OpenYear,
+                context.PlannedYear);
+
+            using var loadStep = _logger.BeginScope(new Dictionary<string, object?> { ["StepName"] = "ExecuteLoad" });
+
+            var executionStrategy = _dbContext.Database.CreateExecutionStrategy();
+            await executionStrategy.ExecuteAsync(async () =>
+            {
+                await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+                _logger.LogInformation(
+                    "Starting MABArchive full processing | FpsYear={FpsYear} | YearStatus=Open",
+                    context.OpenYear);
+                await ExecuteFullYearCycleAsync(context.OpenYear, cancellationToken);
+                _logger.LogInformation(
+                    "Completed MABArchive full processing | FpsYear={FpsYear}",
+                    context.OpenYear);
+
+                if (context.PlannedYear.HasValue)
+                {
+                    _logger.LogInformation(
+                        "Starting MABArchive project-only processing | FpsYear={FpsYear} | YearStatus=Planned",
+                        context.PlannedYear.Value);
+                    await ExecuteProjectOnlyRefreshAsync(context.PlannedYear.Value, cancellationToken);
+                    _logger.LogInformation(
+                        "Completed MABArchive project-only processing | FpsYear={FpsYear}",
+                        context.PlannedYear.Value);
+                }
+
+                _logger.LogInformation("MABArchive orchestration completed successfully");
+
+                await transaction.CommitAsync(cancellationToken);
+            });
+
+            var duration = DateTime.UtcNow - startedAt;
+            _logger.LogInformation("===========================================");
+            _logger.LogInformation(
+                "MABArchive Job - Completed Successfully | JobExecutionId={JobExecutionId} | Duration={DurationSeconds}s",
+                jobExecutionId,
+                (int)duration.TotalSeconds);
+            _logger.LogInformation("===========================================");
+        }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogWarning(ex, "MABArchive job execution was interrupted | JobExecutionId={JobExecutionId}", jobExecutionId);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "MABArchive job failed with unhandled exception | JobExecutionId={JobExecutionId}", jobExecutionId);
+            throw;
+        }
+    }
+
+    private async Task ExecuteFullYearCycleAsync(int year, CancellationToken cancellationToken)
+    {
+        _executionYearContext.FpsYear = year;
+        _executionYearContext.YearSource = "MABArchive.OpenYearFullCycle";
+
+        _logger.LogInformation("Executing full cycle for Open year {Year}", year);
+
+        var totalsRows = await _totalsService.RebuildSourceTotalsAsync(year, cancellationToken);
+        _logger.LogInformation("Rebuilt source totals for year {Year} | RowsInserted={RowsInserted}", year, totalsRows);
+
+        var deletedRows = await _dataService.DeleteYearDataAsync(year, cancellationToken);
+        _logger.LogInformation("Deleted archive data for year {Year} | RowsDeleted={RowsDeleted}", year, deletedRows);
+
+        var loadedRows = await _dataService.LoadYearDataAsync(year, cancellationToken);
+        _logger.LogInformation("Loaded archive data for year {Year} | RowsLoaded={RowsLoaded}", year, loadedRows);
+    }
+
+    private async Task ExecuteProjectOnlyRefreshAsync(int year, CancellationToken cancellationToken)
+    {
+        _executionYearContext.FpsYear = year;
+        _executionYearContext.YearSource = "MABArchive.PlannedYearProjectRefresh";
+
+        _logger.LogInformation("Executing project-only refresh for Planned year {Year}", year);
+
+        var refreshedRows = await _dataService.RefreshProjectsOnlyAsync(year, cancellationToken);
+        _logger.LogInformation("Refreshed projects for year {Year} | RowsRefreshed={RowsRefreshed}", year, refreshedRows);
+    }
+}

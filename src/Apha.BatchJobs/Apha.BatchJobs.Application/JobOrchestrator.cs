@@ -26,6 +26,8 @@ public sealed class JobOrchestrator : IJobOrchestrator
     private readonly IBatchLockRepository _lockRepository;
     private readonly IJobExecutionRepository _executionRepository;
     private readonly ICorrelationService _correlationService;
+    private readonly IEmailNotificationService _notificationService;
+    private readonly BatchAlertingSettings _alertingSettings;
     private readonly ILogger<JobOrchestrator> _logger;
     private readonly IConfiguration _configuration;
     private readonly int _lockTimeoutSeconds;
@@ -51,6 +53,8 @@ public sealed class JobOrchestrator : IJobOrchestrator
         IBatchLockRepository lockRepository,
         IJobExecutionRepository executionRepository,
         ICorrelationService correlationService,
+        IEmailNotificationService notificationService,
+        IOptions<BatchAlertingSettings> alertingSettings,
         IOptions<BatchJobSettings> settings,
         IConfiguration configuration,
         ILogger<JobOrchestrator> logger)
@@ -59,6 +63,8 @@ public sealed class JobOrchestrator : IJobOrchestrator
         _lockRepository = lockRepository ?? throw new ArgumentNullException(nameof(lockRepository));
         _executionRepository = executionRepository ?? throw new ArgumentNullException(nameof(executionRepository));
         _correlationService = correlationService ?? throw new ArgumentNullException(nameof(correlationService));
+        _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+        _alertingSettings = alertingSettings?.Value ?? new BatchAlertingSettings();
         _lockTimeoutSeconds = settings?.Value.LockTimeoutSeconds >= 0
             ? settings.Value.LockTimeoutSeconds
             : DefaultLockTimeoutSeconds;
@@ -444,7 +450,10 @@ public sealed class JobOrchestrator : IJobOrchestrator
 
             await MarkFailedSafelyAsync(record, finalStatus, jobException, jobQueueId);
 
-            // Step 5 — Release lock (always)
+            // Step 5 — Release lock (always), immediately after the final lifecycle state is
+            // persisted. This releases the lock before failure notification (below, outside this
+            // finally) runs — notification is best-effort operational reporting, not part of the
+            // protected batch execution, so it must not hold the lock open while it sends.
             try
             {
                 await _lockRepository.ReleaseLockAsync(lockName, jobQueueId, CancellationToken.None);
@@ -482,7 +491,12 @@ public sealed class JobOrchestrator : IJobOrchestrator
             throw cancelEx;
 
         if (jobException != null)
+        {
+            // Runs after the lock has already been released above — best-effort operational
+            // reporting is not part of the protected batch execution and must not delay it.
+            await TryNotifyFailureAsync(jobName, jobExecutionId, jobException);
             ThrowWithStructuredLog(jobException, jobName, jobQueueId, jobExecutionId);
+        }
 
         return new JobExecutionResult(jobQueueId, jobName, status, finalDuration, executionId);
     }
@@ -537,6 +551,41 @@ public sealed class JobOrchestrator : IJobOrchestrator
             jobExecutionId);
 
         ExceptionDispatchInfo.Capture(exception).Throw();
+    }
+
+    /// <summary>
+    /// Sends a best-effort failure notification once retries are exhausted and the job is about
+    /// to be reported as failed. Never lets a notification failure mask the original job exception.
+    /// Gated on <see cref="BatchAlertingSettings.EnableEmailNotifications"/> AND job-name
+    /// membership in <see cref="BatchAlertingSettings.EmailEnabledJobs"/> — this hook is generic
+    /// across all jobs, so eligibility must be opted into per job rather than applying to every
+    /// job's failure by default.
+    /// </summary>
+    private async Task TryNotifyFailureAsync(string jobName, Guid jobExecutionId, Exception exception)
+    {
+        if (!_alertingSettings.EnableEmailNotifications ||
+            !_alertingSettings.EmailEnabledJobs.Contains(jobName, StringComparer.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        try
+        {
+            await _notificationService.SendFailureNotificationAsync(
+                jobExecutionId.ToString("D"),
+                jobName,
+                exception.Message,
+                DateTime.UtcNow,
+                CancellationToken.None);
+        }
+        catch (Exception notifyEx)
+        {
+            _logger.LogWarning(
+                notifyEx,
+                "Failed to send failure notification | JobName={JobName} | JobExecutionId={JobExecutionId}",
+                jobName,
+                jobExecutionId);
+        }
     }
 
     private static string ResolveLockName(string jobName)

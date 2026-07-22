@@ -1,7 +1,8 @@
-namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
+namespace Apha.BatchJobs.Application.Interfaces;
 
 /// <summary>
-/// Service for sending email notifications on job failure.
+/// Service for sending email notifications on job failure. Job-agnostic — callers pass the
+/// failing job's name as a parameter rather than this being scoped to any one job.
 /// </summary>
 public interface IEmailNotificationService
 {

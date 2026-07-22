@@ -72,6 +72,10 @@ public sealed class BatchWorkerRunner : IBatchWorkerRunner
         });
 
         var startedAt = DateTime.UtcNow;
+
+        // Established before the execution scope below (not after) so the entire invocation —
+        // scope creation, orchestrator resolution, and execution — is governed by one
+        // cancellation boundary, rather than the scope being created under an unbounded token.
         using var cancellationContext = new ExecutionCancellationContext(_hostLifetime, _runtimeOptions.Value.WorkerOverallTimeoutSeconds);
 
         BatchExecutionResult result;

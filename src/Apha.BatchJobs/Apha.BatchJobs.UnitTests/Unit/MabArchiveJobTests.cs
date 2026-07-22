@@ -1,0 +1,371 @@
+using Apha.BatchJobs.Application.Interfaces;
+using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive;
+using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
+using Apha.BatchJobs.Domain.Configuration;
+using Apha.BatchJobs.Domain.Interfaces;
+using Apha.BatchJobs.Infrastructure.Context;
+using Apha.BatchJobs.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+using NSubstitute;
+
+namespace Apha.BatchJobs.UnitTests;
+
+/// <summary>
+/// Tests for <see cref="MabArchiveJob"/> covering job metadata and status-driven Open/Planned
+/// year processing (docs/mabarchive-year-selection-processing-spec.md). Failure-notification
+/// behavior lives in <c>JobOrchestratorTests</c> now that <see cref="MabArchiveJob"/> no longer
+/// sends its own notifications.
+/// </summary>
+public sealed class MabArchiveJobTests
+{
+    private const string DefaultConnectionString = "Host=localhost;Port=5432;Database=batch_jobs_foundation_db;Username=postgres;Password=LOCAL_DB_PASSWORD;Timeout=30";
+
+    [Fact]
+    public void Constructor_WhenDbContextIsNull_ShouldThrowArgumentNullException()
+    {
+        var ex = Assert.Throws<ArgumentNullException>(() => new MabArchiveJob(
+            null!,
+            Substitute.For<IMabArchiveYearSelectionService>(),
+            Substitute.For<IReloadFpsTotalsService>(),
+            Substitute.For<IMyFpsYearlyDataService>(),
+            new ExecutionYearContext(),
+            Substitute.For<ICorrelationService>(),
+            NullLogger<MabArchiveJob>.Instance,
+            Options.Create(new MabArchiveSettings())));
+
+        Assert.Equal("dbContext", ex.ParamName);
+    }
+
+    [Fact]
+    public void Constructor_WhenYearSelectionServiceIsNull_ShouldThrowArgumentNullException()
+    {
+        using var dbContext = CreateDbContext();
+
+        var ex = Assert.Throws<ArgumentNullException>(() => new MabArchiveJob(
+            dbContext,
+            null!,
+            Substitute.For<IReloadFpsTotalsService>(),
+            Substitute.For<IMyFpsYearlyDataService>(),
+            new ExecutionYearContext(),
+            Substitute.For<ICorrelationService>(),
+            NullLogger<MabArchiveJob>.Instance,
+            Options.Create(new MabArchiveSettings())));
+
+        Assert.Equal("yearSelectionService", ex.ParamName);
+    }
+
+    [Fact]
+    public void Constructor_WhenTotalsServiceIsNull_ShouldThrowArgumentNullException()
+    {
+        using var dbContext = CreateDbContext();
+
+        var ex = Assert.Throws<ArgumentNullException>(() => new MabArchiveJob(
+            dbContext,
+            Substitute.For<IMabArchiveYearSelectionService>(),
+            null!,
+            Substitute.For<IMyFpsYearlyDataService>(),
+            new ExecutionYearContext(),
+            Substitute.For<ICorrelationService>(),
+            NullLogger<MabArchiveJob>.Instance,
+            Options.Create(new MabArchiveSettings())));
+
+        Assert.Equal("totalsService", ex.ParamName);
+    }
+
+    [Fact]
+    public void Constructor_WhenDataServiceIsNull_ShouldThrowArgumentNullException()
+    {
+        using var dbContext = CreateDbContext();
+
+        var ex = Assert.Throws<ArgumentNullException>(() => new MabArchiveJob(
+            dbContext,
+            Substitute.For<IMabArchiveYearSelectionService>(),
+            Substitute.For<IReloadFpsTotalsService>(),
+            null!,
+            new ExecutionYearContext(),
+            Substitute.For<ICorrelationService>(),
+            NullLogger<MabArchiveJob>.Instance,
+            Options.Create(new MabArchiveSettings())));
+
+        Assert.Equal("dataService", ex.ParamName);
+    }
+
+    [Fact]
+    public void Constructor_WhenExecutionYearContextIsNull_ShouldThrowArgumentNullException()
+    {
+        using var dbContext = CreateDbContext();
+
+        var ex = Assert.Throws<ArgumentNullException>(() => new MabArchiveJob(
+            dbContext,
+            Substitute.For<IMabArchiveYearSelectionService>(),
+            Substitute.For<IReloadFpsTotalsService>(),
+            Substitute.For<IMyFpsYearlyDataService>(),
+            null!,
+            Substitute.For<ICorrelationService>(),
+            NullLogger<MabArchiveJob>.Instance,
+            Options.Create(new MabArchiveSettings())));
+
+        Assert.Equal("executionYearContext", ex.ParamName);
+    }
+
+    [Fact]
+    public void Constructor_WhenCorrelationServiceIsNull_ShouldThrowArgumentNullException()
+    {
+        using var dbContext = CreateDbContext();
+
+        var ex = Assert.Throws<ArgumentNullException>(() => new MabArchiveJob(
+            dbContext,
+            Substitute.For<IMabArchiveYearSelectionService>(),
+            Substitute.For<IReloadFpsTotalsService>(),
+            Substitute.For<IMyFpsYearlyDataService>(),
+            new ExecutionYearContext(),
+            null!,
+            NullLogger<MabArchiveJob>.Instance,
+            Options.Create(new MabArchiveSettings())));
+
+        Assert.Equal("correlationService", ex.ParamName);
+    }
+
+    [Fact]
+    public void Constructor_WhenLoggerIsNull_ShouldThrowArgumentNullException()
+    {
+        using var dbContext = CreateDbContext();
+
+        var ex = Assert.Throws<ArgumentNullException>(() => new MabArchiveJob(
+            dbContext,
+            Substitute.For<IMabArchiveYearSelectionService>(),
+            Substitute.For<IReloadFpsTotalsService>(),
+            Substitute.For<IMyFpsYearlyDataService>(),
+            new ExecutionYearContext(),
+            Substitute.For<ICorrelationService>(),
+            null!,
+            Options.Create(new MabArchiveSettings())));
+
+        Assert.Equal("logger", ex.ParamName);
+    }
+
+    [Fact]
+    public void Constructor_WhenSettingsIsNull_ShouldUseDefaults()
+    {
+        using var dbContext = CreateDbContext();
+
+        var subject = new MabArchiveJob(
+            dbContext,
+            Substitute.For<IMabArchiveYearSelectionService>(),
+            Substitute.For<IReloadFpsTotalsService>(),
+            Substitute.For<IMyFpsYearlyDataService>(),
+            new ExecutionYearContext(),
+            Substitute.For<ICorrelationService>(),
+            NullLogger<MabArchiveJob>.Instance,
+            settings: null!);
+
+        Assert.Equal("MABArchive", subject.Name);
+    }
+
+    [Fact]
+    public void Metadata_ShouldMatchExpectedContract()
+    {
+        using var dbContext = CreateDbContext();
+
+        var subject = new MabArchiveJob(
+            dbContext,
+            Substitute.For<IMabArchiveYearSelectionService>(),
+            Substitute.For<IReloadFpsTotalsService>(),
+            Substitute.For<IMyFpsYearlyDataService>(),
+            new ExecutionYearContext(),
+            Substitute.For<ICorrelationService>(),
+            NullLogger<MabArchiveJob>.Instance,
+            Options.Create(new MabArchiveSettings()));
+
+        Assert.Equal("MABArchive", subject.Name);
+        Assert.Equal("YearScopedRebuildWithDeterministicOrdering", subject.IdempotencyStrategy);
+        Assert.Equal("cron(0 20 ? * MON-FRI *)", subject.ScheduleExpression);
+        Assert.Equal("Weekdays (Monday to Friday) at 8:00 PM UTC", subject.ScheduleDescription);
+        Assert.Null(subject.MaxExecutionSeconds);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenPlannedYearPresent_RunsOpenYearFullCycleThenPlannedYearProjectOnly()
+    {
+        var dataService = Substitute.For<IMyFpsYearlyDataService>();
+        dataService.DeleteYearDataAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(0);
+        dataService.LoadYearDataAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(0);
+        dataService.RefreshProjectsOnlyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(0);
+
+        var totalsService = Substitute.For<IReloadFpsTotalsService>();
+        totalsService.RebuildSourceTotalsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(0);
+
+        var yearSelectionService = Substitute.For<IMabArchiveYearSelectionService>();
+        yearSelectionService.GetProcessableYearsAsync(Arg.Any<CancellationToken>())
+            .Returns(new MabArchiveExecutionContext(2026, 2027));
+
+        var correlationService = Substitute.For<ICorrelationService>();
+        correlationService.GetCorrelationId().Returns((string?)null);
+        correlationService.GenerateCorrelationId().Returns("cid-open-planned");
+
+        await using var dbContext = CreateDbContext();
+        await AssertCanConnectAsync(dbContext);
+
+        var subject = new MabArchiveJob(
+            dbContext,
+            yearSelectionService,
+            totalsService,
+            dataService,
+            new ExecutionYearContext(),
+            correlationService,
+            NullLogger<MabArchiveJob>.Instance,
+            Options.Create(new MabArchiveSettings()));
+
+        await subject.ExecuteAsync(CancellationToken.None);
+
+        correlationService.Received(1).GenerateCorrelationId();
+
+        Received.InOrder(() =>
+        {
+            _ = totalsService.RebuildSourceTotalsAsync(2026, Arg.Any<CancellationToken>());
+            _ = dataService.DeleteYearDataAsync(2026, Arg.Any<CancellationToken>());
+            _ = dataService.LoadYearDataAsync(2026, Arg.Any<CancellationToken>());
+            _ = dataService.RefreshProjectsOnlyAsync(2027, Arg.Any<CancellationToken>());
+        });
+
+        // Spec: Planned-year transactional data must never be touched.
+        await totalsService.DidNotReceive().RebuildSourceTotalsAsync(2027, Arg.Any<CancellationToken>());
+        await dataService.DidNotReceive().DeleteYearDataAsync(2027, Arg.Any<CancellationToken>());
+        await dataService.DidNotReceive().LoadYearDataAsync(2027, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenNoPlannedYear_RunsOpenYearOnlyAndSkipsProjectOnlyRefresh()
+    {
+        var dataService = Substitute.For<IMyFpsYearlyDataService>();
+        dataService.DeleteYearDataAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(0);
+        dataService.LoadYearDataAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(0);
+
+        var totalsService = Substitute.For<IReloadFpsTotalsService>();
+        totalsService.RebuildSourceTotalsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(0);
+
+        var yearSelectionService = Substitute.For<IMabArchiveYearSelectionService>();
+        yearSelectionService.GetProcessableYearsAsync(Arg.Any<CancellationToken>())
+            .Returns(new MabArchiveExecutionContext(2026, null));
+
+        var correlationService = Substitute.For<ICorrelationService>();
+        correlationService.GetCorrelationId().Returns("cid-open-only");
+
+        await using var dbContext = CreateDbContext();
+        await AssertCanConnectAsync(dbContext);
+
+        var subject = new MabArchiveJob(
+            dbContext,
+            yearSelectionService,
+            totalsService,
+            dataService,
+            new ExecutionYearContext(),
+            correlationService,
+            NullLogger<MabArchiveJob>.Instance,
+            Options.Create(new MabArchiveSettings()));
+
+        await subject.ExecuteAsync(CancellationToken.None);
+
+        await totalsService.Received(1).RebuildSourceTotalsAsync(2026, Arg.Any<CancellationToken>());
+        await dataService.Received(1).DeleteYearDataAsync(2026, Arg.Any<CancellationToken>());
+        await dataService.Received(1).LoadYearDataAsync(2026, Arg.Any<CancellationToken>());
+        await dataService.DidNotReceiveWithAnyArgs().RefreshProjectsOnlyAsync(default, default);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenProcessingFails_ShouldRethrow()
+    {
+        var dataService = Substitute.For<IMyFpsYearlyDataService>();
+
+        var totalsService = Substitute.For<IReloadFpsTotalsService>();
+        totalsService
+            .RebuildSourceTotalsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromException<int>(new InvalidOperationException("boom")));
+
+        var yearSelectionService = Substitute.For<IMabArchiveYearSelectionService>();
+        yearSelectionService.GetProcessableYearsAsync(Arg.Any<CancellationToken>())
+            .Returns(new MabArchiveExecutionContext(2026, null));
+
+        var correlationService = Substitute.For<ICorrelationService>();
+        correlationService.GetCorrelationId().Returns("cid-fail");
+
+        await using var dbContext = CreateDbContext();
+        await AssertCanConnectAsync(dbContext);
+
+        var subject = new MabArchiveJob(
+            dbContext,
+            yearSelectionService,
+            totalsService,
+            dataService,
+            new ExecutionYearContext(),
+            correlationService,
+            NullLogger<MabArchiveJob>.Instance,
+            Options.Create(new MabArchiveSettings()));
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => subject.ExecuteAsync(CancellationToken.None));
+
+        Assert.Equal("boom", ex.Message);
+
+        // The Planned year must never be reached once the Open year cycle fails.
+        await dataService.DidNotReceiveWithAnyArgs().RefreshProjectsOnlyAsync(default, default);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenCancellationRequested_ShouldRethrowOperationCanceledException()
+    {
+        var dataService = Substitute.For<IMyFpsYearlyDataService>();
+
+        var totalsService = Substitute.For<IReloadFpsTotalsService>();
+        totalsService
+            .RebuildSourceTotalsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo => Task.FromCanceled<int>((CancellationToken)callInfo[1]));
+
+        var yearSelectionService = Substitute.For<IMabArchiveYearSelectionService>();
+        yearSelectionService.GetProcessableYearsAsync(Arg.Any<CancellationToken>())
+            .Returns(new MabArchiveExecutionContext(2026, null));
+
+        var correlationService = Substitute.For<ICorrelationService>();
+        correlationService.GetCorrelationId().Returns("cid-cancel");
+
+        await using var dbContext = CreateDbContext();
+        await AssertCanConnectAsync(dbContext);
+
+        var subject = new MabArchiveJob(
+            dbContext,
+            yearSelectionService,
+            totalsService,
+            dataService,
+            new ExecutionYearContext(),
+            correlationService,
+            NullLogger<MabArchiveJob>.Instance,
+            Options.Create(new MabArchiveSettings()));
+
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => subject.ExecuteAsync(cts.Token));
+    }
+
+    private static string GetConnectionString()
+    {
+        return Environment.GetEnvironmentVariable("ConnectionStrings__FPSConnectionString")
+            ?? DefaultConnectionString;
+    }
+
+    private static BatchJobsDbContext CreateDbContext()
+    {
+        var options = new DbContextOptionsBuilder<BatchJobsDbContext>()
+            .UseNpgsql(GetConnectionString())
+            .Options;
+
+        return new BatchJobsDbContext(options);
+    }
+
+    private static async Task AssertCanConnectAsync(BatchJobsDbContext dbContext)
+    {
+        var canConnect = await dbContext.Database.CanConnectAsync();
+        Assert.True(canConnect, "Integration DB unavailable for MabArchiveJobTests.");
+    }
+}
