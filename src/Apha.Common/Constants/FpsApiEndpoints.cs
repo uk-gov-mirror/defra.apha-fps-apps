@@ -264,6 +264,7 @@ namespace Apha.Common.Constants
         public const string ApproveBulkRatesRequest = "api/v1/bulk-rates/requests/{0}/approve";
         public const string RejectBulkRatesRequest = "api/v1/bulk-rates/requests/{0}/reject";
         public const string CancelBulkRatesRequest = "api/v1/bulk-rates/requests/{0}/cancel";
+        public const string DownloadBulkRatesFecTestDataForRequest = "api/v1/bulk-rates/requests/{0}/download";
         public const string ExportBulkRatesFecTestData = "api/v1/bulk-rates/export?fpsYear={0}";
         public const string ExportBulkRatesStaffTestData = "api/v1/bulk-rates/export/staff?fpsYear={0}";
         public const string ExportBulkRatesAnimalTestData = "api/v1/bulk-rates/export/animal?fpsYear={0}";

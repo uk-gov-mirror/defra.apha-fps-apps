@@ -19,5 +19,22 @@ namespace Apha.FPS.Core.Entities.BulkRates
         public short? Active { get; set; }
         public string? Comments { get; set; }
         public string? ValidationComments { get; set; }
+
+        // ── CR056/CR059/DR-API-04/05: routing fields. On a staged (uploaded) row these are
+        // whatever the workbook supplied for this upload (null until DR-UI-02 adds workbook
+        // support); on a live row (GetAgrupRowsForExportAsync) these are the current
+        // fps.tlkptestreqmt values. TestBuyerWorkGroup has no live counterpart — the live
+        // column is the single testbuyercode string (concatenation rule unconfirmed, see
+        // CR059) — so it is only ever populated on staged rows. ─────────────────────────
+        public string? ProjectBuyerCode { get; set; }
+        public string? TestBuyerCode { get; set; }
+        public string? TestBuyerWorkGroup { get; set; }
+
+        // ── CR056/DR-API-07: frozen at release time, compared against the worker's
+        // re-derived result (DR-WK-04 §5.2 drift check). Null until release. ──────────
+        public string? CalculatedAction { get; set; }
+        public decimal? EffectiveNewRate { get; set; }
+        public decimal? SourceCurrentRate { get; set; }
+        public int? ValidationVersion { get; set; }
     }
 }

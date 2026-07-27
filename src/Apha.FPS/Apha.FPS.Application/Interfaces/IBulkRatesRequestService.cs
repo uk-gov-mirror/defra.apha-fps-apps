@@ -1,4 +1,5 @@
 using Apha.FPS.Application.Dtos.BulkRates;
+using Apha.FPS.Application.Pagination;
 using Apha.FPS.Core.Entities.BulkRates;
 
 namespace Apha.FPS.Application.Interfaces
@@ -43,12 +44,22 @@ namespace Apha.FPS.Application.Interfaces
         Task<BulkRatesRequestDto?> GetRequestAsync(
             Guid jobExecutionId, CancellationToken ct = default);
 
-        /// <summary>US-API-11: List requests, optionally filtered by job name, year and status.</summary>
-        Task<IReadOnlyList<BulkRatesQueueEntry>> GetRequestsAsync(
-            string? jobName, int? fpsYear, string? status, CancellationToken ct = default);
+        /// <summary>US-API-11: Server-side paged/sorted list, optionally filtered by job name, year and status.</summary>
+        Task<PaginatedResult<BulkRatesQueueEntry>> GetRequestsAsync(
+            string? jobName, int? fpsYear, string? status,
+            QueryParameters<string> query, CancellationToken ct = default);
 
         /// <summary>Export current FEC test rates for the given year as an Excel (.xlsx) byte array.</summary>
         Task<byte[]> ExportFecTestDataAsync(int fpsYear, CancellationToken ct = default);
+
+        /// <summary>
+        /// DR-UI-01: request-scoped FEC/AGRUP workbook download. Atomically captures an immutable
+        /// snapshot of live data (fps.bulk_rates_downloaded_key) as the new active download version
+        /// for this request before generating the workbook from that snapshot, and embeds the
+        /// download version in protected workbook metadata so DR-VAL-03 can reject a re-upload of a
+        /// stale download. Only permitted while the request is Initiated or Rejected (plan §2.1).
+        /// </summary>
+        Task<byte[]> DownloadFecTestDataAsync(Guid jobExecutionId, CancellationToken ct = default);
 
         /// <summary>Export current Staff rates for the given year as an Excel (.xlsx) byte array.</summary>
         Task<byte[]> ExportStaffTestDataAsync(int fpsYear, CancellationToken ct = default);

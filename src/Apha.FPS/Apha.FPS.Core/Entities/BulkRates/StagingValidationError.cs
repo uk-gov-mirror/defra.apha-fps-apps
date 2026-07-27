@@ -20,5 +20,13 @@ namespace Apha.FPS.Core.Entities.BulkRates
         public string? Buyer { get; set; }
         public string? CurrentValue { get; set; }
         public string? ExpectedValue { get; set; }
+
+        /// <summary>
+        /// True when this finding has no single uploaded row to attach to (e.g. a downloaded
+        /// key missing from the re-upload, DR-UI-04) and must be surfaced as a request-level
+        /// message, not rendered like an ordinary per-row error. Mirrors
+        /// Apha.Common.BulkRates.Validation.ValidationFinding.IsRequestLevel (CR061).
+        /// </summary>
+        public bool IsRequestLevel { get; set; }
     }
 }

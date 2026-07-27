@@ -50,7 +50,6 @@
                             <div class="govuk-grid-column-two-thirds govuk-!-padding-left-0">
 
                                 <a asp-area="FPS" asp-controller="BulkRates" asp-action="@QueueAction(Model.JobName)"
-                                   asp-route-fpsYear="@Model.FpsYear"
                                    class="govuk-back-link govuk-!-font-size-16">Back to queue</a>
 
                                 <h2 class="govuk-heading-m govuk-!-margin-top-4">New Bulk Rates Request</h2>
@@ -84,7 +83,6 @@
                                         Create Request
                                     </button>
                                     <a asp-area="FPS" asp-controller="BulkRates" asp-action="@QueueAction(Model.JobName)"
-                                       asp-route-fpsYear="@Model.FpsYear"
                                        class="govuk-link govuk-!-font-size-16">Cancel</a>
                                 </div>
 

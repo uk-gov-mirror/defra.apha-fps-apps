@@ -30,5 +30,22 @@ namespace Apha.FPS.Application.Dtos.BulkRates
 
         [Display(Name = "Comments")]
         public string? Comments { get; set; }
+
+        // ── DR-UI-02: routing fields (CR056/CR059/CR062) ─────────────────────────
+        // Existing rows: reference-only (protected, see BuildFecAgrupSheets) — the current
+        // live values, for visibility only; the API rejects any attempted change regardless
+        // (DR-API-05). New rows: the user supplies routing through these controlled columns
+        // (ProjectBuyerCode and/or TestBuyerWorkGroup) rather than hand-authoring a
+        // concatenated code — TestBuyerWorkGroup has no live counterpart, so it is always
+        // blank on a downloaded existing row.
+
+        [Display(Name = "Project Buyer Code")]
+        public string? ProjectBuyerCode { get; set; }
+
+        [Display(Name = "Test Buyer Code")]
+        public string? TestBuyerCode { get; set; }
+
+        [Display(Name = "Test Buyer Work Group")]
+        public string? TestBuyerWorkGroup { get; set; }
     }
 }

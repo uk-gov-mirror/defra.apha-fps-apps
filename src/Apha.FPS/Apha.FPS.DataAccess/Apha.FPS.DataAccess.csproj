@@ -23,6 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Apha.Common\Apha.Common.csproj" />
     <ProjectReference Include="..\Apha.FPS.Core\Apha.FPS.Core.csproj" />
   </ItemGroup>
 

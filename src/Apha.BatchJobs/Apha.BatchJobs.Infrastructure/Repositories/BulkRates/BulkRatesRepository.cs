@@ -42,7 +42,9 @@ public sealed class BulkRatesRepository : IBulkRatesRepository
                 q.fpsyear,
                 q.requestedby,
                 q.approved_by,
-                q.approved_at_utc
+                q.approved_at_utc,
+                q.upload_version,
+                q.active_download_version
             FROM fps.job_queue q
             JOIN fps.job_master m ON m.jobid = q.jobid
             JOIN fps.job_status s ON s.statusid = q.statusid AND s.jobid = q.jobid
@@ -62,7 +64,9 @@ public sealed class BulkRatesRepository : IBulkRatesRepository
             FpsYear:          reader.IsDBNull(5) ? 0 : reader.GetInt32(5),
             RequestedBy:      reader.IsDBNull(6) ? string.Empty : reader.GetString(6),
             ApprovedBy:       reader.IsDBNull(7) ? null : reader.GetString(7),
-            ApprovedAtUtc:    reader.IsDBNull(8) ? null : reader.GetDateTime(8));
+            ApprovedAtUtc:    reader.IsDBNull(8) ? null : reader.GetDateTime(8),
+            UploadVersion:    reader.IsDBNull(9) ? null : reader.GetInt32(9),
+            ActiveDownloadVersion: reader.IsDBNull(10) ? null : reader.GetInt32(10));
     }
 
     /// <inheritdoc />
@@ -77,9 +81,12 @@ public sealed class BulkRatesRepository : IBulkRatesRepository
         cmd.CommandText = @"
             SELECT jobqueueid, testcode, unitpricevla::numeric, defraunitprice::numeric,
                    fecnewrate::numeric, change::numeric,
-                   itemdescription, shortdescription, owner, comments
+                   itemdescription, shortdescription, owner, comments,
+                   calculated_action, effective_new_rate::numeric, source_current_rate::numeric,
+                   validation_version
             FROM fps.tblstagingtestorproduct
-            WHERE jobqueueid = @jobqueueid;";
+            WHERE jobqueueid = @jobqueueid
+            ORDER BY testcode;";
         cmd.Parameters.AddWithValue("jobqueueid", jobQueueId);
 
         var rows = new List<FecStagingRow>();
@@ -96,7 +103,11 @@ public sealed class BulkRatesRepository : IBulkRatesRepository
                 ItemDescription:  reader.IsDBNull(6) ? null : reader.GetString(6),
                 ShortDescription: reader.IsDBNull(7) ? null : reader.GetString(7),
                 Owner:            reader.IsDBNull(8) ? null : reader.GetString(8),
-                Comments:         reader.IsDBNull(9) ? null : reader.GetString(9)));
+                Comments:         reader.IsDBNull(9) ? null : reader.GetString(9),
+                CalculatedAction:  reader.IsDBNull(10) ? null : reader.GetString(10),
+                EffectiveNewRate:  reader.IsDBNull(11) ? null : reader.GetDecimal(11),
+                SourceCurrentRate: reader.IsDBNull(12) ? null : reader.GetDecimal(12),
+                ValidationVersion: reader.IsDBNull(13) ? null : reader.GetInt32(13)));
         }
 
         return rows;
@@ -114,9 +125,13 @@ public sealed class BulkRatesRepository : IBulkRatesRepository
         cmd.CommandText = @"
             SELECT jobqueueid, testcode, buyer,
                    agrup::numeric, agrupnew::numeric, change::numeric,
-                   norequired, datecreated, active, comments
+                   norequired, datecreated, active, comments,
+                   projectbuyercode, testbuyercode, testbuyerworkgroup,
+                   calculated_action, effective_new_rate::numeric, source_current_rate::numeric,
+                   validation_version
             FROM fps.tblstagingtlkptestreqmt
-            WHERE jobqueueid = @jobqueueid;";
+            WHERE jobqueueid = @jobqueueid
+            ORDER BY testcode, buyer;";
         cmd.Parameters.AddWithValue("jobqueueid", jobQueueId);
 
         var rows = new List<AgrupStagingRow>();
@@ -133,7 +148,14 @@ public sealed class BulkRatesRepository : IBulkRatesRepository
                 NoRequired:  reader.IsDBNull(6) ? null : reader.GetDouble(6),
                 DateCreated: reader.IsDBNull(7) ? null : reader.GetDateTime(7),
                 Active:      reader.IsDBNull(8) ? null : reader.GetInt16(8),
-                Comments:    reader.IsDBNull(9) ? null : reader.GetString(9)));
+                Comments:    reader.IsDBNull(9) ? null : reader.GetString(9),
+                ProjectBuyerCode:   reader.IsDBNull(10) ? null : reader.GetString(10),
+                TestBuyerCode:      reader.IsDBNull(11) ? null : reader.GetString(11),
+                TestBuyerWorkGroup: reader.IsDBNull(12) ? null : reader.GetString(12),
+                CalculatedAction:   reader.IsDBNull(13) ? null : reader.GetString(13),
+                EffectiveNewRate:   reader.IsDBNull(14) ? null : reader.GetDecimal(14),
+                SourceCurrentRate:  reader.IsDBNull(15) ? null : reader.GetDecimal(15),
+                ValidationVersion:  reader.IsDBNull(16) ? null : reader.GetInt32(16)));
         }
 
         return rows;

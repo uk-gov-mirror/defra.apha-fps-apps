@@ -1,4 +1,5 @@
 using ClosedXML.Excel;
+using Apha.Common.Utilities.ExcelExport;
 using Apha.FPS.Core.Entities.BulkRates;
 
 namespace Apha.FPS.Application.Services
@@ -26,7 +27,11 @@ namespace Apha.FPS.Application.Services
         private static readonly string[] AgrupRequiredColumns =
         [
             "Test Code", "Buyer", "Agrup", "Agrup New",
-            "Change", "No Required", "Date Created", "Active", "Comments"
+            "Change", "No Required", "Date Created", "Active", "Comments",
+            // DR-UI-02: routing columns. Cell values are optional per row (existing rows are
+            // protected/reference-only; a new row supplies at least one) — only the column
+            // headers themselves are required to exist.
+            "Project Buyer Code", "Test Buyer Code", "Test Buyer Work Group"
         ];
 
         // Staff worksheet
@@ -57,7 +62,9 @@ namespace Apha.FPS.Application.Services
 
             using var workbook = new XLWorkbook(stream);
 
-            return jobName switch
+            var metadata = ReadProtectedMetadata(workbook);
+
+            var result = jobName switch
             {
                 "BulkTestRatesUpdate" => ParseTestRates(workbook, jobQueueId, jobName),
                 "BulkStaffRatesUpdate" => ParseStaffRates(workbook, jobQueueId, jobName),
@@ -69,6 +76,11 @@ namespace Apha.FPS.Application.Services
                     ParseErrors = [$"Unrecognised job name: {jobName}"]
                 }
             };
+
+            // DR-VAL-03: attach protected metadata regardless of job type so the upload
+            // flow can enforce the active-download-version contract without re-opening
+            // the workbook a second time.
+            return result with { WorkbookMetadata = metadata };
         }
 
         // ── FEC + AGRUP ──────────────────────────────────────────────────────────
@@ -141,7 +153,10 @@ namespace Apha.FPS.Application.Services
                     NoRequired = CellDoubleOrNull(row, agrupHeaders, "No Required"),
                     DateCreated = CellDateOrNull(row, agrupHeaders, "Date Created"),
                     Active = CellShortOrNull(row, agrupHeaders, "Active"),
-                    Comments = CellString(row, agrupHeaders, "Comments")
+                    Comments = CellString(row, agrupHeaders, "Comments"),
+                    ProjectBuyerCode = CellString(row, agrupHeaders, "Project Buyer Code"),
+                    TestBuyerCode = CellString(row, agrupHeaders, "Test Buyer Code"),
+                    TestBuyerWorkGroup = CellString(row, agrupHeaders, "Test Buyer Work Group")
                 });
             }
 
@@ -299,6 +314,33 @@ namespace Apha.FPS.Application.Services
             if (cell.TryGetValue<bool>(out var b)) return b;
             if (cell.TryGetValue<int>(out var i)) return i != 0;
             return null;
+        }
+
+        /// <summary>
+        /// DR-VAL-03: reads the VeryHidden protected-metadata sheet written by
+        /// <c>ExcelExportService.ExportToExcelMultiSheet</c> (overload with
+        /// <c>protectedMetadata</c>). Returns an empty dictionary if the sheet is absent —
+        /// absence is not itself an error here; the upload flow decides what to do when
+        /// the metadata is missing.
+        /// </summary>
+        private static IReadOnlyDictionary<string, string> ReadProtectedMetadata(IXLWorkbook wb)
+        {
+            var metaSheet = wb.Worksheets.FirstOrDefault(w =>
+                string.Equals(w.Name, ExcelExportService.ProtectedMetadataSheetName,
+                    StringComparison.OrdinalIgnoreCase));
+
+            if (metaSheet == null)
+                return new Dictionary<string, string>();
+
+            var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var row in metaSheet.RowsUsed())
+            {
+                var key = row.Cell(1).GetValue<string>().Trim();
+                var value = row.Cell(2).GetValue<string>().Trim();
+                if (!string.IsNullOrEmpty(key))
+                    result[key] = value;
+            }
+            return result;
         }
     }
 }

@@ -34,5 +34,10 @@ namespace Apha.FPS.Core.Entities.BulkRates
         public DateTime? EndDateTime { get; set; }
         public string? ErrorMessage { get; set; }
         public string? FailureReason { get; set; }
+        /// <summary>
+        /// DR-VAL-03: the download version that the next upload must carry in its protected
+        /// metadata sheet. Null means no workbook has been generated yet for this request.
+        /// </summary>
+        public int? ActiveDownloadVersion { get; set; }
     }
 }

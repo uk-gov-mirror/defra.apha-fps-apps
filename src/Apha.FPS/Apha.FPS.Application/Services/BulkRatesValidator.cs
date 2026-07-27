@@ -1,3 +1,4 @@
+using Apha.Common.BulkRates.Validation;
 using Apha.Common.Constants;
 using Apha.FPS.Core.Entities.BulkRates;
 using Apha.FPS.Core.Interfaces;
@@ -5,23 +6,33 @@ using Apha.FPS.Core.Interfaces;
 namespace Apha.FPS.Application.Services
 {
     /// <summary>
-    /// Validates parsed staging rows against structural, duplicate-key, business and reference rules.
-    /// Spec §12. Returns StagingValidationError rows and computed BulkRatesRowCounts.
-    /// Severity: 'Error' blocks release; 'Warning' does not.
+    /// Orchestrates Bulk Rates upload/release validation. FEC/AGRUP business rules live in
+    /// Apha.Common.BulkRates.Validation.IBulkRatesValidationService (DR-VAL-01, Phase D2) —
+    /// this class's job (Phase D3) is to build that service's ValidationContext from bulk
+    /// repository reads plus the parsed/staged rows, call it once, and map the returned
+    /// ValidationFinding list onto StagingValidationError/BulkRatesRowCounts. It must not
+    /// reimplement any FEC/AGRUP rule itself (plan §4: "every item... calls DR-VAL-01/DR-VAL-02
+    /// rather than implementing its own copy"). Staff/Animal validation predates DR-VAL-01 and
+    /// is outside its scope (its ValidationContext has no Staff/Animal shape), so those two
+    /// stay exactly as before.
     /// </summary>
     public class BulkRatesValidator
     {
         private readonly IBulkRatesRepository _repository;
+        private readonly IBulkRatesValidationService _validationService;
 
-        public BulkRatesValidator(IBulkRatesRepository repository)
+        public BulkRatesValidator(IBulkRatesRepository repository, IBulkRatesValidationService validationService)
         {
             _repository = repository;
+            _validationService = validationService;
         }
 
         public async Task<BulkRatesValidationResult> ValidateAsync(
             BulkRatesParseResult parseResult,
             int fpsYear,
             string jobName,
+            int uploadVersion,
+            int? downloadVersion,
             CancellationToken ct = default)
         {
             // File-level parse errors become Error-severity validation entries on row 0
@@ -30,7 +41,7 @@ namespace Apha.FPS.Application.Services
                 var fileErrors = parseResult.ParseErrors.Select((msg, i) => new StagingValidationError
                 {
                     JobQueueId = parseResult.JobQueueId,
-                    UploadVersion = 0,
+                    UploadVersion = uploadVersion,
                     SourceRowNumber = 0,
                     FieldName = "file",
                     ValidationCode = "FILE_ERROR",
@@ -43,7 +54,9 @@ namespace Apha.FPS.Application.Services
 
             return jobName switch
             {
-                BulkRatesJobNames.Fec => await ValidateFecAsync(parseResult, fpsYear, ct),
+                BulkRatesJobNames.Fec => await ValidateFecAsync(
+                    parseResult.JobQueueId, fpsYear, uploadVersion, downloadVersion,
+                    parseResult.FecRows, parseResult.AgrupRows, ct),
                 BulkRatesJobNames.Staff => ValidateStaff(parseResult),
                 BulkRatesJobNames.Animal => ValidateAnimal(parseResult),
                 _ => new BulkRatesValidationResult
@@ -56,162 +69,269 @@ namespace Apha.FPS.Application.Services
             };
         }
 
-        // ── FEC + AGRUP validation ───────────────────────────────────────────────
+        // ── DR-API-07: release-time re-validation + freeze ───────────────────────
+
+        /// <summary>
+        /// Re-runs the same DR-VAL-01 rules against the currently staged rows (read back from
+        /// the DB — release time has no fresh parseResult in hand) and the current live/
+        /// reference data, and packages the per-row classification for
+        /// BulkRatesRequestService.ReleaseForApprovalAsync to freeze onto staging (CR056).
+        /// This is a safety net: live reference data can drift between upload and release, so
+        /// release must not blindly trust the validation errors recorded at upload time.
+        /// </summary>
+        public async Task<BulkRatesFreezeResult> BuildFreezeAsync(
+            Guid jobQueueId, int fpsYear, int uploadVersion, int? downloadVersion, CancellationToken ct = default)
+        {
+            var fecRows = await _repository.GetFecStagingRowsAsync(jobQueueId, ct);
+            var agrupRows = await _repository.GetAgrupStagingRowsAsync(jobQueueId, ct);
+
+            var context = await BuildContextAsync(
+                jobQueueId, fpsYear, uploadVersion, downloadVersion, fecRows, agrupRows,
+                includeWorkerOnlyChecks: false, ct);
+            var findings = _validationService.Validate(context);
+
+            var blockingErrors = findings.Where(f => f.Severity == ValidationSeverity.Error).ToList();
+
+            var fecFreezes = findings
+                .Where(f => f.ValidationCode == "ROW_CLASSIFIED" && string.Equals(f.Sheet, "FEC", StringComparison.OrdinalIgnoreCase))
+                .Select(f =>
+                {
+                    context.LiveFecLookup.TryGetValue(BulkRatesValidationKeys.TestCode(f.BusinessKey!), out var live);
+                    return new BulkRatesFreezeEntry(f.BusinessKey!, null, f.CalculatedAction!, f.EffectiveNewRate, live?.DefraUnitPrice);
+                })
+                .ToList();
+
+            var agrupFreezes = findings
+                .Where(f => f.ValidationCode == "ROW_CLASSIFIED" && string.Equals(f.Sheet, "AGRUP", StringComparison.OrdinalIgnoreCase))
+                .Select(f =>
+                {
+                    var (testCode, buyer) = SplitBusinessKey(f.Sheet, f.BusinessKey);
+                    context.LiveAgrupLookup.TryGetValue(BulkRatesValidationKeys.AgrupKey(testCode!, buyer!), out var live);
+                    return new BulkRatesFreezeEntry(testCode!, buyer, f.CalculatedAction!, f.EffectiveNewRate, live?.UnitPrice);
+                })
+                .ToList();
+
+            return new BulkRatesFreezeResult
+            {
+                BlockingErrors = blockingErrors,
+                FecFreezes = fecFreezes,
+                AgrupFreezes = agrupFreezes
+            };
+        }
+
+        // ── DR-UI-03: calculated action for display, when nothing is frozen yet ─────
+
+        /// <summary>
+        /// Computes the same DR-VAL-01 classification <see cref="BuildFreezeAsync"/> would freeze,
+        /// for display purposes before a request has ever been released (calculated_action is
+        /// still null on staging). Returns raw ROW_CLASSIFIED findings rather than a bespoke
+        /// shape — callers (the Detail-page staging grid) read <see cref="ValidationFinding.BusinessKey"/>/
+        /// <see cref="ValidationFinding.CalculatedAction"/>/<see cref="ValidationFinding.EffectiveNewRate"/>
+        /// directly, so this never becomes a second, UI-owned re-implementation of the classification rule.
+        /// </summary>
+        public async Task<IReadOnlyList<ValidationFinding>> GetCalculatedActionsAsync(
+            Guid jobQueueId, int fpsYear, int uploadVersion, int? downloadVersion, CancellationToken ct = default)
+        {
+            var fecRows = await _repository.GetFecStagingRowsAsync(jobQueueId, ct);
+            var agrupRows = await _repository.GetAgrupStagingRowsAsync(jobQueueId, ct);
+
+            var context = await BuildContextAsync(
+                jobQueueId, fpsYear, uploadVersion, downloadVersion, fecRows, agrupRows,
+                includeWorkerOnlyChecks: false, ct);
+
+            return _validationService.Validate(context)
+                .Where(f => f.ValidationCode == "ROW_CLASSIFIED")
+                .ToList();
+        }
+
+        // ── FEC + AGRUP validation (DR-API-01/02/03/04/05/06/08/09, all via DR-VAL-01) ──
 
         private async Task<BulkRatesValidationResult> ValidateFecAsync(
-            BulkRatesParseResult parseResult, int fpsYear, CancellationToken ct)
+            Guid jobQueueId, int fpsYear, int uploadVersion, int? downloadVersion,
+            IReadOnlyList<FecStagingRow> fecRows, IReadOnlyList<AgrupStagingRow> agrupRows,
+            CancellationToken ct)
         {
-            var errors = new List<StagingValidationError>();
-            var fecRows = parseResult.FecRows;
-            var agrupRows = parseResult.AgrupRows;
-            var jobQueueId = parseResult.JobQueueId;
+            var context = await BuildContextAsync(
+                jobQueueId, fpsYear, uploadVersion, downloadVersion, fecRows, agrupRows,
+                includeWorkerOnlyChecks: false, ct);
+            var findings = _validationService.Validate(context);
 
-            // ── Duplicate FEC test codes within the upload
-            var fecDuplicates = fecRows.GroupBy(r => r.TestCode, StringComparer.OrdinalIgnoreCase)
-                .Where(g => g.Count() > 1).Select(g => g.Key).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            // ROW_CLASSIFIED findings (Info severity) are DR-VAL-01's per-row calculated-action
+            // output, not user-facing validation errors — they drive RowCounts below, not
+            // fps.staging_validation_error (DR-UI-03 reads them from the frozen staging columns
+            // instead, once DR-API-07 has run).
+            var errors = findings
+                .Where(f => f.ValidationCode != "ROW_CLASSIFIED")
+                .Select(f => MapFinding(f, jobQueueId, uploadVersion))
+                .ToList();
 
-            // ── Bulk reference check for FEC test codes
-            var allTestCodes = fecRows.Select(r => r.TestCode).ToHashSet(StringComparer.OrdinalIgnoreCase);
-            var existingTestCodes = await _repository.GetExistingTestCodesAsync(allTestCodes, fpsYear, ct);
-
-            // ── Bulk reference check for AGRUP keys
-            var agrupKeys = agrupRows
-                .Select(r => (r.TestCode, r.Buyer))
-                .ToHashSet();
-            var existingAgrupKeys = await _repository.GetExistingAgrupKeysAsync(agrupKeys, fpsYear, ct);
-
-            // ── FEC row validation (spec §12.1 + §12.2)
-            int fecInsert = 0, fecUpdate = 0, fecUnchanged = 0;
-            for (int rowNum = 0; rowNum < fecRows.Count; rowNum++)
-            {
-                var row = fecRows[rowNum];
-                var sourceRow = rowNum + 2; // 1-based, row 1 is header
-
-                if (fecDuplicates.Contains(row.TestCode))
-                    AddError(errors, jobQueueId, sourceRow, "testcode", "DUPLICATE_TEST_CODE",
-                        $"TestCode '{row.TestCode}' appears more than once in the FEC worksheet.",
-                        sheetName: "FEC", testCode: row.TestCode);
-
-                if (row.FecNewRate == null)
-                    AddError(errors, jobQueueId, sourceRow, "fecnewrate", "MISSING_FEC_NEW_RATE",
-                        "FEC New rate is mandatory for every row.",
-                        sheetName: "FEC", testCode: row.TestCode);
-
-                if (row.FecNewRate.HasValue && row.FecNewRate.Value < 0)
-                    AddError(errors, jobQueueId, sourceRow, "fecnewrate", "NEGATIVE_RATE",
-                        "Negative rates are not permitted.",
-                        sheetName: "FEC", testCode: row.TestCode);
-
-                var isNew = !existingTestCodes.Contains(row.TestCode);
-                if (isNew)
-                {
-                    fecInsert++;
-                    if (string.IsNullOrWhiteSpace(row.ItemDescription))
-                        AddError(errors, jobQueueId, sourceRow, "itemdescription", "MISSING_FOR_INSERT",
-                            "Item Description is required for new Test Code inserts.",
-                            sheetName: "FEC", testCode: row.TestCode);
-                    if (string.IsNullOrWhiteSpace(row.ShortDescription))
-                        AddError(errors, jobQueueId, sourceRow, "shortdescription", "MISSING_FOR_INSERT",
-                            "Short Description is required for new Test Code inserts.",
-                            sheetName: "FEC", testCode: row.TestCode);
-                    if (string.IsNullOrWhiteSpace(row.Owner))
-                        AddError(errors, jobQueueId, sourceRow, "owner", "MISSING_FOR_INSERT",
-                            "Owner is required for new Test Code inserts.",
-                            sheetName: "FEC", testCode: row.TestCode);
-                }
-                else
-                {
-                    // Existing row: changes to description/owner are ignored (add warning if materially different)
-                    if (!string.IsNullOrWhiteSpace(row.ItemDescription))
-                        AddWarning(errors, jobQueueId, sourceRow, "itemdescription", "IGNORED_ON_UPDATE",
-                            "Item Description changes are ignored for existing Test Codes (update-only modifies price columns).",
-                            sheetName: "FEC", testCode: row.TestCode);
-
-                    // Classify: unchanged if FEC New == existing DefraUnitPrice
-                    // We don't have the existing price here, so we classify as Update
-                    // (the worker re-classifies precisely at execution)
-                    fecUpdate++;
-                }
-            }
-
-            // ── AGRUP row validation (spec §12.3)
-            var fecTestCodesInUpload = allTestCodes;
-            int agrupInsert = 0, agrupUpdate = 0, agrupUnchanged = 0;
-            var agrupDuplicates = agrupRows
-                .GroupBy(r => (r.TestCode.ToUpperInvariant(), r.Buyer.ToUpperInvariant()))
-                .Where(g => g.Count() > 1)
-                .Select(g => g.Key)
-                .ToHashSet();
-
-            for (int rowNum = 0; rowNum < agrupRows.Count; rowNum++)
-            {
-                var row = agrupRows[rowNum];
-                var sourceRow = rowNum + 2;
-
-                if (agrupDuplicates.Contains((row.TestCode.ToUpperInvariant(), row.Buyer.ToUpperInvariant())))
-                    AddError(errors, jobQueueId, sourceRow, "testcode+buyer", "DUPLICATE_AGRUP_KEY",
-                        $"TestCode+Buyer combination '{row.TestCode}/{row.Buyer}' appears more than once.",
-                        sheetName: "AGRUP", testCode: row.TestCode, buyer: row.Buyer);
-
-                // Test Code must exist in current year OR be a new insert in the same FEC upload
-                if (!existingTestCodes.Contains(row.TestCode) && !fecTestCodesInUpload.Contains(row.TestCode))
-                    AddError(errors, jobQueueId, sourceRow, "testcode", "TEST_CODE_NOT_FOUND",
-                        $"TestCode '{row.TestCode}' does not exist in FPS year {fpsYear} and is not being inserted by this FEC upload.",
-                        sheetName: "AGRUP", testCode: row.TestCode, buyer: row.Buyer);
-
-                var isNew = !existingAgrupKeys.Contains((row.TestCode, row.Buyer));
-                if (isNew)
-                {
-                    agrupInsert++;
-                    if (row.AgrupNew == null)
-                        AddError(errors, jobQueueId, sourceRow, "agrupnew", "MISSING_FOR_INSERT",
-                            "Agrup New is required for new TestCode+Buyer inserts.",
-                            sheetName: "AGRUP", testCode: row.TestCode, buyer: row.Buyer);
-                }
-                else
-                {
-                    if (row.AgrupNew == null)
-                    {
-                        agrupUnchanged++;
-                        continue; // blank AgrupNew on existing row = no update (spec §11.2)
-                    }
-                    agrupUpdate++;
-                }
-
-                if (row.AgrupNew.HasValue && row.AgrupNew.Value < 0)
-                    AddError(errors, jobQueueId, sourceRow, "agrupnew", "NEGATIVE_RATE",
-                        "Negative rates are not permitted.",
-                        sheetName: "AGRUP", testCode: row.TestCode, buyer: row.Buyer);
-
-                // "Same as FEC" comments validation
-                if (string.Equals(row.Comments, "Same as FEC", StringComparison.OrdinalIgnoreCase))
-                {
-                    var fecMatch = fecRows.FirstOrDefault(f =>
-                        string.Equals(f.TestCode, row.TestCode, StringComparison.OrdinalIgnoreCase));
-                    if (fecMatch != null && row.AgrupNew.HasValue && fecMatch.FecNewRate.HasValue
-                        && row.AgrupNew.Value != fecMatch.FecNewRate.Value)
-                        AddError(errors, jobQueueId, sourceRow, "agrupnew", "SAME_AS_FEC_MISMATCH",
-                            $"Comments is 'Same as FEC' but Agrup New ({row.AgrupNew}) does not equal FEC New ({fecMatch.FecNewRate}) for TestCode '{row.TestCode}'.",
-                            sheetName: "AGRUP", testCode: row.TestCode, buyer: row.Buyer);
-                }
-            }
-
-            var totalFec = fecRows.Count;
-            var totalAgrup = agrupRows.Count;
-            var counts = new BulkRatesRowCounts
-            {
-                Total = totalFec + totalAgrup,
-                Insert = fecInsert + agrupInsert,
-                Update = fecUpdate + agrupUpdate,
-                Unchanged = fecUnchanged + agrupUnchanged,
-                Invalid = errors.Count(e => e.Severity == "Error"),
-                Valid = totalFec + totalAgrup - errors.Count(e => e.Severity == "Error")
-            };
+            var counts = ComputeRowCounts(fecRows.Count, agrupRows.Count, findings, errors);
 
             return new BulkRatesValidationResult { Errors = errors, RowCounts = counts };
         }
 
-        // ── Staff validation ─────────────────────────────────────────────────────
+        /// <summary>
+        /// Builds DR-VAL-01's ValidationContext from bulk repository reads (§3.2 — batched,
+        /// never per-row) plus the given FEC/AGRUP rows, which the two callers above source
+        /// differently: a fresh parse at upload time, or a DB read-back at release time.
+        /// </summary>
+        private async Task<ValidationContext> BuildContextAsync(
+            Guid jobQueueId, int fpsYear, int uploadVersion, int? downloadVersion,
+            IReadOnlyList<FecStagingRow> fecRows, IReadOnlyList<AgrupStagingRow> agrupRows,
+            bool includeWorkerOnlyChecks, CancellationToken ct)
+        {
+            var liveFecRows = await _repository.GetFecRowsForExportAsync(fpsYear, ct);
+            var liveAgrupRows = await _repository.GetAgrupRowsForExportAsync(fpsYear, ct);
+
+            var liveFecLookup = liveFecRows.ToDictionary(
+                r => BulkRatesValidationKeys.TestCode(r.TestCode),
+                r => new LiveFecRow { TestCode = r.TestCode, UnitPriceVla = r.UnitPriceVla, DefraUnitPrice = r.DefraUnitPrice });
+
+            var liveAgrupLookup = liveAgrupRows.ToDictionary(
+                r => BulkRatesValidationKeys.AgrupKey(r.TestCode, r.Buyer),
+                r => new LiveAgrupRow
+                {
+                    TestCode = r.TestCode,
+                    Buyer = r.Buyer,
+                    UnitPrice = r.Agrup,
+                    ProjectBuyerCode = r.ProjectBuyerCode,
+                    TestBuyerCode = r.TestBuyerCode
+                });
+
+            // Project/capability lookups are bulk (§3.2) but scoped to only the routing values
+            // this upload actually supplies — not the entire reference table.
+            var projectCodes = agrupRows
+                .Where(r => !string.IsNullOrWhiteSpace(r.ProjectBuyerCode))
+                .Select(r => r.ProjectBuyerCode!)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var projectLookup = await _repository.GetExistingProjectCodesAsync(projectCodes, fpsYear, ct);
+
+            var capabilityPairs = agrupRows
+                .Where(r => !string.IsNullOrWhiteSpace(r.TestBuyerWorkGroup))
+                .Select(r => (r.TestCode, r.TestBuyerWorkGroup!))
+                .ToHashSet();
+            var capabilityLookup = await _repository.GetExistingCapabilityPairsAsync(capabilityPairs, fpsYear, ct);
+
+            IReadOnlyList<DownloadedSnapshotKey> frozenSnapshot = [];
+            if (downloadVersion.HasValue)
+            {
+                var snapshotFec = await _repository.GetFecSnapshotRowsAsync(jobQueueId, downloadVersion.Value, ct);
+                var snapshotAgrup = await _repository.GetAgrupSnapshotRowsAsync(jobQueueId, downloadVersion.Value, ct);
+                frozenSnapshot = snapshotFec
+                    .Select(r => new DownloadedSnapshotKey { Sheet = "FEC", TestCode = r.TestCode, SourceRate = r.DefraUnitPrice })
+                    .Concat(snapshotAgrup.Select(r => new DownloadedSnapshotKey { Sheet = "AGRUP", TestCode = r.TestCode, Buyer = r.Buyer, SourceRate = r.Agrup }))
+                    .ToList();
+            }
+
+            var stagedFec = fecRows.Select((r, i) => new ValidationFecRow
+            {
+                TestCode = r.TestCode,
+                FecNewRate = r.FecNewRate,
+                ItemDescription = r.ItemDescription,
+                ShortDescription = r.ShortDescription,
+                Owner = r.Owner,
+                Comments = r.Comments,
+                SourceRow = i + 2
+            }).ToList();
+
+            var stagedAgrup = agrupRows.Select((r, i) =>
+            {
+                liveAgrupLookup.TryGetValue(BulkRatesValidationKeys.AgrupKey(r.TestCode, r.Buyer), out var live);
+                return new ValidationAgrupRow
+                {
+                    TestCode = r.TestCode,
+                    Buyer = r.Buyer,
+                    AgrupNew = r.AgrupNew,
+                    // Existing rows: the workbook has no column yet to assert a routing value
+                    // (DR-UI-02/Phase D5 adds that). Until then, an absent staged value must echo
+                    // the live one rather than read as "blanked out" — otherwise every ordinary
+                    // rate-only update on a row that already has routing data would falsely trip
+                    // DR-API-05's immutability check below. New rows have no live value to echo,
+                    // so they correctly stay null and fall through to DR-API-04's
+                    // MISSING_ROUTING_FIELD until a workbook can actually supply one.
+                    ProjectBuyerCode = r.ProjectBuyerCode ?? live?.ProjectBuyerCode,
+                    TestBuyerCode = r.TestBuyerCode ?? live?.TestBuyerCode,
+                    TestBuyerWorkGroup = r.TestBuyerWorkGroup,
+                    Comments = r.Comments,
+                    SourceRow = i + 2
+                };
+            }).ToList();
+
+            return new ValidationContext
+            {
+                JobQueueId = jobQueueId,
+                FpsYear = fpsYear,
+                DownloadVersion = downloadVersion,
+                UploadVersion = uploadVersion,
+                LiveFecLookup = liveFecLookup,
+                LiveAgrupLookup = liveAgrupLookup,
+                ProjectLookup = projectLookup,
+                CapabilityLookup = capabilityLookup,
+                StagedFecRows = stagedFec,
+                StagedAgrupRows = stagedAgrup,
+                FrozenSnapshot = frozenSnapshot,
+                IncludeWorkerOnlyChecks = includeWorkerOnlyChecks
+            };
+        }
+
+        private static StagingValidationError MapFinding(ValidationFinding finding, Guid jobQueueId, int uploadVersion)
+        {
+            var (testCode, buyer) = SplitBusinessKey(finding.Sheet, finding.BusinessKey);
+            return new StagingValidationError
+            {
+                JobQueueId = jobQueueId,
+                UploadVersion = uploadVersion,
+                SourceRowNumber = finding.SourceRow ?? 0,
+                FieldName = finding.Field,
+                ValidationCode = finding.ValidationCode,
+                Severity = finding.Severity,
+                ValidationMessage = finding.Message,
+                SheetName = finding.Sheet,
+                TestCode = testCode,
+                Buyer = buyer,
+                IsRequestLevel = finding.IsRequestLevel
+            };
+        }
+
+        /// <summary>AGRUP findings carry "TestCode/Buyer" as a single BusinessKey string (DR-VAL-01); everything else is a plain TestCode.</summary>
+        private static (string? TestCode, string? Buyer) SplitBusinessKey(string sheet, string? businessKey)
+        {
+            if (businessKey is null) return (null, null);
+            if (!string.Equals(sheet, "AGRUP", StringComparison.OrdinalIgnoreCase)) return (businessKey, null);
+            var parts = businessKey.Split('/', 2);
+            return parts.Length == 2 ? (parts[0], parts[1]) : (businessKey, null);
+        }
+
+        private static BulkRatesRowCounts ComputeRowCounts(
+            int totalFec, int totalAgrup, IReadOnlyList<ValidationFinding> findings, IReadOnlyList<StagingValidationError> errors)
+        {
+            int insert = 0, update = 0, unchanged = 0;
+            foreach (var f in findings)
+            {
+                if (f.ValidationCode != "ROW_CLASSIFIED") continue;
+                switch (f.CalculatedAction)
+                {
+                    case ValidationCalculatedAction.Insert: insert++; break;
+                    case ValidationCalculatedAction.Update:
+                    case ValidationCalculatedAction.ZeroRateWithdrawal: update++; break;
+                    case ValidationCalculatedAction.NoChange: unchanged++; break;
+                }
+            }
+
+            var total = totalFec + totalAgrup;
+            var invalid = errors.Count(e => e.Severity == ValidationSeverity.Error);
+            return new BulkRatesRowCounts
+            {
+                Total = total,
+                Insert = insert,
+                Update = update,
+                Unchanged = unchanged,
+                Invalid = invalid,
+                Valid = total - invalid
+            };
+        }
+
+        // ── Staff validation (predates DR-VAL-01 — no Staff shape in its ValidationContext) ──
 
         private static BulkRatesValidationResult ValidateStaff(BulkRatesParseResult parseResult)
         {
@@ -258,7 +378,7 @@ namespace Apha.FPS.Application.Services
             };
         }
 
-        // ── Animal validation ────────────────────────────────────────────────────
+        // ── Animal validation (predates DR-VAL-01 — no Animal shape in its ValidationContext) ──
 
         private static BulkRatesValidationResult ValidateAnimal(BulkRatesParseResult parseResult)
         {
@@ -302,7 +422,7 @@ namespace Apha.FPS.Application.Services
             };
         }
 
-        // ── Error helpers ────────────────────────────────────────────────────────
+        // ── Error helpers (Staff/Animal only — FEC/AGRUP findings go through MapFinding) ──
 
         private static void AddError(
             List<StagingValidationError> list, Guid jobQueueId,
@@ -317,26 +437,6 @@ namespace Apha.FPS.Application.Services
                 FieldName = fieldName,
                 ValidationCode = code,
                 Severity = "Error",
-                ValidationMessage = message,
-                SheetName = sheetName,
-                TestCode = testCode,
-                Buyer = buyer
-            });
-        }
-
-        private static void AddWarning(
-            List<StagingValidationError> list, Guid jobQueueId,
-            int sourceRowNumber, string? fieldName, string code, string message,
-            string? sheetName = null, string? testCode = null, string? buyer = null)
-        {
-            list.Add(new StagingValidationError
-            {
-                JobQueueId = jobQueueId,
-                UploadVersion = 0,
-                SourceRowNumber = sourceRowNumber,
-                FieldName = fieldName,
-                ValidationCode = code,
-                Severity = "Warning",
                 ValidationMessage = message,
                 SheetName = sheetName,
                 TestCode = testCode,

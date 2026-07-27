@@ -1,5 +1,7 @@
+using Apha.Common.Contracts;
 using Apha.FPS.Application.Dtos.BulkRates;
 using Apha.FPS.Application.Interfaces;
+using Apha.FPS.Application.Pagination;
 using Apha.FPS.Core.Entities.BulkRates;
 using Apha.FPS.Core.Interfaces;
 using Asp.Versioning;
@@ -117,16 +119,27 @@ namespace Apha.FPS.Api.Controllers
             return Ok(result);
         }
 
-        /// <summary>US-API-11: List requests, optionally filtered by job name, year and status.</summary>
+        /// <summary>US-API-11: Server-side paged/sorted list, optionally filtered by job name, year and status.</summary>
         [HttpGet("requests")]
         public async Task<ActionResult> GetRequestsAsync(
             [FromQuery] string? jobName,
             [FromQuery] int? fpsYear,
             [FromQuery] string? status,
+            [FromQuery] QueryParameters<string> query,
             CancellationToken ct)
         {
-            var result = await _service.GetRequestsAsync(jobName, fpsYear, status, ct);
-            return Ok(result);
+            var result = await _service.GetRequestsAsync(jobName, fpsYear, status, query, ct);
+            return Ok(new PaginationRes<BulkRatesQueueEntry>
+            {
+                Data = result.Data,
+                PaginationData = new Pagination
+                {
+                    PageNumber = result.PaginationData.PageNumber,
+                    PageSize = result.PaginationData.PageSize,
+                    TotalPages = result.PaginationData.TotalPages,
+                    TotalRecords = result.PaginationData.TotalRecords
+                }
+            });
         }
 
         /// <summary>Returns the currently active (blocking-status) request for a job name, or null if none exists.</summary>
@@ -155,6 +168,17 @@ namespace Apha.FPS.Api.Controllers
             return File(bytes,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 $"BulkRates_Staging_{jobExecutionId}.xlsx");
+        }
+
+        /// <summary>DR-UI-01: Atomically snapshot live FEC/AGRUP data for a specific request and return the workbook.</summary>
+        [HttpGet("requests/{jobExecutionId:guid}/download")]
+        public async Task<IActionResult> DownloadFecTestDataAsync(
+            Guid jobExecutionId, CancellationToken ct)
+        {
+            var bytes = await _service.DownloadFecTestDataAsync(jobExecutionId, ct);
+            return File(bytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"FEC_TestRates_{jobExecutionId}.xlsx");
         }
 
         /// <summary>Export current FEC test rates for a given FPS year as an Excel file.</summary>

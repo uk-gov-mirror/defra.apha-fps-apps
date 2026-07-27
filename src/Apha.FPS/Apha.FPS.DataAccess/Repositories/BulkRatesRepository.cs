@@ -1,5 +1,6 @@
 using Apha.FPS.Core.Entities.BulkRates;
 using Apha.FPS.Core.Interfaces;
+using Apha.FPS.Core.Pagination;
 using Apha.FPS.DataAccess.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -98,7 +99,8 @@ namespace Apha.FPS.DataAccess.Repositories
                        q.rejected_by, q.rejected_at_utc, q.rejection_reason,
                        q.cancelled_by, q.cancelled_at_utc, q.cancellation_reason,
                        q.triggered_by, q.triggered_at_utc,
-                       q.startdatetime, q.enddatetime, q.errormessage
+                       q.startdatetime, q.enddatetime, q.errormessage,
+                       q.active_download_version
                 FROM fps.job_queue q
                 JOIN fps.job_master m ON m.jobid = q.jobid
                 JOIN fps.job_status s ON s.statusid = q.statusid AND s.jobid = q.jobid
@@ -112,50 +114,88 @@ namespace Apha.FPS.DataAccess.Repositories
             return ReadQueueEntry(reader);
         }
 
-        public async Task<IReadOnlyList<BulkRatesQueueEntry>> GetRequestsAsync(
-            string? jobName, int? fpsYear, string? status, CancellationToken ct = default)
+        // Whitelist mapping from client-facing sort keys to literal SQL column expressions —
+        // sortBy is user input (via the DataGrid's sortable-header clicks) and must never be
+        // interpolated directly into SQL text.
+        private static readonly Dictionary<string, string> SortColumns = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["jobname"] = "m.jobname",
+            ["fpsyear"] = "q.fpsyear",
+            ["status"] = "s.status",
+            ["requestedby"] = "q.requestedby",
+            ["requestedatutc"] = "q.requested_at_utc"
+        };
+
+        public async Task<PagedData<BulkRatesQueueEntry>> GetRequestsAsync(
+            string? jobName, int? fpsYear, string? status,
+            int page, int pageSize, string? sortBy, bool descending,
+            CancellationToken ct = default)
         {
             var conn = await OpenAsync(ct);
-            await using var cmd = conn.CreateCommand();
-            var sql = new StringBuilder(@"
-                SELECT q.jobqueueid, q.jobid, m.jobname, q.statusid, s.status,
-                       q.jobexecutionid, q.requestedby, q.requested_at_utc, q.fpsyear,
-                       q.upload_filename, q.upload_checksum_sha256, q.upload_version,
-                       q.upload_validated_at_utc, q.upload_row_counts_json,
-                       q.approved_by, q.approved_at_utc,
-                       q.rejected_by, q.rejected_at_utc, q.rejection_reason,
-                       q.cancelled_by, q.cancelled_at_utc, q.cancellation_reason,
-                       q.triggered_by, q.triggered_at_utc,
-                       q.startdatetime, q.enddatetime, q.errormessage
-                FROM fps.job_queue q
-                JOIN fps.job_master m ON m.jobid = q.jobid
-                JOIN fps.job_status s ON s.statusid = q.statusid AND s.jobid = q.jobid
-                WHERE 1=1");
 
-            if (jobName != null)
+            var where = new StringBuilder(" WHERE 1=1");
+            if (jobName != null) where.Append(" AND m.jobname = @jobname");
+            if (fpsYear.HasValue) where.Append(" AND q.fpsyear = @fpsyear");
+            if (status != null) where.Append(" AND s.status = @status");
+
+            void AddFilterParameters(NpgsqlCommand filterCmd)
             {
-                sql.Append(" AND m.jobname = @jobname");
-                cmd.Parameters.AddWithValue("jobname", jobName);
+                if (jobName != null) filterCmd.Parameters.AddWithValue("jobname", jobName);
+                if (fpsYear.HasValue) filterCmd.Parameters.AddWithValue("fpsyear", fpsYear.Value);
+                if (status != null) filterCmd.Parameters.AddWithValue("status", status);
             }
-            if (fpsYear.HasValue)
+
+            int totalRecords;
+            await using (var countCmd = conn.CreateCommand())
             {
-                sql.Append(" AND q.fpsyear = @fpsyear");
-                cmd.Parameters.AddWithValue("fpsyear", fpsYear.Value);
+                countCmd.CommandText = @"
+                    SELECT COUNT(*)
+                    FROM fps.job_queue q
+                    JOIN fps.job_master m ON m.jobid = q.jobid
+                    JOIN fps.job_status s ON s.statusid = q.statusid AND s.jobid = q.jobid" + where;
+                AddFilterParameters(countCmd);
+                totalRecords = Convert.ToInt32(await countCmd.ExecuteScalarAsync(ct));
             }
-            if (status != null)
-            {
-                sql.Append(" AND s.status = @status");
-                cmd.Parameters.AddWithValue("status", status);
-            }
-            sql.Append(" ORDER BY q.requested_at_utc DESC;");
-            cmd.CommandText = sql.ToString();
+
+            var sortColumn = sortBy != null && SortColumns.TryGetValue(sortBy, out var col)
+                ? col
+                : "q.requested_at_utc";
+            var sortDirection = descending ? "DESC" : "ASC";
 
             var results = new List<BulkRatesQueueEntry>();
-            await using var reader = await cmd.ExecuteReaderAsync(ct);
-            while (await reader.ReadAsync(ct))
-                results.Add(ReadQueueEntry(reader));
+            await using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = @"
+                    SELECT q.jobqueueid, q.jobid, m.jobname, q.statusid, s.status,
+                           q.jobexecutionid, q.requestedby, q.requested_at_utc, q.fpsyear,
+                           q.upload_filename, q.upload_checksum_sha256, q.upload_version,
+                           q.upload_validated_at_utc, q.upload_row_counts_json,
+                           q.approved_by, q.approved_at_utc,
+                           q.rejected_by, q.rejected_at_utc, q.rejection_reason,
+                           q.cancelled_by, q.cancelled_at_utc, q.cancellation_reason,
+                           q.triggered_by, q.triggered_at_utc,
+                           q.startdatetime, q.enddatetime, q.errormessage,
+                           q.active_download_version
+                    FROM fps.job_queue q
+                    JOIN fps.job_master m ON m.jobid = q.jobid
+                    JOIN fps.job_status s ON s.statusid = q.statusid AND s.jobid = q.jobid"
+                    + where + $" ORDER BY {sortColumn} {sortDirection} LIMIT @pagesize OFFSET @offset;";
+                AddFilterParameters(cmd);
+                cmd.Parameters.AddWithValue("pagesize", pageSize);
+                cmd.Parameters.AddWithValue("offset", (page - 1) * pageSize);
 
-            return results;
+                await using var reader = await cmd.ExecuteReaderAsync(ct);
+                while (await reader.ReadAsync(ct))
+                    results.Add(ReadQueueEntry(reader));
+            }
+
+            return new PagedData<BulkRatesQueueEntry>(results, new PaginationData
+            {
+                PageNumber = page,
+                PageSize = pageSize,
+                TotalPages = pageSize > 0 ? (int)Math.Ceiling(totalRecords / (double)pageSize) : 0,
+                TotalRecords = totalRecords
+            });
         }
 
         public async Task<BulkRatesQueueEntry?> GetActiveRequestAsync(string jobName, CancellationToken ct = default)
@@ -171,7 +211,8 @@ namespace Apha.FPS.DataAccess.Repositories
                        q.rejected_by, q.rejected_at_utc, q.rejection_reason,
                        q.cancelled_by, q.cancelled_at_utc, q.cancellation_reason,
                        q.triggered_by, q.triggered_at_utc,
-                       q.startdatetime, q.enddatetime, q.errormessage
+                       q.startdatetime, q.enddatetime, q.errormessage,
+                       q.active_download_version
                 FROM fps.job_queue q
                 JOIN fps.job_master m ON m.jobid = q.jobid
                 JOIN fps.job_status s ON s.statusid = q.statusid AND s.jobid = q.jobid
@@ -428,10 +469,12 @@ namespace Apha.FPS.DataAccess.Repositories
                 ins.CommandText = @"
                     INSERT INTO fps.tblstagingtlkptestreqmt
                         (jobqueueid, testcode, buyer, agrup, agrupnew, change,
-                         norequired, datecreated, active, comments)
+                         norequired, datecreated, active, comments,
+                         projectbuyercode, testbuyercode, testbuyerworkgroup)
                     VALUES
                         (@jobqueueid, @testcode, @buyer, @agrup, @agrupnew, @change,
-                         @norequired, @datecreated, @active, @comments);";
+                         @norequired, @datecreated, @active, @comments,
+                         @projectbuyercode, @testbuyercode, @testbuyerworkgroup);";
                 ins.Parameters.AddWithValue("jobqueueid",  jobQueueId);
                 ins.Parameters.AddWithValue("testcode",    row.TestCode);
                 ins.Parameters.AddWithValue("buyer",       row.Buyer);
@@ -442,6 +485,9 @@ namespace Apha.FPS.DataAccess.Repositories
                 ins.Parameters.AddWithValue("datecreated", (object?)row.DateCreated ?? DBNull.Value);
                 ins.Parameters.AddWithValue("active",      (object?)row.Active ?? DBNull.Value);
                 ins.Parameters.AddWithValue("comments",    (object?)row.Comments ?? DBNull.Value);
+                ins.Parameters.AddWithValue("projectbuyercode",   (object?)row.ProjectBuyerCode ?? DBNull.Value);
+                ins.Parameters.AddWithValue("testbuyercode",      (object?)row.TestBuyerCode ?? DBNull.Value);
+                ins.Parameters.AddWithValue("testbuyerworkgroup", (object?)row.TestBuyerWorkGroup ?? DBNull.Value);
                 await ins.ExecuteNonQueryAsync(ct);
             }
 
@@ -564,9 +610,12 @@ namespace Apha.FPS.DataAccess.Repositories
             cmd.CommandText = @"
                 SELECT jobqueueid, testcode, unitpricevla::numeric, defraunitprice::numeric,
                        fecnewrate::numeric, change::numeric,
-                       itemdescription, shortdescription, owner, comments
+                       itemdescription, shortdescription, owner, comments,
+                       calculated_action, effective_new_rate::numeric, source_current_rate::numeric,
+                       validation_version
                 FROM fps.tblstagingtestorproduct
-                WHERE jobqueueid = @jobqueueid;";
+                WHERE jobqueueid = @jobqueueid
+                ORDER BY testcode;";
             cmd.Parameters.AddWithValue("jobqueueid", jobQueueId);
 
             var rows = new List<FecStagingRow>();
@@ -584,7 +633,11 @@ namespace Apha.FPS.DataAccess.Repositories
                     ItemDescription  = reader.IsDBNull(6) ? null : reader.GetString(6),
                     ShortDescription = reader.IsDBNull(7) ? null : reader.GetString(7),
                     Owner            = reader.IsDBNull(8) ? null : reader.GetString(8),
-                    Comments         = reader.IsDBNull(9) ? null : reader.GetString(9)
+                    Comments         = reader.IsDBNull(9) ? null : reader.GetString(9),
+                    CalculatedAction  = reader.IsDBNull(10) ? null : reader.GetString(10),
+                    EffectiveNewRate  = reader.IsDBNull(11) ? null : reader.GetDecimal(11),
+                    SourceCurrentRate = reader.IsDBNull(12) ? null : reader.GetDecimal(12),
+                    ValidationVersion = reader.IsDBNull(13) ? null : reader.GetInt32(13)
                 });
             }
             return rows;
@@ -598,9 +651,13 @@ namespace Apha.FPS.DataAccess.Repositories
             cmd.CommandText = @"
                 SELECT jobqueueid, testcode, buyer,
                        agrup::numeric, agrupnew::numeric, change::numeric,
-                       norequired, datecreated, active, comments
+                       norequired, datecreated, active, comments,
+                       projectbuyercode, testbuyercode, testbuyerworkgroup,
+                       calculated_action, effective_new_rate::numeric, source_current_rate::numeric,
+                       validation_version
                 FROM fps.tblstagingtlkptestreqmt
-                WHERE jobqueueid = @jobqueueid;";
+                WHERE jobqueueid = @jobqueueid
+                ORDER BY testcode, buyer;";
             cmd.Parameters.AddWithValue("jobqueueid", jobQueueId);
 
             var rows = new List<AgrupStagingRow>();
@@ -618,7 +675,14 @@ namespace Apha.FPS.DataAccess.Repositories
                     NoRequired  = reader.IsDBNull(6) ? null : reader.GetDouble(6),
                     DateCreated = reader.IsDBNull(7) ? null : reader.GetDateTime(7),
                     Active      = reader.IsDBNull(8) ? null : reader.GetInt16(8),
-                    Comments    = reader.IsDBNull(9) ? null : reader.GetString(9)
+                    Comments    = reader.IsDBNull(9) ? null : reader.GetString(9),
+                    ProjectBuyerCode   = reader.IsDBNull(10) ? null : reader.GetString(10),
+                    TestBuyerCode      = reader.IsDBNull(11) ? null : reader.GetString(11),
+                    TestBuyerWorkGroup = reader.IsDBNull(12) ? null : reader.GetString(12),
+                    CalculatedAction   = reader.IsDBNull(13) ? null : reader.GetString(13),
+                    EffectiveNewRate   = reader.IsDBNull(14) ? null : reader.GetDecimal(14),
+                    SourceCurrentRate  = reader.IsDBNull(15) ? null : reader.GetDecimal(15),
+                    ValidationVersion  = reader.IsDBNull(16) ? null : reader.GetInt32(16)
                 });
             }
             return rows;
@@ -708,11 +772,11 @@ namespace Apha.FPS.DataAccess.Repositories
                     INSERT INTO fps.staging_validation_error
                         (jobqueueid, uploadversion, sourcerownumber, fieldname,
                          validationcode, severity, validationmessage,
-                         sheetname, testcode, buyer, currentvalue, expectedvalue)
+                         sheetname, testcode, buyer, currentvalue, expectedvalue, is_request_level)
                     VALUES
                         (@jobqueueid, @uploadversion, @sourcerownumber, @fieldname,
                          @validationcode, @severity, @validationmessage,
-                         @sheetname, @testcode, @buyer, @currentvalue, @expectedvalue);";
+                         @sheetname, @testcode, @buyer, @currentvalue, @expectedvalue, @isrequestlevel);";
                 ins.Parameters.AddWithValue("jobqueueid",       jobQueueId);
                 ins.Parameters.AddWithValue("uploadversion",    err.UploadVersion);
                 ins.Parameters.AddWithValue("sourcerownumber",  err.SourceRowNumber);
@@ -725,6 +789,7 @@ namespace Apha.FPS.DataAccess.Repositories
                 ins.Parameters.AddWithValue("buyer",            (object?)err.Buyer ?? DBNull.Value);
                 ins.Parameters.AddWithValue("currentvalue",     (object?)err.CurrentValue ?? DBNull.Value);
                 ins.Parameters.AddWithValue("expectedvalue",    (object?)err.ExpectedValue ?? DBNull.Value);
+                ins.Parameters.AddWithValue("isrequestlevel",   err.IsRequestLevel);
                 await ins.ExecuteNonQueryAsync(ct);
             }
 
@@ -743,7 +808,7 @@ namespace Apha.FPS.DataAccess.Repositories
             cmd.CommandText = @"
                 SELECT id, jobqueueid, uploadversion, sourcerownumber, fieldname,
                        validationcode, severity, validationmessage,
-                       sheetname, testcode, buyer, currentvalue, expectedvalue
+                       sheetname, testcode, buyer, currentvalue, expectedvalue, is_request_level
                 FROM fps.staging_validation_error
                 WHERE jobqueueid = @jobqueueid
                 ORDER BY sourcerownumber, id;";
@@ -767,7 +832,8 @@ namespace Apha.FPS.DataAccess.Repositories
                     TestCode          = reader.IsDBNull(9) ? null : reader.GetString(9),
                     Buyer             = reader.IsDBNull(10) ? null : reader.GetString(10),
                     CurrentValue      = reader.IsDBNull(11) ? null : reader.GetString(11),
-                    ExpectedValue     = reader.IsDBNull(12) ? null : reader.GetString(12)
+                    ExpectedValue     = reader.IsDBNull(12) ? null : reader.GetString(12),
+                    IsRequestLevel    = reader.GetBoolean(13)
                 });
             }
             return results;
@@ -838,18 +904,18 @@ namespace Apha.FPS.DataAccess.Repositories
             return result is not null;
         }
 
-        public async Task<IReadOnlySet<string>> GetExistingTestCodesAsync(
-            IEnumerable<string> testCodes, int fpsYear, CancellationToken ct = default)
+        public async Task<IReadOnlySet<string>> GetExistingProjectCodesAsync(
+            IEnumerable<string> parentProjectCodes, int fpsYear, CancellationToken ct = default)
         {
-            var codeList = testCodes.ToList();
+            var codeList = parentProjectCodes.ToList();
             if (codeList.Count == 0)
                 return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             var conn = await OpenAsync(ct);
             await using var cmd = conn.CreateCommand();
             cmd.CommandText = @"
-                SELECT itemcode FROM fps.testorproduct
-                WHERE fpsyear = @fpsyear AND itemcode = ANY(@codes);";
+                SELECT parentproject FROM fps.tlkpproject
+                WHERE fpsyear = @fpsyear AND parentproject = ANY(@codes);";
             cmd.Parameters.AddWithValue("fpsyear", fpsYear);
             cmd.Parameters.Add(new NpgsqlParameter("codes", NpgsqlTypes.NpgsqlDbType.Array | NpgsqlTypes.NpgsqlDbType.Text)
             {
@@ -864,31 +930,31 @@ namespace Apha.FPS.DataAccess.Repositories
             return result;
         }
 
-        public async Task<IReadOnlySet<(string TestCode, string Buyer)>> GetExistingAgrupKeysAsync(
-            IEnumerable<(string TestCode, string Buyer)> keys, int fpsYear, CancellationToken ct = default)
+        public async Task<IReadOnlySet<(string TestCode, string WorkGroup)>> GetExistingCapabilityPairsAsync(
+            IEnumerable<(string TestCode, string WorkGroup)> pairs, int fpsYear, CancellationToken ct = default)
         {
-            var keyList = keys.ToList();
-            if (keyList.Count == 0)
+            var pairList = pairs.ToList();
+            if (pairList.Count == 0)
                 return new HashSet<(string, string)>();
 
             var conn = await OpenAsync(ct);
             await using var cmd = conn.CreateCommand();
 
-            // Use unnest to match against a set of (testcode, buyer) tuples
+            // Two real columns (testcode, workgroup) — DR-VAL-02, never a concatenated string.
             cmd.CommandText = @"
-                SELECT t.testcode, t.buyer
-                FROM fps.tlkptestreqmt t
-                JOIN unnest(@testcodes::text[], @buyers::text[]) AS v(tc, bu)
-                  ON t.testcode = v.tc AND t.buyer = v.bu
-                WHERE t.fpsyear = @fpsyear;";
+                SELECT c.testcode, c.workgroup
+                FROM fps.tlkptestcapability c
+                JOIN unnest(@testcodes::text[], @workgroups::text[]) AS v(tc, wg)
+                  ON c.testcode = v.tc AND c.workgroup = v.wg
+                WHERE c.fpsyear = @fpsyear;";
             cmd.Parameters.AddWithValue("fpsyear", fpsYear);
             cmd.Parameters.Add(new NpgsqlParameter("testcodes", NpgsqlTypes.NpgsqlDbType.Array | NpgsqlTypes.NpgsqlDbType.Text)
             {
-                Value = keyList.Select(k => k.TestCode).ToArray()
+                Value = pairList.Select(p => p.TestCode).ToArray()
             });
-            cmd.Parameters.Add(new NpgsqlParameter("buyers", NpgsqlTypes.NpgsqlDbType.Array | NpgsqlTypes.NpgsqlDbType.Text)
+            cmd.Parameters.Add(new NpgsqlParameter("workgroups", NpgsqlTypes.NpgsqlDbType.Array | NpgsqlTypes.NpgsqlDbType.Text)
             {
-                Value = keyList.Select(k => k.Buyer).ToArray()
+                Value = pairList.Select(p => p.WorkGroup).ToArray()
             });
 
             var result = new HashSet<(string, string)>();
@@ -899,6 +965,207 @@ namespace Apha.FPS.DataAccess.Repositories
             return result;
         }
 
+        // ── Download snapshot (DR-UI-01, CR057/CR060) ─────────────────────────────
+
+        public async Task<int> GetNextDownloadVersionAsync(Guid jobQueueId, CancellationToken ct = default)
+        {
+            var conn = await OpenAsync(ct);
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+                SELECT COALESCE(MAX(download_version), 0) + 1
+                FROM fps.bulk_rates_download
+                WHERE jobqueueid = @jobqueueid;";
+            cmd.Parameters.AddWithValue("jobqueueid", jobQueueId);
+            return (int)(await cmd.ExecuteScalarAsync(ct))!;
+        }
+
+        public async Task CreateDownloadSnapshotAsync(
+            Guid jobQueueId, int downloadVersion,
+            IReadOnlyList<FecStagingRow> fecRows, IReadOnlyList<AgrupStagingRow> agrupRows,
+            CancellationToken ct = default)
+        {
+            var conn = await OpenAsync(ct);
+            await using var tx = await conn.BeginTransactionAsync(ct);
+
+            await using (var ins = conn.CreateCommand())
+            {
+                ins.Transaction = tx;
+                ins.CommandText = @"
+                    INSERT INTO fps.bulk_rates_download (jobqueueid, download_version, status)
+                    VALUES (@jobqueueid, @downloadversion, 'Generating');";
+                ins.Parameters.AddWithValue("jobqueueid", jobQueueId);
+                ins.Parameters.AddWithValue("downloadversion", downloadVersion);
+                await ins.ExecuteNonQueryAsync(ct);
+            }
+
+            // source_rate carries defraunitprice for FEC rows, unitprice for AGRUP rows —
+            // the single "current rate" value DR-VAL-01's ValidationContext.FrozenSnapshot
+            // reads (plan §2.1, reconciliation §2.6). unitpricevla/norequired/datecreated/
+            // active/itemdescription/shortdescription/owner (CR060) exist only to let the
+            // workbook be regenerated from the snapshot without a second live query.
+            foreach (var row in fecRows)
+            {
+                await using var ins = conn.CreateCommand();
+                ins.Transaction = tx;
+                ins.CommandText = @"
+                    INSERT INTO fps.bulk_rates_downloaded_key
+                        (jobqueueid, download_version, sheetname, testcode, source_rate,
+                         unitpricevla, itemdescription, shortdescription, owner)
+                    VALUES
+                        (@jobqueueid, @downloadversion, 'FEC', @testcode, @sourcerate,
+                         @unitpricevla, @itemdescription, @shortdescription, @owner);";
+                ins.Parameters.AddWithValue("jobqueueid", jobQueueId);
+                ins.Parameters.AddWithValue("downloadversion", downloadVersion);
+                ins.Parameters.AddWithValue("testcode", row.TestCode);
+                ins.Parameters.AddWithValue("sourcerate", (object?)row.DefraUnitPrice ?? DBNull.Value);
+                ins.Parameters.AddWithValue("unitpricevla", (object?)row.UnitPriceVla ?? DBNull.Value);
+                ins.Parameters.AddWithValue("itemdescription", (object?)row.ItemDescription ?? DBNull.Value);
+                ins.Parameters.AddWithValue("shortdescription", (object?)row.ShortDescription ?? DBNull.Value);
+                ins.Parameters.AddWithValue("owner", (object?)row.Owner ?? DBNull.Value);
+                await ins.ExecuteNonQueryAsync(ct);
+            }
+
+            foreach (var row in agrupRows)
+            {
+                await using var ins = conn.CreateCommand();
+                ins.Transaction = tx;
+                ins.CommandText = @"
+                    INSERT INTO fps.bulk_rates_downloaded_key
+                        (jobqueueid, download_version, sheetname, testcode, buyer, source_rate,
+                         norequired, datecreated, active, projectbuyercode, testbuyercode)
+                    VALUES
+                        (@jobqueueid, @downloadversion, 'AGRUP', @testcode, @buyer, @sourcerate,
+                         @norequired, @datecreated, @active, @projectbuyercode, @testbuyercode);";
+                ins.Parameters.AddWithValue("jobqueueid", jobQueueId);
+                ins.Parameters.AddWithValue("downloadversion", downloadVersion);
+                ins.Parameters.AddWithValue("testcode", row.TestCode);
+                ins.Parameters.AddWithValue("buyer", row.Buyer);
+                ins.Parameters.AddWithValue("sourcerate", (object?)row.Agrup ?? DBNull.Value);
+                ins.Parameters.AddWithValue("norequired", (object?)row.NoRequired ?? DBNull.Value);
+                ins.Parameters.AddWithValue("datecreated", (object?)row.DateCreated ?? DBNull.Value);
+                ins.Parameters.AddWithValue("active", (object?)row.Active ?? DBNull.Value);
+                ins.Parameters.AddWithValue("projectbuyercode", (object?)row.ProjectBuyerCode ?? DBNull.Value);
+                ins.Parameters.AddWithValue("testbuyercode", (object?)row.TestBuyerCode ?? DBNull.Value);
+                await ins.ExecuteNonQueryAsync(ct);
+            }
+
+            await tx.CommitAsync(ct);
+
+            _logger.LogInformation(
+                "CreateDownloadSnapshot | JobQueueId={JobQueueId} | DownloadVersion={DownloadVersion} | FecRows={FecRows} | AgrupRows={AgrupRows}",
+                jobQueueId, downloadVersion, fecRows.Count, agrupRows.Count);
+        }
+
+        public async Task MarkDownloadReadyAsync(Guid jobQueueId, int downloadVersion, CancellationToken ct = default)
+        {
+            var conn = await OpenAsync(ct);
+            await using var tx = await conn.BeginTransactionAsync(ct);
+
+            await using (var upd = conn.CreateCommand())
+            {
+                upd.Transaction = tx;
+                upd.CommandText = @"
+                    UPDATE fps.bulk_rates_download
+                    SET status = 'Ready', ready_at_utc = now()
+                    WHERE jobqueueid = @jobqueueid AND download_version = @downloadversion;";
+                upd.Parameters.AddWithValue("jobqueueid", jobQueueId);
+                upd.Parameters.AddWithValue("downloadversion", downloadVersion);
+                await upd.ExecuteNonQueryAsync(ct);
+            }
+
+            await using (var upd = conn.CreateCommand())
+            {
+                upd.Transaction = tx;
+                upd.CommandText = @"
+                    UPDATE fps.job_queue
+                    SET active_download_version = @downloadversion
+                    WHERE jobqueueid = @jobqueueid;";
+                upd.Parameters.AddWithValue("jobqueueid", jobQueueId);
+                upd.Parameters.AddWithValue("downloadversion", downloadVersion);
+                await upd.ExecuteNonQueryAsync(ct);
+            }
+
+            await tx.CommitAsync(ct);
+        }
+
+        public async Task MarkDownloadFailedAsync(Guid jobQueueId, int downloadVersion, CancellationToken ct = default)
+        {
+            var conn = await OpenAsync(ct);
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+                UPDATE fps.bulk_rates_download
+                SET status = 'Failed'
+                WHERE jobqueueid = @jobqueueid AND download_version = @downloadversion AND status = 'Generating';";
+            cmd.Parameters.AddWithValue("jobqueueid", jobQueueId);
+            cmd.Parameters.AddWithValue("downloadversion", downloadVersion);
+            await cmd.ExecuteNonQueryAsync(ct);
+        }
+
+        public async Task<IReadOnlyList<FecStagingRow>> GetFecSnapshotRowsAsync(
+            Guid jobQueueId, int downloadVersion, CancellationToken ct = default)
+        {
+            var conn = await OpenAsync(ct);
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+                SELECT testcode, unitpricevla, source_rate, itemdescription, shortdescription, owner
+                FROM fps.bulk_rates_downloaded_key
+                WHERE jobqueueid = @jobqueueid AND download_version = @downloadversion AND sheetname = 'FEC'
+                ORDER BY id;";
+            cmd.Parameters.AddWithValue("jobqueueid", jobQueueId);
+            cmd.Parameters.AddWithValue("downloadversion", downloadVersion);
+
+            var result = new List<FecStagingRow>();
+            await using var reader = await cmd.ExecuteReaderAsync(ct);
+            while (await reader.ReadAsync(ct))
+            {
+                result.Add(new FecStagingRow
+                {
+                    JobQueueId = jobQueueId,
+                    TestCode = reader.GetString(0),
+                    UnitPriceVla = reader.IsDBNull(1) ? null : reader.GetDecimal(1),
+                    DefraUnitPrice = reader.IsDBNull(2) ? null : reader.GetDecimal(2),
+                    ItemDescription = reader.IsDBNull(3) ? null : reader.GetString(3),
+                    ShortDescription = reader.IsDBNull(4) ? null : reader.GetString(4),
+                    Owner = reader.IsDBNull(5) ? null : reader.GetString(5),
+                });
+            }
+            return result;
+        }
+
+        public async Task<IReadOnlyList<AgrupStagingRow>> GetAgrupSnapshotRowsAsync(
+            Guid jobQueueId, int downloadVersion, CancellationToken ct = default)
+        {
+            var conn = await OpenAsync(ct);
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+                SELECT testcode, buyer, source_rate, norequired, datecreated, active,
+                       projectbuyercode, testbuyercode
+                FROM fps.bulk_rates_downloaded_key
+                WHERE jobqueueid = @jobqueueid AND download_version = @downloadversion AND sheetname = 'AGRUP'
+                ORDER BY id;";
+            cmd.Parameters.AddWithValue("jobqueueid", jobQueueId);
+            cmd.Parameters.AddWithValue("downloadversion", downloadVersion);
+
+            var result = new List<AgrupStagingRow>();
+            await using var reader = await cmd.ExecuteReaderAsync(ct);
+            while (await reader.ReadAsync(ct))
+            {
+                result.Add(new AgrupStagingRow
+                {
+                    JobQueueId = jobQueueId,
+                    TestCode = reader.GetString(0),
+                    Buyer = reader.GetString(1),
+                    Agrup = reader.IsDBNull(2) ? null : reader.GetDecimal(2),
+                    NoRequired = reader.IsDBNull(3) ? null : reader.GetDouble(3),
+                    DateCreated = reader.IsDBNull(4) ? null : reader.GetDateTime(4),
+                    Active = reader.IsDBNull(5) ? null : reader.GetInt16(5),
+                    ProjectBuyerCode = reader.IsDBNull(6) ? null : reader.GetString(6),
+                    TestBuyerCode = reader.IsDBNull(7) ? null : reader.GetString(7)
+                });
+            }
+            return result;
+        }
+
         // ── Export: live table reads ──────────────────────────────────────────────
 
         public async Task<IReadOnlyList<FecStagingRow>> GetFecRowsForExportAsync(
@@ -906,9 +1173,14 @@ namespace Apha.FPS.DataAccess.Repositories
         {
             var conn = await OpenAsync(ct);
             await using var cmd = conn.CreateCommand();
+            // fecnewrate is pre-populated with the current Defra Unit Price (not left NULL) so a
+            // downloaded workbook shows "FEC New" already carrying the current rate for every
+            // row — an untouched row then classifies as No Change rather than the existing-row
+            // blank/zero rule (Zero-Rate Withdrawal), and the Change formula the caller writes
+            // over this data starts from a real number instead of blank.
             cmd.CommandText = @"
                 SELECT itemcode, unitpricevla::numeric, defraunitprice::numeric,
-                       NULL::numeric AS fecnewrate, NULL::numeric AS change,
+                       defraunitprice::numeric AS fecnewrate, NULL::numeric AS change,
                        itemdescription, shortdescription, owner, NULL::text AS comments
                 FROM fps.testorproduct
                 WHERE fpsyear = @fpsyear
@@ -941,10 +1213,13 @@ namespace Apha.FPS.DataAccess.Repositories
         {
             var conn = await OpenAsync(ct);
             await using var cmd = conn.CreateCommand();
+            // agrupnew is pre-populated with the current unit price (not left NULL) — same
+            // rationale as fecnewrate above.
             cmd.CommandText = @"
                 SELECT testcode, buyer,
-                       unitprice::numeric AS agrup, NULL::numeric AS agrupnew, NULL::numeric AS change,
-                       norequired, datecreated, active, NULL::text AS comments
+                       unitprice::numeric AS agrup, unitprice::numeric AS agrupnew, NULL::numeric AS change,
+                       norequired, datecreated, active, NULL::text AS comments,
+                       projectbuyercode, testbuyercode
                 FROM fps.tlkptestreqmt
                 WHERE fpsyear = @fpsyear
                 ORDER BY testcode, buyer;";
@@ -960,12 +1235,14 @@ namespace Apha.FPS.DataAccess.Repositories
                     TestCode    = reader.GetString(0),
                     Buyer       = reader.GetString(1),
                     Agrup       = reader.IsDBNull(2) ? null : reader.GetDecimal(2),
-                    AgrupNew    = null,
+                    AgrupNew    = reader.IsDBNull(3) ? null : reader.GetDecimal(3),
                     Change      = null,
                     NoRequired  = reader.IsDBNull(5) ? null : reader.GetDouble(5),
                     DateCreated = reader.IsDBNull(6) ? null : reader.GetDateTime(6),
                     Active      = reader.IsDBNull(7) ? null : reader.GetInt16(7),
-                    Comments    = reader.IsDBNull(8) ? null : reader.GetString(8)
+                    Comments    = reader.IsDBNull(8) ? null : reader.GetString(8),
+                    ProjectBuyerCode = reader.IsDBNull(9) ? null : reader.GetString(9),
+                    TestBuyerCode    = reader.IsDBNull(10) ? null : reader.GetString(10)
                 });
             }
             return rows;
@@ -1030,6 +1307,65 @@ namespace Apha.FPS.DataAccess.Repositories
             return rows;
         }
 
+        // ── DR-API-07: freeze reviewed classification onto staging (CR056) ───────
+
+        public async Task FreezeStagingCalculatedActionsAsync(
+            Guid jobQueueId, int validationVersion,
+            IReadOnlyList<BulkRatesFreezeEntry> fecFreezes,
+            IReadOnlyList<BulkRatesFreezeEntry> agrupFreezes,
+            CancellationToken ct = default)
+        {
+            var conn = await OpenAsync(ct);
+            await using var tx = await conn.BeginTransactionAsync(ct);
+
+            foreach (var entry in fecFreezes)
+            {
+                await using var upd = conn.CreateCommand();
+                upd.Transaction = tx;
+                upd.CommandText = @"
+                    UPDATE fps.tblstagingtestorproduct
+                    SET calculated_action    = @calculated_action,
+                        effective_new_rate   = @effective_new_rate,
+                        source_current_rate  = @source_current_rate,
+                        validation_version   = @validation_version
+                    WHERE jobqueueid = @jobqueueid AND testcode = @testcode;";
+                upd.Parameters.AddWithValue("jobqueueid",          jobQueueId);
+                upd.Parameters.AddWithValue("testcode",            entry.TestCode);
+                upd.Parameters.AddWithValue("calculated_action",   entry.CalculatedAction);
+                upd.Parameters.AddWithValue("effective_new_rate",  (object?)entry.EffectiveNewRate ?? DBNull.Value);
+                upd.Parameters.AddWithValue("source_current_rate", (object?)entry.SourceCurrentRate ?? DBNull.Value);
+                upd.Parameters.AddWithValue("validation_version",  validationVersion);
+                await upd.ExecuteNonQueryAsync(ct);
+            }
+
+            foreach (var entry in agrupFreezes)
+            {
+                await using var upd = conn.CreateCommand();
+                upd.Transaction = tx;
+                upd.CommandText = @"
+                    UPDATE fps.tblstagingtlkptestreqmt
+                    SET calculated_action    = @calculated_action,
+                        effective_new_rate   = @effective_new_rate,
+                        source_current_rate  = @source_current_rate,
+                        validation_version   = @validation_version
+                    WHERE jobqueueid = @jobqueueid AND testcode = @testcode AND buyer = @buyer;";
+                upd.Parameters.AddWithValue("jobqueueid",          jobQueueId);
+                upd.Parameters.AddWithValue("testcode",            entry.TestCode);
+                upd.Parameters.AddWithValue("buyer",               (object?)entry.Buyer ?? DBNull.Value);
+                upd.Parameters.AddWithValue("calculated_action",   entry.CalculatedAction);
+                upd.Parameters.AddWithValue("effective_new_rate",  (object?)entry.EffectiveNewRate ?? DBNull.Value);
+                upd.Parameters.AddWithValue("source_current_rate", (object?)entry.SourceCurrentRate ?? DBNull.Value);
+                upd.Parameters.AddWithValue("validation_version",  validationVersion);
+                await upd.ExecuteNonQueryAsync(ct);
+            }
+
+            await tx.CommitAsync(ct);
+
+            _logger.LogInformation(
+                "FreezeStagingCalculatedActions | JobQueueId={JobQueueId} | ValidationVersion={ValidationVersion} | FecRows={FecRows} | AgrupRows={AgrupRows}",
+                jobQueueId, validationVersion, fecFreezes.Count, agrupFreezes.Count);
+        }
+
         // ── Private helpers ──────────────────────────────────────────────────────
 
         private static BulkRatesQueueEntry ReadQueueEntry(NpgsqlDataReader reader) =>
@@ -1059,9 +1395,10 @@ namespace Apha.FPS.DataAccess.Repositories
                 CancellationReason = reader.IsDBNull(21) ? null : reader.GetString(21),
                 TriggeredBy      = reader.IsDBNull(22) ? null : reader.GetString(22),
                 TriggeredAtUtc   = reader.IsDBNull(23) ? null : reader.GetDateTime(23),
-                StartDateTime    = reader.IsDBNull(24) ? null : reader.GetDateTime(24),
-                EndDateTime      = reader.IsDBNull(25) ? null : reader.GetDateTime(25),
-                FailureReason    = reader.IsDBNull(26) ? null : reader.GetString(26)
+                StartDateTime          = reader.IsDBNull(24) ? null : reader.GetDateTime(24),
+                EndDateTime            = reader.IsDBNull(25) ? null : reader.GetDateTime(25),
+                FailureReason          = reader.IsDBNull(26) ? null : reader.GetString(26),
+                ActiveDownloadVersion  = reader.IsDBNull(27) ? null : reader.GetInt32(27)
             };
 
         private static async Task DeleteFromAsync(

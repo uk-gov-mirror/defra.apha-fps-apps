@@ -4,7 +4,7 @@
 // US-UI-05 (approve), US-UI-06 (reject modal), US-UI-07 (detail), US-UI-08 (cancel).
 
 /* jshint esversion: 6 */
-/* global $, showLoader, hideLoader, showAlertMessage, AlertType */
+/* global $, showLoader, hideLoader, showAlertMessage, showGovukConfirm, AlertType */
 
 var BulkRates = (function () {
     'use strict';
@@ -246,109 +246,72 @@ var BulkRates = (function () {
         window.location.href = '/FPS/BulkRates/DownloadStagingData/' + requestId;
     }
 
-    // ── Staging grids — generic client-side pagination ───────────────────────
-    // One factory shared by FEC / Agrup / Staff / Animal staging tables — each
-    // grid just needs its own table id, row class, and control ids.
+    // ── US-UI-05: Bulk Rates queue grid ──────────────────────────────────────
+    // getBulkRatesExtraFilters / viewBulkRatesRequest are looked up by _DataGrid.cshtml's
+    // JS via window[functionName] (ExtraFilterMethod / ViewFunction) — they must be true
+    // globals, not members of the BulkRates module object like the rest of this file.
 
-    function createStagingPagination(tableId, rowClass, pageSizeId, prevId, nextId, labelId) {
-        var currentPage = 1;
-
-        function render() {
-            var rows = document.querySelectorAll('#' + tableId + ' .' + rowClass);
-            var pageSizeEl = document.getElementById(pageSizeId);
-            var pageLabel  = document.getElementById(labelId);
-            var prevBtn    = document.getElementById(prevId);
-            var nextBtn    = document.getElementById(nextId);
-            if (!rows.length || !pageSizeEl) { return; }
-
-            var pageSize = parseInt(pageSizeEl.value, 10) || 10;
-            var pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
-            if (currentPage > pageCount) { currentPage = pageCount; }
-            if (currentPage < 1) { currentPage = 1; }
-
-            var start = (currentPage - 1) * pageSize;
-            var end = start + pageSize;
-            rows.forEach(function (row, i) {
-                row.style.display = (i >= start && i < end) ? '' : 'none';
-            });
-
-            if (pageLabel) { pageLabel.textContent = currentPage + ' of ' + pageCount; }
-            if (prevBtn)   { prevBtn.disabled = currentPage <= 1; }
-            if (nextBtn)   { nextBtn.disabled = currentPage >= pageCount; }
-        }
-
-        function init() {
-            var pageSizeEl = document.getElementById(pageSizeId);
-            var prevBtn    = document.getElementById(prevId);
-            var nextBtn    = document.getElementById(nextId);
-            if (!pageSizeEl) { return; }
-
-            pageSizeEl.addEventListener('change', function () { currentPage = 1; render(); });
-            if (prevBtn) { prevBtn.addEventListener('click', function () { currentPage -= 1; render(); }); }
-            if (nextBtn) { nextBtn.addEventListener('click', function () { currentPage += 1; render(); }); }
-            render();
-        }
-
-        return { init: init };
+    function getBulkRatesExtraFilters() {
+        var jobNameEl = document.getElementById('jobNameFilter');
+        var statusEl  = document.getElementById('statusFilter');
+        return {
+            jobName: jobNameEl ? jobNameEl.value : '',
+            status:  statusEl  ? statusEl.value  : ''
+        };
     }
+    window.getBulkRatesExtraFilters = getBulkRatesExtraFilters;
 
-    function initAllStagingPagination() {
-        createStagingPagination('fecStagingTable', 'staging-page-row',
-            'fecStagingPageSize', 'fecStagingPrevBtn', 'fecStagingNextBtn', 'fecStagingPageLabel').init();
-        createStagingPagination('agrupStagingTable', 'agrup-staging-page-row',
-            'agrupStagingPageSize', 'agrupStagingPrevBtn', 'agrupStagingNextBtn', 'agrupStagingPageLabel').init();
-        createStagingPagination('staffStagingTable', 'staff-staging-page-row',
-            'staffStagingPageSize', 'staffStagingPrevBtn', 'staffStagingNextBtn', 'staffStagingPageLabel').init();
-        createStagingPagination('animalStagingTable', 'animal-staging-page-row',
-            'animalStagingPageSize', 'animalStagingPrevBtn', 'animalStagingNextBtn', 'animalStagingPageLabel').init();
+    function viewBulkRatesRequest(btn) {
+        var id = $(btn).data('id');
+        window.location.href = '/FPS/BulkRates/Detail/' + id;
     }
+    window.viewBulkRatesRequest = viewBulkRatesRequest;
 
-    // ── US-UI-03: Validation errors modal ───────────────────────────────────
-
-    function showValidationErrorsModal() {
-        $('#validationErrorsModal').addClass('show');
-    }
-
-    function closeValidationErrorsModal() {
-        $('#validationErrorsModal').removeClass('show');
+    function filterGrid() {
+        var gm = window['gridManager_bulkRatesGrid'];
+        if (gm) { gm.reloadGrid({ page: 1 }); }
     }
 
     // ── US-UI-04: Release for Approval ─────────────────────────────────────
 
     function release(requestId) {
-        if (!confirm('Release this request for approval? This action cannot be undone.')) { return; }
-        hideActionError();
-        var btn = document.getElementById('btnRelease');
-        if (btn) { btn.disabled = true; }
+        showGovukConfirm('Release this request for approval? This action cannot be undone.').then(function (confirmed) {
+            if (!confirmed) { return; }
+            hideActionError();
+            var btn = document.getElementById('btnRelease');
+            if (btn) { btn.disabled = true; }
 
-        ajaxPost(
-            '/FPS/BulkRates/Release',
-            { id: requestId },
-            function () { window.location.reload(); },
-            function (msg) {
-                showActionError(msg);
-                if (btn) { btn.disabled = false; }
-            }
-        );
+            ajaxPost(
+                '/FPS/BulkRates/Release',
+                { id: requestId },
+                function () { window.location.reload(); },
+                function (msg) {
+                    showActionError(msg);
+                    if (btn) { btn.disabled = false; }
+                }
+            );
+        });
     }
 
     // ── US-UI-05: Approve ───────────────────────────────────────────────────
 
     function approve(requestId) {
-        if (!confirm('Approve this request? The batch job will be triggered.')) { return; }
-        hideActionError();
-        var btn = document.getElementById('btnApprove');
-        if (btn) { btn.disabled = true; }
+        showGovukConfirm('Approve this request? The batch job will be triggered.').then(function (confirmed) {
+            if (!confirmed) { return; }
+            hideActionError();
+            var btn = document.getElementById('btnApprove');
+            if (btn) { btn.disabled = true; }
 
-        ajaxPost(
-            '/FPS/BulkRates/Approve',
-            { id: requestId },
-            function () { window.location.reload(); },
-            function (msg) {
-                showActionError(msg);
-                if (btn) { btn.disabled = false; }
-            }
-        );
+            ajaxPost(
+                '/FPS/BulkRates/Approve',
+                { id: requestId },
+                function () { window.location.reload(); },
+                function (msg) {
+                    showActionError(msg);
+                    if (btn) { btn.disabled = false; }
+                }
+            );
+        });
     }
 
     // ── US-UI-06: Reject modal ──────────────────────────────────────────────
@@ -407,22 +370,40 @@ var BulkRates = (function () {
         );
     }
 
-    // ── US-UI-08: Cancel ────────────────────────────────────────────────────
+    // ── US-UI-08: Cancel modal ──────────────────────────────────────────────
 
-    function cancel(requestId) {
-        var reason = prompt('Optional: enter a cancellation reason (or leave blank).');
-        if (reason === null) { return; } // user pressed Cancel on the prompt
-        hideActionError();
-        var btn = document.getElementById('btnCancel');
+    var _pendingCancelId = null;
+
+    function showCancelModal(requestId) {
+        _pendingCancelId = requestId;
+        var overlay = document.getElementById('cancelModalOverlay');
+        var reason  = document.getElementById('cancelReason');
+        if (!overlay) { return; }
+        if (reason)  { reason.value = ''; }
+        overlay.style.display = '';
+        if (reason)  { reason.focus(); }
+    }
+
+    function closeCancelModal() {
+        var overlay = document.getElementById('cancelModalOverlay');
+        if (overlay) { overlay.style.display = 'none'; }
+        _pendingCancelId = null;
+    }
+
+    function confirmCancel() {
+        var reason    = document.getElementById('cancelReason');
+        var reasonVal = reason ? reason.value.trim() : '';
+
+        var btn = document.getElementById('btnConfirmCancel');
         if (btn) { btn.disabled = true; }
 
         ajaxPost(
             '/FPS/BulkRates/Cancel',
-            { id: requestId, reason: reason || '' },
+            { id: _pendingCancelId, reason: reasonVal },
             function () { window.location.href = '/FPS/BulkRates/Index'; },
             function (msg) {
-                showActionError(msg);
                 if (btn) { btn.disabled = false; }
+                alert(msg);
             }
         );
     }
@@ -431,8 +412,8 @@ var BulkRates = (function () {
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {
             closeRejectModal();
+            closeCancelModal();
             closeUploadTrackerModal();
-            closeValidationErrorsModal();
         }
     });
 
@@ -446,7 +427,6 @@ var BulkRates = (function () {
         if (btnUploadTracker) {
             btnUploadTracker.addEventListener('click', showUploadTrackerModal);
         }
-        initAllStagingPagination();
     });
 
     // ── Public API ──────────────────────────────────────────────────────────
@@ -458,14 +438,15 @@ var BulkRates = (function () {
         showRejectModal:        showRejectModal,
         closeRejectModal:       closeRejectModal,
         confirmReject:          confirmReject,
-        cancel:                 cancel,
+        showCancelModal:        showCancelModal,
+        closeCancelModal:       closeCancelModal,
+        confirmCancel:          confirmCancel,
+        filterGrid:             filterGrid,
         downloadTestData:       downloadTestData,
         downloadStagingData:    downloadStagingData,
         showUploadTrackerModal: showUploadTrackerModal,
         closeUploadTrackerModal:closeUploadTrackerModal,
-        confirmTrackerUpload:   confirmTrackerUpload,
-        showValidationErrorsModal:  showValidationErrorsModal,
-        closeValidationErrorsModal: closeValidationErrorsModal
+        confirmTrackerUpload:   confirmTrackerUpload
     };
 }());
 

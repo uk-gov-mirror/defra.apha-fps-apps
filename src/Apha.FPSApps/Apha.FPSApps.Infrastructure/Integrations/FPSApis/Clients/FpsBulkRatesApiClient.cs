@@ -2,6 +2,7 @@ using Apha.Common.Constants;
 using Apha.FPSApps.Application.Dtos;
 using Apha.FPSApps.Application.Dtos.FPS.BulkRates;
 using Apha.FPSApps.Application.Interfaces.FpsApiClients;
+using Apha.FPSApps.Application.Pagination;
 using Apha.FPSApps.Infrastructure.Integrations.HttpExecutor;
 using AutoMapper;
 
@@ -139,9 +140,9 @@ namespace Apha.FPSApps.Infrastructure.Integrations.FPSApis.Clients
 
         /// <inheritdoc/>
         public async Task<ApiResponseDto<List<BulkRatesQueueEntryDto>>> GetRequestsAsync(
-            string? jobName = null, int? fpsYear = null, string? status = null)
+            QueryParameters<string> query, string? jobName = null, int? fpsYear = null, string? status = null)
         {
-            var url = BuildGetRequestsUrl(jobName, fpsYear, status);
+            var url = BuildGetRequestsUrl(jobName, fpsYear, status, query);
             var response = await _http.GetAsync<List<BulkRatesQueueEntryDto>>(url);
 
             if (response.Success)
@@ -179,6 +180,13 @@ namespace Apha.FPSApps.Infrastructure.Integrations.FPSApis.Clients
 
         // ── Helpers ────────────────────────────────────────────────────────────────
         /// <inheritdoc/>
+        public Task<byte[]> DownloadFecTestDataForRequestAsync(Guid jobExecutionId)
+        {
+            var url = string.Format(FpsApiEndpoints.DownloadBulkRatesFecTestDataForRequest, jobExecutionId);
+            return _http.GetFileAsync(url);
+        }
+
+        /// <inheritdoc/>
         public Task<byte[]> DownloadFecTestDataAsync(int fpsYear)
         {
             var url = string.Format(FpsApiEndpoints.ExportBulkRatesFecTestData, fpsYear);
@@ -205,19 +213,25 @@ namespace Apha.FPSApps.Infrastructure.Integrations.FPSApis.Clients
             var url = string.Format(FpsApiEndpoints.ExportBulkRatesStagingData, jobExecutionId);
             return _http.GetFileAsync(url);
         }
-        private static string BuildGetRequestsUrl(string? jobName, int? fpsYear, string? status)
+        private static string BuildGetRequestsUrl(
+            string? jobName, int? fpsYear, string? status, QueryParameters<string> query)
         {
-            var queryParts = new List<string>();
+            var queryParts = new List<string>
+            {
+                $"Page={query.Page}",
+                $"PageSize={query.PageSize}",
+                $"Descending={query.Descending}"
+            };
             if (!string.IsNullOrWhiteSpace(jobName))
                 queryParts.Add($"jobName={Uri.EscapeDataString(jobName)}");
             if (fpsYear.HasValue)
                 queryParts.Add($"fpsYear={fpsYear.Value}");
             if (!string.IsNullOrWhiteSpace(status))
                 queryParts.Add($"status={Uri.EscapeDataString(status)}");
+            if (!string.IsNullOrWhiteSpace(query.SortBy))
+                queryParts.Add($"SortBy={Uri.EscapeDataString(query.SortBy)}");
 
-            return queryParts.Count == 0
-                ? FpsApiEndpoints.GetBulkRatesRequests
-                : $"{FpsApiEndpoints.GetBulkRatesRequests}?{string.Join("&", queryParts)}";
+            return $"{FpsApiEndpoints.GetBulkRatesRequests}?{string.Join("&", queryParts)}";
         }
     }
 }

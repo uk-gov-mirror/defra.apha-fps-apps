@@ -1,9 +1,11 @@
 using System.Security.Cryptography;
 using System.Text.Json;
+using Apha.Common.BulkRates.Validation;
 using Apha.Common.Constants;
 using Apha.Common.Utilities.ExcelExport;
 using Apha.FPS.Application.Dtos.BulkRates;
 using Apha.FPS.Application.Interfaces;
+using Apha.FPS.Application.Pagination;
 using Apha.FPS.Application.Validation;
 using Apha.FPS.Core.Entities.BulkRates;
 using Apha.FPS.Core.Interfaces;
@@ -126,14 +128,34 @@ namespace Apha.FPS.Application.Services
             // Parse the Excel file
             var parseResult = _parser.Parse(fileBytes, filename, entry.JobName, entry.JobQueueId);
 
+            // DR-VAL-03: the annual FEC upload must carry the same download version as this
+            // request's currently active download (plan §2.1) — rejects a superseded or
+            // hand-edited workbook before it ever reaches staging. Staff/Animal downloads don't
+            // write this metadata and are exempt.
+            if (entry.JobName == BulkRatesJobNames.Fec)
+            {
+                int? carriedVersion = parseResult.WorkbookMetadata.TryGetValue(
+                        BulkRatesDownloadMetadataKeys.DownloadVersion, out var carriedVersionText)
+                    && int.TryParse(carriedVersionText, out var parsedVersion)
+                    ? parsedVersion
+                    : null;
+
+                if (carriedVersion is null || entry.ActiveDownloadVersion is null || carriedVersion != entry.ActiveDownloadVersion)
+                    throw new BusinessValidationErrorException([
+                        new("The uploaded workbook's download version does not match this request's active download. " +
+                            "Download the current workbook and upload it without editing the hidden metadata.", "STALE_DOWNLOAD_VERSION")]);
+            }
+
             // Compute SHA-256 checksum
             var checksum = ComputeSha256(fileBytes);
 
-            // Run validation (structural + reference) and classify rows
-            var validationResult = await _validator.ValidateAsync(parseResult, entry.FpsYear, entry.JobName, ct);
-
-            // Determine upload version
+            // Determine upload version — computed before validation so DR-VAL-01's
+            // ValidationContext.UploadVersion reflects the version this upload is about to become.
             var newVersion = (entry.UploadVersion ?? 0) + 1;
+
+            // Run validation (structural + reference) and classify rows
+            var validationResult = await _validator.ValidateAsync(
+                parseResult, entry.FpsYear, entry.JobName, newVersion, entry.ActiveDownloadVersion, ct);
 
             // Staging always holds every parsed row — valid and invalid alike — so the user can
             // review and correct invalid rows in place; only Release is gated on zero blocking
@@ -228,6 +250,25 @@ namespace Apha.FPS.Application.Services
             if (blockingCount > 0)
                 throw new BusinessValidationErrorException([
                     new($"Cannot release: {blockingCount} blocking validation error(s) must be corrected first.", "BLOCKING_ERRORS")]);
+
+            // DR-API-07: re-run DR-VAL-01 against the currently staged rows and *current*
+            // live/reference data — not the errors recorded at upload time — because live data
+            // (a project, a capability, another request's FEC change) can drift between upload
+            // and release. Only once this comes back clean is the reviewed classification frozen
+            // onto staging (CR056) for the worker's revalidation (DR-WK-04) to compare against.
+            if (string.Equals(entry.JobName, BulkRatesJobNames.Fec, StringComparison.OrdinalIgnoreCase))
+            {
+                var freeze = await _validator.BuildFreezeAsync(
+                    jobQueueId, entry.FpsYear, entry.UploadVersion!.Value, entry.ActiveDownloadVersion, ct);
+
+                if (freeze.BlockingErrors.Count > 0)
+                    throw new BusinessValidationErrorException(freeze.BlockingErrors
+                        .Select(f => new BusinessValidationError(f.Message, f.ValidationCode))
+                        .ToList());
+
+                await _repository.FreezeStagingCalculatedActionsAsync(
+                    jobQueueId, entry.UploadVersion.Value, freeze.FecFreezes, freeze.AgrupFreezes, ct);
+            }
 
             var initiatedStatusId = entry.StatusId;
             var releasedStatusId = await _repository.GetStatusIdByNameAsync(entry.JobId, StatusReleasedForApproval, ct)
@@ -328,10 +369,9 @@ namespace Apha.FPS.Application.Services
 
             RequireStatus(entry, StatusReleasedForApproval, "reject");
 
-            // Approver must differ from initiator (same maker-checker rule applies for rejection)
-            if (string.Equals(entry.RequestedBy, rejectedBy, StringComparison.OrdinalIgnoreCase))
-                throw new BusinessValidationErrorException([
-                    new("The rejector cannot be the same person as the initiator (maker-checker rule).", "MAKER_CHECKER_VIOLATION")]);
+            // Approver must differ from initiator (same maker-checker rule applies for rejection).
+            // TEMPORARILY DISABLED at the requester's request so a single admin can
+            // self-reject during testing. Restore this check before release.
 
             var releasedStatusId = entry.StatusId;
             var rejectedStatusId = await _repository.GetStatusIdByNameAsync(entry.JobId, StatusRejected, ct)
@@ -434,10 +474,27 @@ namespace Apha.FPS.Application.Services
             return await BuildRequestDtoAsync(entry, ct);
         }
 
-        public async Task<IReadOnlyList<BulkRatesQueueEntry>> GetRequestsAsync(
-            string? jobName, int? fpsYear, string? status, CancellationToken ct = default)
+        public async Task<PaginatedResult<BulkRatesQueueEntry>> GetRequestsAsync(
+            string? jobName, int? fpsYear, string? status,
+            QueryParameters<string> query, CancellationToken ct = default)
         {
-            return await _repository.GetRequestsAsync(jobName, fpsYear, status, ct);
+            var page = query.Page < 1 ? 1 : query.Page;
+            var pageSize = query.PageSize < 1 ? 10 : query.PageSize;
+
+            var paged = await _repository.GetRequestsAsync(
+                jobName, fpsYear, status, page, pageSize, query.SortBy, query.Descending, ct);
+
+            return new PaginatedResult<BulkRatesQueueEntry>
+            {
+                Data = paged.Data,
+                PaginationData = new PaginationDto
+                {
+                    PageNumber = paged.PaginationData.PageNumber,
+                    PageSize = paged.PaginationData.PageSize,
+                    TotalPages = paged.PaginationData.TotalPages,
+                    TotalRecords = paged.PaginationData.TotalRecords
+                }
+            };
         }
 
         public async Task<BulkRatesQueueEntry?> GetActiveRequestAsync(string jobName, CancellationToken ct = default)
@@ -457,6 +514,59 @@ namespace Apha.FPS.Application.Services
                 fpsYear, fecRows.Count, agrupRows.Count);
 
             return _excelExportService.ExportToExcelMultiSheet(BuildFecAgrupSheets(fecRows, agrupRows));
+        }
+
+        // ── DR-UI-01: request-scoped download, atomic with snapshot capture ────────
+
+        public async Task<byte[]> DownloadFecTestDataAsync(Guid jobExecutionId, CancellationToken ct = default)
+        {
+            var entry = await RequireRequestAsync(jobExecutionId, ct);
+            RequireDownloadableStatus(entry);
+
+            var downloadVersion = await _repository.GetNextDownloadVersionAsync(entry.JobQueueId, ct);
+
+            // Steps 1-2: snapshot live data as the new Generating header, in one transaction —
+            // this becomes the immutable record DR-API-06/DR-WK-04 validate against, regardless
+            // of whether workbook generation below succeeds.
+            var liveFec = await _repository.GetFecRowsForExportAsync(entry.FpsYear, ct);
+            var liveAgrup = await _repository.GetAgrupRowsForExportAsync(entry.FpsYear, ct);
+            await _repository.CreateDownloadSnapshotAsync(entry.JobQueueId, downloadVersion, liveFec, liveAgrup, ct);
+
+            try
+            {
+                // Step 3: generate from the just-persisted snapshot, not a second live query —
+                // the snapshot and the workbook can never disagree because they share one source.
+                var snapshotFec = await _repository.GetFecSnapshotRowsAsync(entry.JobQueueId, downloadVersion, ct);
+                var snapshotAgrup = await _repository.GetAgrupSnapshotRowsAsync(entry.JobQueueId, downloadVersion, ct);
+
+                var metadata = new Dictionary<string, string>
+                {
+                    [BulkRatesDownloadMetadataKeys.JobQueueId] = entry.JobQueueId.ToString(),
+                    [BulkRatesDownloadMetadataKeys.DownloadVersion] = downloadVersion.ToString(),
+                };
+                var bytes = _excelExportService.ExportToExcelMultiSheet(
+                    BuildFecAgrupSheets(snapshotFec, snapshotAgrup), metadata);
+
+                // Step 4: only on success, Ready + active_download_version — if anything above
+                // throws, the header is left Generating/marked Failed below and
+                // active_download_version stays untouched, so the previous still-valid version
+                // (if any) remains what an upload is checked against (plan §3, DR-UI-01).
+                await _repository.MarkDownloadReadyAsync(entry.JobQueueId, downloadVersion, ct);
+
+                _logger.LogInformation(
+                    "[BulkRates.DownloadFecTestData] JobQueueId={JobQueueId} | DownloadVersion={DownloadVersion} | FecRows={FecRows} | AgrupRows={AgrupRows}",
+                    entry.JobQueueId, downloadVersion, snapshotFec.Count, snapshotAgrup.Count);
+
+                return bytes;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "[BulkRates.DownloadFecTestData] Workbook generation failed after snapshot commit | JobQueueId={JobQueueId} | DownloadVersion={DownloadVersion}",
+                    entry.JobQueueId, downloadVersion);
+                await _repository.MarkDownloadFailedAsync(entry.JobQueueId, downloadVersion, ct);
+                throw;
+            }
         }
 
         public async Task<byte[]> ExportStaffTestDataAsync(int fpsYear, CancellationToken ct = default)
@@ -503,21 +613,53 @@ namespace Apha.FPS.Application.Services
 
             var stagedFec = await _repository.GetFecStagingRowsAsync(entry.JobQueueId, ct);
             var stagedAgrup = await _repository.GetAgrupStagingRowsAsync(entry.JobQueueId, ct);
-            var liveFec = await _repository.GetFecRowsForExportAsync(entry.FpsYear, ct);
 
-            var liveByTestCode = liveFec.ToDictionary(r => r.TestCode, StringComparer.OrdinalIgnoreCase);
+            // Once a request has Completed, its staging rows are purged as post-commit cleanup
+            // (spec §10.6, BulkTestRatesService step 5) — there is nothing left to diff against
+            // live data. Skipping the live fetch here isn't just an optimisation: treating "no
+            // staged rows" as "every live row was deleted" would be actively wrong, since the
+            // apply step only ever touches rows that were actually staged — an unstaged live row
+            // is never modified or removed, so labelling the whole live catalog "Deleted" after
+            // completion is both misleading and unrelated to what actually happened.
+            var liveFec = entry.Status == "Completed"
+                ? []
+                : await _repository.GetFecRowsForExportAsync(entry.FpsYear, ct);
+
             var stagedTestCodes = stagedFec.Select(r => r.TestCode).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            // DR-UI-03: the per-row action label comes from DR-VAL-01 — frozen at release time
+            // (DR-API-07) once available, or computed live via the same shared validator
+            // (BulkRatesValidator.GetCalculatedActionsAsync) before release — never a bespoke
+            // UI-layer diff. "Deleted" below is a separate concept DR-VAL-01 has no row to
+            // classify: a live TestCode/Buyer this upload never staged at all.
+            var needsLiveClassification =
+                stagedFec.Any(r => r.CalculatedAction is null) || stagedAgrup.Any(r => r.CalculatedAction is null);
+            var liveClassifications = needsLiveClassification
+                ? await _validator.GetCalculatedActionsAsync(
+                    entry.JobQueueId, entry.FpsYear, entry.UploadVersion ?? 0, entry.ActiveDownloadVersion, ct)
+                : [];
+
+            var fecActionByTestCode = liveClassifications
+                .Where(f => string.Equals(f.Sheet, "FEC", StringComparison.OrdinalIgnoreCase))
+                .ToDictionary(f => f.BusinessKey!, StringComparer.OrdinalIgnoreCase);
+            var agrupActionByKey = liveClassifications
+                .Where(f => string.Equals(f.Sheet, "AGRUP", StringComparison.OrdinalIgnoreCase))
+                .ToDictionary(f =>
+                {
+                    var parts = f.BusinessKey!.Split('/', 2);
+                    return AgrupKey(parts[0], parts.Length > 1 ? parts[1] : string.Empty);
+                });
 
             var fecRows = new List<BulkRatesStagingFecRowDto>();
             foreach (var row in stagedFec)
             {
-                var isNew = !liveByTestCode.TryGetValue(row.TestCode, out var live);
-                if (!isNew && row.FecNewRate == live!.DefraUnitPrice)
-                    continue; // Unchanged — spec says only New/Updated/Deleted are shown
+                var calculatedAction = row.CalculatedAction;
+                if (calculatedAction is null && fecActionByTestCode.TryGetValue(row.TestCode, out var liveFinding))
+                    calculatedAction = liveFinding.CalculatedAction;
 
                 fecRows.Add(new BulkRatesStagingFecRowDto
                 {
-                    Status = isNew ? "Inserted" : "Updated",
+                    Status = FormatCalculatedAction(calculatedAction),
                     TestCode = row.TestCode,
                     UnitPriceVla = row.UnitPriceVla,
                     DefraUnitPrice = row.DefraUnitPrice,
@@ -547,20 +689,22 @@ namespace Apha.FPS.Application.Services
                 });
             }
 
-            var liveAgrup = await _repository.GetAgrupRowsForExportAsync(entry.FpsYear, ct);
-            var liveAgrupByKey = liveAgrup.ToDictionary(r => AgrupKey(r.TestCode, r.Buyer));
+            // Same rationale as liveFec above — AGRUP staging is purged alongside FEC on commit.
+            var liveAgrup = entry.Status == "Completed"
+                ? []
+                : await _repository.GetAgrupRowsForExportAsync(entry.FpsYear, ct);
             var stagedAgrupKeys = stagedAgrup.Select(r => AgrupKey(r.TestCode, r.Buyer)).ToHashSet();
 
             var agrupRows = new List<BulkRatesStagingAgrupRowDto>();
             foreach (var row in stagedAgrup)
             {
-                var isNew = !liveAgrupByKey.TryGetValue(AgrupKey(row.TestCode, row.Buyer), out var live);
-                if (!isNew && row.AgrupNew == live!.Agrup)
-                    continue; // Unchanged — same rule as FEC: only New/Updated/Deleted are shown
+                var calculatedAction = row.CalculatedAction;
+                if (calculatedAction is null && agrupActionByKey.TryGetValue(AgrupKey(row.TestCode, row.Buyer), out var liveFinding))
+                    calculatedAction = liveFinding.CalculatedAction;
 
                 agrupRows.Add(new BulkRatesStagingAgrupRowDto
                 {
-                    Status = isNew ? "Inserted" : "Updated",
+                    Status = FormatCalculatedAction(calculatedAction),
                     TestCode = row.TestCode,
                     Buyer = row.Buyer,
                     Agrup = row.Agrup,
@@ -595,6 +739,16 @@ namespace Apha.FPS.Application.Services
 
         private static (string TestCode, string Buyer) AgrupKey(string testCode, string buyer) =>
             (testCode.ToUpperInvariant(), buyer.ToUpperInvariant());
+
+        /// <summary>Maps a DR-VAL-01 <see cref="ValidationCalculatedAction"/> code to its Detail-page label (DR-UI-03).</summary>
+        private static string FormatCalculatedAction(string? calculatedAction) => calculatedAction switch
+        {
+            ValidationCalculatedAction.NoChange => "No Change",
+            ValidationCalculatedAction.Insert => "Insert",
+            ValidationCalculatedAction.Update => "Update",
+            ValidationCalculatedAction.ZeroRateWithdrawal => "Zero-Rate Withdrawal",
+            _ => "Unknown"
+        };
 
         // Staff/Animal are update-only (see BulkStaffRatesService/BulkAnimalRatesService in the
         // worker): a staged row whose key doesn't exist live is skipped, never inserted, and a
@@ -710,6 +864,7 @@ namespace Apha.FPS.Application.Services
             return _excelExportService.ExportToExcelMultiSheet(BuildFecAgrupSheets(stagedFec, stagedAgrup));
         }
 
+        /// <summary>
         private static List<ExcelSheetDefinition> BuildFecAgrupSheets(
             IReadOnlyList<FecStagingRow> fecRows, IReadOnlyList<AgrupStagingRow> agrupRows)
         {
@@ -728,21 +883,50 @@ namespace Apha.FPS.Application.Services
 
             var agrupExportRows = agrupRows.Select(r => new AgrupExportRow
             {
-                TestCode    = r.TestCode,
-                Buyer       = r.Buyer,
-                Agrup       = r.Agrup,
-                AgrupNew    = r.AgrupNew,
-                Change      = r.Change,
-                NoRequired  = r.NoRequired,
-                DateCreated = r.DateCreated,
-                Active      = r.Active,
-                Comments    = r.Comments
+                TestCode           = r.TestCode,
+                Buyer              = r.Buyer,
+                Agrup              = r.Agrup,
+                AgrupNew           = r.AgrupNew,
+                Change             = r.Change,
+                NoRequired         = r.NoRequired,
+                DateCreated        = r.DateCreated,
+                Active             = r.Active,
+                Comments           = r.Comments,
+                ProjectBuyerCode   = r.ProjectBuyerCode,
+                TestBuyerCode      = r.TestBuyerCode,
+                TestBuyerWorkGroup = r.TestBuyerWorkGroup
             }).ToList();
 
+            // Change is a live Excel formula, not the stored value above — it's for the user's
+            // visibility only (Recommended behaviour: Excel formula populates Change; the
+            // backend ignores it and recalculates independently, matching how
+            // BulkRatesExcelParser already discards the uploaded Change cell and recomputes it
+            // from FecNew/AgrupNew vs. the current rate). Blank FEC New/Agrup New maps to
+            // "0 minus current rate" rather than a blank result, matching the existing-row
+            // blank/zero = Zero-Rate Withdrawal business rule (reconciliation §2.1/§2.2) instead
+            // of implying "no change" for a row the reviewer deliberately cleared.
             return
             [
-                new() { SheetName = "FEC",   Data = fecExportRows.Cast<object>(),   DataType = typeof(FecExportRow) },
-                new() { SheetName = "AGRUP", Data = agrupExportRows.Cast<object>(), DataType = typeof(AgrupExportRow) }
+                new()
+                {
+                    SheetName = "FEC",
+                    Data = fecExportRows.Cast<object>(),
+                    DataType = typeof(FecExportRow),
+                    FormulaColumns = new Dictionary<string, string>
+                    {
+                        [nameof(FecExportRow.Change)] = "IF({FecNew}=\"\",0-{DefraUnitPrice},{FecNew}-{DefraUnitPrice})"
+                    }
+                },
+                new()
+                {
+                    SheetName = "AGRUP",
+                    Data = agrupExportRows.Cast<object>(),
+                    DataType = typeof(AgrupExportRow),
+                    FormulaColumns = new Dictionary<string, string>
+                    {
+                        [nameof(AgrupExportRow.Change)] = "IF({AgrupNew}=\"\",0-{Agrup},{AgrupNew}-{Agrup})"
+                    }
+                }
             ];
         }
 
@@ -794,6 +978,18 @@ namespace Apha.FPS.Application.Services
             if (!string.Equals(entry.Status, expectedStatus, StringComparison.OrdinalIgnoreCase))
                 throw new BusinessValidationErrorException([
                     new($"Cannot {action}: request must be in '{expectedStatus}' status. Current status: {entry.Status}.", "INVALID_STATUS_TRANSITION")]);
+        }
+
+        /// <summary>
+        /// DR-UI-01/plan §2.1: a new download is only allowed while the request is still
+        /// editable — Initiated, or Rejected (uploading from Rejected already auto-transitions
+        /// to Initiated, so there is no separate "editable Rejected" status to check).
+        /// </summary>
+        private static void RequireDownloadableStatus(BulkRatesQueueEntry entry)
+        {
+            if (entry.Status is not (StatusInitiated or StatusRejected))
+                throw new BusinessValidationErrorException([
+                    new($"Cannot download: request must be in '{StatusInitiated}' or '{StatusRejected}' status. Current status: {entry.Status}.", "INVALID_STATUS_TRANSITION")]);
         }
 
         private async Task<BulkRatesRequestDto> BuildRequestDtoAsync(BulkRatesQueueEntry entry, CancellationToken ct)

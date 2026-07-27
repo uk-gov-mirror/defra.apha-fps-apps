@@ -1,3 +1,4 @@
+using Apha.Common.BulkRates.Validation;
 using Apha.Common.Utilities.StateManagement;
 using Apha.Common.Utilities.ExcelExport;
 using Apha.FPS.Application.Interfaces;
@@ -59,6 +60,7 @@ namespace Apha.FPS.Api.Extensions
             // Bulk Rates
             services.AddScoped<IBulkRatesRequestService, BulkRatesRequestService>();
             services.AddScoped<BulkRatesExcelParser>();
+            services.AddScoped<IBulkRatesValidationService, BulkRatesValidationService>();
             services.AddScoped<BulkRatesValidator>();
             services.AddScoped<IEventBridgePublisher, NullEventBridgePublisher>();
             services.AddScoped<IBulkRatesNotificationService, LogOnlyBulkRatesNotificationService>();

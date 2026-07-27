@@ -81,6 +81,17 @@
                                     </div>
                                 }
 
+                                @* Action/upload error banner — rendered unconditionally (not gated behind the
+                                   action-button flags below) so it's available to showActionError() regardless of
+                                   which actions are currently permitted, and shown at the top of the page rather
+                                   than buried below the staging grids. *@
+                                <div id="actionErrorBanner" class="govuk-error-summary" style="display:none;" aria-labelledby="action-error-title" role="alert">
+                                    <h2 class="govuk-error-summary__title" id="action-error-title">There is a problem</h2>
+                                    <div class="govuk-error-summary__body">
+                                        <ul class="govuk-list govuk-error-summary__list"><li id="actionErrorText"></li></ul>
+                                    </div>
+                                </div>
+
                                 @* ── Request header ── *@
                                 <div class="govuk-grid-row govuk-!-margin-top-4 govuk-!-margin-bottom-4">
                                     <div class="govuk-grid-column-full">
@@ -150,7 +161,7 @@
                                             {
                                                 "BulkStaffRatesUpdate"  => ($"/FPS/BulkRates/DownloadStaffTestData?fpsYear={entry.FpsYear}", "Download Staff Data (Excel)"),
                                                 "BulkAnimalRatesUpdate" => ($"/FPS/BulkRates/DownloadAnimalTestData?fpsYear={entry.FpsYear}", "Download Animal Data (Excel)"),
-                                                _                       => ($"/FPS/BulkRates/DownloadTestData?fpsYear={entry.FpsYear}", "Download Test Data (Excel)")
+                                                _                       => ($"/FPS/BulkRates/DownloadTestDataForRequest?id={entry.JobExecutionId}", "Download Test Data (Excel)")
                                             };
                                         }
                                         <div class="govuk-button-group govuk-!-margin-bottom-2">
@@ -185,6 +196,19 @@
                                     var errors = uploadResult.ValidationErrors.Where(e => e.Severity == "Error").ToList();
                                     var warnings = uploadResult.ValidationErrors.Where(e => e.Severity == "Warning").ToList();
 
+                                    // FEC/AGRUP rows carry a TestCode (DR-VAL-01), so those findings are shown inline
+                                    // against the matching row in the staging grids below instead of in a list here.
+                                    // Everything else — file-parse errors, request-level findings with no single row
+                                    // to attach to (DR-UI-04), and all Staff/Animal findings (which predate TestCode
+                                    // matching) — has nowhere else to appear, so it's listed here.
+                                    var isFec = entry.JobName == "BulkTestRatesUpdate";
+                                    var unmatchedErrors = (isFec
+                                        ? uploadResult.ValidationErrors.Where(e => string.IsNullOrEmpty(e.TestCode))
+                                        : uploadResult.ValidationErrors)
+                                        .OrderBy(e => e.Severity == "Error" ? 0 : 1)
+                                        .ThenBy(e => e.SourceRowNumber)
+                                        .ToList();
+
                                     <section class="sup_border govuk-!-padding-3 govuk-!-margin-bottom-4" aria-labelledby="validation-section-title">
                                         <h3 class="govuk-heading-s govuk-!-margin-bottom-2" id="validation-section-title">
                                             Validation results
@@ -205,363 +229,53 @@
                                             Insert: @rc.Insert, Update: @rc.Update, Unchanged: @rc.Unchanged
                                         </p>
 
-                                        @if (uploadResult.ValidationErrors.Any())
+                                        @if (isFec && unmatchedErrors.Count < uploadResult.ValidationErrors.Count)
                                         {
-                                            <button type="button" class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0"
-                                                    onclick="BulkRates.showValidationErrorsModal()">
-                                                View validation errors (@uploadResult.ValidationErrors.Count)
-                                            </button>
+                                            <p class="govuk-body-s govuk-!-margin-bottom-2">
+                                                Row-level findings for staged rows are shown in the Validation column of the tables below.
+                                            </p>
                                         }
-                                        else
+
+                                        @if (!uploadResult.ValidationErrors.Any())
                                         {
                                             <p class="govuk-body-s govuk-!-margin-bottom-0">All rows passed validation.</p>
                                         }
-                                    </section>
-                                }
-
-                                @* ── FEC Data (Staging) / Agrup Details — staged rows for this request vs. live data ── *@
-                                @if (entry.JobName == "BulkTestRatesUpdate")
-                                {
-                                    var fecStagingRows = Model.StagingData?.FecRows ?? [];
-                                    var agrupDetailRows = Model.StagingData?.AgrupRows ?? [];
-
-                                    <section class="sup_border govuk-!-padding-3 govuk-!-margin-bottom-4" aria-labelledby="fec-staging-section-title">
-                                        <div class="govuk-grid-row govuk-!-margin-bottom-2">
-                                            <div class="govuk-grid-column-one-half">
-                                                <h3 class="govuk-heading-s govuk-!-margin-bottom-0" id="fec-staging-section-title">FEC Data (Staging)</h3>
-                                            </div>
-                                            <div class="govuk-grid-column-one-half govuk-!-text-align-right">
-                                                <button type="button" class="govuk-button govuk-button--secondary sup_margin_0"
-                                                        data-module="govuk-button" onclick="BulkRates.downloadStagingData('@entry.JobExecutionId')">
-                                                    Download Staging Data
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        @if (!fecStagingRows.Any())
+                                        else if (unmatchedErrors.Any())
                                         {
-                                            <p class="govuk-body-s govuk-!-margin-bottom-0">No staged changes for this request.</p>
-                                        }
-                                        else
-                                        {
-                                            <div style="overflow-x:auto;">
-                                                <table class="govuk-table govuk-!-font-size-14 govuk-!-margin-bottom-2" id="fecStagingTable">
+                                            <div class="govuk-!-margin-top-2" style="max-height:320px; overflow-y:auto;">
+                                                <table class="govuk-table govuk-!-font-size-14 govuk-!-margin-bottom-0">
                                                     <thead class="govuk-table__head">
                                                         <tr class="govuk-table__row">
-                                                            <th scope="col" class="govuk-table__header">Status</th>
-                                                            <th scope="col" class="govuk-table__header">Test Code</th>
-                                                            <th scope="col" class="govuk-table__header">Unit Price VLA</th>
-                                                            <th scope="col" class="govuk-table__header">Defra Unit Price</th>
-                                                            <th scope="col" class="govuk-table__header">FEC New</th>
-                                                            <th scope="col" class="govuk-table__header">Item Description</th>
-                                                            <th scope="col" class="govuk-table__header">Short Description</th>
-                                                            <th scope="col" class="govuk-table__header">Owner</th>
-                                                            <th scope="col" class="govuk-table__header">Comments</th>
+                                                            <th scope="col" class="govuk-table__header govuk-!-width-one-eighth">Row</th>
+                                                            <th scope="col" class="govuk-table__header">Field</th>
+                                                            <th scope="col" class="govuk-table__header govuk-!-width-one-eighth">Severity</th>
+                                                            <th scope="col" class="govuk-table__header">Message</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody class="govuk-table__body">
-                                                        @foreach (var row in fecStagingRows)
+                                                        @foreach (var ve in unmatchedErrors)
                                                         {
-                                                            <tr class="govuk-table__row staging-page-row">
-                                                                <td class="govuk-table__cell">@row.Status</td>
-                                                                <td class="govuk-table__cell">@row.TestCode</td>
-                                                                <td class="govuk-table__cell">@row.UnitPriceVla</td>
-                                                                <td class="govuk-table__cell">@row.DefraUnitPrice</td>
-                                                                <td class="govuk-table__cell">@row.FecNewRate</td>
-                                                                <td class="govuk-table__cell">@(row.ItemDescription ?? "—")</td>
-                                                                <td class="govuk-table__cell">@(row.ShortDescription ?? "—")</td>
-                                                                <td class="govuk-table__cell">@(row.Owner ?? "—")</td>
-                                                                <td class="govuk-table__cell">@(row.Comments ?? "—")</td>
+                                                            <tr class="govuk-table__row">
+                                                                <td class="govuk-table__cell">@(ve.SourceRowNumber > 0 ? ve.SourceRowNumber.ToString() : "—")</td>
+                                                                <td class="govuk-table__cell">@(ve.FieldName ?? "—")</td>
+                                                                <td class="govuk-table__cell">
+                                                                    <strong class="govuk-tag @(ve.Severity == "Error" ? "govuk-tag--red" : "govuk-tag--yellow")">@ve.Severity</strong>
+                                                                </td>
+                                                                <td class="govuk-table__cell">@ve.ValidationMessage</td>
                                                             </tr>
                                                         }
                                                     </tbody>
                                                 </table>
                                             </div>
-
-                                            <div class="govuk-grid-row" style="align-items:center;">
-                                                <div class="govuk-grid-column-one-half">
-                                                    <label class="govuk-label govuk-!-font-size-14 govuk-!-margin-bottom-0" for="fecStagingPageSize">
-                                                        Records per page
-                                                    </label>
-                                                    <select class="govuk-select govuk-!-font-size-14" id="fecStagingPageSize">
-                                                        <option value="10">10</option>
-                                                        <option value="25">25</option>
-                                                        <option value="50">50</option>
-                                                    </select>
-                                                </div>
-                                                <div class="govuk-grid-column-one-half govuk-!-text-align-right">
-                                                    <div class="govuk-button-group govuk-!-margin-bottom-0" style="display:inline-flex; align-items:center;">
-                                                        <button type="button" class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0"
-                                                                id="fecStagingPrevBtn">Previous</button>
-                                                        <span class="govuk-body-s govuk-!-margin-bottom-0 govuk-!-margin-left-2 govuk-!-margin-right-2" id="fecStagingPageLabel">1</span>
-                                                        <button type="button" class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0"
-                                                                id="fecStagingNextBtn">Next</button>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <p class="govuk-body-s govuk-!-margin-bottom-0 govuk-!-margin-top-2">
-                                                Note: Only records which are New, Updated, Deleted are shown.
-                                            </p>
-                                        }
-                                    </section>
-
-                                    <section class="sup_border govuk-!-padding-3 govuk-!-margin-bottom-4" aria-labelledby="agrup-details-section-title">
-                                        <h3 class="govuk-heading-s govuk-!-margin-bottom-2" id="agrup-details-section-title">Agrup Details</h3>
-
-                                        @if (!agrupDetailRows.Any())
-                                        {
-                                            <p class="govuk-body-s govuk-!-margin-bottom-0">No staged Agrup rows for this request.</p>
-                                        }
-                                        else
-                                        {
-                                            <div style="overflow-x:auto;">
-                                                <table class="govuk-table govuk-!-font-size-14 govuk-!-margin-bottom-2" id="agrupStagingTable">
-                                                    <thead class="govuk-table__head">
-                                                        <tr class="govuk-table__row">
-                                                            <th scope="col" class="govuk-table__header">Status</th>
-                                                            <th scope="col" class="govuk-table__header">Test Code</th>
-                                                            <th scope="col" class="govuk-table__header">Buyer</th>
-                                                            <th scope="col" class="govuk-table__header">Agrup</th>
-                                                            <th scope="col" class="govuk-table__header">Agrup New</th>
-                                                            <th scope="col" class="govuk-table__header">No Required</th>
-                                                            <th scope="col" class="govuk-table__header">Date Created</th>
-                                                            <th scope="col" class="govuk-table__header">Active</th>
-                                                            <th scope="col" class="govuk-table__header">Comments</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody class="govuk-table__body">
-                                                        @foreach (var row in agrupDetailRows)
-                                                        {
-                                                            <tr class="govuk-table__row agrup-staging-page-row">
-                                                                <td class="govuk-table__cell">@row.Status</td>
-                                                                <td class="govuk-table__cell">@row.TestCode</td>
-                                                                <td class="govuk-table__cell">@row.Buyer</td>
-                                                                <td class="govuk-table__cell">@row.Agrup</td>
-                                                                <td class="govuk-table__cell">@row.AgrupNew</td>
-                                                                <td class="govuk-table__cell">@row.NoRequired</td>
-                                                                <td class="govuk-table__cell">@(row.DateCreated?.ToString("yyyy-MM-dd") ?? "—")</td>
-                                                                <td class="govuk-table__cell">@(row.Active == 1 ? "Yes" : "No")</td>
-                                                                <td class="govuk-table__cell">@(row.Comments ?? "—")</td>
-                                                            </tr>
-                                                        }
-                                                    </tbody>
-                                                </table>
-                                            </div>
-
-                                            <div class="govuk-grid-row" style="align-items:center;">
-                                                <div class="govuk-grid-column-one-half">
-                                                    <label class="govuk-label govuk-!-font-size-14 govuk-!-margin-bottom-0" for="agrupStagingPageSize">
-                                                        Records per page
-                                                    </label>
-                                                    <select class="govuk-select govuk-!-font-size-14" id="agrupStagingPageSize">
-                                                        <option value="10">10</option>
-                                                        <option value="25">25</option>
-                                                        <option value="50">50</option>
-                                                    </select>
-                                                </div>
-                                                <div class="govuk-grid-column-one-half govuk-!-text-align-right">
-                                                    <div class="govuk-button-group govuk-!-margin-bottom-0" style="display:inline-flex; align-items:center;">
-                                                        <button type="button" class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0"
-                                                                id="agrupStagingPrevBtn">Previous</button>
-                                                        <span class="govuk-body-s govuk-!-margin-bottom-0 govuk-!-margin-left-2 govuk-!-margin-right-2" id="agrupStagingPageLabel">1</span>
-                                                        <button type="button" class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0"
-                                                                id="agrupStagingNextBtn">Next</button>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <p class="govuk-body-s govuk-!-margin-bottom-0 govuk-!-margin-top-2">
-                                                Note: Only records which are New, Updated, Deleted are shown.
-                                            </p>
                                         }
                                     </section>
                                 }
 
-                                @* ── Staff Data (Staging) — staged rows for this request vs. live data ── *@
-                                @if (entry.JobName == "BulkStaffRatesUpdate")
-                                {
-                                    var staffStagingRows = Model.StagingData?.StaffRows ?? [];
-
-                                    <section class="sup_border govuk-!-padding-3 govuk-!-margin-bottom-4" aria-labelledby="staff-staging-section-title">
-                                        <div class="govuk-grid-row govuk-!-margin-bottom-2">
-                                            <div class="govuk-grid-column-one-half">
-                                                <h3 class="govuk-heading-s govuk-!-margin-bottom-0" id="staff-staging-section-title">Staff Data (Staging)</h3>
-                                            </div>
-                                            <div class="govuk-grid-column-one-half govuk-!-text-align-right">
-                                                <button type="button" class="govuk-button govuk-button--secondary sup_margin_0"
-                                                        data-module="govuk-button" onclick="BulkRates.downloadStagingData('@entry.JobExecutionId')">
-                                                    Download Staging Data
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        @if (!staffStagingRows.Any())
-                                        {
-                                            <p class="govuk-body-s govuk-!-margin-bottom-0">No staged changes for this request.</p>
-                                        }
-                                        else
-                                        {
-                                            <div style="overflow-x:auto;">
-                                                <table class="govuk-table govuk-!-font-size-14 govuk-!-margin-bottom-2" id="staffStagingTable">
-                                                    <thead class="govuk-table__head">
-                                                        <tr class="govuk-table__row">
-                                                            <th scope="col" class="govuk-table__header">Status</th>
-                                                            <th scope="col" class="govuk-table__header">PcGrade</th>
-                                                            <th scope="col" class="govuk-table__header">Pay Rate</th>
-                                                            <th scope="col" class="govuk-table__header">Pay Rate New</th>
-                                                            <th scope="col" class="govuk-table__header">NPR</th>
-                                                            <th scope="col" class="govuk-table__header">NPR New</th>
-                                                            <th scope="col" class="govuk-table__header">OHR</th>
-                                                            <th scope="col" class="govuk-table__header">OHR New</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody class="govuk-table__body">
-                                                        @foreach (var row in staffStagingRows)
-                                                        {
-                                                            <tr class="govuk-table__row staff-staging-page-row">
-                                                                <td class="govuk-table__cell">@row.Status</td>
-                                                                <td class="govuk-table__cell">@row.PcGrade</td>
-                                                                <td class="govuk-table__cell">@row.PayRate</td>
-                                                                <td class="govuk-table__cell">@row.PayRateNew</td>
-                                                                <td class="govuk-table__cell">@row.Npr</td>
-                                                                <td class="govuk-table__cell">@row.NprNew</td>
-                                                                <td class="govuk-table__cell">@row.Ohr</td>
-                                                                <td class="govuk-table__cell">@row.OhrNew</td>
-                                                            </tr>
-                                                        }
-                                                    </tbody>
-                                                </table>
-                                            </div>
-
-                                            <div class="govuk-grid-row" style="align-items:center;">
-                                                <div class="govuk-grid-column-one-half">
-                                                    <label class="govuk-label govuk-!-font-size-14 govuk-!-margin-bottom-0" for="staffStagingPageSize">
-                                                        Records per page
-                                                    </label>
-                                                    <select class="govuk-select govuk-!-font-size-14" id="staffStagingPageSize">
-                                                        <option value="10">10</option>
-                                                        <option value="25">25</option>
-                                                        <option value="50">50</option>
-                                                    </select>
-                                                </div>
-                                                <div class="govuk-grid-column-one-half govuk-!-text-align-right">
-                                                    <div class="govuk-button-group govuk-!-margin-bottom-0" style="display:inline-flex; align-items:center;">
-                                                        <button type="button" class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0"
-                                                                id="staffStagingPrevBtn">Previous</button>
-                                                        <span class="govuk-body-s govuk-!-margin-bottom-0 govuk-!-margin-left-2 govuk-!-margin-right-2" id="staffStagingPageLabel">1</span>
-                                                        <button type="button" class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0"
-                                                                id="staffStagingNextBtn">Next</button>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <p class="govuk-body-s govuk-!-margin-bottom-0 govuk-!-margin-top-2">
-                                                Note: Only records which are Updated or Not Found are shown. "Not Found"
-                                                means the PcGrade doesn't exist for this FPS year — it will be skipped, not created.
-                                            </p>
-                                        }
-                                    </section>
-                                }
-
-                                @* ── Animal Data (Staging) — staged rows for this request vs. live data ── *@
-                                @if (entry.JobName == "BulkAnimalRatesUpdate")
-                                {
-                                    var animalStagingRows = Model.StagingData?.AnimalRows ?? [];
-
-                                    <section class="sup_border govuk-!-padding-3 govuk-!-margin-bottom-4" aria-labelledby="animal-staging-section-title">
-                                        <div class="govuk-grid-row govuk-!-margin-bottom-2">
-                                            <div class="govuk-grid-column-one-half">
-                                                <h3 class="govuk-heading-s govuk-!-margin-bottom-0" id="animal-staging-section-title">Animal Data (Staging)</h3>
-                                            </div>
-                                            <div class="govuk-grid-column-one-half govuk-!-text-align-right">
-                                                <button type="button" class="govuk-button govuk-button--secondary sup_margin_0"
-                                                        data-module="govuk-button" onclick="BulkRates.downloadStagingData('@entry.JobExecutionId')">
-                                                    Download Staging Data
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        @if (!animalStagingRows.Any())
-                                        {
-                                            <p class="govuk-body-s govuk-!-margin-bottom-0">No staged changes for this request.</p>
-                                        }
-                                        else
-                                        {
-                                            <div style="overflow-x:auto;">
-                                                <table class="govuk-table govuk-!-font-size-14 govuk-!-margin-bottom-2" id="animalStagingTable">
-                                                    <thead class="govuk-table__head">
-                                                        <tr class="govuk-table__row">
-                                                            <th scope="col" class="govuk-table__header">Status</th>
-                                                            <th scope="col" class="govuk-table__header">Animal Type</th>
-                                                            <th scope="col" class="govuk-table__header">Species</th>
-                                                            <th scope="col" class="govuk-table__header">Security Level</th>
-                                                            <th scope="col" class="govuk-table__header">Daily Rate</th>
-                                                            <th scope="col" class="govuk-table__header">Daily Rate New</th>
-                                                            <th scope="col" class="govuk-table__header">Defra Daily Rate</th>
-                                                            <th scope="col" class="govuk-table__header">Defra Daily Rate New</th>
-                                                            <th scope="col" class="govuk-table__header">Plan By Week</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody class="govuk-table__body">
-                                                        @foreach (var row in animalStagingRows)
-                                                        {
-                                                            <tr class="govuk-table__row animal-staging-page-row">
-                                                                <td class="govuk-table__cell">@row.Status</td>
-                                                                <td class="govuk-table__cell">@row.AnimalType</td>
-                                                                <td class="govuk-table__cell">@(row.Species ?? "—")</td>
-                                                                <td class="govuk-table__cell">@(row.SecurityLevel ?? "—")</td>
-                                                                <td class="govuk-table__cell">@row.DailyRate</td>
-                                                                <td class="govuk-table__cell">@row.DailyRateNew</td>
-                                                                <td class="govuk-table__cell">@row.DefraDailyRate</td>
-                                                                <td class="govuk-table__cell">@row.DefraDailyRateNew</td>
-                                                                <td class="govuk-table__cell">@(row.PlanByWeek == true ? "Yes" : "No")</td>
-                                                            </tr>
-                                                        }
-                                                    </tbody>
-                                                </table>
-                                            </div>
-
-                                            <div class="govuk-grid-row" style="align-items:center;">
-                                                <div class="govuk-grid-column-one-half">
-                                                    <label class="govuk-label govuk-!-font-size-14 govuk-!-margin-bottom-0" for="animalStagingPageSize">
-                                                        Records per page
-                                                    </label>
-                                                    <select class="govuk-select govuk-!-font-size-14" id="animalStagingPageSize">
-                                                        <option value="10">10</option>
-                                                        <option value="25">25</option>
-                                                        <option value="50">50</option>
-                                                    </select>
-                                                </div>
-                                                <div class="govuk-grid-column-one-half govuk-!-text-align-right">
-                                                    <div class="govuk-button-group govuk-!-margin-bottom-0" style="display:inline-flex; align-items:center;">
-                                                        <button type="button" class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0"
-                                                                id="animalStagingPrevBtn">Previous</button>
-                                                        <span class="govuk-body-s govuk-!-margin-bottom-0 govuk-!-margin-left-2 govuk-!-margin-right-2" id="animalStagingPageLabel">1</span>
-                                                        <button type="button" class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0"
-                                                                id="animalStagingNextBtn">Next</button>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <p class="govuk-body-s govuk-!-margin-bottom-0 govuk-!-margin-top-2">
-                                                Note: Only records which are Updated or Not Found are shown. "Not Found"
-                                                means the Animal Type doesn't exist for this FPS year — it will be skipped, not created.
-                                            </p>
-                                        }
-                                    </section>
-                                }
-
-                                @* ── Action buttons (US-UI-04, 05, 06, 08) ── *@
+                                @* ── Action buttons (US-UI-04, 05, 06, 08) — placed right after the validation
+                                   summary, before the staging grids below, so approving/rejecting/cancelling a
+                                   request never requires scrolling past a potentially long grid to reach them. ── *@
                                 @if (Model.CanRelease || Model.CanApprove || Model.CanReject || Model.CanCancel)
                                 {
-                                    <div id="actionErrorBanner" class="govuk-error-summary" style="display:none;" aria-labelledby="action-error-title" role="alert">
-                                        <h2 class="govuk-error-summary__title" id="action-error-title">There is a problem</h2>
-                                        <div class="govuk-error-summary__body">
-                                            <ul class="govuk-list govuk-error-summary__list"><li id="actionErrorText"></li></ul>
-                                        </div>
-                                    </div>
-
                                     <div class="govuk-button-group govuk-!-margin-bottom-4">
 
                                         @* US-UI-04: Release — initiator + Initiated + no blocking errors *@
@@ -595,12 +309,124 @@
                                         @if (Model.CanCancel)
                                         {
                                             <button type="button" class="govuk-button govuk-button--warning" data-module="govuk-button" id="btnCancel"
-                                                    onclick="BulkRates.cancel('@entry.JobExecutionId')">
+                                                    onclick="BulkRates.showCancelModal('@entry.JobExecutionId')">
                                                 Cancel Request
                                             </button>
                                         }
 
                                     </div>
+                                }
+
+                                @* ── FEC Data (Staging) / Agrup Details — staged rows for this request vs. live data ── *@
+                                @if (entry.JobName == "BulkTestRatesUpdate")
+                                {
+                                    <section class="sup_border govuk-!-padding-3 govuk-!-margin-bottom-4" aria-labelledby="fec-staging-section-title">
+                                        <div class="govuk-grid-row govuk-!-margin-bottom-2">
+                                            <div class="govuk-grid-column-one-half">
+                                                <h3 class="govuk-heading-s govuk-!-margin-bottom-0" id="fec-staging-section-title">FEC Data (Staging)</h3>
+                                            </div>
+                                            <div class="govuk-grid-column-one-half govuk-!-text-align-right">
+                                                <button type="button" class="govuk-button govuk-button--secondary sup_margin_0"
+                                                        data-module="govuk-button" onclick="BulkRates.downloadStagingData('@entry.JobExecutionId')">
+                                                    Download Staging Data
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        @if (entry.Status == "Completed")
+                                        {
+                                            <p class="govuk-body-s govuk-!-margin-bottom-0">
+                                                Staging data was cleared after this request completed. See the row counts in
+                                                Validation results above, and Status history below, for what was applied.
+                                            </p>
+                                        }
+                                        else
+                                        {
+                                            <div id="gridContainer_@Model.FecStagingGrid.GridId">
+                                                @await Html.PartialAsync("_DataGrid", Model.FecStagingGrid)
+                                            </div>
+
+                                            <p class="govuk-body-s govuk-!-margin-bottom-0 govuk-!-margin-top-2">
+                                                Note: Status shows the calculated action for this row (No Change / Insert / Update / Zero-Rate Withdrawal), or Deleted for a live record this upload did not include at all.
+                                            </p>
+                                        }
+                                    </section>
+
+                                    <section class="sup_border govuk-!-padding-3 govuk-!-margin-bottom-4" aria-labelledby="agrup-details-section-title">
+                                        <h3 class="govuk-heading-s govuk-!-margin-bottom-2" id="agrup-details-section-title">Agrup Details</h3>
+
+                                        @if (entry.Status == "Completed")
+                                        {
+                                            <p class="govuk-body-s govuk-!-margin-bottom-0">
+                                                Staging data was cleared after this request completed. See the row counts in
+                                                Validation results above, and Status history below, for what was applied.
+                                            </p>
+                                        }
+                                        else
+                                        {
+                                            <div id="gridContainer_@Model.AgrupStagingGrid.GridId">
+                                                @await Html.PartialAsync("_DataGrid", Model.AgrupStagingGrid)
+                                            </div>
+
+                                            <p class="govuk-body-s govuk-!-margin-bottom-0 govuk-!-margin-top-2">
+                                                Note: Status shows the calculated action for this row (No Change / Insert / Update / Zero-Rate Withdrawal), or Deleted for a live record this upload did not include at all.
+                                            </p>
+                                        }
+                                    </section>
+                                }
+
+                                @* ── Staff Data (Staging) — staged rows for this request vs. live data ── *@
+                                @if (entry.JobName == "BulkStaffRatesUpdate")
+                                {
+                                    <section class="sup_border govuk-!-padding-3 govuk-!-margin-bottom-4" aria-labelledby="staff-staging-section-title">
+                                        <div class="govuk-grid-row govuk-!-margin-bottom-2">
+                                            <div class="govuk-grid-column-one-half">
+                                                <h3 class="govuk-heading-s govuk-!-margin-bottom-0" id="staff-staging-section-title">Staff Data (Staging)</h3>
+                                            </div>
+                                            <div class="govuk-grid-column-one-half govuk-!-text-align-right">
+                                                <button type="button" class="govuk-button govuk-button--secondary sup_margin_0"
+                                                        data-module="govuk-button" onclick="BulkRates.downloadStagingData('@entry.JobExecutionId')">
+                                                    Download Staging Data
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div id="gridContainer_@Model.StaffStagingGrid.GridId">
+                                            @await Html.PartialAsync("_DataGrid", Model.StaffStagingGrid)
+                                        </div>
+
+                                        <p class="govuk-body-s govuk-!-margin-bottom-0 govuk-!-margin-top-2">
+                                            Note: Only records which are Updated or Not Found are shown. "Not Found"
+                                            means the PcGrade doesn't exist for this FPS year — it will be skipped, not created.
+                                        </p>
+                                    </section>
+                                }
+
+                                @* ── Animal Data (Staging) — staged rows for this request vs. live data ── *@
+                                @if (entry.JobName == "BulkAnimalRatesUpdate")
+                                {
+                                    <section class="sup_border govuk-!-padding-3 govuk-!-margin-bottom-4" aria-labelledby="animal-staging-section-title">
+                                        <div class="govuk-grid-row govuk-!-margin-bottom-2">
+                                            <div class="govuk-grid-column-one-half">
+                                                <h3 class="govuk-heading-s govuk-!-margin-bottom-0" id="animal-staging-section-title">Animal Data (Staging)</h3>
+                                            </div>
+                                            <div class="govuk-grid-column-one-half govuk-!-text-align-right">
+                                                <button type="button" class="govuk-button govuk-button--secondary sup_margin_0"
+                                                        data-module="govuk-button" onclick="BulkRates.downloadStagingData('@entry.JobExecutionId')">
+                                                    Download Staging Data
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div id="gridContainer_@Model.AnimalStagingGrid.GridId">
+                                            @await Html.PartialAsync("_DataGrid", Model.AnimalStagingGrid)
+                                        </div>
+
+                                        <p class="govuk-body-s govuk-!-margin-bottom-0 govuk-!-margin-top-2">
+                                            Note: Only records which are Updated or Not Found are shown. "Not Found"
+                                            means the Animal Type doesn't exist for this FPS year — it will be skipped, not created.
+                                        </p>
+                                    </section>
                                 }
 
                                 @* ── Status history (US-UI-07) ── *@
@@ -644,58 +470,8 @@
 @* US-UI-06: Rejection modal (rendered at body end, toggled by JS) *@
 @await Html.PartialAsync("_RejectModal")
 
-@* US-UI-03: Validation errors modal — long lists render here instead of inline on the page *@
-@if (uploadResult != null && uploadResult.ValidationErrors.Any())
-{
-    <div class="modal" id="validationErrorsModal" tabindex="-1" role="dialog" aria-labelledby="validationErrorsModalTitle">
-        <div class="modal-dialog modal-xl" role="document">
-            <div class="modal-content">
-                <div class="modal-header flex-space-center">
-                    <h3 class="govuk-heading-s sup_margin_0" id="validationErrorsModalTitle">Validation errors</h3>
-                    <button type="button" class="btn-close" aria-label="Close"
-                            onclick="BulkRates.closeValidationErrorsModal()">&times;</button>
-                </div>
-                <div class="modal-body" style="max-height:70vh; overflow-y:auto;">
-                    <table class="govuk-table govuk-!-font-size-14 govuk-!-margin-bottom-0" id="validationErrorsTable">
-                        <thead class="govuk-table__head">
-                            <tr class="govuk-table__row">
-                                <th scope="col" class="govuk-table__header">Sheet</th>
-                                <th scope="col" class="govuk-table__header govuk-!-width-one-eighth">Row</th>
-                                <th scope="col" class="govuk-table__header">Test Code</th>
-                                <th scope="col" class="govuk-table__header">Buyer</th>
-                                <th scope="col" class="govuk-table__header govuk-!-width-one-quarter">Field</th>
-                                <th scope="col" class="govuk-table__header govuk-!-width-one-eighth">Severity</th>
-                                <th scope="col" class="govuk-table__header">Message</th>
-                            </tr>
-                        </thead>
-                        <tbody class="govuk-table__body">
-                            @foreach (var ve in uploadResult.ValidationErrors.OrderBy(v => v.Severity == "Error" ? 0 : 1).ThenBy(v => v.SourceRowNumber))
-                            {
-                                <tr class="govuk-table__row">
-                                    <td class="govuk-table__cell">@(ve.SheetName ?? "—")</td>
-                                    <td class="govuk-table__cell">@ve.SourceRowNumber</td>
-                                    <td class="govuk-table__cell">@(ve.TestCode ?? "—")</td>
-                                    <td class="govuk-table__cell">@(ve.Buyer ?? "—")</td>
-                                    <td class="govuk-table__cell">@ve.FieldName</td>
-                                    <td class="govuk-table__cell">
-                                        <strong class="govuk-tag @(ve.Severity == "Error" ? "govuk-tag--red" : "govuk-tag--yellow")">@ve.Severity</strong>
-                                    </td>
-                                    <td class="govuk-table__cell">@ve.ValidationMessage</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-                <div class="modal-footer sup_flex_space_center">
-                    <button type="button" class="govuk-button govuk-button--secondary sup_margin_0"
-                            onclick="BulkRates.closeValidationErrorsModal()">
-                        Close
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
+@* US-UI-08: Cancellation modal (rendered at body end, toggled by JS) *@
+@await Html.PartialAsync("_CancelModal")
 
 @section Scripts {
     <script src="~/js/fps_js/fec_testmanagement.js" asp-append-version="true"></script>

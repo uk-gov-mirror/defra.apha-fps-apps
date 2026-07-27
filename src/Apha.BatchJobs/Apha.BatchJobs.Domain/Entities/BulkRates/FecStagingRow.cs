@@ -14,4 +14,10 @@ public sealed record FecStagingRow(
     string? ItemDescription,
     string? ShortDescription,
     string? Owner,
-    string? Comments);
+    string? Comments,
+    // CR056/DR-API-07: frozen at release time, compared against the worker's
+    // re-derived result (DR-WK-04 §5.2 drift check). Null until release.
+    string? CalculatedAction = null,
+    decimal? EffectiveNewRate = null,
+    decimal? SourceCurrentRate = null,
+    int? ValidationVersion = null);

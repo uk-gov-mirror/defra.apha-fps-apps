@@ -1,6 +1,6 @@
 namespace Apha.FPS.Application.Dtos.BulkRates
 {
-    /// <summary>A single AGRUP staging row for the "Agrup Details" grid — diffed against live data per (TestCode, Buyer), same as FEC.</summary>
+    /// <summary>A single AGRUP staging row for the "Agrup Details" grid. See <see cref="BulkRatesStagingFecRowDto"/> for what Status means.</summary>
     public class BulkRatesStagingAgrupRowDto
     {
         public string Status { get; set; } = string.Empty;

@@ -1,5 +1,6 @@
 using Apha.FPSApps.Application.Dtos;
 using Apha.FPSApps.Application.Dtos.FPS;
+using Apha.FPSApps.Application.Dtos.FPS.BulkRates;
 using Apha.FPSApps.Application.Dtos.PACT;
 using Apha.FPSApps.Application.Pagination;
 using Apha.FPSApps.Web.Areas.FPS.Models;
@@ -138,6 +139,32 @@ namespace Apha.FPSApps.Web.Mappings
             // UserEmail is NOT in AdditionalCostLogDto (requires UserId→email resolution); Ignore() it.
             CreateMap<AdditionalCostLogDto, AdditionalCostLogItem>()
                 .ForMember(d => d.UserEmail, o => o.Ignore());
+
+            // Bulk Rates — queue grid row. JobName mapped to its friendly display name since
+            // the DataGrid renders raw property values with no per-column custom formatting.
+            CreateMap<BulkRatesQueueEntryDto, BulkRatesQueueGridItem>()
+                .ForMember(d => d.JobName, o => o.MapFrom(s => FriendlyBulkRatesJobName(s.JobName)));
+
+            // Bulk Rates — staging grids (Detail page). ValidationSummary has no source member —
+            // it's populated after mapping, from BulkRatesUploadResultDto, by
+            // BulkRatesController.BuildStagingGridConfig.
+            CreateMap<BulkRatesStagingFecRowDto, FecStagingGridItem>()
+                .ForMember(d => d.ValidationSummary, o => o.Ignore());
+            CreateMap<BulkRatesStagingAgrupRowDto, AgrupStagingGridItem>()
+                .ForMember(d => d.Active, o => o.MapFrom(s => s.Active == 1))
+                .ForMember(d => d.ValidationSummary, o => o.Ignore());
+            CreateMap<BulkRatesStagingStaffRowDto, StaffStagingGridItem>();
+            CreateMap<BulkRatesStagingAnimalRowDto, AnimalStagingGridItem>();
         }
+
+        // AutoMapper's MapFrom builds an expression tree, which cannot contain a switch
+        // expression — a plain method call is used instead.
+        private static string FriendlyBulkRatesJobName(string jobName) => jobName switch
+        {
+            "BulkTestRatesUpdate" => "FEC Test Rates",
+            "BulkStaffRatesUpdate" => "Staff Rates",
+            "BulkAnimalRatesUpdate" => "Animal Rates",
+            _ => jobName
+        };
     }
 }

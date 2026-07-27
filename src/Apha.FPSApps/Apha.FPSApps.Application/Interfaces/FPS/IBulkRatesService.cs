@@ -1,5 +1,6 @@
 using Apha.FPSApps.Application.Dtos;
 using Apha.FPSApps.Application.Dtos.FPS.BulkRates;
+using Apha.FPSApps.Application.Pagination;
 
 namespace Apha.FPSApps.Application.Interfaces.FPS
 {
@@ -33,9 +34,12 @@ namespace Apha.FPSApps.Application.Interfaces.FPS
         /// <summary>US-API-11: Get full request detail including log history.</summary>
         Task<ApiResponseDto<BulkRatesRequestDetailDto?>> GetRequestAsync(Guid jobExecutionId);
 
-        /// <summary>US-API-11: List requests, optionally filtered by job name, FPS year and status.</summary>
+        /// <summary>US-API-11: Server-side paged/sorted list, optionally filtered by job name, FPS year and status.</summary>
         Task<ApiResponseDto<List<BulkRatesQueueEntryDto>>> GetRequestsAsync(
-            string? jobName = null, int? fpsYear = null, string? status = null);
+            QueryParameters<string> query, string? jobName = null, int? fpsYear = null, string? status = null);
+
+        /// <summary>DR-UI-01: Atomically snapshot live FEC/AGRUP data for a specific request and return the workbook.</summary>
+        Task<byte[]> DownloadFecTestDataForRequestAsync(Guid jobExecutionId);
 
         /// <summary>Download current FEC test rates for the given FPS year as an Excel byte array.</summary>
         Task<byte[]> DownloadFecTestDataAsync(int fpsYear);

@@ -1,11 +1,11 @@
 namespace Apha.FPS.Application.Dtos.BulkRates
 {
     /// <summary>
-    /// A single FEC staging row for the "FEC Data (Staging)" grid, classified against
-    /// the live fps.testorproduct data for the request's FPS year.
-    /// Status is one of: Inserted (TestCode not in live data), Updated (TestCode exists
-    /// and the staged FecNewRate differs from the live DefraUnitPrice), or Deleted
-    /// (TestCode exists live but is absent from this upload). Unchanged rows are omitted.
+    /// A single FEC staging row for the "FEC Data (Staging)" grid.
+    /// Status is DR-VAL-01's calculated action for this row — "No Change", "Insert",
+    /// "Update", or "Zero-Rate Withdrawal" (frozen at release time, DR-API-07; computed live
+    /// via the same shared validator before release) — or "Deleted" for a live TestCode
+    /// absent from this upload entirely, a separate concept DR-VAL-01 has no row to classify.
     /// </summary>
     public class BulkRatesStagingFecRowDto
     {

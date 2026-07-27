@@ -2,6 +2,7 @@ using Apha.FPSApps.Application.Dtos;
 using Apha.FPSApps.Application.Dtos.FPS.BulkRates;
 using Apha.FPSApps.Application.Interfaces.FPS;
 using Apha.FPSApps.Application.Interfaces.FpsApiClients;
+using Apha.FPSApps.Application.Pagination;
 
 namespace Apha.FPSApps.Application.Services.FPS
 {
@@ -39,8 +40,11 @@ namespace Apha.FPSApps.Application.Services.FPS
             => _fpsClient.FpsBulkRates.GetRequestAsync(jobExecutionId);
 
         public Task<ApiResponseDto<List<BulkRatesQueueEntryDto>>> GetRequestsAsync(
-            string? jobName = null, int? fpsYear = null, string? status = null)
-            => _fpsClient.FpsBulkRates.GetRequestsAsync(jobName, fpsYear, status);
+            QueryParameters<string> query, string? jobName = null, int? fpsYear = null, string? status = null)
+            => _fpsClient.FpsBulkRates.GetRequestsAsync(query, jobName, fpsYear, status);
+
+        public Task<byte[]> DownloadFecTestDataForRequestAsync(Guid jobExecutionId)
+            => _fpsClient.FpsBulkRates.DownloadFecTestDataForRequestAsync(jobExecutionId);
 
         public Task<byte[]> DownloadFecTestDataAsync(int fpsYear)
             => _fpsClient.FpsBulkRates.DownloadFecTestDataAsync(fpsYear);

@@ -31,5 +31,12 @@ namespace Apha.FPSApps.Application.Dtos.FPS.BulkRates
         public string? Buyer { get; set; }
         public string? CurrentValue { get; set; }
         public string? ExpectedValue { get; set; }
+
+        /// <summary>
+        /// True when this finding has no single uploaded row to attach to (e.g. a downloaded
+        /// key missing from the re-upload, DR-UI-04) — rendered as a request-level message,
+        /// not an ordinary per-row error.
+        /// </summary>
+        public bool IsRequestLevel { get; set; }
     }
 }

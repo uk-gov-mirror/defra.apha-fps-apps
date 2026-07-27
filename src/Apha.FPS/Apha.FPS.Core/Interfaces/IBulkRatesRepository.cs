@@ -1,4 +1,5 @@
 using Apha.FPS.Core.Entities.BulkRates;
+using Apha.FPS.Core.Pagination;
 
 namespace Apha.FPS.Core.Interfaces
 {
@@ -20,8 +21,15 @@ namespace Apha.FPS.Core.Interfaces
 
         Task<BulkRatesQueueEntry?> GetRequestAsync(Guid jobExecutionId, CancellationToken ct = default);
 
-        Task<IReadOnlyList<BulkRatesQueueEntry>> GetRequestsAsync(
-            string? jobName, int? fpsYear, string? status, CancellationToken ct = default);
+        /// <summary>
+        /// Server-side paged/sorted list, matching the app-wide DataGrid pagination convention.
+        /// <paramref name="sortBy"/> is validated against a column whitelist internally — never
+        /// interpolated directly into SQL.
+        /// </summary>
+        Task<PagedData<BulkRatesQueueEntry>> GetRequestsAsync(
+            string? jobName, int? fpsYear, string? status,
+            int page, int pageSize, string? sortBy, bool descending,
+            CancellationToken ct = default);
 
         /// <summary>
         /// Returns the most recent request for <paramref name="jobName"/> that is still in a
@@ -116,18 +124,81 @@ namespace Apha.FPS.Core.Interfaces
         // ── Reference checks (used during upload validation) ─────────────────────
         Task<bool> FpsYearExistsAsync(int fpsYear, CancellationToken ct = default);
 
-        /// <summary>Bulk check: returns the subset of testCodes that already exist for the given year.</summary>
-        Task<IReadOnlySet<string>> GetExistingTestCodesAsync(
-            IEnumerable<string> testCodes, int fpsYear, CancellationToken ct = default);
+        /// <summary>
+        /// Bulk check for DR-VAL-01's ValidationContext.ProjectLookup: returns the subset of
+        /// fps.tlkpproject.parentproject codes that exist for the given year.
+        /// </summary>
+        Task<IReadOnlySet<string>> GetExistingProjectCodesAsync(
+            IEnumerable<string> parentProjectCodes, int fpsYear, CancellationToken ct = default);
 
-        /// <summary>Bulk check: returns the subset of (testCode, buyer) pairs that already exist for the given year.</summary>
-        Task<IReadOnlySet<(string TestCode, string Buyer)>> GetExistingAgrupKeysAsync(
-            IEnumerable<(string TestCode, string Buyer)> keys, int fpsYear, CancellationToken ct = default);
+        /// <summary>
+        /// Bulk check for DR-VAL-01's ValidationContext.CapabilityLookup (DR-VAL-02): returns
+        /// the subset of (testCode, workGroup) pairs that exist in fps.tlkptestcapability for
+        /// the given year.
+        /// </summary>
+        Task<IReadOnlySet<(string TestCode, string WorkGroup)>> GetExistingCapabilityPairsAsync(
+            IEnumerable<(string TestCode, string WorkGroup)> pairs, int fpsYear, CancellationToken ct = default);
+
+        // ── Download snapshot (DR-UI-01, CR057/CR060) ────────────────────────────
+
+        /// <summary>Next monotonic download_version for this request (1 if none exist yet).</summary>
+        Task<int> GetNextDownloadVersionAsync(Guid jobQueueId, CancellationToken ct = default);
+
+        /// <summary>
+        /// DR-UI-01 steps 1-2: creates the download_version header as 'Generating' and persists
+        /// the immutable snapshot rows (keys, source rates, and the descriptive fields the
+        /// workbook needs to render — CR060) in one transaction.
+        /// </summary>
+        Task CreateDownloadSnapshotAsync(
+            Guid jobQueueId, int downloadVersion,
+            IReadOnlyList<FecStagingRow> fecRows, IReadOnlyList<AgrupStagingRow> agrupRows,
+            CancellationToken ct = default);
+
+        /// <summary>
+        /// DR-UI-01 step 4: marks the header 'Ready' and sets job_queue.active_download_version,
+        /// in one transaction — only called after the workbook has been generated successfully.
+        /// </summary>
+        Task MarkDownloadReadyAsync(Guid jobQueueId, int downloadVersion, CancellationToken ct = default);
+
+        /// <summary>
+        /// Best-effort: marks the header 'Failed' if workbook generation throws after the
+        /// snapshot already committed. active_download_version is deliberately left untouched
+        /// (plan §3, DR-UI-01) so the previous, still-valid version remains the one an upload is
+        /// checked against.
+        /// </summary>
+        Task MarkDownloadFailedAsync(Guid jobQueueId, int downloadVersion, CancellationToken ct = default);
+
+        /// <summary>
+        /// DR-UI-01 step 3: reads back the just-persisted snapshot rows for a download version —
+        /// never a live requery of fps.testorproduct (plan §3).
+        /// </summary>
+        Task<IReadOnlyList<FecStagingRow>> GetFecSnapshotRowsAsync(
+            Guid jobQueueId, int downloadVersion, CancellationToken ct = default);
+
+        /// <summary>As GetFecSnapshotRowsAsync, for AGRUP — never a live requery of fps.tlkptestreqmt.</summary>
+        Task<IReadOnlyList<AgrupStagingRow>> GetAgrupSnapshotRowsAsync(
+            Guid jobQueueId, int downloadVersion, CancellationToken ct = default);
 
         // ── Export (live table reads for Excel download) ──────────────────────────
         Task<IReadOnlyList<FecStagingRow>> GetFecRowsForExportAsync(int fpsYear, CancellationToken ct = default);
         Task<IReadOnlyList<AgrupStagingRow>> GetAgrupRowsForExportAsync(int fpsYear, CancellationToken ct = default);
         Task<IReadOnlyList<StaffStagingRow>> GetStaffRowsForExportAsync(int fpsYear, CancellationToken ct = default);
         Task<IReadOnlyList<AnimalStagingRow>> GetAnimalRowsForExportAsync(int fpsYear, CancellationToken ct = default);
+
+        // ── DR-API-07: freeze reviewed classification onto staging (CR056) ────────
+
+        /// <summary>
+        /// Writes the DR-VAL-01 classification computed at release time onto the matching
+        /// FEC/AGRUP staging rows' calculated_action/effective_new_rate/source_current_rate/
+        /// validation_version columns (CR056), keyed by business key (TestCode for FEC,
+        /// TestCode+Buyer for AGRUP) — never by source row number, which is not stable across
+        /// a DB read-back. Called once, at release (DR-API-07), so DR-WK-04's worker
+        /// revalidation has a frozen baseline to detect drift against (plan §5.2).
+        /// </summary>
+        Task FreezeStagingCalculatedActionsAsync(
+            Guid jobQueueId, int validationVersion,
+            IReadOnlyList<BulkRatesFreezeEntry> fecFreezes,
+            IReadOnlyList<BulkRatesFreezeEntry> agrupFreezes,
+            CancellationToken ct = default);
     }
 }
