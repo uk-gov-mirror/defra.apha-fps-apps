@@ -128,7 +128,7 @@ namespace Apha.FPS.Application.Services
             // Parse the Excel file
             var parseResult = _parser.Parse(fileBytes, filename, entry.JobName, entry.JobQueueId);
 
-            // DR-VAL-03: the annual FEC upload must carry the same download version as this
+            // The annual FEC upload must carry the same download version as this
             // request's currently active download (plan §2.1) — rejects a superseded or
             // hand-edited workbook before it ever reaches staging. Staff/Animal downloads don't
             // write this metadata and are exempt.
@@ -149,7 +149,7 @@ namespace Apha.FPS.Application.Services
             // Compute SHA-256 checksum
             var checksum = ComputeSha256(fileBytes);
 
-            // Determine upload version — computed before validation so DR-VAL-01's
+            // Determine upload version — computed before validation so the
             // ValidationContext.UploadVersion reflects the version this upload is about to become.
             var newVersion = (entry.UploadVersion ?? 0) + 1;
 
@@ -244,18 +244,18 @@ namespace Apha.FPS.Application.Services
                 throw new BusinessValidationErrorException([
                     new("The uploaded file contains no data rows. Upload a file with at least one row before releasing.", "NO_ROWS")]);
 
-            // US-API-06: All blocking errors must be resolved
+            // All blocking errors must be resolved
             var errors = await _repository.GetValidationErrorsAsync(jobQueueId, ct);
             var blockingCount = errors.Count(e => string.Equals(e.Severity, "Error", StringComparison.OrdinalIgnoreCase));
             if (blockingCount > 0)
                 throw new BusinessValidationErrorException([
                     new($"Cannot release: {blockingCount} blocking validation error(s) must be corrected first.", "BLOCKING_ERRORS")]);
 
-            // DR-API-07: re-run DR-VAL-01 against the currently staged rows and *current*
+            // Re-run validation against the currently staged rows and *current*
             // live/reference data — not the errors recorded at upload time — because live data
             // (a project, a capability, another request's FEC change) can drift between upload
             // and release. Only once this comes back clean is the reviewed classification frozen
-            // onto staging (CR056) for the worker's revalidation (DR-WK-04) to compare against.
+            // onto staging (CR056) for the worker's revalidation to compare against.
             if (string.Equals(entry.JobName, BulkRatesJobNames.Fec, StringComparison.OrdinalIgnoreCase))
             {
                 var freeze = await _validator.BuildFreezeAsync(
@@ -297,7 +297,7 @@ namespace Apha.FPS.Application.Services
             return await BuildRequestDtoAsync(entry, ct);
         }
 
-        // ── US-API-07/09/10/12/13: Approve ──────────────────────────────────────
+        // ── Approve ──────────────────────────────────────────────────────────────
 
         public async Task<BulkRatesRequestDto> ApproveAsync(
             Guid jobExecutionId, string approvedBy, CancellationToken ct = default)
@@ -307,11 +307,11 @@ namespace Apha.FPS.Application.Services
 
             RequireStatus(entry, StatusReleasedForApproval, "approve");
 
-            // US-API-09: Maker-checker — approver must differ from initiator.
+            // Maker-checker — approver must differ from initiator.
             // TEMPORARILY DISABLED at the requester's request so a single admin can
             // self-approve during testing. Restore this check before release.
 
-            // US-API-12: Verify checksum is stored (immutability of frozen upload)
+            // Verify checksum is stored (immutability of frozen upload)
             if (entry.UploadChecksumSha256 == null)
                 throw new BusinessValidationErrorException([
                     new("Upload metadata is missing. The request cannot be approved.", "MISSING_CHECKSUM")]);
@@ -331,7 +331,7 @@ namespace Apha.FPS.Application.Services
             await _repository.WriteJobQueueLogAsync(
                 jobQueueId, $"Request approved. EventBridge trigger published.", approvedBy, ct);
 
-            // US-API-10: Publish EventBridge trigger
+            // Publish EventBridge trigger
             var payload = new BulkRatesEventPayload
             {
                 JobExecutionId = entry.JobExecutionId,
@@ -355,7 +355,7 @@ namespace Apha.FPS.Application.Services
             return await BuildRequestDtoAsync(entry, ct);
         }
 
-        // ── US-API-08/13: Reject ─────────────────────────────────────────────────
+        // ── Reject ───────────────────────────────────────────────────────────────
 
         public async Task<BulkRatesRequestDto> RejectAsync(
             Guid jobExecutionId, string rejectedBy, string reason, CancellationToken ct = default)
@@ -406,7 +406,7 @@ namespace Apha.FPS.Application.Services
             return await BuildRequestDtoAsync(entry, ct);
         }
 
-        // ── US-API-14/13: Cancel ─────────────────────────────────────────────────
+        // ── Cancel ───────────────────────────────────────────────────────────────
 
         public async Task<BulkRatesRequestDto> CancelAsync(
             Guid jobExecutionId, string cancelledBy, string? reason, CancellationToken ct = default)
@@ -465,7 +465,7 @@ namespace Apha.FPS.Application.Services
             return await BuildRequestDtoAsync(entry, ct);
         }
 
-        // ── US-API-11: Query ─────────────────────────────────────────────────────
+        // ── Query ────────────────────────────────────────────────────────────────
 
         public async Task<BulkRatesRequestDto?> GetRequestAsync(Guid jobExecutionId, CancellationToken ct = default)
         {
@@ -516,7 +516,7 @@ namespace Apha.FPS.Application.Services
             return _excelExportService.ExportToExcelMultiSheet(BuildFecAgrupSheets(fecRows, agrupRows));
         }
 
-        // ── DR-UI-01: request-scoped download, atomic with snapshot capture ────────
+        // ── Request-scoped download, atomic with snapshot capture ─────────────────
 
         public async Task<byte[]> DownloadFecTestDataAsync(Guid jobExecutionId, CancellationToken ct = default)
         {
@@ -550,7 +550,7 @@ namespace Apha.FPS.Application.Services
                 // Step 4: only on success, Ready + active_download_version — if anything above
                 // throws, the header is left Generating/marked Failed below and
                 // active_download_version stays untouched, so the previous still-valid version
-                // (if any) remains what an upload is checked against (plan §3, DR-UI-01).
+                // (if any) remains what an upload is checked against (plan §3).
                 await _repository.MarkDownloadReadyAsync(entry.JobQueueId, downloadVersion, ct);
 
                 _logger.LogInformation(
@@ -627,11 +627,11 @@ namespace Apha.FPS.Application.Services
 
             var stagedTestCodes = stagedFec.Select(r => r.TestCode).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            // DR-UI-03: the per-row action label comes from DR-VAL-01 — frozen at release time
-            // (DR-API-07) once available, or computed live via the same shared validator
-            // (BulkRatesValidator.GetCalculatedActionsAsync) before release — never a bespoke
-            // UI-layer diff. "Deleted" below is a separate concept DR-VAL-01 has no row to
-            // classify: a live TestCode/Buyer this upload never staged at all.
+            // The per-row action label is frozen at release time once available, or computed
+            // live via the same shared validator (BulkRatesValidator.GetCalculatedActionsAsync)
+            // before release — never a bespoke UI-layer diff. "Deleted" below is a separate
+            // concept the validator has no row to classify: a live TestCode/Buyer this upload
+            // never staged at all.
             var needsLiveClassification =
                 stagedFec.Any(r => r.CalculatedAction is null) || stagedAgrup.Any(r => r.CalculatedAction is null);
             var liveClassifications = needsLiveClassification
@@ -740,7 +740,7 @@ namespace Apha.FPS.Application.Services
         private static (string TestCode, string Buyer) AgrupKey(string testCode, string buyer) =>
             (testCode.ToUpperInvariant(), buyer.ToUpperInvariant());
 
-        /// <summary>Maps a DR-VAL-01 <see cref="ValidationCalculatedAction"/> code to its Detail-page label (DR-UI-03).</summary>
+        /// <summary>Maps a <see cref="ValidationCalculatedAction"/> code to its Detail-page display label.</summary>
         private static string FormatCalculatedAction(string? calculatedAction) => calculatedAction switch
         {
             ValidationCalculatedAction.NoChange => "No Change",
@@ -981,7 +981,7 @@ namespace Apha.FPS.Application.Services
         }
 
         /// <summary>
-        /// DR-UI-01/plan §2.1: a new download is only allowed while the request is still
+        /// Plan §2.1: a new download is only allowed while the request is still
         /// editable — Initiated, or Rejected (uploading from Rejected already auto-transitions
         /// to Initiated, so there is no separate "editable Rejected" status to check).
         /// </summary>

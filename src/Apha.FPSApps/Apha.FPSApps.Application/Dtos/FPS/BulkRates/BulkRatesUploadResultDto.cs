@@ -34,7 +34,7 @@ namespace Apha.FPSApps.Application.Dtos.FPS.BulkRates
 
         /// <summary>
         /// True when this finding has no single uploaded row to attach to (e.g. a downloaded
-        /// key missing from the re-upload, DR-UI-04) — rendered as a request-level message,
+        /// key missing from the re-upload) — rendered as a request-level message,
         /// not an ordinary per-row error.
         /// </summary>
         public bool IsRequestLevel { get; set; }

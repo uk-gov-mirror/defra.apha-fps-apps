@@ -7,13 +7,12 @@ namespace Apha.FPS.Application.Services
 {
     /// <summary>
     /// Orchestrates Bulk Rates upload/release validation. FEC/AGRUP business rules live in
-    /// Apha.Common.BulkRates.Validation.IBulkRatesValidationService (DR-VAL-01, Phase D2) —
+    /// Apha.Common.BulkRates.Validation.IBulkRatesValidationService (Phase D2) —
     /// this class's job (Phase D3) is to build that service's ValidationContext from bulk
     /// repository reads plus the parsed/staged rows, call it once, and map the returned
     /// ValidationFinding list onto StagingValidationError/BulkRatesRowCounts. It must not
-    /// reimplement any FEC/AGRUP rule itself (plan §4: "every item... calls DR-VAL-01/DR-VAL-02
-    /// rather than implementing its own copy"). Staff/Animal validation predates DR-VAL-01 and
-    /// is outside its scope (its ValidationContext has no Staff/Animal shape), so those two
+    /// reimplement any FEC/AGRUP rule itself. Staff/Animal validation predates this service
+    /// and is outside its scope (its ValidationContext has no Staff/Animal shape), so those two
     /// stay exactly as before.
     /// </summary>
     public class BulkRatesValidator
@@ -69,10 +68,10 @@ namespace Apha.FPS.Application.Services
             };
         }
 
-        // ── DR-API-07: release-time re-validation + freeze ───────────────────────
+        // ── Release-time re-validation + freeze ──────────────────────────────────
 
         /// <summary>
-        /// Re-runs the same DR-VAL-01 rules against the currently staged rows (read back from
+        /// Re-runs validation against the currently staged rows (read back from
         /// the DB — release time has no fresh parseResult in hand) and the current live/
         /// reference data, and packages the per-row classification for
         /// BulkRatesRequestService.ReleaseForApprovalAsync to freeze onto staging (CR056).
@@ -119,10 +118,10 @@ namespace Apha.FPS.Application.Services
             };
         }
 
-        // ── DR-UI-03: calculated action for display, when nothing is frozen yet ─────
+        // ── Calculated action for display, when nothing is frozen yet ──────────────
 
         /// <summary>
-        /// Computes the same DR-VAL-01 classification <see cref="BuildFreezeAsync"/> would freeze,
+        /// Computes the same classification <see cref="BuildFreezeAsync"/> would freeze,
         /// for display purposes before a request has ever been released (calculated_action is
         /// still null on staging). Returns raw ROW_CLASSIFIED findings rather than a bespoke
         /// shape — callers (the Detail-page staging grid) read <see cref="ValidationFinding.BusinessKey"/>/
@@ -144,7 +143,7 @@ namespace Apha.FPS.Application.Services
                 .ToList();
         }
 
-        // ── FEC + AGRUP validation (DR-API-01/02/03/04/05/06/08/09, all via DR-VAL-01) ──
+        // ── FEC + AGRUP validation ────────────────────────────────────────────────
 
         private async Task<BulkRatesValidationResult> ValidateFecAsync(
             Guid jobQueueId, int fpsYear, int uploadVersion, int? downloadVersion,
@@ -156,10 +155,10 @@ namespace Apha.FPS.Application.Services
                 includeWorkerOnlyChecks: false, ct);
             var findings = _validationService.Validate(context);
 
-            // ROW_CLASSIFIED findings (Info severity) are DR-VAL-01's per-row calculated-action
+            // ROW_CLASSIFIED findings (Info severity) are the per-row calculated-action
             // output, not user-facing validation errors — they drive RowCounts below, not
-            // fps.staging_validation_error (DR-UI-03 reads them from the frozen staging columns
-            // instead, once DR-API-07 has run).
+            // fps.staging_validation_error (the Detail page reads them from the frozen staging
+            // columns instead, once release-time re-validation has run).
             var errors = findings
                 .Where(f => f.ValidationCode != "ROW_CLASSIFIED")
                 .Select(f => MapFinding(f, jobQueueId, uploadVersion))
@@ -171,7 +170,7 @@ namespace Apha.FPS.Application.Services
         }
 
         /// <summary>
-        /// Builds DR-VAL-01's ValidationContext from bulk repository reads (§3.2 — batched,
+        /// Builds the ValidationContext from bulk repository reads (§3.2 — batched,
         /// never per-row) plus the given FEC/AGRUP rows, which the two callers above source
         /// differently: a fresh parse at upload time, or a DB read-back at release time.
         /// </summary>
@@ -243,7 +242,7 @@ namespace Apha.FPS.Application.Services
                     Buyer = r.Buyer,
                     AgrupNew = r.AgrupNew,
                     // Existing rows: the workbook has no column yet to assert a routing value
-                    // (DR-UI-02/Phase D5 adds that). Until then, an absent staged value must echo
+                    // (Phase D5 adds that). Until then, an absent staged value must echo
                     // the live one rather than read as "blanked out" — otherwise every ordinary
                     // rate-only update on a row that already has routing data would falsely trip
                     // DR-API-05's immutability check below. New rows have no live value to echo,
@@ -293,7 +292,7 @@ namespace Apha.FPS.Application.Services
             };
         }
 
-        /// <summary>AGRUP findings carry "TestCode/Buyer" as a single BusinessKey string (DR-VAL-01); everything else is a plain TestCode.</summary>
+        /// <summary>AGRUP findings carry "TestCode/Buyer" as a single BusinessKey string; everything else is a plain TestCode.</summary>
         private static (string? TestCode, string? Buyer) SplitBusinessKey(string sheet, string? businessKey)
         {
             if (businessKey is null) return (null, null);

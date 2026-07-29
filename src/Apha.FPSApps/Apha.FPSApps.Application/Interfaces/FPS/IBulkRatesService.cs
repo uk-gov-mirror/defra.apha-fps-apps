@@ -38,7 +38,7 @@ namespace Apha.FPSApps.Application.Interfaces.FPS
         Task<ApiResponseDto<List<BulkRatesQueueEntryDto>>> GetRequestsAsync(
             QueryParameters<string> query, string? jobName = null, int? fpsYear = null, string? status = null);
 
-        /// <summary>DR-UI-01: Atomically snapshot live FEC/AGRUP data for a specific request and return the workbook.</summary>
+        /// <summary>Atomically snapshot live FEC/AGRUP data for a specific request and return the workbook.</summary>
         Task<byte[]> DownloadFecTestDataForRequestAsync(Guid jobExecutionId);
 
         /// <summary>Download current FEC test rates for the given FPS year as an Excel byte array.</summary>

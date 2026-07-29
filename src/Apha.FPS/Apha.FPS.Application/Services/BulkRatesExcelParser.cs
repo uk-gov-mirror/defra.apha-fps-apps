@@ -28,7 +28,7 @@ namespace Apha.FPS.Application.Services
         [
             "Test Code", "Buyer", "Agrup", "Agrup New",
             "Change", "No Required", "Date Created", "Active", "Comments",
-            // DR-UI-02: routing columns. Cell values are optional per row (existing rows are
+            // Routing columns. Cell values are optional per row (existing rows are
             // protected/reference-only; a new row supplies at least one) — only the column
             // headers themselves are required to exist.
             "Project Buyer Code", "Test Buyer Code", "Test Buyer Work Group"
@@ -77,7 +77,7 @@ namespace Apha.FPS.Application.Services
                 }
             };
 
-            // DR-VAL-03: attach protected metadata regardless of job type so the upload
+            // Attach protected metadata regardless of job type so the upload
             // flow can enforce the active-download-version contract without re-opening
             // the workbook a second time.
             return result with { WorkbookMetadata = metadata };

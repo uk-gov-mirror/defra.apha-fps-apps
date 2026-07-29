@@ -53,10 +53,10 @@ namespace Apha.FPS.Application.Interfaces
         Task<byte[]> ExportFecTestDataAsync(int fpsYear, CancellationToken ct = default);
 
         /// <summary>
-        /// DR-UI-01: request-scoped FEC/AGRUP workbook download. Atomically captures an immutable
+        /// Request-scoped FEC/AGRUP workbook download. Atomically captures an immutable
         /// snapshot of live data (fps.bulk_rates_downloaded_key) as the new active download version
         /// for this request before generating the workbook from that snapshot, and embeds the
-        /// download version in protected workbook metadata so DR-VAL-03 can reject a re-upload of a
+        /// download version in protected workbook metadata to reject a re-upload of a
         /// stale download. Only permitted while the request is Initiated or Rejected (plan §2.1).
         /// </summary>
         Task<byte[]> DownloadFecTestDataAsync(Guid jobExecutionId, CancellationToken ct = default);

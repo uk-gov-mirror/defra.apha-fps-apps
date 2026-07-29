@@ -2,10 +2,10 @@ namespace Apha.FPS.Application.Dtos.BulkRates
 {
     /// <summary>
     /// A single FEC staging row for the "FEC Data (Staging)" grid.
-    /// Status is DR-VAL-01's calculated action for this row — "No Change", "Insert",
-    /// "Update", or "Zero-Rate Withdrawal" (frozen at release time, DR-API-07; computed live
+    /// Status is the calculated action for this row — "No Change", "Insert",
+    /// "Update", or "Zero-Rate Withdrawal" (frozen at release time; computed live
     /// via the same shared validator before release) — or "Deleted" for a live TestCode
-    /// absent from this upload entirely, a separate concept DR-VAL-01 has no row to classify.
+    /// absent from this upload entirely, a separate concept the validator has no row to classify.
     /// </summary>
     public class BulkRatesStagingFecRowDto
     {

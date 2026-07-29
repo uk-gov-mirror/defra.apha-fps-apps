@@ -148,7 +148,7 @@
                                     </div>
                                 </div>
 
-                                @* ── Upload section (US-UI-02) — shown only to initiator on Initiated/Rejected ── *@
+                                @* ── Upload section — shown only to initiator on Initiated/Rejected ── *@
                                 @if (Model.CanUpload)
                                 {
                                     <section class="sup_border govuk-!-padding-3 govuk-!-margin-bottom-4" aria-labelledby="upload-section-title">
@@ -186,7 +186,7 @@
                                     </section>
                                 }
 
-                                @* ── Upload metadata + validation results (US-UI-03) ── *@
+                                @* ── Upload metadata + validation results ── *@
                                 @* GetValidationResultsAsync always returns a DTO, even with nothing uploaded —
                                    Filename is the only field that distinguishes "not yet uploaded" from
                                    "uploaded with zero errors", so gate the panel on it rather than null. *@
@@ -196,11 +196,10 @@
                                     var errors = uploadResult.ValidationErrors.Where(e => e.Severity == "Error").ToList();
                                     var warnings = uploadResult.ValidationErrors.Where(e => e.Severity == "Warning").ToList();
 
-                                    // FEC/AGRUP rows carry a TestCode (DR-VAL-01), so those findings are shown inline
-                                    // against the matching row in the staging grids below instead of in a list here.
-                                    // Everything else — file-parse errors, request-level findings with no single row
-                                    // to attach to (DR-UI-04), and all Staff/Animal findings (which predate TestCode
-                                    // matching) — has nowhere else to appear, so it's listed here.
+                                    // FEC/AGRUP rows with a TestCode are shown inline against the matching row
+                                    // in the staging grids below. Everything else — file-parse errors, request-level
+                                    // findings with no single row to attach to, and all Staff/Animal findings —
+                                    // has nowhere else to appear, so it's listed here.
                                     var isFec = entry.JobName == "BulkTestRatesUpdate";
                                     var unmatchedErrors = (isFec
                                         ? uploadResult.ValidationErrors.Where(e => string.IsNullOrEmpty(e.TestCode))
@@ -271,14 +270,14 @@
                                     </section>
                                 }
 
-                                @* ── Action buttons (US-UI-04, 05, 06, 08) — placed right after the validation
-                                   summary, before the staging grids below, so approving/rejecting/cancelling a
-                                   request never requires scrolling past a potentially long grid to reach them. ── *@
+                                @* ── Action buttons — placed right after the validation summary, before the
+                                   staging grids below, so approving/rejecting/cancelling a request never
+                                   requires scrolling past a potentially long grid to reach them. ── *@
                                 @if (Model.CanRelease || Model.CanApprove || Model.CanReject || Model.CanCancel)
                                 {
                                     <div class="govuk-button-group govuk-!-margin-bottom-4">
 
-                                        @* US-UI-04: Release — initiator + Initiated + no blocking errors *@
+                                        @* Release — initiator + Initiated + no blocking errors *@
                                         @if (Model.CanRelease)
                                         {
                                             <button type="button" class="govuk-button" data-module="govuk-button" id="btnRelease"
@@ -287,7 +286,7 @@
                                             </button>
                                         }
 
-                                        @* US-UI-05: Approve — approver + ReleasedForApproval *@
+                                        @* Approve — approver + ReleasedForApproval *@
                                         @if (Model.CanApprove)
                                         {
                                             <button type="button" class="govuk-button" data-module="govuk-button" id="btnApprove"
@@ -296,7 +295,7 @@
                                             </button>
                                         }
 
-                                        @* US-UI-06: Reject — approver + ReleasedForApproval *@
+                                        @* Reject — approver + ReleasedForApproval *@
                                         @if (Model.CanReject)
                                         {
                                             <button type="button" class="govuk-button govuk-button--warning" data-module="govuk-button" id="btnReject"
@@ -305,7 +304,7 @@
                                             </button>
                                         }
 
-                                        @* US-UI-08: Cancel — initiator + Initiated/Rejected *@
+                                        @* Cancel — initiator + Initiated/Rejected *@
                                         @if (Model.CanCancel)
                                         {
                                             <button type="button" class="govuk-button govuk-button--warning" data-module="govuk-button" id="btnCancel"
@@ -429,7 +428,7 @@
                                     </section>
                                 }
 
-                                @* ── Status history (US-UI-07) ── *@
+                                @* ── Status history ── *@
                                 @if (Model.Request.Log.Any())
                                 {
                                     <section class="sup_border govuk-!-padding-3 govuk-!-margin-bottom-4" aria-labelledby="history-section-title">
@@ -467,10 +466,7 @@
     </div>
 </main>
 
-@* US-UI-06: Rejection modal (rendered at body end, toggled by JS) *@
 @await Html.PartialAsync("_RejectModal")
-
-@* US-UI-08: Cancellation modal (rendered at body end, toggled by JS) *@
 @await Html.PartialAsync("_CancelModal")
 
 @section Scripts {

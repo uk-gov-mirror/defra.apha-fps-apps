@@ -47,8 +47,6 @@
         _                       => "Bulk Rates Upload and Approval Process"
     };
 
-    // Matches the original design mockups (fec_testmanagement.html, update_staff_rates.html,
-    // update_animal_rates.html) — each job type has its own button wording, not a generic label.
     string DownloadButtonLabel(string? j) => j switch
     {
         "BulkStaffRatesUpdate"  => "Download Staff Data (Excel)",

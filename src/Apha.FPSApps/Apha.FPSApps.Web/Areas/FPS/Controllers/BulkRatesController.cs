@@ -38,7 +38,6 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             _mapper = mapper;
         }
 
-        // US-UI-05: Queue list — all requests, filterable
         public Task<IActionResult> Index(string? jobName = JobNameFec, string? status = null)
             => BuildIndexViewAsync(jobName, status, isLocked: false);
 
@@ -82,9 +81,6 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             return View("Index", vm);
         }
 
-        // US-UI-05: Queue grid AJAX reload — paging, sorting, and job/status filtering. FPS year is
-        // not client-controllable — it always comes from the app-wide year context (header selector),
-        // matching every other year-scoped screen, not a separately overridable grid filter.
         [HttpPost]
         public async Task<IActionResult> LoadBulkRatesGrid(
             PaginationFilter<string> request, string? jobName, string? status)
@@ -138,7 +134,6 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             };
         }
 
-        // US-UI-01: Create request — GET form
         [HttpGet]
         public async Task<IActionResult> Create(string jobName = JobNameFec)
         {
@@ -158,9 +153,6 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             });
         }
 
-        // US-UI-01: Create request — POST (AJAX)
-        // FPS year is not user-selectable: the posted fpsYear is ignored and the header
-        // year-context value is used instead, enforced server-side regardless of client input.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(string jobName, int fpsYear)
@@ -174,7 +166,6 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             return Json(new { success = false, message = msg });
         }
 
-        // US-UI-07: Request detail page — GET
         [HttpGet]
         public async Task<IActionResult> Detail(Guid id)
         {
@@ -301,7 +292,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
 
         // Row-level findings are matched onto a staged row by business key (TestCode for FEC,
         // TestCode+Buyer for AGRUP) so they can render inline in the grid instead of a separate
-        // modal. Findings with no TestCode (file-parse errors, DR-UI-04 request-level findings)
+        // Findings with no TestCode (file-parse errors, request-level findings)
         // aren't in either lookup and are listed on the page instead — see Detail.cshtml.
         private static Dictionary<string, string> BuildFecValidationLookup(BulkRatesUploadResultDto? uploadResult)
         {
@@ -470,7 +461,6 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             }
         }
 
-        // US-UI-02/03/05: Upload (or re-upload) Excel file — POST (AJAX)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Upload(Guid id, IFormFile file)
@@ -491,7 +481,6 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             return Json(new { success = false, message = msg });
         }
 
-        // US-UI-04: Release for approval — POST (AJAX)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Release(Guid id)
@@ -505,7 +494,6 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             return Json(new { success = false, message = msg });
         }
 
-        // US-UI-05: Approve — POST (AJAX)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Approve(Guid id)
@@ -519,7 +507,6 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             return Json(new { success = false, message = msg });
         }
 
-        // US-UI-06: Reject with mandatory reason — POST (AJAX)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Reject(Guid id, string reason)
@@ -536,7 +523,6 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             return Json(new { success = false, message = msg });
         }
 
-        // US-UI-08: Cancel — POST (AJAX)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Cancel(Guid id, string? reason)
@@ -570,7 +556,6 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             }
         }
 
-        // DR-UI-01: Download FEC test data snapshot atomically tied to a specific request.
         [HttpGet]
         public async Task<IActionResult> DownloadTestDataForRequest(Guid id)
         {
