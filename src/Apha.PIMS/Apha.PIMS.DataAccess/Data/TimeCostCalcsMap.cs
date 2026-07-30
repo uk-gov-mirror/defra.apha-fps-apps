@@ -27,7 +27,7 @@ namespace Apha.PIMS.DataAccess.Data
                 .HasMaxLength(50)
                 .HasColumnName("staffid");
             entity.Property(e => e.Chargerate)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("chargerate");
             entity.Property(e => e.Class)
                 .HasMaxLength(255)
@@ -46,13 +46,13 @@ namespace Apha.PIMS.DataAccess.Data
                 .HasMaxLength(50)
                 .HasColumnName("name");
             entity.Property(e => e.Nonpay)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("nonpay");
             entity.Property(e => e.Overhead)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("overhead");
             entity.Property(e => e.Pay)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("pay");
             entity.Property(e => e.Time).HasColumnName("time");
         }

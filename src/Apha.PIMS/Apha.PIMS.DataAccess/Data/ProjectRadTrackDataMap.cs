@@ -47,7 +47,7 @@ namespace Apha.PIMS.DataAccess.Data
                 .HasDefaultValue((short)0)
                 .HasColumnName("inflation");
             entity.Property(e => e.Overallcustincome)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("overallcustincome");
             entity.Property(e => e.Pcforecastspend).HasColumnName("pcforecastspend");
             entity.Property(e => e.Revisedenddate)
@@ -66,6 +66,7 @@ namespace Apha.PIMS.DataAccess.Data
             entity.Property(e => e.Version)
                 .HasMaxLength(10)
                 .HasColumnName("version");
+            
         }
     }
 }

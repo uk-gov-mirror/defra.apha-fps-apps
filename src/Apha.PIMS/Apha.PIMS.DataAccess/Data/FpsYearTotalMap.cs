@@ -19,10 +19,10 @@ namespace Apha.PIMS.DataAccess.Data
                 .HasMaxLength(20)
                 .HasColumnName("parentproject");
             entity.Property(e => e.BudgetCvl)
-                .HasColumnType(ColumnTypeMoney)
+                .HasPrecision(19, 4)
                 .HasColumnName("budget_cvl");
             entity.Property(e => e.Custincome)
-                .HasColumnType(ColumnTypeMoney)
+                .HasPrecision(19, 4)
                 .HasColumnName("custincome");
             entity.Property(e => e.Customer)
                 .HasMaxLength(50)
@@ -31,7 +31,7 @@ namespace Apha.PIMS.DataAccess.Data
                 .HasMaxLength(50)
                 .HasColumnName("manager");
             entity.Property(e => e.Plancaseworkdebit)
-                .HasColumnType(ColumnTypeMoney)
+                .HasPrecision(19, 4)
                 .HasColumnName("plancaseworkdebit");
             entity.Property(e => e.Program)
                 .HasMaxLength(10)
@@ -40,24 +40,24 @@ namespace Apha.PIMS.DataAccess.Data
                 .HasMaxLength(50)
                 .HasColumnName("projectstatus");
             entity.Property(e => e.Pvsincome)
-                .HasColumnType(ColumnTypeMoney)
+                .HasPrecision(19, 4)
                 .HasColumnName("pvsincome");
             entity.Property(e => e.Requiredprofit)
-                .HasColumnType(ColumnTypeMoney)
+                .HasPrecision(19, 4)
                 .HasColumnName("requiredprofit");
             entity.Property(e => e.Totaladditionalcosts)
-                .HasColumnType(ColumnTypeMoney)
+                .HasPrecision(19, 4)
                 .HasColumnName("totaladditionalcosts");
             entity.Property(e => e.Totalanimalcosts).HasColumnName("totalanimalcosts");
             entity.Property(e => e.Totalcosts).HasColumnName("totalcosts");
             entity.Property(e => e.Totalincome)
-                .HasColumnType(ColumnTypeMoney)
+                .HasPrecision(19, 4)
                 .HasColumnName("totalincome");
             entity.Property(e => e.Totalpaycosts).HasColumnName("totalpaycosts");
             entity.Property(e => e.Totalstaffcosts).HasColumnName("totalstaffcosts");
             entity.Property(e => e.Totaltestcosts).HasColumnName("totaltestcosts");
             entity.Property(e => e.Transferincome)
-                .HasColumnType(ColumnTypeMoney)
+                .HasPrecision(19, 4)
                 .HasColumnName("transferincome");
         }
     }

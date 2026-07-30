@@ -12,9 +12,7 @@ namespace Apha.PIMS.DataAccess.Data
                 .HasNoKey()
                 .ToView("vmy_projectstaffplan", "mabarchive");
 
-            entity.Property(e => e.Cost)
-                .HasColumnType("money")
-                .HasColumnName("cost");
+            entity.Property(e => e.Cost).HasColumnName("cost");
             entity.Property(e => e.Name)
                 .HasMaxLength(50)
                 .HasColumnName("name");
@@ -25,9 +23,7 @@ namespace Apha.PIMS.DataAccess.Data
                 .HasMaxLength(20)
                 .HasColumnName("pcgrade");
             entity.Property(e => e.Plannedhours).HasColumnName("plannedhours");
-            entity.Property(e => e.Rate)
-                .HasColumnType("money")
-                .HasColumnName("rate");
+            entity.Property(e => e.Rate).HasColumnName("rate");
             entity.Property(e => e.Workgroupgrade)
                 .HasMaxLength(50)
                 .HasColumnName("workgroupgrade");

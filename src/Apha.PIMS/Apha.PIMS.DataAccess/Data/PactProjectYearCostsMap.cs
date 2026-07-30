@@ -11,53 +11,23 @@ namespace Apha.PIMS.DataAccess.Data
 
         public void Configure(EntityTypeBuilder<PactProjectYearCosts> entity)
         {
-            entity.HasNoKey();
-           
-            entity.ToView("vpactprojectyearcosts", "mabarchive");
+            entity
+                .HasNoKey()
+                .ToView("vpactprojectyearcosts", "mabarchive");
 
+            entity.Property(e => e.Animals).HasColumnName("animals");
+            entity.Property(e => e.Hours).HasColumnName("hours");
+            entity.Property(e => e.MonthNo).HasColumnName("monthno");
+            entity.Property(e => e.NonPayOH).HasColumnName("nonpayoh");
+            entity.Property(e => e.Pay).HasColumnName("pay");
             entity.Property(e => e.Project)
-                  .HasMaxLength(20)
-                  .HasColumnName("project");
-
-            entity.Property(e => e.Year)
-                  .HasColumnType(ColumnTypeDouble)
-                  .HasColumnName("year");
-
-            entity.Property(e => e.MonthNo)
-                  .HasColumnType(ColumnTypeDouble)
-                  .HasColumnName("monthno");
-
-            entity.Property(e => e.SubContracts)
-                  .HasColumnType(ColumnTypeMoney)
-                  .HasColumnName("subcontracts");
-
-            entity.Property(e => e.Animals)
-                  .HasColumnType(ColumnTypeMoney)
-                  .HasColumnName("animals");
-
-            entity.Property(e => e.Tests)
-                  .HasColumnType(ColumnTypeMoney)
-                  .HasColumnName("tests");
-
-            entity.Property(e => e.Pay)
-                  .HasColumnType(ColumnTypeMoney)
-                  .HasColumnName("pay");
-
-            entity.Property(e => e.NonPayOH)
-                  .HasColumnType(ColumnTypeMoney)
-                  .HasColumnName("nonpayoh");
-
-            entity.Property(e => e.TotalCosts)
-                  .HasColumnType(ColumnTypeMoney)
-                  .HasColumnName("totalcosts");
-
-            entity.Property(e => e.TimeCost)
-                  .HasColumnType(ColumnTypeMoney)
-                  .HasColumnName("timecost");
-
-            entity.Property(e => e.Hours)
-                  .HasColumnType(ColumnTypeDouble)
-                  .HasColumnName("hours");
+                .HasMaxLength(20)
+                .HasColumnName("project");
+            entity.Property(e => e.SubContracts).HasColumnName("subcontracts");
+            entity.Property(e => e.Tests).HasColumnName("tests");
+            entity.Property(e => e.TimeCost).HasColumnName("timecost");
+            entity.Property(e => e.TotalCosts).HasColumnName("totalcosts");
+            entity.Property(e => e.Year).HasColumnName("year");
         }
     }
 }

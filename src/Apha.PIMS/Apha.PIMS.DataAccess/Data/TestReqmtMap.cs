@@ -31,7 +31,7 @@ namespace Apha.PIMS.DataAccess.Data
                 .HasMaxLength(50)
                 .HasColumnName("testbuyercode");
             entity.Property(e => e.Unitprice)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("unitprice");
         }
     }

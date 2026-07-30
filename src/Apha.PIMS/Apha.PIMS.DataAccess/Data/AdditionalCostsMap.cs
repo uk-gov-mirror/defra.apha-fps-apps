@@ -23,7 +23,7 @@ namespace Apha.PIMS.DataAccess.Data
                 .HasMaxLength(5)
                 .HasColumnName("freq");
             entity.Property(e => e.Itemcost)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("itemcost");
             entity.Property(e => e.Jobcode)
                 .HasMaxLength(20)
