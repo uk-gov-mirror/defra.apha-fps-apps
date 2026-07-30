@@ -1,0 +1,250 @@
+@model Apha.FPSApps.Web.Areas.FPS.Models.WorkgroupMaintenanceItem
+
+@{
+    var isEditMode = !string.IsNullOrWhiteSpace(Model?.WorkGroupName);
+    var title = isEditMode ? "Edit WorkGroup" : "Add WorkGroup";
+    var formId = isEditMode ? "editWorkgroupForm" : "addWorkgroupForm";
+    var saveLabel = isEditMode ? "Update" : "Save";
+    var saveAction = isEditMode ? "updateWorkgroup()" : "saveWorkgroup()";
+}
+
+<div class="modal-header flex-space-center">
+    <h3 class="modal-title govuk-heading-s" style="margin: 0;">@title</h3>
+    <button type="button" class="btn-close btn-red" onclick="closeModal()" aria-label="Close">X</button>
+</div>
+
+<div class="modal-body cc-modal-body">
+
+    <div class="govuk-error-summary"
+         aria-labelledby="error-summary-title" tabindex="-1" style="display:none;">
+        <h2 class="govuk-error-summary__title" id="error-summary-title">
+            There is a problem
+        </h2>
+        <div class="govuk-error-summary__body">
+            <ul class="govuk-list govuk-error-summary__list">
+            </ul>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <form id="@formId">
+            @Html.AntiForgeryToken()
+
+            <input type="hidden" id="hdnOriginalWorkGroupName" value="@(Model?.WorkGroupName ?? string.Empty)" />
+            <input type="hidden" id="hdnIsEdit" value="@isEditMode.ToString().ToLower()" />
+
+            <div class="cc-modal-form-grid">
+
+                @* Row 1: WorkGroup | ResourceCentre *@
+                <div class="govuk-grid-row sup_padding_right_left_10">
+
+                    <div class="govuk-grid-column-one-half">
+                        <div class="govuk-form-group sup_margin_bottom_10" id="fg-modal-wg-name">
+                            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" for="WorkGroupName">
+                                WorkGroup:<span class="app-required sup_color_red" aria-hidden="true">*</span>
+                            </label>
+                            <input class="govuk-input govuk-!-font-size-16"
+                                   id="WorkGroupName"
+                                   name="WorkGroupName"
+                                   type="text"
+                                   required
+                                   maxlength="100"
+                                   aria-required="true"
+                                   aria-describedby="err-modal-wg-name"
+                                   @(isEditMode ? "readonly" : "")
+                                   value="@(Model?.WorkGroupName ?? string.Empty)" />
+                            <span data-valmsg-for="WorkGroupName" class="govuk-error-message field-validation-valid" id="err-modal-wg-name" style="display:none;"></span>
+                        </div>
+                    </div>
+
+                    <div class="govuk-grid-column-one-half">
+                        <div class="govuk-form-group sup_margin_bottom_10" id="fg-modal-wg-rc">
+                            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" for="ProfitCentre">
+                                ResourceCentre:<span class="app-required sup_color_red" aria-hidden="true">*</span>
+                            </label>
+                            <select class="govuk-select govuk-!-font-size-16 sup_select_option_width_100"
+                                    id="ProfitCentre"
+                                    name="ProfitCentre"
+                                    aria-required="true"
+                                    aria-describedby="err-modal-wg-rc">
+                                <option value="">-- Select --</option>
+                                @* Options populated by AJAX loadProfitCentreOptions() below *@
+                            </select>
+                            <span data-valmsg-for="ProfitCentre" class="govuk-error-message field-validation-valid" id="err-modal-wg-rc" style="display:none;"></span>
+                        </div>
+                    </div>
+
+                </div>
+
+                @* Row 2: CostCentre | Owner *@
+                <div class="govuk-grid-row sup_padding_right_left_10">
+
+                    <div class="govuk-grid-column-one-half">
+                        <div class="govuk-form-group sup_margin_bottom_10" id="fg-modal-wg-cc">
+                            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" for="CostCentre">
+                                CostCentre:
+                            </label>
+                            <input class="govuk-input govuk-!-font-size-16"
+                                   id="CostCentre"
+                                   name="CostCentre"
+                                   type="text"
+                                   inputmode="numeric"
+                                   pattern="[0-9]*"
+                                   maxlength="10"
+                                   aria-label="Cost centre"
+                                   aria-describedby="err-modal-wg-cc"
+                                   value="@(Model?.CostCentre.HasValue == true ? ((long)Model.CostCentre.Value).ToString() : string.Empty)" />
+                            <span data-valmsg-for="CostCentre" class="govuk-error-message field-validation-valid" id="err-modal-wg-cc" style="display:none;"></span>
+                        </div>
+                    </div>
+
+                    <div class="govuk-grid-column-one-half">
+                        <div class="govuk-form-group sup_margin_bottom_10" id="fg-modal-wg-owner">
+                            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" for="Owner">
+                                Owner:
+                            </label>
+                            <select class="govuk-select govuk-!-font-size-16 sup_select_option_width_100"
+                                    id="Owner"
+                                    name="Owner"
+                                    aria-describedby="err-modal-wg-owner">
+                                <option value="">-- Select --</option>
+                                @* Options populated by AJAX loadOwnerOptions() below *@
+                            </select>
+                            <span data-valmsg-for="Owner" class="govuk-error-message field-validation-valid" id="err-modal-wg-owner" style="display:none;"></span>
+                        </div>
+                    </div>
+
+                </div>
+
+                @* Row 3: Description | CentralOverhead *@
+                <div class="govuk-grid-row sup_padding_right_left_10">
+
+                    <div class="govuk-grid-column-one-half">
+                        <div class="govuk-form-group sup_margin_bottom_10" id="fg-modal-wg-desc">
+                            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" for="Description">
+                                Description:
+                            </label>
+                            <input class="govuk-input govuk-!-font-size-16"
+                                   id="Description"
+                                   name="Description"
+                                   type="text"
+                                   maxlength="45"
+                                   aria-describedby="err-modal-wg-desc"
+                                   value="@(Model?.Description ?? string.Empty)" />
+                            <span data-valmsg-for="Description" class="govuk-error-message field-validation-valid" id="err-modal-wg-desc" style="display:none;"></span>
+                        </div>
+                    </div>
+
+                    <div class="govuk-grid-column-one-half">
+                        <div class="govuk-form-group sup_margin_bottom_10" id="fg-modal-wg-overhead">
+                            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" for="CentralOverhead">
+                                CentralOverhead:
+                            </label>
+                            <div class="govuk-input__wrapper">
+                                <div class="govuk-input__prefix" aria-hidden="true">£</div>
+                                <input class="govuk-input govuk-!-font-size-16 wg-overhead-input"
+                                       id="CentralOverhead"
+                                       name="CentralOverhead"
+                                       type="text"
+                                       inputmode="decimal"
+                                       aria-describedby="err-modal-wg-overhead"
+                                       value="@(Model?.CentralOverhead.HasValue == true ? Model.CentralOverhead.Value.ToString("F2") : string.Empty)" />
+                            </div>
+                            <span data-valmsg-for="CentralOverhead" class="govuk-error-message field-validation-valid" id="err-modal-wg-overhead" style="display:none;"></span>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<div class="modal-footer cc-modal-footer sup_flex_space_center">
+    <button type="button"
+            class="govuk-button govuk-button--secondary sup_margin_0"
+            data-module="govuk-button"
+            onclick="closeModal()">
+        Cancel
+    </button>
+    <button type="button"
+            class="govuk-button sup_margin_0"
+            data-module="govuk-button"
+            onclick="@saveAction">
+        @saveLabel
+    </button>
+</div>
+
+@* NOTE: This partial is loaded via AJAX ($.get(...).html()) into the shared modal host.
+   Razor @section blocks are ONLY rendered when a layout consumes them; a PartialView has no
+   layout, so a @section Scripts block would be silently dropped and the dropdowns never populate.
+   The script is therefore emitted inline — jQuery .html() executes inline <script> tags. *@
+<script>
+        (function initWorkgroupModal() {
+            var currentProfitCentre = @Json.Serialize(Model?.ProfitCentre ?? string.Empty);
+            var currentOwner = @Json.Serialize(Model?.Owner ?? string.Empty);
+
+            // Load ProfitCentres (ResourceCentres) and Owners
+            loadProfitCentreOptions(currentProfitCentre);
+
+            loadOwnerOptions(currentOwner);
+
+            // CostCentre is a numeric-only text box (max 10 digits, no decimals)
+            var costCentreInput = document.getElementById('CostCentre');
+            if (costCentreInput) {
+                costCentreInput.addEventListener('input', function () {
+                    // Strip any non-digit characters and enforce max length of 10
+                    this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
+                });
+                costCentreInput.addEventListener('keypress', function (e) {
+                    // Block non-numeric key presses (including '.' to disallow decimals)
+                    if (e.key.length === 1 && (e.key < '0' || e.key > '9')) {
+                        e.preventDefault();
+                    }
+                });
+            }
+        })();
+
+        function loadProfitCentreOptions(selectedValue, callback) {
+            $.getJSON('/FPS/WorkgroupMaintenance/GetProfitCentres', function (response) {
+                var select = document.getElementById('ProfitCentre');
+                // Preserve blank default option
+                select.innerHTML = '<option value="">-- Select --</option>';
+
+                if (response.success && response.data) {
+                    response.data.forEach(function (item) {
+                        var opt = document.createElement('option');
+                        opt.value = item;
+                        opt.textContent = item;
+                        if (item === selectedValue) { opt.selected = true; }
+                        select.appendChild(opt);
+                    });
+                }
+
+                if (typeof callback === 'function') { callback(); }
+            }).fail(function () {
+                console.warn('Failed to load profit centres for WorkGroup modal');
+            });
+        }
+
+        function loadOwnerOptions(selectedValue) {
+            $.getJSON('/FPS/WorkgroupMaintenance/GetOwners', function (response) {
+                var select = document.getElementById('Owner');
+                select.innerHTML = '<option value="">-- Select --</option>';
+
+                if (response.success && response.data) {
+                    response.data.forEach(function (item) {
+                        var opt = document.createElement('option');
+                        opt.value = item.name;
+                        opt.textContent = item.name;
+                        if (item.name === selectedValue) { opt.selected = true; }
+                        select.appendChild(opt);
+                    });
+                }
+            }).fail(function () {
+                console.warn('Failed to load owners for WorkGroup modal');
+            });
+        }
+    </script>

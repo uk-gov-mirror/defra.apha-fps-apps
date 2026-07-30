@@ -6,6 +6,8 @@ let currentJobCodeId = '';
 let currentTestCode = '';
 let jobCodeGridId = '';
 let timeCodeGridId = '';
+let portfolioDropdown = null;
+let isInitializingPortfolioDropdown = false;
 
 // Initialize the module with grid IDs and selected portfolio
 function initPortfolioTimeCodes(selectedPortfolio, jobCodeGrid, timeCodeGrid) {
@@ -13,6 +15,75 @@ function initPortfolioTimeCodes(selectedPortfolio, jobCodeGrid, timeCodeGrid) {
     jobCodeGridId = jobCodeGrid;
     timeCodeGridId = timeCodeGrid;
 }
+
+// Initialize Portfolio Multi-Column Dropdown
+function initializePortfolioMultiDropdown() {
+    // Wait for DOM and ensure data is available
+    if (typeof portfolioOptionsListData === 'undefined') {
+        return;
+    }
+
+    isInitializingPortfolioDropdown = true;
+
+    // Parse the portfolio options to extract code and title
+    const portfolioData = portfolioOptionsListData.map(function(option) {
+        // The Text format is "CODE - Title", split it
+        const parts = option.Text.split(' - ');
+        return {
+            Value: option.Value,
+            Code: parts[0] || option.Value,
+            Title: parts[1] || ''
+        };
+    });
+
+    portfolioDropdown = new MultiColumnDropdownComponent({
+        dropdownId: 'portfolioDropdown',
+        containerSelector: '#portfolioMultiDropdown',
+        placeholder: 'Select Portfolio',
+        showSerialNumber: false,
+        searchPlaceholder: 'Search by code or title',
+        labelText: '',
+        columns: [
+            { field: 'Code', header: 'Portfolio Code', width: '120px' },
+            { field: 'Title', header: 'Project Title', width: '300px' }
+        ],
+        data: portfolioData,
+        displayField: 'Code',
+        valueField: 'Value',
+        clearButtonClearsSelection: true,
+        callbacks: {
+            onSelect: function (selectedItem, dropdown) {
+                // Only navigate if not initializing
+                if (!isInitializingPortfolioDropdown) {
+                    onPortfolioChange(selectedItem.Value);
+                }
+            },
+            onClear: function (dropdown) {
+                // Only navigate if not initializing
+                if (!isInitializingPortfolioDropdown) {
+                    onPortfolioChange('');
+                }
+            }
+        }
+    });
+
+    // Set initial value if a portfolio is already selected
+    if (selectedPortfolioValue && selectedPortfolioValue !== '') {
+        portfolioDropdown.setValue(selectedPortfolioValue);
+    }
+
+    // Allow navigation after a short delay to ensure setValue completes
+    setTimeout(function() {
+        isInitializingPortfolioDropdown = false;
+    }, 500);
+}
+
+// Initialize dropdown on DOM ready
+document.addEventListener('DOMContentLoaded', function () {
+    if (typeof portfolioOptionsListData !== 'undefined') {
+        initializePortfolioMultiDropdown();
+    }
+});
 
 function toggleSidebar() {
     document.querySelector('.sidenav').classList.toggle('collapsed');
@@ -388,4 +459,51 @@ function refreshTimeCodeGrid() {
                 showAlertMessage('Failed to refresh time code grid.', AlertType.ERROR);
             });
     }
+}
+
+// ========================================
+// Multi-Column Dropdown for Job Code Modal
+// ========================================
+
+function initializeJobCodeWorkGroupDropdown(config) {
+    setTimeout(function () {
+        var isClearing = false;
+        var workGroupDropdown = new MultiColumnDropdownComponent({
+            dropdownId: 'workGroupDropdown',
+            containerSelector: '#workGroupMultiDropdown',
+            placeholder: 'Select Work Group',
+            showSerialNumber: false,
+            searchPlaceholder: 'Search work group',
+            labelText: 'Work Group',
+            columns: [
+                { field: 'Value', header: 'Work Group', width: '150px' },
+                { field: 'Text', header: 'Description', width: '250px' }
+            ],
+            data: config.workGroupData || [],
+            displayField: 'Text',
+            valueField: 'Value',
+            clearButtonClearsSelection: true,
+            callbacks: {
+                onSelect: function (selectedItem, dropdown) {
+                    if (!isClearing) {
+                        $('#JobCodeWorkGroup').val(selectedItem.Value).trigger('change');
+                    }
+                },
+                onClear: function (dropdown) {
+                    if (!isClearing) {
+                        isClearing = true;
+                        $('#JobCodeWorkGroup').val('').trigger('change');
+                        setTimeout(function () {
+                            isClearing = false;
+                        }, 50);
+                    }
+                }
+            }
+        });
+
+        // Set initial value if provided
+        if (config.selectedWorkGroup && config.selectedWorkGroup !== '') {
+            workGroupDropdown.setValue(config.selectedWorkGroup);
+        }
+    }, 100);
 }

@@ -29,7 +29,7 @@ function onMonthPickChange(value) {
 function reloadSubContractsGrid() {
     var postData = {
         Page: 1,
-        PageSize: 50,
+        PageSize: 10,
         SortBy: 'Month',
         Descending: false,
         Filter: '{}',
@@ -170,4 +170,60 @@ function saveSubContract() {
 function filterSubContractsGrid(input) {
     var gm = getSubContractsGridManager();
     if (gm) gm.reloadGrid({ page: 1, search: input.value });
+}
+
+// ========================================
+// Multi-Column Dropdown for SubContract Modal
+// ========================================
+
+function initializeSubContractProjectDropdown(config) {
+    var isClearing = false;
+
+     setTimeout(function () {
+        var projectDropdown = new MultiColumnDropdownComponent({
+            dropdownId: 'projectDropdown',
+            containerSelector: '#projectMultiDropdown',
+            placeholder: 'Select Project',
+            showSerialNumber: false,
+            searchPlaceholder: 'Search by code or title',
+            labelText: '',
+            required: true,
+            columns: [
+                { field: 'Text', header: 'Project Code', width: '120px' },
+                { field: 'Value', header: 'Project Title', width: '300px' }
+            ],
+            data: config.projectsData || [],
+            displayField: 'Text',
+            valueField: 'Value',
+            clearButtonClearsSelection: true,
+            callbacks: {
+                onSelect: function (selectedItem, dropdown) {
+                    if (!isClearing) {
+                        $('#Project').val(selectedItem.Value).trigger('change');
+                        // Explicitly close dropdown if needed
+                        setTimeout(function() {
+                            if (dropdown && typeof dropdown.closeDropdown === 'function') {
+                                dropdown.closeDropdown();
+                            }
+                        }, 50);
+                    }
+                },
+                onClear: function (dropdown) {
+                    if (!isClearing) {
+                        isClearing = true;
+                        $('#Project').val('').trigger('change');
+                        $('#Project').val('');
+                        setTimeout(function () {
+                            isClearing = false;
+                        }, 50);
+                    }
+                }
+
+            }
+        });
+        const initialProject = $('#Project').val();
+        if (initialProject) {
+            projectDropdown.setValue(initialProject);
+        }
+     }, 100);
 }

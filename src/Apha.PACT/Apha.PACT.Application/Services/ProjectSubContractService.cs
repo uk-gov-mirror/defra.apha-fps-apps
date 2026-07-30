@@ -5,6 +5,7 @@ using Apha.PACT.Application.Validation;
 using Apha.PACT.Core.Entities;
 using Apha.PACT.Core.Interfaces;
 using Apha.PACT.Core.Pagination;
+using Apha.Common.Utilities.ExcelImport;
 using AutoMapper;
 
 namespace Apha.PACT.Application.Services
@@ -89,7 +90,7 @@ namespace Apha.PACT.Application.Services
         {
             // Push filter to the repository so the DB query is already filtered
             PaginationParameters<string> parameters = _mapper.Map<PaginationParameters<string>>(query);
-            
+
           var data = await _repository.GetMonthlySubContractsSummaryAsync(parameters);
 
             // Discover all months present in filtered data (used to build columns)
@@ -136,6 +137,207 @@ namespace Apha.PACT.Application.Services
                     TotalRecords = totalRecords
                 }
             };
+        }
+
+        public async Task<PaginatedResult<SubContractRmsImportRowDto>> GetFailedSubContractRmsAsync(QueryParameters<string> query, string importedBy)
+        {
+            var parameters = _mapper.Map<PaginationParameters<string>>(query);
+            var pagedData = await _repository.GetFailedSubContractRmsAsync(parameters, importedBy);
+            return _mapper.Map<PaginatedResult<SubContractRmsImportRowDto>>(pagedData);
+        }
+
+        public async Task<int> DeleteFailedSubContractRmsByUserAsync(string importedBy)
+        {
+            return await _repository.DeleteFailedSubContractRmsByUserAsync(importedBy);
+        }
+
+        public async Task<SubContractRmsImportResultDto> ImportSubContractRmsAsync(SubContractRmsImportDto request, string importedBy)
+        {
+            var validProjects = await _repository.GetValidProjectsAsync();
+            var fpsYear = _repository.GetCurrentFpsYear();
+            var now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            var fileName = request.FileName ?? "SubContractRMS-Import.xlsx";
+
+            var passedRows = new List<ProjectSubContract>(request.Rows.Count);
+            var failedRows = new List<ProjectSubcontractStaging>(request.Rows.Count);
+
+            foreach (var source in request.Rows)
+            {
+                var failures = ValidateImportRow(source, validProjects);
+
+                var parsedMonth = ExcelParseHelper.TryParseDouble(source.Month);
+                var parsedAmount = ExcelParseHelper.TryParseDecimal(source.Amount);
+                var parsedSupplierNumber = ExcelParseHelper.TryParseInt(source.SupplierNumber);
+                var parsedDailyRate = ExcelParseHelper.TryParseDecimal(source.DailyRate);
+                var parsedAnimalDays = ExcelParseHelper.TryParseInt(source.AnimalDays);
+
+                if (failures.Count == 0)
+                {
+                    passedRows.Add(new ProjectSubContract
+                    {
+                        Project = source.Project,
+                        TestJob = source.TestJob,
+                        Month = parsedMonth,
+                        Amount = parsedAmount,
+                        WorkGroup = source.WorkGroup,
+                        AcctCode = source.AcctCode,
+                        Supplier = source.Supplier,
+                        Description = source.Description,
+                        SupplierNumber = parsedSupplierNumber,
+                        DailyRate = parsedDailyRate,
+                        AnimalDays = parsedAnimalDays,
+                        FpsYear = fpsYear
+                    });
+                }
+                else
+                {
+                    failedRows.Add(new ProjectSubcontractStaging
+                    {
+                        Project = source.Project,
+                        TestJob = source.TestJob,
+                        Month = source.Month,
+                        Amount = source.Amount,
+                        WorkGroup = source.WorkGroup,
+                        AcctCode = source.AcctCode,
+                        Supplier = source.Supplier,
+                        Description = source.Description,
+                        SupplierNumber = source.SupplierNumber,
+                        DailyRate = source.DailyRate,
+                        AnimalDays = source.AnimalDays,
+                        Filename = fileName,
+                        ImportedBy = importedBy,
+                        ImportedDate = now,
+                        IsPassed = false,
+                        IsExported = false,
+                        ValidationFailure = string.Join("\n", failures)
+                    });
+                }
+            }
+
+            var result = await _repository.ImportSubContractRmsAsync(passedRows, failedRows);
+            var totalCount = result.PassedCount + result.FailedCount;
+
+            return new SubContractRmsImportResultDto
+            {
+                PassedCount = result.PassedCount,
+                FailedCount = result.FailedCount,                
+                Message = $"Import completed successfully. {result.PassedCount} out of {totalCount} records successfully validated and is now live."
+            };
+        }
+
+        private static List<string> ValidateImportRow(SubContractRmsImportRowDto row, HashSet<string> validProjects)
+        {
+            var failures = new List<string>();
+
+            ExcelValidationHelper.ValidateStringInSet(row.Project, validProjects, "Project", failures);
+            ExcelValidationHelper.ValidateRequiredDecimal(row.Amount, "Amount", failures);
+            ExcelValidationHelper.ValidateMonth(row.Month, failures);
+            ExcelValidationHelper.ValidateNonNegativeInteger(row.SupplierNumber, "Supplier Number", failures, required: false);
+            ExcelValidationHelper.ValidateDecimal(row.DailyRate, "Daily Rate", failures, required: false);
+            ExcelValidationHelper.ValidateNonNegativeInteger(row.AnimalDays, "Animal Days", failures, required: false);
+
+            return failures;
+        }
+
+        public async Task<SubContractRmsImportRowDto?> GetFailedSubContractRmsByIdAsync(int id, string importedBy)
+        {
+            var entity = await _repository.GetFailedSubContractRmsByIdAsync(id, importedBy);
+            return entity == null ? null : _mapper.Map<SubContractRmsImportRowDto>(entity);
+        }
+
+        public async Task<bool> SaveFailedSubContractRmsAsync(int id, SubContractRmsImportRowDto dto, string importedBy)
+        {
+            var validProjects = await _repository.GetValidProjectsAsync();
+            var fpsYear = _repository.GetCurrentFpsYear();
+
+            var failures = ValidateImportRow(dto, validProjects);
+
+            if (failures.Count > 0)
+            {
+                // Map display field names to model property names for inline validation
+                var fieldNameMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "Project", "Project" },
+                    { "Amount", "Amount" },
+                    { "Month", "Month" },
+                    { "Supplier Number", "SupplierNumber" },
+                    { "Daily Rate", "DailyRate" },
+                    { "Animal Days", "AnimalDays" }
+                };
+
+                // Convert validation failures to BusinessValidationError format
+                var validationErrors = failures.Select(failure =>
+                {
+                    // Extract field name from error message (format: "FieldName message")
+                    // Try to match multi-word field names first (longest match wins)
+                    var displayFieldName = string.Empty;
+                    var message = failure;
+
+                    // Sort by length descending to match longest field names first
+                    foreach (var fieldKey in fieldNameMap.Keys.OrderByDescending(k => k.Length))
+                    {
+                        if (failure.StartsWith(fieldKey + " ", StringComparison.OrdinalIgnoreCase))
+                        {
+                            displayFieldName = fieldKey;
+                            message = failure.Substring(fieldKey.Length + 1).Trim();
+                            break;
+                        }
+                    }
+
+                    // Check if this is a "does not exist" error - show in summary only
+                    if (message.Contains("does not exist", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // For summary-only errors, use the full message and empty code
+                        return new BusinessValidationError(failure, string.Empty);
+                    }
+
+                    // Map display name to model property name for inline field validation
+                    var modelFieldName = displayFieldName;
+                    if (!string.IsNullOrEmpty(displayFieldName) && fieldNameMap.TryGetValue(displayFieldName, out var mappedFieldName))
+                    {
+                        modelFieldName = mappedFieldName;
+                    }
+
+                    // BusinessValidationError(message, code) - code is the field name.
+                    var finalMessage = string.IsNullOrEmpty(displayFieldName) ? message : $"{displayFieldName} {message}";
+                    return new BusinessValidationError(finalMessage, modelFieldName);
+                }).ToList();
+
+                throw new BusinessValidationErrorException(validationErrors);
+            }
+
+            var parsedMonth = ExcelParseHelper.TryParseDouble(dto.Month);
+            var parsedAmount = ExcelParseHelper.TryParseDecimal(dto.Amount);
+            var parsedSupplierNumber = ExcelParseHelper.TryParseInt(dto.SupplierNumber);
+            var parsedDailyRate = ExcelParseHelper.TryParseDecimal(dto.DailyRate);
+            var parsedAnimalDays = ExcelParseHelper.TryParseInt(dto.AnimalDays);
+
+            // Record is valid - move to ProjectSubContract
+            var subContract = new ProjectSubContract
+            {
+                Project = dto.Project,
+                TestJob = dto.TestJob,
+                Month = parsedMonth,
+                Amount = parsedAmount,
+                WorkGroup = dto.WorkGroup,
+                AcctCode = dto.AcctCode,
+                Supplier = dto.Supplier,
+                Description = dto.Description,
+                SupplierNumber = parsedSupplierNumber,
+                DailyRate = parsedDailyRate,
+                AnimalDays = parsedAnimalDays,
+                FpsYear = fpsYear
+            };
+
+            await _repository.CreateAsync(subContract);
+            await _repository.DeleteFailedSubContractRmsByIdAsync(id, importedBy);
+
+            return true; // Successfully moved to SubContract
+        }
+
+        public async Task<bool> DeleteFailedSubContractRmsByIdAsync(int id, string importedBy)
+        {
+            return await _repository.DeleteFailedSubContractRmsByIdAsync(id, importedBy);
         }
 
         private static IEnumerable<MonthlySubContractsSummaryDto> SortPivotRows(

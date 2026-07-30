@@ -70,7 +70,7 @@ namespace Apha.FPSApps.Web.Middleware
         private (string errorType, string errorCode, int statusCode) ClassifyException(Exception ex)
         {
             var errorType = _configuration["ExceptionTypes:General"]
-                            ?? "FPS.GENERAL_EXCEPTION";
+                            ?? "FPSAPPS.EXCEPTION.WEB.GENERAL";
             string errorCode;
             int statusCode;
 

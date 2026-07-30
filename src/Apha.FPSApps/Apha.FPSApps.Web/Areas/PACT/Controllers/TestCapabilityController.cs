@@ -61,7 +61,7 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
                 TestReqmtGrid = testReqmtGrid,
                 WorkGroupOptions = workGroupsResponse.Success && workGroupsResponse.Data != null
                     ? workGroupsResponse.Data
-                        .Select(w => new SelectListItem(w.WorkGroupName, w.WorkGroupName))
+                        .Select(w => new SelectListItem(w.ProfitCentre, w.WorkGroupName))
                         .ToList()
                     : new List<SelectListItem>(),
                 TestorProductOptions = testsResponse.Success && testsResponse.Data != null
@@ -69,10 +69,11 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
                         .Select(t => new SelectListItem(
                             string.IsNullOrWhiteSpace(t.ItemDescription)
                                 ? t.ItemCode
-                                : $"{t.ItemCode}",
+                                : $"{t.ItemDescription}",
                             t.ItemCode))
                         .ToList()
-                    : new List<SelectListItem>()
+                    : new List<SelectListItem>(),
+                SelectedWorkGroup= Request.Query["workgroup"].ToString()
             };
 
             return View(viewModel);

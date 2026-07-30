@@ -45,5 +45,8 @@ namespace Apha.FPS.Core.Interfaces
 
         // Program FK validation (derived from tI_tlkpProject / tU_tlkpProject triggers)
         Task<bool> CheckProgramExistsAsync(string programNo);
+
+        // Resource Replan — staff data for a workgroup, paged/filtered/sorted
+        Task<PagedData<ProjectStaffReplanView>> GetProjectStaffReplanAsync(PaginationParameters<string> query, string workgroup);
     }
 }

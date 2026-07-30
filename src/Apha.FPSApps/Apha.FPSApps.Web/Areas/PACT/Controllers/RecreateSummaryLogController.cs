@@ -15,14 +15,14 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
     public class RecreateSummaryLogController : Controller
     {
         private readonly IMapper _mapper;
-        private readonly IRecreateAndReleaseSummaryService _logService;
+        private readonly IRecreateSummaryService _logService;
 
         /// <summary>
         /// Initialises a new instance of <see cref="RecreateSummaryLogController"/>.
         /// </summary>
         /// <param name="mapper">AutoMapper instance used to map pagination filters and row collections to their corresponding view-model types.</param>
         /// <param name="logService">Application service that retrieves recreate summaries log data from the PACT API.</param>
-        public RecreateSummaryLogController(IMapper mapper, IRecreateAndReleaseSummaryService logService)
+        public RecreateSummaryLogController(IMapper mapper, IRecreateSummaryService logService)
         {
             _mapper = mapper;
             _logService = logService;

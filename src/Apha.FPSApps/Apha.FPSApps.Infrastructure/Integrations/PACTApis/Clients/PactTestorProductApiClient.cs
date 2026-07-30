@@ -87,7 +87,7 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PACTApis.Clients
         public async Task<ApiResponseDto<bool>> DeleteTestOrProductAsync(string itemCode)
         {
 
-            var response = await _http.DeleteAsync<bool>(string.Format(PactApiEndpoints.DeleteTestOrProduct, Uri.EscapeDataString(itemCode)));
+            var response = await _http.DeleteAsync<bool?>(string.Format(PactApiEndpoints.DeleteTestOrProduct, Uri.EscapeDataString(itemCode)));
             if (response.Success)
                 return _mapper.Map<ApiResponseDto<bool>>(response);
 

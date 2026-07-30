@@ -2,7 +2,6 @@
 @model Apha.FPSApps.Web.Areas.FPS.Models.GradeMaintenanceViewModel
 
 @{
-    // TRANSFORMENGINE: Title from HTML prototype <title>2025-2026 : Grade Maintenance</title>
     ViewData["Title"] = "2025-2026 : Grade Maintenance";
 }
 
@@ -12,7 +11,7 @@
         <!-- Title — matches frmMaintGrade.html govuk-heading-s -->
         <div class="govuk-grid-row">
             <div class="govuk-grid-column-full">
-                <h1 class="govuk-heading-s sup_border-bottom govuk-!-margin-top-2 govuk-!-padding-bottom-2 govuk-!-padding-left-4">
+                <h1 class="govuk-heading-s sup_border-bottom govuk-!-margin-top-2 govuk-!-padding-bottom-2">
                     Grade Maintenance
                 </h1>
             </div>
@@ -26,7 +25,6 @@
                             <div class="container-fluid" style="padding-left:0px;">
                                 <div style="display: flex; flex-direction: row; align-items: flex-start;">
 
-                                    <!-- TRANSFORMENGINE: _MaintenanceSideNav partial — active token "GradeMaintenance" -->
                                     @await Html.PartialAsync("_MaintenanceSideNav", "GradeMaintenance")
 
                                     <div style="display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; margin: 0 0px 5px 8px;">
@@ -34,10 +32,6 @@
                                         <!-- DataGrid section -->
                                         <div class="govuk-grid-row">
                                             <div class="govuk-grid-column-full mt-2">
-                                                <!-- TRANSFORMENGINE: grid container ID = gridContainer_gradeGrid
-                                                     matching JS: containerSelector:'#gridContainer_gradeList'
-                                                     NOTE: JS uses 'gradeList' for container but 'gradeGrid' for gridId.
-                                                     The _DataGrid partial and window['gridManager_gradeGrid'] use the GridId value. -->
                                                 <div id="@($"gridContainer_{Model.GradeGrid.GridId}")">
                                                     @await Html.PartialAsync("_DataGrid", Model.GradeGrid)
                                                 </div>
@@ -60,13 +54,11 @@
     <script src="~/js/ajax-form-validation.js"></script>
     <script>
 
-        // TRANSFORMENGINE: reloadGradeGrid — uses gm.reloadGrid({ page: 1 }) (NOT gm.reload())
         function reloadGradeGrid() {
             var gm = window['gridManager_gradeGrid'];
             if (gm) { gm.reloadGrid({ page: 1 }); }
         }
 
-        // TRANSFORMENGINE: addGrade — AllowAdd:true from JS showAddButton:true
         // Loads _AddEditGrade partial (empty GradeItem) into shared modal host
         function addGrade() {
             $.get('/FPS/GradeMaintenance/Create', function (html) {
@@ -77,7 +69,6 @@
             });
         }
 
-        // TRANSFORMENGINE: editGrade — AllowEdit:true from JS openTblGradeEditModal button
         // $(btn).data('id') reads data-id attribute emitted by _DataGrid EditFunction
         function editGrade(btn) {
             var id = $(btn).data('id');
@@ -89,7 +80,6 @@
             });
         }
 
-        // TRANSFORMENGINE: deleteGrade — AllowDelete:true from JS handleTblGradeDelete button
         // JS prototype used window.confirm(); MVC equivalent uses showGovukConfirm (govuk-alert pattern)
         function deleteGrade(btn) {
             var id = $(btn).data('id');
@@ -114,7 +104,6 @@
             });
         }
 
-        // TRANSFORMENGINE: saveGrade — called from _AddEditGrade.cshtml when isEditMode=false
         // Collects GradeCode, Description, AvSalary from modal inputs and POST to Create
         function saveGrade() {
             clearValidationErrors('#modaPopupBody');
@@ -155,7 +144,6 @@
             });
         }
 
-        // TRANSFORMENGINE: updateGrade — called from _AddEditGrade.cshtml when isEditMode=true
         // GradeCode is read-only on edit; originalCode taken from hdnOriginalCode hidden field
         function updateGrade() {
             clearValidationErrors('#modaPopupBody');
@@ -203,7 +191,6 @@
             $('#modalPopup').removeClass('show');
         }
 
-        // TRANSFORMENGINE: parseDecimalOrNull — shared decimal parsing helper
         // Used for AvSalary (optional numeric field; null when empty/invalid)
         function parseDecimalOrNull(val) {
             if (val === null || val === undefined || val.toString().trim() === '') return null;

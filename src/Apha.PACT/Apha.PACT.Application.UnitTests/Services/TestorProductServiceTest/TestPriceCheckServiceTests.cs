@@ -13,14 +13,16 @@ namespace Apha.PACT.Application.UnitTests.Services.TestorProductServiceTest
     public class TestPriceCheckServiceTests
     {
         private readonly ITestorProductRepository _repo;
+        private readonly ITestCapabilityRepository _testCapabilityRepo;
         private readonly IMapper _mapper;
         private readonly TestorProductService _sut;
 
         public TestPriceCheckServiceTests()
         {
             _repo = Substitute.For<ITestorProductRepository>();
+            _testCapabilityRepo = Substitute.For<ITestCapabilityRepository>();
             _mapper = Substitute.For<IMapper>();
-            _sut = new TestorProductService(_repo, _mapper);
+            _sut = new TestorProductService(_repo, _testCapabilityRepo, _mapper);
         }
 
         #region GetTestPriceCheckPagedAsync

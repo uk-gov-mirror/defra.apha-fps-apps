@@ -10,7 +10,7 @@ namespace Apha.FPSApps.Web.Areas.PACT.Models
         [GridColumn(Order = 1, Width = 150, Type = GridColumnType.Text, IsFilterable = true)]
         public string TestCode { get; set; } = null!;
 
-        [Display(Name = "Work Group")]
+        [Display(Name = "WorkGroup")]
         [Required(ErrorMessage = "Work Group is required.")]
         [GridColumn(Order = 2, Width = 150, Type = GridColumnType.Text, IsFilterable = true)]
         public string WorkGroup { get; set; } = null!;

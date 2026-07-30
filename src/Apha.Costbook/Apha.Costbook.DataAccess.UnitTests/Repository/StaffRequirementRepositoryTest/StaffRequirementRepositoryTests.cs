@@ -26,6 +26,7 @@ public class StaffRequirementRepositoryTests
         CreateRepository(
             IEnumerable<StaffRequirement>? staffRequirements = null,
             IEnumerable<WorkGroupGrade>? workGroupGrades = null,
+            IEnumerable<ProfitCentreGrade>? profitCentreGrades = null,
             IEnumerable<Project>? projects = null,
             IEnumerable<EuGradeConversion>? euGradeConversions = null)
     {
@@ -41,6 +42,9 @@ public class StaffRequirementRepositoryTests
         var wggMockSet = RepositoryTestHelper.CreateMockDbSet(workGroupGrades ?? []);
         mockContext.Setup(x => x.WorkGroupGrades).Returns(wggMockSet.Object);
 
+        var pcgMockSet = RepositoryTestHelper.CreateMockDbSet(profitCentreGrades ?? []);
+        mockContext.Setup(x => x.ProfitCentreGrades).Returns(pcgMockSet.Object);
+
         var projectsMockSet = RepositoryTestHelper.CreateMockDbSet(projects ?? []);
         mockContext.Setup(x => x.Projects).Returns(projectsMockSet.Object);
 
@@ -50,6 +54,8 @@ public class StaffRequirementRepositoryTests
         RepositoryTestHelper.SetupSaveChanges(mockContext);
 
         var mockSettingsRepo = new Mock<ISettingsRepository>();
+        mockSettingsRepo.Setup(x => x.GetSettingValueByIdAsync("CurrentYear")).ReturnsAsync(DefaultFpsYear.ToString());
+
         var mockProjectRepo = new Mock<IProjectRepository>();
         mockProjectRepo.Setup(x => x.GetInflationFactorAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
             .ReturnsAsync(1.0);
@@ -64,7 +70,16 @@ public class StaffRequirementRepositoryTests
     public async Task AddStaffRequirementAsync_AddsEntity_AndCallsSaveChanges()
     {
         // Arrange
-        var (repo, staffReqDbSet, mockContext) = CreateRepository();
+        var wggs = new List<WorkGroupGrade>
+        {
+            new() { WgGrade = "HEO", FpsYear = DefaultFpsYear, ProfitCentreGrade = "PCG1", GradeCode = "GC01", WorkGroup = "Science" }
+        };
+        var pcgs = new List<ProfitCentreGrade>
+        {
+            new() { PcGrade = "PCG1", FpsYear = DefaultFpsYear, PayRate = 100m, Npr = 50m, Ohr = 25m, ChargeRate = 10m, DefraChargeRate = 10m, DivisionGrade = "D1", GradeCode = "GC01", ProfitCentre = "PC1" }
+        };
+
+        var (repo, staffReqDbSet, mockContext) = CreateRepository(workGroupGrades: wggs, profitCentreGrades: pcgs);
         var newReq = new StaffRequirement
         {
             SrIdentity = 1,
@@ -87,6 +102,9 @@ public class StaffRequirementRepositoryTests
         Assert.Equal("John Smith", result.Name);
         Assert.Equal(100.0, result.Nohours);
         Assert.Equal(45.50, result.Chargerate);
+        Assert.Equal(100.0, result.Payrate);
+        Assert.Equal(50.0, result.Npr);
+        Assert.Equal(25.0, result.Ohr);
         staffReqDbSet.Verify(x => x.Add(It.IsAny<StaffRequirement>()), Times.Once);
         RepositoryTestHelper.VerifySaveChanges(mockContext);
     }
@@ -146,7 +164,15 @@ public class StaffRequirementRepositoryTests
             Nohours = 100.0,
             Chargerate = 45.50
         };
-        var (repo, staffReqDbSet, mockContext) = CreateRepository(staffRequirements: [existing]);
+        var wggs = new List<WorkGroupGrade>
+        {
+            new() { WgGrade = "HEO", FpsYear = DefaultFpsYear, ProfitCentreGrade = "PCG1", GradeCode = "GC01", WorkGroup = "Science" }
+        };
+        var pcgs = new List<ProfitCentreGrade>
+        {
+            new() { PcGrade = "PCG1", FpsYear = DefaultFpsYear, PayRate = 200m, Npr = 70m, Ohr = 30m, ChargeRate = 10m, DefraChargeRate = 10m, DivisionGrade = "D1", GradeCode = "GC01", ProfitCentre = "PC1" }
+        };
+        var (repo, staffReqDbSet, mockContext) = CreateRepository(staffRequirements: [existing], workGroupGrades: wggs, profitCentreGrades: pcgs);
 
         existing.Nohours = 200.0;
 
@@ -156,6 +182,9 @@ public class StaffRequirementRepositoryTests
         // Assert
         Assert.NotNull(result);
         Assert.Equal(200.0, result.Nohours);
+        Assert.Equal(200.0, result.Payrate);
+        Assert.Equal(70.0, result.Npr);
+        Assert.Equal(30.0, result.Ohr);
         staffReqDbSet.Verify(x => x.Update(It.IsAny<StaffRequirement>()), Times.Once);
         RepositoryTestHelper.VerifySaveChanges(mockContext);
     }

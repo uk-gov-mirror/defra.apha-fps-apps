@@ -14,5 +14,7 @@ namespace Apha.PACT.Core.Interfaces
             double? month,
             string? userId,
             string? insertDelete);
+
+        Task<bool> ExistsByTestCodeAndWorkGroupAsync(string testCode, string workGroup);
     }
 }

@@ -1,5 +1,6 @@
 using Apha.FPSApps.Web.Models.Components.DataGrid;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.ComponentModel.DataAnnotations;
 
 namespace Apha.FPSApps.Web.Areas.FPS.Models
 {
@@ -31,9 +32,11 @@ namespace Apha.FPSApps.Web.Areas.FPS.Models
         [GridColumn(Width = 120, Type = GridColumnType.GbpValue, IsFilterable = false)]
         public decimal? PayRate { get; set; }
 
+        [Display(Name = "NPR")]
         [GridColumn(Width = 100, Type = GridColumnType.GbpValue, IsFilterable = false)]
         public decimal? Npr { get; set; }
 
+        [Display(Name = "OHR")]
         [GridColumn(Width = 100, Type = GridColumnType.GbpValue, IsFilterable = false)]
         public decimal? Ohr { get; set; }
     }

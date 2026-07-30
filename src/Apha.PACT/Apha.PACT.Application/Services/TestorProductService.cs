@@ -11,11 +11,13 @@ namespace Apha.PACT.Application.Services
     public class TestorProductService : ITestorProductService
     {
         private readonly ITestorProductRepository _repository;
+        private readonly ITestCapabilityRepository _testCapabilityRepository;
         private readonly IMapper _mapper;
 
-        public TestorProductService(ITestorProductRepository repository, IMapper mapper)
+        public TestorProductService(ITestorProductRepository repository, ITestCapabilityRepository testCapabilityRepository, IMapper mapper)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _testCapabilityRepository = testCapabilityRepository ?? throw new ArgumentNullException(nameof(testCapabilityRepository));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
@@ -130,7 +132,11 @@ namespace Apha.PACT.Application.Services
             {
                 throw new ArgumentException("Item Code cannot be null or empty.", nameof(itemCode));
             }
-
+            var existingTestCapEntity = await _testCapabilityRepository.HasRelatedTestCapabilitiesValidRecordsAsync(itemCode);
+            if(existingTestCapEntity != null)
+            {
+                throw new InvalidOperationException($"Cannot delete Test/Product with Item Code '{itemCode}' because it is referenced by a Test Capability.");
+            }
             // Verify entity exists before deletion
             var existingEntity = await _repository.GetTestOrProductByIdAsync(itemCode);
             if (existingEntity == null)

@@ -1,0 +1,212 @@
+@using Apha.FPSApps.Web.Models.Components.DataGrid
+@model Apha.FPSApps.Web.Areas.FPS.Models.CostCentreMaintenanceViewModel
+
+@{
+    ViewData["Title"] = "2025-2026 : Cost Centre Maintenance";
+}
+
+<main id="main-content">
+    <div class="container-fluid">
+
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <h1 class="govuk-heading-s sup_border-bottom govuk-!-margin-top-2 govuk-!-padding-bottom-2 govuk-!-padding-left-4">
+                    Cost Centre / Profit Centre
+                </h1>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-12">
+                <main class="main-content" style="padding:0;">
+                    <div class="container-fluid" style="padding: 0;">
+                        <div class="row">
+                            <div class="container-fluid" style="padding-left:0px;">
+                                <div style="display: flex; flex-direction: row; align-items: flex-start;">
+
+                                    @await Html.PartialAsync("_MaintenanceSideNav", "CostCentreMaintenance")
+
+                                    <div style="display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; margin: 0 0px 5px 8px;">
+
+                                        @* DataGrid section *@
+                                        <div class="govuk-grid-row">
+                                            <div class="govuk-grid-column-full mt-2">
+                                                <div id="@($"gridContainer_{Model.CostCentreGrid.GridId}")">
+                                                    @await Html.PartialAsync("_DataGrid", Model.CostCentreGrid)
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+@section Scripts {
+    <script src="~/js/ajax-form-validation.js"></script>
+    <script>
+
+        function reloadCostCentreGrid() {
+            var gm = window['gridManager_costcenterGrid'];
+            if (gm) { gm.reloadGrid({ page: 1 }); }
+        }
+
+        // Loads _AddEditCostCentre partial (empty CostCentreItem) into shared modal host
+        function addCostCentre() {
+            $.get('/FPS/CostCentreMaintenance/Create', function (html) {
+                $('#modaPopupBody').html(html);
+                $('#modalPopup').addClass('show');
+            }).fail(function () {
+                showAlertMessage('An error occurred while loading the form', AlertType.ERROR);
+            });
+        }
+
+        // $(btn).data('id') reads data-id attribute emitted by _DataGrid EditFunction
+        // CostCentreNo is double PK — encoded as culture-invariant string in data-id
+        function editCostCentre(btn) {
+            var id = $(btn).data('id');
+            $.get('/FPS/CostCentreMaintenance/Edit', { id: id }, function (html) {
+                $('#modaPopupBody').html(html);
+                $('#modalPopup').addClass('show');
+            }).fail(function () {
+                showAlertMessage('An error occurred while loading the edit form', AlertType.ERROR);
+            });
+        }
+
+        // JS prototype used window.confirm(); MVC equivalent uses showGovukConfirm (govuk-alert pattern)
+        // CostCentreNo is double PK — passed culture-invariantly via encodeURIComponent
+        function deleteCostCentre(btn) {
+            var id = $(btn).data('id');
+            showGovukConfirm('Are you sure you want to delete this record?').then(function (result) {
+                if (!result) return;
+                $.ajax({
+                    url: '/FPS/CostCentreMaintenance/Delete?id=' + encodeURIComponent(id),
+                    type: 'DELETE',
+                    success: function (response) {
+                        if (response.success) {
+                            showAlertMessage('Cost Centre deleted successfully', AlertType.SUCCESS).then(function () {
+                                reloadCostCentreGrid();
+                            });
+                        } else {
+                            showAlertMessage('Error: ' + (response.message || 'Delete failed.'), AlertType.ERROR);
+                        }
+                    },
+                    error: function () {
+                        showAlertMessage('An error occurred while deleting.', AlertType.ERROR);
+                    }
+                });
+            });
+        }
+
+        // Collects CostCentreNo (double, culture-invariant) and ProfitCentre from modal inputs
+        // POST to /FPS/CostCentreMaintenance/Create with JSON body (CostCentreDto)
+        function saveCostCentre() {
+            clearValidationErrors('#modaPopupBody');
+            var form = $('#addCostCentreForm');
+
+            if (!isFormValid(form)) {
+                displayClientValidationErrors(form, '#modaPopupBody');
+                return;
+            }
+
+            var ccNoRaw = $('#modal-cc-number').val();
+            // locale-formatted strings. Verify culture-invariant round-trip on non-UK clients.
+            var ccNo = parseFloat(ccNoRaw);
+            if (isNaN(ccNo)) {
+                showAlertMessage('Please enter a valid Cost Centre number.', AlertType.ERROR);
+                return;
+            }
+
+            var dto = {
+                CostCentreNo: ccNo,
+                ProfitCentre: $('#modal-cc-profit').val()
+            };
+
+            $.ajax({
+                url: '/FPS/CostCentreMaintenance/Create',
+                type: 'POST',
+                data: JSON.stringify(dto),
+                contentType: 'application/json; charset=utf-8',
+                success: function (data) {
+                    if (data.success) {
+                        showAlertMessage(data.message || 'Cost Centre created successfully.', AlertType.SUCCESS);
+                        closeModal();
+                        reloadCostCentreGrid();
+                    } else {
+                        displayServerValidationErrors(data.errors, data.message, '#modaPopupBody');
+                    }
+                },
+                error: function (xhr) {
+                    if (xhr.status === 400 && xhr.responseJSON) {
+                        displayServerValidationErrors(xhr.responseJSON.errors, xhr.responseJSON.message, '#modaPopupBody');
+                    } else {
+                        showAlertMessage('An error occurred while saving.', AlertType.ERROR);
+                    }
+                }
+            });
+        }
+
+        // hdnOriginalCostCentreNo holds the original key so the update targets the correct row,
+        // even when the user changes the Cost Centre number. New value taken from #modal-cc-number.
+        // POST to /FPS/CostCentreMaintenance/Edit?id=<original> with JSON body (CostCentreDto)
+        function updateCostCentre() {
+            clearValidationErrors('#modaPopupBody');
+            var form = $('#editCostCentreForm');
+
+            if (!isFormValid(form)) {
+                displayClientValidationErrors(form, '#modaPopupBody');
+                return;
+            }
+
+            var originalId = $('#hdnOriginalCostCentreNo').val();
+
+            var ccNoRaw = $('#modal-cc-number').val();
+            var ccNo = parseFloat(ccNoRaw);
+            if (isNaN(ccNo)) {
+                showAlertMessage('Please enter a valid Cost Centre number.', AlertType.ERROR);
+                return;
+            }
+
+            var dto = {
+                CostCentreNo: ccNo,
+                ProfitCentre: $('#modal-cc-profit').val()
+            };
+
+            $.ajax({
+                url: '/FPS/CostCentreMaintenance/Edit?id=' + encodeURIComponent(originalId),
+                type: 'POST',
+                data: JSON.stringify(dto),
+                contentType: 'application/json; charset=utf-8',
+                success: function (data) {
+                    if (data.success) {
+                        showAlertMessage(data.message || 'Cost Centre updated successfully.', AlertType.SUCCESS);
+                        closeModal();
+                        reloadCostCentreGrid();
+                    } else {
+                        displayServerValidationErrors(data.errors, data.message, '#modaPopupBody');
+                    }
+                },
+                error: function (xhr) {
+                    if (xhr.status === 400 && xhr.responseJSON) {
+                        displayServerValidationErrors(xhr.responseJSON.errors, xhr.responseJSON.message, '#modaPopupBody');
+                    } else {
+                        showAlertMessage('An error occurred while saving.', AlertType.ERROR);
+                    }
+                }
+            });
+        }
+
+        function closeModal() {
+            $('#modaPopupBody').html('');
+            $('#modalPopup').removeClass('show');
+        }
+
+    </script>
+}

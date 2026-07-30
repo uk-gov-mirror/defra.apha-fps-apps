@@ -44,6 +44,16 @@ namespace Apha.Common.Constants
         public const string SetSendEmailForAllWorkGroups = "api/v1/workgroup/setsendemail/all";
         public const string UpdateWorkGroupEmail = "api/v1/workgroup/{0}/email";        
 
+        // Work Group Maintenance (CRUD + lookups)
+        public const string GetPagedWorkGroupMaintenance = "api/v1/workgroup/paged";
+        public const string GetWorkGroupMaintenanceByName = "api/v1/workgroup/maintenance/{0}";
+        public const string CreateWorkGroupMaintenance = "api/v1/workgroup/maintenance";
+        public const string UpdateWorkGroupMaintenance = "api/v1/workgroup/maintenance/{0}";
+        public const string DeleteWorkGroupMaintenance = "api/v1/workgroup/maintenance/{0}";
+        public const string GetWorkGroupProfitCentres = "api/v1/workgroup/profitcentres";
+        public const string GetWorkGroupOwners = "api/v1/workgroup/owners";
+        public const string GetWorkGroupCostCentres = "api/v1/workgroup/costcentres";
+
         // Month
         public const string GetAllMonths = "api/v1/months";
 
@@ -64,6 +74,11 @@ namespace Apha.Common.Constants
 
         // Recreate Summaries Log
         public const string GetRecreateSummaryLog = "api/v1/recreatereleasesummary/recreatesummary/log";
+
+        // Batch Job
+        public const string GetRecreateSummaryBatchJobHistory = "api/v1/recreatesummary/batchjob/history";
+        public const string CanRunRecreateSummaryBatchJob = "api/v1/recreatesummary/batchjob/canrun";
+        public const string TriggerRecreateSummariesBatchJob = "api/v1/recreatesummary/trigger";
 
         // Release Summaries
         public const string GetReleaseSummaries = "api/v1/recreatereleasesummary/releasesummary";
@@ -90,6 +105,12 @@ namespace Apha.Common.Constants
         public const string GetFpsProjectSubContracts = "api/v1/projectsubcontract/animals";
         public const string GetFpsProjectSubContractTotalAmount = "api/v1/projectsubcontract/animals/total";
         public const string GetMonthlySubContractsSummary = "api/v1/projectsubcontract/monthly-summary";
+        public const string GetFailedProjectSubContractRms = "api/v1/projectsubcontract/rms/failed";
+        public const string GetFailedProjectSubContractRmsById = "api/v1/projectsubcontract/rms/failed/{id}";
+        public const string SaveFailedProjectSubContractRms = "api/v1/projectsubcontract/rms/failed/{id}";
+        public const string DeleteFailedProjectSubContractRmsById = "api/v1/projectsubcontract/rms/failed/{id}";
+        public const string DeleteFailedProjectSubContractRmsByUser = "api/v1/projectsubcontract/rms/failed/user";
+        public const string ImportProjectSubContractRms = "api/v1/projectsubcontract/rms/import";
 
         // WorkGroup Test Capability
         public const string GetPagedTestCapabilityByWorkGroup = "api/v1/testcapability/paged/workgroup";
@@ -97,9 +118,19 @@ namespace Apha.Common.Constants
         public const string GetPagedTestCapabilityByPortfolio = "api/v1/testcapability/paged/portfolio";
         public const string GetTestCapabilityById = "api/v1/testcapability/testcapability/{0}/{1}";
         public const string CreateTestCapability = "api/v1/testcapability/testcapability";
+
+        // Plan CrossTab
+        public const string RebuildTestPlanCrossTab = "api/v1/testcapability/plantestcrosstab/rebuild";
+        public const string GetPagedTestPlanCrossTab = "api/v1/testcapability/paged/plantestcrosstab";
         public const string UpdateTestCapability = "api/v1/testcapability/testcapability";
         public const string DeleteTestCapability = "api/v1/testcapability/testcapability/{0}/{1}";
         public const string GetPagedWgTestCapabilitiesWithDescription = "api/v1/testcapability/paged/wg-test-capabilities";
+
+        // Test Requirement Breakdown
+        public const string GetPagedTestReqBreakdown = "api/v1/testrequirement/testreqbreakdown";
+
+        // Test Actual Breakdown
+        public const string GetPagedTestActualBreakdown = "api/v1/testrequirement/getactualstestswithplanneddatabyworkgroup";
 
         // Test Requirement
         public const string GetPagedTestReqmt = "api/v1/testrequirement/paged/{0}";

@@ -172,7 +172,7 @@ public class YearlyDetailsControllerTests
     public async Task CreateStaff_Post_ReturnsSuccess_WhenServiceSucceeds()
     {
         // Arrange
-        var item = new StaffRequirementItem { WgGrade = "HEO" };
+        var item = new StaffRequirementFormItem { WgGrade = "HEO" };
         var dto = new StaffRequirementDto();
 
         _mapper.Map<StaffRequirementDto>(item).Returns(dto);
@@ -192,12 +192,12 @@ public class YearlyDetailsControllerTests
     public async Task CreateStaff_Post_ReturnsFailure_WhenServiceFails()
     {
         // Arrange
-        _mapper.Map<StaffRequirementDto>(Arg.Any<StaffRequirementItem>()).Returns(new StaffRequirementDto());
+        _mapper.Map<StaffRequirementDto>(Arg.Any<StaffRequirementFormItem>()).Returns(new StaffRequirementDto());
         _service.AddStaffRequirementAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<StaffRequirementDto>())
             .Returns(ApiResponseDto<StaffRequirementDto>.FailureResponse(null, new ApiMetaDto()));
 
         // Act
-        var result = await _controller.CreateStaff("2024/001", 2024, new StaffRequirementItem { WgGrade = "HEO" });
+        var result = await _controller.CreateStaff("2024/001", 2024, new StaffRequirementFormItem { WgGrade = "HEO" });
 
         // Assert
         var jsonResult = Assert.IsType<JsonResult>(result);
@@ -228,13 +228,13 @@ public class YearlyDetailsControllerTests
         // Arrange
         var staffDto = new StaffRequirementDto { SrIdentity = 1, WgGrade = "HEO" };
         var pagedResult = new PaginatedResult<StaffRequirementDto>(new List<StaffRequirementDto> { staffDto }, 1);
-        var staffItem = new StaffRequirementItem { SrIdentity = 1, WgGrade = "HEO" };
+        var staffItem = new StaffRequirementFormItem { SrIdentity = 1, WgGrade = "HEO" };
 
         _service.GetStaffRequirementsAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<QueryParameters<string>>())
             .Returns(ApiResponseDto<PaginatedResult<StaffRequirementDto>>.SuccessResponse(pagedResult));
         _service.GetPayRatesAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<bool>())
             .Returns(ApiResponseDto<List<PayRateDto>>.SuccessResponse(new List<PayRateDto>()));
-        _mapper.Map<StaffRequirementItem>(staffDto).Returns(staffItem);
+        _mapper.Map<StaffRequirementFormItem>(staffDto).Returns(staffItem);
 
         // Act
         var result = await _controller.EditStaff("2024/001", 2024, 1, false);
@@ -248,7 +248,7 @@ public class YearlyDetailsControllerTests
     public async Task EditStaff_Post_ReturnsSuccess_WhenServiceSucceeds()
     {
         // Arrange
-        var item = new StaffRequirementItem { WgGrade = "HEO" };
+        var item = new StaffRequirementFormItem { WgGrade = "HEO" };
         _mapper.Map<StaffRequirementDto>(item).Returns(new StaffRequirementDto());
         _service.UpdateStaffRequirementAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<StaffRequirementDto>())
             .Returns(ApiResponseDto<StaffRequirementDto>.SuccessResponse(new StaffRequirementDto()));
@@ -569,7 +569,7 @@ public class YearlyDetailsControllerTests
     {
         _controller.ModelState.AddModelError("WgGrade", "WG Grade is required.");
 
-        var result = await _controller.CreateStaff("2024/001", 2024, new StaffRequirementItem());
+        var result = await _controller.CreateStaff("2024/001", 2024, new StaffRequirementFormItem());
 
         var jsonResult = Assert.IsType<JsonResult>(result);
         var element = GetJsonResultElement(jsonResult);
@@ -582,7 +582,7 @@ public class YearlyDetailsControllerTests
     {
         _controller.ModelState.AddModelError("WgGrade", "WG Grade is required.");
 
-        var result = await _controller.EditStaff("2024/001", 2024, 1, new StaffRequirementItem());
+        var result = await _controller.EditStaff("2024/001", 2024, 1, new StaffRequirementFormItem());
 
         var jsonResult = Assert.IsType<JsonResult>(result);
         var element = GetJsonResultElement(jsonResult);
@@ -670,12 +670,12 @@ public class YearlyDetailsControllerTests
     [Fact]
     public async Task EditStaff_Post_ReturnsErrors_WhenServiceFails()
     {
-        _mapper.Map<StaffRequirementDto>(Arg.Any<StaffRequirementItem>()).Returns(new StaffRequirementDto());
+        _mapper.Map<StaffRequirementDto>(Arg.Any<StaffRequirementFormItem>()).Returns(new StaffRequirementDto());
         _service.UpdateStaffRequirementAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<StaffRequirementDto>())
             .Returns(ApiResponseDto<StaffRequirementDto>.FailureResponse(
                 new List<ApiErrorDto> { new() { Code = "ERR", Message = "Update failed" } }, new ApiMetaDto()));
 
-        var result = await _controller.EditStaff("2024/001", 2024, 1, new StaffRequirementItem { WgGrade = "HEO" });
+        var result = await _controller.EditStaff("2024/001", 2024, 1, new StaffRequirementFormItem { WgGrade = "HEO" });
 
         var jsonResult = Assert.IsType<JsonResult>(result);
         var element = GetJsonResultElement(jsonResult);
@@ -1411,7 +1411,7 @@ public class YearlyDetailsControllerTests
     [Fact]
     public async Task CreateStaff_Post_ReturnsFieldErrors_WhenApiReturnsValidationDetails()
     {
-        _mapper.Map<StaffRequirementDto>(Arg.Any<StaffRequirementItem>()).Returns(new StaffRequirementDto());
+        _mapper.Map<StaffRequirementDto>(Arg.Any<StaffRequirementFormItem>()).Returns(new StaffRequirementDto());
 
         var validationDetails = new Dictionary<string, string[]>
         {
@@ -1424,7 +1424,7 @@ public class YearlyDetailsControllerTests
             .Returns(ApiResponseDto<StaffRequirementDto>.FailureResponse(
                 [apiError], new ApiMetaDto()));
 
-        var result = await _controller.CreateStaff("2024/001", 2024, new StaffRequirementItem { WgGrade = "HEO" });
+        var result = await _controller.CreateStaff("2024/001", 2024, new StaffRequirementFormItem { WgGrade = "HEO" });
 
         var jsonResult = Assert.IsType<JsonResult>(result);
         var element = GetJsonResultElement(jsonResult);
@@ -1438,12 +1438,12 @@ public class YearlyDetailsControllerTests
     [Fact]
     public async Task CreateStaff_Post_ReturnsDefaultError_WhenApiErrorListIsEmpty()
     {
-        _mapper.Map<StaffRequirementDto>(Arg.Any<StaffRequirementItem>()).Returns(new StaffRequirementDto());
+        _mapper.Map<StaffRequirementDto>(Arg.Any<StaffRequirementFormItem>()).Returns(new StaffRequirementDto());
         _service.AddStaffRequirementAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<StaffRequirementDto>())
             .Returns(ApiResponseDto<StaffRequirementDto>.FailureResponse(
                 new List<ApiErrorDto>(), new ApiMetaDto()));
 
-        var result = await _controller.CreateStaff("2024/001", 2024, new StaffRequirementItem { WgGrade = "HEO" });
+        var result = await _controller.CreateStaff("2024/001", 2024, new StaffRequirementFormItem { WgGrade = "HEO" });
 
         var jsonResult = Assert.IsType<JsonResult>(result);
         var element = GetJsonResultElement(jsonResult);

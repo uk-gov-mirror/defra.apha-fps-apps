@@ -31,14 +31,8 @@
             <label class="govuk-label govuk-!-font-weight-bold" asp-for="TestCode">
                 Test Code <span class="sup_color_red">*</span>
             </label>
-            <select class="govuk-select govuk-!-font-size-16" asp-for="TestCode"
-                    id="txtmodal-testcode" style="width:100%;" required>
-                <option value="">--Select Test Code--</option>
-                @foreach (var item in testorProducts)
-                {
-                    <option value="@item.Value" data-description="@item.Text">@item.Value</option>
-                }
-            </select>
+            <div id="testCodeSelectMultiDropdown"></div>
+            <input type="hidden" asp-for="TestCode" id="txtmodal-testcode" />
             <span asp-validation-for="TestCode" class="govuk-error-message"></span>
         </div>
 

@@ -1,0 +1,143 @@
+﻿@using Apha.FPSApps.Web.Models.Components.DataGrid
+@model Apha.FPSApps.Web.Areas.PIMS.Models.PMDMilestoneViewModel
+
+@{
+    ViewData["Title"] = "PIMS : PMD Milestone List";
+    string parentproject = Model.Parentproject;
+}
+
+<div class="govuk-grid-row sup_border-bottom govuk-!-margin-bottom-1 govuk-!-padding-0">
+    <h5 class="govuk-heading-s sup_margin_0 govuk-!-padding-top-2 govuk-!-padding-right-0 govuk-!-padding-bottom-1 govuk-!-padding-left-5">
+        Milestone List
+    </h5>
+</div>
+
+
+<div class="sup_flex sup_align-items-flex-start">
+    <main class="main-content govuk-!-padding-top-0 sup_overflow_hidden">
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+
+                <!-- ── Project Selection ───────────────────────────────────── -->
+                <div class="govuk-grid-row sup_margin_left_right_10">
+                    <div class="govuk-grid-column-full sup_p_0">
+                        <div class="sup_border sup_p_8 sup_margin_bottom_10">
+                            <label class="govuk-label govuk-!-font-size-16 govuk-!-font-weight-bold" for="dpprojectcode">Projects</label>
+                            <select asp-for="Parentproject"
+                                    asp-items="Model.ProjectOptions"
+                                    class="govuk-select govuk-!-font-size-16"
+                                    id="dpprojectcode"
+                                    onchange="onProjectChanged(this.value)">
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Milestones DataGrid ───────────────────────────────── -->
+                <div class="govuk-grid-row sup_margin_left_right_10 sup_margin_bottom_10">
+                    <div class="govuk-grid-column-full sup_p_0">
+                        <div id="@($"gridContainer_{Model.MilestonesGrid.GridId}")">
+                            @await Html.PartialAsync("_DataGrid", Model.MilestonesGrid)
+                        </div>
+                    </div>
+                </div>
+
+                <div id="pmdConfirmationSection"
+                     class="govuk-grid-row sup_margin_left_right_10 govuk-!-margin-bottom-2"
+                     style="@(Model.ShowConfirmationSection ? string.Empty : "display:none;")">
+                    <div class="govuk-grid-column-full sup_p_0">
+                        <div class="sup_flex_align_end sup_flex_gap_10">
+                            <span id="pmdConfirmationLabel" class="govuk-label govuk-!-font-size-16 govuk-!-font-weight-bold ">@Model.ConfirmationLabelText</span>
+                            <button id="pmdConfirmationSubmit" type="button" class="govuk-button govuk-!-margin-bottom-0" onclick="submitPmdConfirmation()">Submit</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Information Section ─────────────────────────────────── -->
+                <div class="govuk-grid-row sup_margin_left_right_10">
+                    <div class="govuk-grid-column-full sup_p_0">
+                        <div class="sup_margin_bottom_10" >
+                            <p class="sup_font_italic">
+                                Milestone/deliverable updates are required for the following periods: April to June,
+                                July to Sept, Oct to Dec, Jan, Feb, Mar in each financial year.<br />
+                                Please indicate whether a milestone/deliverable is on target (if not yet due) with either
+                                "Yes" or
+                                "No". A milestone/deliverable that has passed its due date cannot be classified as "On
+                                Target".<br />
+                                A milestone/deliverable is considered as being "Under Review" when a formal request
+                                has been submitted to the customer.<br />
+                                Comments should be added to the "Project Leaders Comments" section if a milestone/deliverable is
+                                logged as "Off
+                                Target". The comments should state the reason why the milestone/deliverable is off target and
+                                any action
+                                taken to remedy the situation.<br />
+                                Please confirm that the information is correct by clicking the "Submit" button. NB. If
+                                this window is closed or you move to a different project without "Submit" being pressed,
+                                the monitoring system will assume that the milestone/deliverable was "unreported".<br />
+                                Note: the monthly project report on IntraVet will not update automatically, changes
+                                will show on
+                                the report for the next month.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+</div>
+
+@Html.AntiForgeryToken()
+<script src="~/js/ajax-form-validation.js"></script>
+
+@section Scripts {
+    <script>
+        // ── Shared state ─────────────────────────────────────────────────────
+        var currentProject = '@Html.Raw(parentproject)';
+
+        function onProjectChanged(project) {
+            currentProject = project;
+
+            updateConfirmationSection(project);
+
+            // Reload grid with new project data
+            var gmMilestone = window['gridManager_pmdMilestonesGrid'];
+            if (gmMilestone) { gmMilestone.reloadGrid({ page: 1 }); }
+        }
+
+        function updateConfirmationSection(project) {
+            $.get('@Url.Action("GetConfirmationState", "PMDMilestone", new { area = "PIMS" })',
+                { parentproject: project },
+                function (data) {
+                    var section = document.getElementById('pmdConfirmationSection');
+                    var label = document.getElementById('pmdConfirmationLabel');
+                    if (!section || !label) return;
+
+                    if (data && data.showConfirmationSection === true) {
+                        label.textContent = data.confirmationLabelText || '';
+                        section.style.display = '';
+                    } else {
+                        label.textContent = '';
+                        section.style.display = 'none';
+                    }
+                });
+        }
+
+        function editMilestone(btn) {
+            var number = $(btn).data('id');
+            var editBaseUrl = '@Url.Action("Edit", "PMDMilestone", new { area = "PIMS" })';
+            window.location.href = editBaseUrl
+                + '?parentproject=' + encodeURIComponent(currentProject)
+                + '&number=' + encodeURIComponent(number);
+        }
+
+        function submitPmdConfirmation() {
+            // Placeholder for confirmation submit action.
+            // Hook API call here when backend endpoint is available.
+        }
+
+        function getMilestoneExtraFilters() {
+            return { parentproject: currentProject };
+        }
+    </script>
+}

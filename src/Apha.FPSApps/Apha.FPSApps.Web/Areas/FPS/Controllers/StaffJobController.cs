@@ -122,6 +122,20 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
                 return Json(new { success = true, data = result.Data, message = "Staff job created successfully" });
             }
 
+            var duplicateError = (result.Errors ?? new List<ApiErrorDto>())
+                .FirstOrDefault(e => IsDuplicateError(e));
+
+            if (duplicateError != null)
+            {
+                const string friendlyMessage = "This staff member has already been added to this project. Please update the existing entry instead.";
+                return Json(new
+                {
+                    success = false,
+                    message = friendlyMessage,
+                    errors = new[] { new { field = string.Empty, message = friendlyMessage } }
+                });
+            }
+
             return Json(new
             {
                 success = false,
@@ -132,6 +146,19 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
                     message = e.Message ?? "An unexpected error occurred."
                 })
             });
+        }
+
+        private static bool IsDuplicateError(ApiErrorDto error)
+        {
+            var code = error.Code ?? string.Empty;
+            if (code.Equals("CONFLICT", StringComparison.OrdinalIgnoreCase) ||
+                code.Equals("DUPLICATE", StringComparison.OrdinalIgnoreCase) ||
+                code.Equals("BUSINESS_RULE_VIOLATION", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return (error.Message ?? string.Empty).Contains("already exists", StringComparison.OrdinalIgnoreCase);
         }  
 
         [HttpGet]
@@ -291,11 +318,11 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             // Manager dropdown
             var staffResponse = await _staffJobService.GetStaffWorkgroupLookupAsync();
             model.StaffList = staffResponse.Data == null ? new List<SelectListItem>() :
-                staffResponse.Data 
+                staffResponse.Data
                 .Select(m => new SelectListItem
                 {
                     Value = m.StaffID,
-                    Text = m.Name,
+                    Text  = $"{m.Name}|{m.WorkGroupGrade}|{m.HrsAvail}",
                     Selected = string.Equals(model.StaffID, m.StaffID, StringComparison.OrdinalIgnoreCase)
                 })
                 .ToList();

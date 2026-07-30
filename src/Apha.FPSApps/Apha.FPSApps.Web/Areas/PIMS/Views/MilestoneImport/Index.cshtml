@@ -1,0 +1,418 @@
+@using Apha.FPSApps.Web.Models.Components.DataGrid
+@model Apha.FPSApps.Web.Areas.PIMS.Models.MilestoneImportViewModel
+
+@{
+    ViewData["Title"] = "PIMS : Milestones/Deliverables - Import";
+    string parentproject = Model.Parentproject;
+}
+
+<div class="govuk-grid-row sup_border-bottom govuk-!-margin-bottom-1 govuk-!-padding-0">
+    <div class="govuk-grid-column-full sup_flex_between_center">
+        <h5 class="govuk-heading-s sup_margin_0 govuk-!-padding-top-2 govuk-!-padding-right-0 govuk-!-padding-bottom-1 govuk-!-padding-left-5">
+            Milestones/Deliverables - Import
+        </h5>
+        <a href="@Url.Action("Index", "Milestone", new { area = "PIMS" })"
+           class="govuk-back-link govuk-!-margin-top-0 govuk-!-margin-bottom-0 govuk-!-margin-right-3">Back</a>
+    </div>
+</div>
+
+<div class="sup_flex">
+    <main class="main-content sup_p_0" aria-label="Import Milestones/Deliverables">
+
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <div class="sup_flex sup_padding_10">
+
+                    <!-- ── Left workflow panel ──────────────────────────────── -->
+                    <aside class="import-workflow-panel govuk-!-font-size-16"
+                           aria-label="Import workflow steps">
+
+                        <!-- Step 1 — Select Project -->
+                        <div class="sup_margin_bottom_10">
+                            <p class="govuk-body govuk-!-font-weight-bold govuk-!-font-size-16 sup_margin_bottom_10"
+                               id="lbl-select-project">1. Select Project</p>
+                            <div class="govuk-form-group sup_margin_bottom_10">
+                                <label class="govuk-visually-hidden govuk-!-font-size-16" for="selectProject">
+                                    Select project
+                                </label>
+                                <select asp-for="Parentproject"
+                                        asp-items="Model.ProjectOptions"
+                                        id="selectProject"
+                                        class="govuk-select govuk-!-font-size-16 sup_select_option_width_100"
+                                        aria-labelledby="lbl-select-project"
+                                        aria-required="true"
+                                        onchange="onProjectChanged(this.value)">
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Step 2 — Copy instruction -->
+                        <div class="sup_margin_bottom_10">
+                            <p class="govuk-body govuk-!-font-weight-bold govuk-!-font-size-16">
+                                2. Copy details from doc into panel. &mdash;&gt;&gt;&gt;
+                            </p>
+                        </div>
+
+                        <!-- Step 3 — Check Data -->
+                        <div class="sup_margin_bottom_10">
+                            <p class="govuk-body govuk-!-font-weight-bold govuk-!-font-size-16">
+                                3. Click to check data
+                            </p>
+                            <button type="button" id="btnValidate"
+                                    class="govuk-button govuk-button--secondary sup_margin_0 govuk-!-width-three-quarters"
+                                    data-module="govuk-button"
+                                    onclick="validateImport()">
+                                Check Data
+                            </button>
+                        </div>
+
+                        <!-- Step 3b — Overwrite? -->
+                        <div class="sup_margin_bottom_10">
+                            <fieldset class="govuk-fieldset" aria-required="true">
+                                <legend class="govuk-fieldset__legend govuk-!-font-weight-bold govuk-!-font-size-16"
+                                        id="lbl-overwrite">
+                                    Overwrite?
+                                </legend>
+                                <div class="govuk-radios govuk-radios--small govuk-radios--inline"
+                                     data-module="govuk-radios">
+                                    <div class="govuk-radios__item">
+                                        <input class="govuk-radios__input govuk-!-font-size-16"
+                                               id="overwrite-no" name="overwrite" type="radio"
+                                               value="false" checked />
+                                        <label class="govuk-label govuk-radios__label govuk-!-font-size-16 sup_label_auto_width"
+                                               for="overwrite-no">No</label>
+                                    </div>
+                                    <div class="govuk-radios__item">
+                                        <input class="govuk-radios__input govuk-!-font-size-16"
+                                               id="overwrite-yes" name="overwrite" type="radio" value="true" />
+                                        <label class="govuk-label govuk-radios__label govuk-!-font-size-16 sup_label_auto_width"
+                                               for="overwrite-yes">Yes</label>
+                                    </div>
+                                </div>
+                            </fieldset>
+                        </div>
+
+                        <!-- Step 4 — Import -->
+                        <div class="sup_margin_bottom_10">
+                            <p class="govuk-body govuk-!-font-weight-bold govuk-!-font-size-16" id="lbl-import">
+                                4. Click to import &ndash; will not import any rows with any remark in the Error column.
+                            </p>
+                            <button type="button" id="btnImport"
+                                    class="govuk-button sup_margin_0 govuk-button--disabled govuk-!-width-three-quarters"
+                                    data-module="govuk-button"
+                                    disabled aria-disabled="true"
+                                    aria-label="Import validated milestone records"
+                                    onclick="importRecords()">
+                                Import
+                            </button>
+                        </div>
+
+                        <!-- Step 5 — Delete Unimported -->
+                        <div class="sup_margin_bottom_0">
+                            <p class="govuk-body govuk-!-font-weight-bold govuk-!-font-size-16">
+                                5. Click to clear panel if necessary.
+                            </p>
+                            <button type="button" id="btnDeleteUnimported"
+                                    class="govuk-button govuk-button--warning sup_margin_0 govuk-!-width-three-quarters"
+                                    data-module="govuk-button"
+                                    onclick="clearImport()">
+                                Delete All Unimported
+                            </button>
+                        </div>
+                    </aside>
+
+                    <!-- ── Import DataGrid ──────────────────────────────────── -->
+                    <div class="sup_flex_one">
+
+                        <!-- ── Year / Type toolbar ─────────────────────────── -->
+                        <div id="yearTypeToolbar"
+                             class="sup_flex_align_center sup_flex_gap_10 sup_margin_left_right_10 sup_margin_bottom_10"
+                             style="@(Model.TypeLookUp == 'D' ? string.Empty : "display:none;")">
+                            <label class="govuk-label govuk-!-font-size-16 sup_margin_0" for="importYear">Year</label>
+                            <input asp-for="Year"
+                                   type="text"
+                                   id="importYear"
+                                   class="govuk-input govuk-input--width-5 govuk-!-font-size-16"
+                                   maxlength="4" />
+                            <label class="govuk-label govuk-!-font-size-16 sup_margin_0 govuk-!-margin-left-3" for="importType">Type</label>
+                            <select asp-for="ImportType"
+                                    asp-items="Model.MilestoneTypeOptions"
+                                    class="govuk-select govuk-!-font-size-16"
+                                    id="importType">
+                               
+                            </select>
+                        </div>
+
+                        <div class="govuk-grid-row sup_margin_left_right_10 sup_margin_bottom_10 govuk-!-padding-top-2">
+                            <div class="govuk-grid-column-full sup_p_0">
+                                <div id="gridContainer_importGrid">
+                                    @await Html.PartialAsync("_DataGrid", Model.ImportGrid)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<!-- ── Add / Edit modal placeholder (loaded via AJAX) ─────────────────────── -->
+<div id="importEditModalContainer" tabindex="-1"></div>
+<input type="hidden" id="hdnTypeLookUp" value="@Model.TypeLookUp" />
+<script src="~/js/ajax-form-validation.js"></script>
+@section Scripts {
+<script>
+    var currentProject = '@Html.Raw(parentproject)';
+
+    function disableImportButton() {
+        var btnImport = document.getElementById('btnImport');
+        if (!btnImport) return;
+        btnImport.disabled = true;
+        btnImport.classList.add('govuk-button--disabled');
+        btnImport.setAttribute('aria-disabled', 'true');
+    }
+
+    function enableImportButton() {
+        var btnImport = document.getElementById('btnImport');
+        if (!btnImport) return;
+        btnImport.disabled = false;
+        btnImport.classList.remove('govuk-button--disabled');
+        btnImport.removeAttribute('aria-disabled');
+    }
+
+    function getMilestoneImportExtraFilters() {
+        var numberFilter = document.querySelector('input[data-filter="Number"]')?.value || '';
+        return { 
+            project: currentProject,
+            Number: numberFilter
+        };
+    }
+
+    function toggleYearTypeToolbar() {
+        var typeLookUp = document.getElementById('hdnTypeLookUp')?.value || '';
+        var toolbar = document.getElementById('yearTypeToolbar');
+        if (!toolbar) return;
+        toolbar.style.display = typeLookUp === 'D' ? '' : 'none';
+    }
+
+    function onProjectChanged(project) {
+        currentProject = project;
+        disableImportButton();
+
+        $.get('@Url.Action("GetFormRequired", "MilestoneImport", new { area = "PIMS" })',
+            { parentproject: project },
+            function (data) {
+                var hdnTypeLookUp = document.getElementById('hdnTypeLookUp');
+                if (hdnTypeLookUp) { hdnTypeLookUp.value = data.typeLookUp; }
+
+                var importType = document.getElementById('importType');
+                if (importType && data.milestoneTypeOptions) {
+                    importType.innerHTML = '';
+                    data.milestoneTypeOptions.forEach(function (opt) {
+                        var option = document.createElement('option');
+                        option.value = opt.value;
+                        option.textContent = opt.text;
+                        importType.appendChild(option);
+                    });
+                }
+
+                toggleYearTypeToolbar();
+            });
+        var gmImport = window['gridManager_importGrid'];
+        if (gmImport) { 
+            gmImport.reloadGrid({ page: 1 });
+            // Restore filter after grid reload
+            setTimeout(function() {
+                var numberFilter = document.querySelector('input[data-filter="Number"]');
+                if (numberFilter) {
+                    numberFilter.value = '';
+                }
+            }, 100);
+        }
+    }
+
+    toggleYearTypeToolbar();
+
+    // ── Add / Edit modal ─────────────────────────────────────────────────────
+
+    function addImportRow() {
+        var typeLookUp = document.getElementById('hdnTypeLookUp')?.value || 'M';
+        var typeId = document.getElementById('importType')?.value || '';
+
+        $.get('@Url.Action("GetAddEditMilestoneImportPartial", "MilestoneImport", new { area = "PIMS" })',
+            { project: currentProject, typeLookUp: typeLookUp, typeId: typeId },
+            function (html) {
+                $('#importEditModalContainer').html(html);
+                var modal = document.getElementById('importEditModal');
+                if (modal) { modal.classList.add('open'); }
+            });
+    }
+
+    function editImportRow(btn) {
+        var id = $(btn).data('id');
+        var typeLookUp = document.getElementById('hdnTypeLookUp')?.value || 'M';
+        var typeId = document.getElementById('importType')?.value || '';
+
+        $.get('@Url.Action("GetAddEditMilestoneImportPartial", "MilestoneImport", new { area = "PIMS" })',
+            { project: currentProject, id: id, typeLookUp: typeLookUp, typeId: typeId },
+            function (html) {
+                $('#importEditModalContainer').html(html);
+                var modal = document.getElementById('importEditModal');
+                if (modal) { modal.classList.add('open'); }
+            });
+    }
+
+    function closeImportEditModal() {
+        var modal = document.getElementById('importEditModal');
+        if (modal) { modal.classList.remove('open'); }
+    }
+
+    function saveImport() {
+        var form = document.getElementById('formImportEdit');
+        if (!form) return;
+        var $form  = $(form);
+        var $modal = $('#importEditModal');
+        var year = document.getElementById('importYear')?.value || '';
+
+        clearValidationErrors($modal);
+
+        if (!isFormValid($form)) {
+            displayClientValidationErrors($form, $modal);
+            return;
+        }
+
+        var token = $('input[name="__RequestVerificationToken"]', $modal).val();
+
+        $.ajax({
+            url: '@Url.Action("SaveImportRow", "MilestoneImport", new { area = "PIMS" })',
+            type: 'POST',
+            headers: { 'RequestVerificationToken': token },
+            data: $form.serialize() + '&year=' + encodeURIComponent(year),
+            success: function (result) {
+                if (result.success) {
+                    closeImportEditModal();
+                    onProjectChanged(currentProject);
+                    showAlertMessage(result.message, AlertType.SUCCESS);
+                } else {
+                    displayServerValidationErrors(result.errors, 'Failed to save import record.', '#importEditModal');
+                }
+            }
+        });
+    }
+
+    // ── Delete ───────────────────────────────────────────────────────────────
+    function deleteImportRow(btn) {
+        var id = $(btn).data('id');
+        showGovukConfirm('Are you sure you want to delete this import record?').then(function (result) {
+            if (!result) return;
+            $.ajax({
+                url: '/PIMS/MilestoneImport/DeleteImportRow',
+                type: 'DELETE',
+                data: { id: id },
+                success: function (data) {
+                    if (data.success) {
+                        showAlertMessage(data.message, AlertType.SUCCESS).then(function () {
+                            onProjectChanged(document.getElementById('selectProject').value);
+                        });
+                    } else {
+                        showAlertMessage(data.errors?.map(e => e.message).join(', ') || 'Delete failed. Please try again.', AlertType.ERROR);
+                    }
+                },
+                error: function () {
+                    showAlertMessage('An error occurred while deleting the import record.', AlertType.ERROR);
+                }
+            });
+        });
+    }
+
+    // ── Workflow buttons ─────────────────────────────────────────────────────
+    function validateImport() {
+        const project = document.getElementById('selectProject').value;
+        const typeId = document.getElementById('importType')?.value || '';
+        const typeLookUp = document.getElementById('hdnTypeLookUp')?.value || 'M';
+        const isDeliverableMode = typeLookUp === 'D';
+
+        $.ajax({
+            url: '@Url.Action("ValidateImport", "MilestoneImport", new { area = "PIMS" })',
+            type: 'POST',
+            data: {
+                project: project,
+                typeId: typeId,
+                isDeliverableMode: isDeliverableMode
+            },
+            success: function (result) {
+                if (result && result.success) {
+                    var gmImport = window['gridManager_importGrid'];
+                    if (gmImport) { gmImport.reloadGrid({ page: 1 }); }
+                    enableImportButton();
+                } else {
+                    const errorMsg = result?.errors?.map(e => e.message).join(', ') || 'Validation failed. Please check the data and try again.';
+                    showAlertMessage(errorMsg, AlertType.ERROR);
+                }
+            },
+            error: function () {
+                showAlertMessage('Validation failed. Please check the data and try again.', AlertType.ERROR);
+            }
+        });
+    }
+
+    function importRecords() {
+        const project = document.getElementById('selectProject').value;
+        const overwrite = document.querySelector('input[name="overwrite"]:checked').value === 'true';
+
+        $.ajax({
+            url: '@Url.Action("ImportRecords", "MilestoneImport", new { area = "PIMS" })',
+            type: 'POST',
+            data: { project: project, overwrite: overwrite },
+            success: function (result) {
+                if (result && result.success) {
+                    showAlertMessage(result.message || 'Records imported successfully.', AlertType.SUCCESS).then(function () {
+                        var gmImport = window['gridManager_importGrid'];
+                        if (gmImport) { gmImport.reloadGrid({ page: 1 }); }
+                        disableImportButton();
+                    });
+                } else {
+                    const errorMsg = result?.errors?.map(e => e.message).join(', ') || 'Import failed. Please try again.';
+                    showAlertMessage(errorMsg, AlertType.ERROR);
+                }
+            },
+            error: function () {
+                showAlertMessage('An error occurred while importing records. Please try again.', AlertType.ERROR);
+            }
+        });
+    }
+
+    function clearImport() {
+        const project = document.getElementById('selectProject').value;
+        
+        showGovukConfirm('Are you sure you want to clear all unimported records?').then(function (result) {
+            if (!result) return;
+            
+            disableImportButton();
+
+            $.ajax({
+                url: '@Url.Action("ClearImport", "MilestoneImport", new { area = "PIMS" })?project=' + encodeURIComponent(project),
+                type: 'DELETE',
+                success: function (result) {
+                    if (result && result.success) {
+                        showAlertMessage(result.message || 'Data cleared successfully.', AlertType.SUCCESS).then(function () {
+                            var gmImport = window['gridManager_importGrid'];
+                            if (gmImport) { gmImport.reloadGrid({ page: 1 }); }
+                            disableImportButton();
+                        });
+                    } else {
+                        const errorMsg = result?.errors?.map(e => e.message).join(', ') || 'Clear failed. Please try again.';
+                        showAlertMessage(errorMsg, AlertType.ERROR);
+                    }
+                },
+                error: function () {
+                    showAlertMessage('An error occurred while clearing the import data.', AlertType.ERROR);
+                }
+            });
+        });
+    }
+</script>
+}

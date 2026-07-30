@@ -1,87 +1,89 @@
 .govuk-tabs {
-  margin-bottom: 30px;
+    margin-bottom: 30px;
 }
 
 .govuk-tabs__title {
-  margin-bottom: 10px;
-  color: #505a5f;
-  font-size: 19px;
-  font-weight: 400;
+    margin-bottom: 10px;
+    color: #505a5f;
+    font-size: 19px;
+    font-weight: 400;
 }
 
 .govuk-tabs__list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-bottom: 1px solid #b1b4b6;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-bottom: 1px solid #b1b4b6;
+    overflow: hidden;
+    clear: both;
 }
 
+
 .govuk-tabs__list-item {
-  position: relative;
-  margin-right: 5px;
-  margin-bottom: 0;
-  margin-left: 0;
-  padding: 10px 20px;
-  float: left;
-  background-color: #f3f2f1;
-  text-align: center;
+    position: relative;
+    margin-right: 5px;
+    margin-bottom: 0;
+    margin-left: 0;
+    padding: 10px 20px;
+    float: left;
+    background-color: #f3f2f1;
+    text-align: center;
 }
 
 .govuk-tabs__list-item--selected {
-  position: relative;
-  margin-top: -5px;
-  margin-bottom: -1px;
-  padding-top: 14px;
-  padding-right: 19px;
-  padding-bottom: 16px;
-  padding-left: 19px;
-  border: 1px solid #b1b4b6;
-  border-bottom: 0;
-  background-color: #ffffff;
+    position: relative;
+    margin-top: -5px;
+    margin-bottom: -1px;
+    padding-top: 14px;
+    padding-right: 19px;
+    padding-bottom: 16px;
+    padding-left: 19px;
+    border: 1px solid #b1b4b6;
+    border-bottom: 0;
+    background-color: #ffffff;
 }
 
 .govuk-tabs__tab {
     color: #1d70b8;
-    text-decoration: none;
-    padding: 15px 20px;
-    border: 1px solid transparent;
-    border-bottom: none;
-    background: #f3f2f1;
+    text-decoration: none !important;
+    font-weight: 600;
 }
 
-.govuk-tabs__tab:hover {
-  color: #003078;
-}
+    .govuk-tabs__tab:hover {
+        color: #003078;
+    }
 
-.govuk-tabs__tab:focus {
-  color: #0b0c0c;
-  background-color: #ffdd00;
-  outline: 3px solid transparent;
-  box-shadow: 0 -2px #ffdd00, 0 4px #0b0c0c;
-  text-decoration: none;
-}
+    .govuk-tabs__tab:focus {
+        color: #0b0c0c;
+        background-color: #ffdd00;
+        outline: 3px solid transparent;
+        box-shadow: 0 -2px #ffdd00, 0 4px #0b0c0c;
+        text-decoration: none;
+    }
 
 .govuk-tabs__list-item--selected .govuk-tabs__tab {
-  text-decoration: none;
+    text-decoration: none;
 }
 
 .govuk-tabs__panel {
-  padding: 30px 20px;
-  border: 1px solid #b1b4b6;
-  border-top: 0;
+    padding: 30px 20px;
+    border: 1px solid #b1b4b6;
+    border-top: 0;
 }
 
 .govuk-tabs__panel--hidden {
-  display: none;
+    display: none;
 }
 
 .govuk-tabs::after {
-  content: "";
-  display: block;
-  clear: both;
+    content: "";
+    display: block;
+    clear: both;
 }
+
 .govuk-tabs__list-item::before,
 .govuk-tabs__list-item + .govuk-tabs__list-item::before {
     content: none !important;
     display: none !important;
 }
+

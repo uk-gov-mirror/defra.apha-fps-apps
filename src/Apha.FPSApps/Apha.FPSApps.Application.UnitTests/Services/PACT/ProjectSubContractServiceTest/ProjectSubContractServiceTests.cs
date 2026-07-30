@@ -1,8 +1,11 @@
+using Apha.Common.Utilities.ExcelImport;
 using Apha.FPSApps.Application.Dtos;
 using Apha.FPSApps.Application.Dtos.PACT;
 using Apha.FPSApps.Application.Interfaces.PactApiClients;
 using Apha.FPSApps.Application.Pagination;
 using Apha.FPSApps.Application.Services.PACT;
+using ClosedXML.Excel;
+using Microsoft.AspNetCore.Http;
 using NSubstitute;
 using Xunit;
 
@@ -12,14 +15,16 @@ namespace Apha.FPSApps.Application.UnitTests.Services.PACT.ProjectSubContractSer
     {
         private readonly IPactApiClient _pactClient;
         private readonly IPactProjectSubContractApiClient _pactProjectSubContractApiClient;
+        private readonly IExcelImportService _excelImportService;
         private readonly ProjectSubContractService _service;
 
         public ProjectSubContractServiceTests()
         {
             _pactClient = Substitute.For<IPactApiClient>();
             _pactProjectSubContractApiClient = Substitute.For<IPactProjectSubContractApiClient>();
+            _excelImportService = Substitute.For<IExcelImportService>();
             _pactClient.PactProjectSubContract.Returns(_pactProjectSubContractApiClient);
-            _service = new ProjectSubContractService(_pactClient);
+            _service = new ProjectSubContractService(_pactClient, _excelImportService);
         }
 
         #region GetPagedProjectSubContractsAsync Tests
@@ -540,6 +545,222 @@ namespace Apha.FPSApps.Application.UnitTests.Services.PACT.ProjectSubContractSer
 
             // Assert
             await _pactProjectSubContractApiClient.Received(1).GetMonthlySubContractsSummaryAsync(query);
+        }
+
+        #endregion
+
+        #region Failed SubContract RMS Tests
+
+        [Fact]
+        public async Task GetFailedSubContractRmsAsync_WithValidQuery_DelegatesToApiClient()
+        {
+            // Arrange
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var expected = ApiResponseDto<List<SubContractRmsImportRowDto>>.SuccessResponse(
+            [
+                new SubContractRmsImportRowDto { Id = 1, Project = "P1" }
+            ]);
+            _pactProjectSubContractApiClient.GetFailedSubContractRmsAsync(query).Returns(expected);
+
+            // Act
+            var result = await _service.GetFailedSubContractRmsAsync(query);
+
+            // Assert
+            Assert.True(result.Success);
+            Assert.Single(result.Data!);
+            await _pactProjectSubContractApiClient.Received(1).GetFailedSubContractRmsAsync(query);
+        }
+
+        [Fact]
+        public async Task GetFailedSubContractRmsByIdAsync_WithValidId_DelegatesToApiClient()
+        {
+            // Arrange
+            var id = 10;
+            var expected = ApiResponseDto<SubContractRmsImportRowDto>.SuccessResponse(new SubContractRmsImportRowDto { Id = id, Project = "P2" });
+            _pactProjectSubContractApiClient.GetFailedSubContractRmsByIdAsync(id).Returns(expected);
+
+            // Act
+            var result = await _service.GetFailedSubContractRmsByIdAsync(id);
+
+            // Assert
+            Assert.True(result.Success);
+            Assert.Equal(id, result.Data!.Id);
+            await _pactProjectSubContractApiClient.Received(1).GetFailedSubContractRmsByIdAsync(id);
+        }
+
+        [Fact]
+        public async Task SaveFailedSubContractRmsAsync_WithValidPayload_DelegatesToApiClient()
+        {
+            // Arrange
+            var id = 5;
+            var dto = new SubContractRmsImportRowDto { Id = id, Project = "PX1", Month = "1" };
+            var expected = ApiResponseDto<bool>.SuccessResponse(true);
+            _pactProjectSubContractApiClient.SaveFailedSubContractRmsAsync(id, dto).Returns(expected);
+
+            // Act
+            var result = await _service.SaveFailedSubContractRmsAsync(id, dto);
+
+            // Assert
+            Assert.True(result.Success);
+            Assert.True(result.Data);
+            await _pactProjectSubContractApiClient.Received(1).SaveFailedSubContractRmsAsync(id, dto);
+        }
+
+        [Fact]
+        public async Task DeleteFailedSubContractRmsByIdAsync_WithValidId_DelegatesToApiClient()
+        {
+            // Arrange
+            var id = 6;
+            var expected = ApiResponseDto<bool>.SuccessResponse(true);
+            _pactProjectSubContractApiClient.DeleteFailedSubContractRmsByIdAsync(id).Returns(expected);
+
+            // Act
+            var result = await _service.DeleteFailedSubContractRmsByIdAsync(id);
+
+            // Assert
+            Assert.True(result.Success);
+            Assert.True(result.Data);
+            await _pactProjectSubContractApiClient.Received(1).DeleteFailedSubContractRmsByIdAsync(id);
+        }
+
+        [Fact]
+        public async Task DeleteFailedSubContractRmsByUserAsync_WithValidRequest_DelegatesToApiClient()
+        {
+            // Arrange
+            var expected = ApiResponseDto<bool>.SuccessResponse(true);
+            _pactProjectSubContractApiClient.DeleteFailedSubContractRmsByUserAsync().Returns(expected);
+
+            // Act
+            var result = await _service.DeleteFailedSubContractRmsByUserAsync();
+
+            // Assert
+            Assert.True(result.Success);
+            Assert.True(result.Data);
+            await _pactProjectSubContractApiClient.Received(1).DeleteFailedSubContractRmsByUserAsync();
+        }
+
+        [Fact]
+        public async Task ImportSubContractRmsAsync_WhenImportServiceReturnsMissingHeaders_ReturnsInvalidTemplateFailure()
+        {
+            // Arrange
+            using var workbookStream = CreateWorkbookStreamWithHeaders();
+            var file = Substitute.For<IFormFile>();
+            file.OpenReadStream().Returns(workbookStream);
+            file.FileName.Returns("subcontract-rms.xlsx");
+
+            _excelImportService.ReadExcel(
+                Arg.Any<IXLWorkbook>(),
+                Arg.Any<Func<IXLRangeRow, Dictionary<string, int>, SubContractRmsImportRowDto>>(),
+                Arg.Any<IEnumerable<string>>(),
+                1)
+            .Returns(new ExcelImportResult<SubContractRmsImportRowDto>
+            {
+                IsSuccess = false,
+                ErrorMessage = "Template is invalid",
+                MissingHeaders = ["Project"]
+            });
+
+            // Act
+            var result = await _service.ImportSubContractRmsAsync(file);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.NotNull(result.Errors);
+            Assert.Equal("INVALID_TEMPLATE", result.Errors![0].Code);
+            await _pactProjectSubContractApiClient.DidNotReceive().ImportSubContractRmsAsync(Arg.Any<SubContractRmsImportReqDto>());
+        }
+
+        [Fact]
+        public async Task ImportSubContractRmsAsync_WhenImportServiceReturnsNoMissingHeaders_ReturnsEmptyFileFailure()
+        {
+            // Arrange
+            using var workbookStream = CreateWorkbookStreamWithHeaders();
+            var file = Substitute.For<IFormFile>();
+            file.OpenReadStream().Returns(workbookStream);
+            file.FileName.Returns("subcontract-rms.xlsx");
+
+            _excelImportService.ReadExcel(
+                Arg.Any<IXLWorkbook>(),
+                Arg.Any<Func<IXLRangeRow, Dictionary<string, int>, SubContractRmsImportRowDto>>(),
+                Arg.Any<IEnumerable<string>>(),
+                1)
+            .Returns(new ExcelImportResult<SubContractRmsImportRowDto>
+            {
+                IsSuccess = false,
+                ErrorMessage = "No data rows found",
+                MissingHeaders = []
+            });
+
+            // Act
+            var result = await _service.ImportSubContractRmsAsync(file);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.NotNull(result.Errors);
+            Assert.Equal("EMPTY_FILE", result.Errors![0].Code);
+            await _pactProjectSubContractApiClient.DidNotReceive().ImportSubContractRmsAsync(Arg.Any<SubContractRmsImportReqDto>());
+        }
+
+        [Fact]
+        public async Task ImportSubContractRmsAsync_WhenImportServiceSucceeds_DelegatesToApiClientWithMappedRequest()
+        {
+            // Arrange
+            using var workbookStream = CreateWorkbookStreamWithHeaders();
+            var file = Substitute.For<IFormFile>();
+            file.OpenReadStream().Returns(workbookStream);
+            file.FileName.Returns("subcontract-rms.xlsx");
+
+            var importRows = new List<SubContractRmsImportRowDto>
+            {
+                new() { Project = "P10", TestJob = "TJ1", Amount = "100.25" }
+            };
+
+            _excelImportService.ReadExcel(
+                Arg.Any<IXLWorkbook>(),
+                Arg.Any<Func<IXLRangeRow, Dictionary<string, int>, SubContractRmsImportRowDto>>(),
+                Arg.Any<IEnumerable<string>>(),
+                1)
+            .Returns(new ExcelImportResult<SubContractRmsImportRowDto>
+            {
+                IsSuccess = true,
+                Rows = importRows
+            });
+
+            var expected = ApiResponseDto<SubContractRmsImportResultDto>.SuccessResponse(
+                new SubContractRmsImportResultDto { PassedCount = 1, FailedCount = 0, Message = "Imported" });
+            _pactProjectSubContractApiClient.ImportSubContractRmsAsync(Arg.Any<SubContractRmsImportReqDto>()).Returns(expected);
+
+            // Act
+            var result = await _service.ImportSubContractRmsAsync(file);
+
+            // Assert
+            Assert.True(result.Success);
+            await _pactProjectSubContractApiClient.Received(1).ImportSubContractRmsAsync(
+                Arg.Is<SubContractRmsImportReqDto>(req =>
+                    req.FileName == "subcontract-rms.xlsx" &&
+                    req.Rows.Count == 1 &&
+                    req.Rows[0].Project == "P10"));
+        }
+
+        private static MemoryStream CreateWorkbookStreamWithHeaders()
+        {
+            var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("Sheet1");
+            worksheet.Cell(1, 1).Value = "Project";
+            worksheet.Cell(1, 2).Value = "Test Job";
+            worksheet.Cell(1, 3).Value = "Month";
+            worksheet.Cell(1, 4).Value = "Amount";
+            worksheet.Cell(1, 5).Value = "Account Code";
+            worksheet.Cell(1, 6).Value = "Supplier";
+            worksheet.Cell(1, 7).Value = "Description";
+            worksheet.Cell(1, 8).Value = "Supplier Number";
+            worksheet.Cell(1, 9).Value = "Daily Rate";
+            worksheet.Cell(1, 10).Value = "Animal Days";
+
+            var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            stream.Position = 0;
+            return stream;
         }
 
         #endregion

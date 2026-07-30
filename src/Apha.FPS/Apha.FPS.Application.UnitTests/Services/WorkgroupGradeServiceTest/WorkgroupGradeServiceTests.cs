@@ -1,6 +1,7 @@
 using Apha.FPS.Application.Dtos;
 using Apha.FPS.Application.Pagination;
 using Apha.FPS.Application.Services;
+using Apha.FPS.Application.Validation;
 using Apha.FPS.Core.Entities;
 using Apha.FPS.Core.Interfaces;
 using Apha.FPS.Core.Pagination;
@@ -126,6 +127,52 @@ namespace Apha.FPS.Application.UnitTests.Services.WorkGroupGradeServiceTest
             // Act & Assert
             await Assert.ThrowsAsync<KeyNotFoundException>(() =>
                 _sut.DeleteWorkGroupGradeAsync(DefaultWgGrade));
+        }
+
+        #endregion
+
+        #region GetWorkgroupGradesByWorkGroupAsync Tests
+
+        [Fact]
+        public async Task GetWorkgroupGradesByWorkGroupAsync_WithValidInputs_ReturnsMappedResult()
+        {
+            // Arrange
+            var entities = new List<WorkgroupGrade> { new() { WgGrade = DefaultWgGrade } };
+            var expected  = new List<WorkgroupGradeDto> { new() { WgGrade = DefaultWgGrade } };
+
+            _mockRepository.GetWorkgroupGradesByWorkGroupAsync("TeamA").Returns(entities);
+            _mockMapper.Map<List<WorkgroupGradeDto>>(entities).Returns(expected);
+
+            // Act
+            var result = await _sut.GetWorkgroupGradesByWorkGroupAsync("TeamA");
+
+            // Assert
+            result.Should().BeEquivalentTo(expected);
+            await _mockRepository.Received(1).GetWorkgroupGradesByWorkGroupAsync("TeamA");
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task GetWorkgroupGradesByWorkGroupAsync_WithNullOrWhitespaceWorkGroup_ThrowsArgumentException(string wg)
+        {
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                _sut.GetWorkgroupGradesByWorkGroupAsync(wg));
+
+            await _mockRepository.DidNotReceive().GetWorkgroupGradesByWorkGroupAsync(Arg.Any<string>());
+        }
+
+        [Fact]
+        public async Task GetWorkgroupGradesByWorkGroupAsync_WhenRepositoryThrows_PropagatesException()
+        {
+            // Arrange
+            _mockRepository.GetWorkgroupGradesByWorkGroupAsync("TeamA")
+                .ThrowsAsync(new InvalidOperationException("DB failure"));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                _sut.GetWorkgroupGradesByWorkGroupAsync("TeamA"));
         }
 
         #endregion

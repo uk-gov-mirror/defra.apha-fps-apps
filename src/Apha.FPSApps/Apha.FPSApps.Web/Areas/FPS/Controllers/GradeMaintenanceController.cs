@@ -12,7 +12,6 @@ using Newtonsoft.Json;
 
 namespace Apha.FPSApps.Web.Areas.FPS.Controllers
 {
-    // TRANSFORMENGINE: [Area] + [Authorize] + [AuthorizeForScopes] — matches FPS area controller convention
     [Area("FPS")]
     [Authorize(Roles = "FPSAdmin")]
     [AuthorizeForScopes(ScopeKeySection = "FPSApiSettings:Scope")]
@@ -20,7 +19,6 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
     {
         private readonly IMapper _mapper;
 
-        // TRANSFORMENGINE: only IGradeService injected — no API clients, no repositories per layer boundary rule
         private readonly IGradeService _gradeService;
 
         public GradeMaintenanceController(IMapper mapper, IGradeService gradeService)
@@ -35,7 +33,6 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
         {
             var viewModel = new GradeMaintenanceViewModel();
 
-            // TRANSFORMENGINE: DataGridConfig built explicitly — leaving as new() would render
             // an empty grid with default Add button regardless of JS-derived operations profile.
             // AllowAdd:true from JS showAddButton:true; AllowEdit+AllowDelete:true from JS
             // actions column containing both edit and delete buttons (fps_grade_maintenance.js).
@@ -52,7 +49,6 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
 
         // ── DataGrid AJAX Reload ─────────────────────────────────────────────
 
-        // TRANSFORMENGINE: HTTP POST — DataGrid sends pagination + filter payload to this endpoint
         [HttpPost]
         public async Task<IActionResult> LoadGradeGrid(PaginationFilter<string> request)
         {
@@ -70,7 +66,6 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             return PartialView("_DataGrid", gridConfig);
         }
 
-        // TRANSFORMENGINE: private grid config builder — called from Index() and LoadGradeGrid()
         private async Task<DataGridConfig<GradeItem>> GetGradeGridConfigAsync(PaginationFilter<string> request)
         {
             var filterDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(
@@ -93,23 +88,17 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
 
             return new DataGridConfig<GradeItem>
             {
-                // TRANSFORMENGINE: GridId from JS gradeGrid; Title from JS DataGridComponent title
                 GridId             = "gradeGrid",
                 Title              = "Grade Maintenance",
                 ShowCheckboxColumn = false,
                 ShowPagination     = true,
-                // TRANSFORMENGINE: KeyProperty = GradeCode (sole visible PK column; FpsYear is hidden)
                 KeyProperty        = "GradeCode",
-                // TRANSFORMENGINE: AllowAdd=true from JS showAddButton:true
                 AllowAdd           = true,
                 AddFunction        = "addGrade",
-                // TRANSFORMENGINE: AllowEdit=true — edit button present in JS actions column render
                 AllowEdit          = true,
                 EditFunction       = "editGrade",
-                // TRANSFORMENGINE: AllowDelete=true — delete button present in JS actions column render
                 AllowDelete        = true,
                 DeleteFunction     = "deleteGrade",
-                // TRANSFORMENGINE: no ExtraFilterMethod — no page-level filter controls in HTML prototype
                 BindGridUrl        = "/FPS/GradeMaintenance/LoadGradeGrid",
                 Data               = items,
                 Columns            = GridDataProvider.GetColumnsDefination<GradeItem>(null),
@@ -120,14 +109,12 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
 
         // ── CRUD — Create ────────────────────────────────────────────────────
 
-        // TRANSFORMENGINE: GET Create — returns empty GradeItem to _AddEditGrade partial
         [HttpGet]
         public IActionResult Create()
         {
             return PartialView("_AddEditGrade", new GradeItem());
         }
 
-        // TRANSFORMENGINE: POST Create — accepts GradeDto [FromBody] (JSON from modal form submit)
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] GradeDto dto)
         {
@@ -174,7 +161,6 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
 
         // ── CRUD — Edit ──────────────────────────────────────────────────────
 
-        // TRANSFORMENGINE: GET Edit — loads existing grade by gradeCode → _AddEditGrade partial
         [HttpGet]
         public async Task<IActionResult> Edit(string id)
         {
@@ -194,7 +180,6 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             return Json(new { success = false, message = $"Grade '{id}' not found." });
         }
 
-        // TRANSFORMENGINE: POST Edit — id = originalCode (before potential GradeCode rename);
         // IGradeService.UpdateAsync signature: UpdateAsync(string originalCode, GradeDto dto)
         [HttpPost]
         public async Task<IActionResult> Edit(string id, [FromBody] GradeDto dto)
@@ -220,7 +205,6 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
                 });
             }
 
-            // TRANSFORMENGINE: originalCode = id (route param) to support GradeCode rename
             // (matches IGradeService.UpdateAsync(string originalCode, GradeDto dto) signature)
             var result = await _gradeService.UpdateAsync(id, dto);
 
@@ -244,7 +228,6 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
 
         // ── CRUD — Delete ────────────────────────────────────────────────────
 
-        // TRANSFORMENGINE: [HttpDelete] — JS confirm() in grid action handler; no modal partial needed
         [HttpDelete]
         public async Task<IActionResult> Delete(string id)
         {

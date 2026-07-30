@@ -92,6 +92,7 @@
                                        id="DateDueDisplay"
                                        class="govuk-input"
                                        value="@Model.DateDue?.ToString("dd/MM/yyyy")"
+                                       aria-label="DateDueDisplay"
                                        placeholder="dd/mm/yyyy"
                                        maxlength="10"
                                        autocomplete="off"
@@ -110,6 +111,7 @@
                                        id="DateDuePicker"
                                        value="@(Model.DateDue.HasValue ? Model.DateDue.Value.ToString("yyyy-MM-dd") : string.Empty)"
                                        style="position:absolute; top:0; left:0; opacity:0; width:1px; height:1px; pointer-events:auto;"
+                                       aria-label="DateDuePicker"
                                        onchange="syncDateToText('DateDuePicker', 'DateDueDisplay', 'DateDueBinding', 'DateDueError')">
                             </div>
                             <span id="DateDueError" class="govuk-error-message" style="display:none;"></span>
@@ -129,6 +131,7 @@
                                        placeholder="dd/mm/yyyy"
                                        maxlength="10"
                                        autocomplete="off"
+                                       aria-label="DateCompletedDisplay"
                                        oninput="formatDateInput(this)"
                                        onblur="validateAndSyncDate('DateCompletedDisplay', 'DateCompletedBinding', 'DateCompletedError')"
                                        style="flex:1;">
@@ -142,6 +145,7 @@
                                        value="@(Model.DateCompleted.HasValue ? Model.DateCompleted.Value.ToString("yyyy-MM-dd") : string.Empty)">
                                 <input type="date"
                                        id="DateCompletedPicker"
+                                       aria-label="DateCompletedBinding"
                                        value="@(Model.DateCompleted.HasValue ? Model.DateCompleted.Value.ToString("yyyy-MM-dd") : string.Empty)"
                                        style="position:absolute; top:0; left:0; opacity:0; width:1px; height:1px; pointer-events:auto;"
                                        onchange="syncDateToText('DateCompletedPicker', 'DateCompletedDisplay', 'DateCompletedBinding', 'DateCompletedError')">
@@ -163,7 +167,7 @@
                                 <label class="govuk-checkboxes__label font-size-16"
                                        for="underSdReviewChk"
                                        style="font-weight: normal;">
-                                    Under Review
+                                    Under Review?
                                 </label>
                                 <input type="hidden" name="UnderSdReview" value="0" />
                             </div>

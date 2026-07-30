@@ -1,0 +1,185 @@
+@using Apha.FPSApps.Web.Models.Components.DataGrid
+@model Apha.FPSApps.Web.Areas.FPS.Models.WorkgroupMaintenanceViewModel
+
+@{
+    ViewData["Title"] = "2025-2026 : WorkGroup Maintenance";
+}
+
+<main id="main-content">
+    <div class="container-fluid">
+
+        <!-- Title — matches frmMaintWorkGroup2 HTML prototype govuk-heading-s -->
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <h1 class="govuk-heading-s sup_border-bottom govuk-!-margin-top-2 govuk-!-padding-bottom-2 govuk-!-padding-left-4">
+                    WorkGroup Maintenance
+                </h1>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-12">
+                <main class="main-content" style="padding:0;">
+                    <div class="container-fluid" style="padding: 0;">
+                        <div class="row">
+                            <div class="container-fluid" style="padding-left:0px;">
+                                <div style="display: flex; flex-direction: row; align-items: flex-start;">
+
+                                    @await Html.PartialAsync("_MaintenanceSideNav", "WorkgroupMaintenance")
+
+                                    <div style="display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; margin: 0 0px 5px 8px;">
+
+                                        <!-- DataGrid section -->
+                                        <div class="govuk-grid-row">
+                                            <div class="govuk-grid-column-full mt-2">
+                                                <div id="@($"gridContainer_{Model.WorkgroupGrid.GridId}")">
+                                                    @await Html.PartialAsync("_DataGrid", Model.WorkgroupGrid)
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+@section Scripts {
+    <script src="~/js/ajax-form-validation.js"></script>
+    <script>
+
+        function reloadWorkgroupMaintenanceGrid() {
+            var gm = window['gridManager_workgroupGrid'];
+            if (gm) { gm.reloadGrid({ page: 1 }); }
+        }
+
+        function addWorkgroupMaintenance() {
+            $.get('/FPS/WorkgroupMaintenance/Create', function (html) {
+                $('#modaPopupBody').html(html);
+                $('#modalPopup').addClass('show');
+            }).fail(function () {
+                showAlertMessage('An error occurred while loading the form', AlertType.ERROR);
+            });
+        }
+
+        function editWorkgroupMaintenance(btn) {
+            var id = $(btn).data('id');
+            $.get('/FPS/WorkgroupMaintenance/Edit', { workGroupName: id }, function (html) {
+                $('#modaPopupBody').html(html);
+                $('#modalPopup').addClass('show');
+            }).fail(function () {
+                showAlertMessage('An error occurred while loading the edit form', AlertType.ERROR);
+            });
+        }
+
+        function deleteWorkgroupMaintenance(btn) {
+            var id = $(btn).data('id');
+            showGovukConfirm('Are you sure you want to delete this record?').then(function (result) {
+                if (!result) return;
+                $.ajax({
+                    url: '/FPS/WorkgroupMaintenance/Delete?workGroupName=' + encodeURIComponent(id),
+                    type: 'DELETE',
+                    success: function (response) {
+                        if (response.success) {
+                            showAlertMessage(response.message || 'WorkGroup deleted successfully', AlertType.SUCCESS).then(function () {
+                                reloadWorkgroupMaintenanceGrid();
+                            });
+                        } else {
+                            showAlertMessage('Error: ' + (response.message || 'Delete failed.'), AlertType.ERROR);
+                        }
+                    },
+                    error: function () {
+                        showAlertMessage('An error occurred while deleting.', AlertType.ERROR);
+                    }
+                });
+            });
+        }
+
+        function buildWorkgroupDto() {
+            return {
+                WorkGroupName: $('#WorkGroupName').val(),
+                ProfitCentre: $('#ProfitCentre').val() || null,
+                CostCentre: parseDoubleOrNull($('#CostCentre').val()),
+                Owner: $('#Owner').val() || null,
+                Description: $('#Description').val() || null,
+                CentralOverhead: parseDecimalOrNull($('#CentralOverhead').val())
+            };
+        }
+
+        function submitWorkgroup(options) {
+            clearValidationErrors('#modaPopupBody');
+            var form = $(options.formSelector);
+
+            if (!isFormValid(form)) {
+                displayClientValidationErrors(form, '#modaPopupBody');
+                return;
+            }
+
+            $.ajax({
+                url: options.url,
+                type: 'POST',
+                data: JSON.stringify(buildWorkgroupDto()),
+                contentType: 'application/json; charset=utf-8',
+                success: function (data) {
+                    if (data.success) {
+                        showAlertMessage(data.message || options.successMessage, AlertType.SUCCESS).then(function () {
+                            closeModal();
+                            reloadWorkgroupMaintenanceGrid();
+                        });
+                    } else {
+                        displayServerValidationErrors(data.errors, data.message, '#modaPopupBody');
+                    }
+                },
+                error: function (xhr) {
+                    if (xhr.status === 400 && xhr.responseJSON) {
+                        displayServerValidationErrors(xhr.responseJSON.errors, xhr.responseJSON.message, '#modaPopupBody');
+                    } else {
+                        showAlertMessage('An error occurred while saving.', AlertType.ERROR);
+                    }
+                }
+            });
+        }
+
+        function saveWorkgroup() {
+            submitWorkgroup({
+                formSelector: '#addWorkgroupForm',
+                url: '/FPS/WorkgroupMaintenance/Create',
+                successMessage: 'WorkGroup created successfully.'
+            });
+        }
+
+        function updateWorkgroup() {
+            var originalName = $('#hdnOriginalWorkGroupName').val();
+            submitWorkgroup({
+                formSelector: '#editWorkgroupForm',
+                url: '/FPS/WorkgroupMaintenance/Edit?originalWorkGroupName=' + encodeURIComponent(originalName),
+                successMessage: 'WorkGroup updated successfully.'
+            });
+        }
+
+        function closeModal() {
+            $('#modaPopupBody').html('');
+            $('#modalPopup').removeClass('show');
+        }
+
+        function parseDecimalOrNull(val) {
+            if (val === null || val === undefined || val.toString().trim() === '') return null;
+            var cleaned = val.toString().replace(/[^0-9.-]/g, '');
+            var parsed = parseFloat(cleaned);
+            return isNaN(parsed) ? null : parsed;
+        }
+
+        function parseDoubleOrNull(val) {
+            if (val === null || val === undefined || val.toString().trim() === '') return null;
+            var parsed = parseFloat(val);
+            return isNaN(parsed) ? null : parsed;
+        }
+
+    </script>
+}

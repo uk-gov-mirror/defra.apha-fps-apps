@@ -138,7 +138,7 @@ namespace Apha.FPS.DataAccess.Repositories
         {
             return await _dbContext.Projects
                 .AsNoTracking()
-                .FirstOrDefaultAsync(p => p.ParentProject == parentProject);
+                .FirstOrDefaultAsync(p => p.ParentProject.ToLower() == parentProject.ToLower());
         }
 
         public async Task<PagedData<Project>> GetPagedProjectsAsync(PaginationParameters<string> query)
@@ -1817,6 +1817,86 @@ namespace Apha.FPS.DataAccess.Repositories
                 Profit        = profit,
                 TargetProfit  = targetProfit,
                 OffTarget     = profit - targetProfit
+            };
+        }
+
+        public async Task<PagedData<ProjectStaffReplanView>> GetProjectStaffReplanAsync(PaginationParameters<string> query, string workgroup)
+        {
+            var baseQuery = (from proj in _dbContext.Projects
+                             join sj in _dbContext.StaffJobs on proj.ParentProject equals sj.JobCode
+                             join wge in _dbContext.WorkGroupEmployees on sj.StaffId equals wge.PactId
+                             join emp in _dbContext.Employees on wge.SpNumber equals emp.SPNumber
+                             join wgg in _dbContext.WorkgroupGrades on wge.WorkGroupGrade equals wgg.WgGrade
+                             join wg in _dbContext.Workgroups on wgg.Workgroup equals wg.WorkGroupName
+                             join pc in _dbContext.ProfitCentres on wg.ProfitCentre equals pc.ProfitCentreId
+                             join upc in _dbContext.UserProfitcentres on pc.ProfitCentreId equals upc.ProfitCentre
+                             join u in _dbContext.Users on upc.UserId equals u.UserId
+                             where wgg.Workgroup == workgroup
+                                && EF.Functions.ILike(u.UserEmail!, _requestContext.UserEmailId)
+                             select new ProjectStaffReplanView
+                             {
+                                 WorkGroup = wgg.Workgroup,
+                                 GradeCode = wgg.GradeCode,
+                                 Name = (emp.LastName ?? string.Empty) + ", " +
+                                                 (emp.FirstName ?? string.Empty),
+                                 PlannedHours = sj.PlannedHours,
+                                 ParentProject = proj.ParentProject,
+                                 Program = proj.Program,
+                                 WgGrade = wgg.WgGrade
+                             }).Distinct();
+
+            baseQuery = ApplyStaffReplanFilter(baseQuery, query.Filter);
+            baseQuery = ApplyStaffReplanSorting(baseQuery, query.SortBy, query.Descending);
+
+            var result = await baseQuery.AsNoTracking().ToListAsync();
+            return ApplyPaging(result, query.Page, query.PageSize);
+        }
+
+        private static IQueryable<ProjectStaffReplanView> ApplyStaffReplanFilter(
+            IQueryable<ProjectStaffReplanView> query, string? filter)
+        {
+            if (string.IsNullOrEmpty(filter))
+                return query;
+
+            dynamic? filterModel = JsonConvert.DeserializeObject<ExpandoObject>(filter);
+            if (filterModel == null)
+                return query;
+
+            var dict = (IDictionary<string, object>)filterModel;
+
+            if (dict.TryGetValue("WorkGroup", out var workGroup) && workGroup != null)
+                query = query.Where(x => EF.Functions.ILike(x.WorkGroup!, $"%{workGroup}%"));
+
+            if (dict.TryGetValue("GradeCode", out var gradeCode) && gradeCode != null)
+                query = query.Where(x => EF.Functions.ILike(x.GradeCode!, $"%{gradeCode}%"));
+
+            if (dict.TryGetValue("Name", out var name) && name != null)
+                query = query.Where(x => EF.Functions.ILike(x.Name!, $"%{name}%"));
+
+            if (dict.TryGetValue("ParentProject", out var parentProject) && parentProject != null)
+                query = query.Where(x => EF.Functions.ILike(x.ParentProject!, $"%{parentProject}%"));
+
+            if (dict.TryGetValue("Program", out var program) && program != null)
+                query = query.Where(x => EF.Functions.ILike(x.Program!, $"%{program}%"));
+
+            return query;
+        }
+
+        private static IQueryable<ProjectStaffReplanView> ApplyStaffReplanSorting(
+            IQueryable<ProjectStaffReplanView> query, string? sortBy, bool descending)
+        {
+            if (string.IsNullOrEmpty(sortBy))
+                return query.OrderBy(x => x.WorkGroup).ThenBy(x => x.Name);
+
+            return sortBy.ToLower() switch
+            {
+                "workgroup" => descending ? query.OrderByDescending(x => x.WorkGroup) : query.OrderBy(x => x.WorkGroup),
+                "gradecode" => descending ? query.OrderByDescending(x => x.GradeCode) : query.OrderBy(x => x.GradeCode),
+                "name" => descending ? query.OrderByDescending(x => x.Name) : query.OrderBy(x => x.Name),
+                "plannedhours" => descending ? query.OrderByDescending(x => x.PlannedHours) : query.OrderBy(x => x.PlannedHours),
+                "parentproject" => descending ? query.OrderByDescending(x => x.ParentProject) : query.OrderBy(x => x.ParentProject),
+                "program" => descending ? query.OrderByDescending(x => x.Program) : query.OrderBy(x => x.Program),
+                _ => query.OrderBy(x => x.WorkGroup).ThenBy(x => x.Name)
             };
         }
     }

@@ -111,6 +111,7 @@ namespace Apha.PACT.DataAccess.Repository
             query = ApplyILikeFilter(dict, "ShortDescription", query, (q, v) => q.Where(x => x.ShortDescription != null && EF.Functions.ILike(x.ShortDescription, v)));
             query = ApplyILikeFilter(dict, "Owner", query, (q, v) => q.Where(x => x.Owner != null && EF.Functions.ILike(x.Owner, v)));
             query = ApplyILikeFilter(dict, "TestManager", query, (q, v) => q.Where(x => x.TestManager != null && EF.Functions.ILike(x.TestManager, v)));
+            query = ApplyILikeFilter(dict, "JobStatus", query, (q, v) => q.Where(x => x.JobStatus != null && EF.Functions.ILike(x.JobStatus, v)));
 
             return query;
         }
@@ -135,6 +136,7 @@ namespace Apha.PACT.DataAccess.Repository
                 ["shortdescription"] = e => e.ShortDescription,
                 ["owner"] = e => e.Owner,
                 ["testmanager"] = e => e.TestManager,
+                ["jobstatus"] = e => e.JobStatus,
                 ["unitpricevla"] = e => e.UnitPriceVla,
                 ["defraunitprice"] = e => e.DefraUnitPrice,
             };

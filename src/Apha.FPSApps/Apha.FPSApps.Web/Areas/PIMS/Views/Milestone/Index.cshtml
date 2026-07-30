@@ -31,10 +31,15 @@
                                 onchange="onProjectChanged(this.value)">
                         </select>
                     </div>
-                    <div>
+                    <div >
+                        <a id="importBtn"
+                               href="@Url.Action("Index", "MilestoneImport", new { area = "PIMS", project = parentproject })"
+                               class="govuk-button font-size-16 govuk-!-margin-bottom-1">
+                            Import
+                        </a>
                         <a id="logOfUpdatesBtn"
                            href="@Url.Action("LogIndex", "Milestone", new { area = "PIMS", project = parentproject })"
-                           class="govuk-button font-size-16 govuk-!-margin-bottom-1">
+                           class="govuk-button font-size-16 govuk-!-margin-bottom-1 govuk-!-margin-left-2">
                             Log of Updates
                         </a>
                     </div>
@@ -52,7 +57,7 @@
 
                 <!-- ── Financial Form Dates section ─────────────────────── -->
                 <div class="govuk-grid-row sup_margin_left_right_0 sup_margin_top_20">
-                    <div class="govuk-grid-column-full govuk-!-padding-4">
+                    <div>
                         <div class="govuk-grid-column-full sup_margin_left_right_10 checkbox-section sup_flex_align_center sup_gap_16 govuk-!-margin-bottom-2">
                             <span class="govuk-label tab-font-bold-size sup_margin_0">
                                 Show Milestone/Deliverable Update Received

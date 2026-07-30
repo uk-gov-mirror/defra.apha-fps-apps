@@ -1,0 +1,240 @@
+@model Apha.FPSApps.Web.Areas.PIMS.Models.StagingMilestoneItem
+
+<dialog id="importEditModal" class="govuk-edit-modal" aria-labelledby="importEditModalTitle">
+    <div class="govuk-edit-modal-dialog">
+
+        <div class="govuk-edit-modal__header">
+            <h3 id="importEditModalTitle" class="govuk-heading-s sup_margin_0">
+                @(ViewBag.IsAddingNew == true ? "Add Milestone Import Record" : "Edit Milestone Import Record")
+            </h3>
+            <button type="button" class="govuk-edit-modal__close-btn"
+                    onclick="closeImportEditModal()" aria-label="Close">&#x2715;</button>
+        </div>
+
+        <div class="govuk-edit-modal__body">
+            <div class="sup_flex_between_center sup_margin_bottom_10">
+                <div></div>
+              @*   <span class="app-mandatory-note">
+                    <span class="app-required" aria-hidden="true">*</span> Mandatory Fields
+                </span> *@
+            </div>
+
+            <form id="formImportEdit" class="app-form" novalidate>
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="Project" />
+                <input type="hidden" asp-for="IsAddingNew" value="@(ViewBag.IsAddingNew == true ? "true" : "false")" />
+                <input type="hidden" asp-for="TypeId" />
+                <input type="hidden" id="hdnModalTypeLookUp" name="TypeLookUp" value="@ViewBag.TypeLookUp" />
+               
+
+                <div class="govuk-error-summary" role="alert"
+                     aria-labelledby="importEditForm-error-title" tabindex="-1" style="display: none;">
+                    <h2 class="govuk-error-summary__title" id="importEditForm-error-title">There is a problem</h2>
+                    <div class="govuk-error-summary__body">
+                        <ul class="govuk-list govuk-error-summary__list"></ul>
+                    </div>
+                </div>
+
+                <fieldset class="govuk-fieldset">
+                    <legend class="govuk-visually-hidden">Milestone Import Record</legend>
+
+                    <div class="govuk-grid-row">
+                        <div class="govuk-grid-column-one-half">
+                            <div class="govuk-form-group sup_margin_bottom_10">
+                                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="Number">
+                                    Number
+                                    @if(ViewBag.TypeLookUp == 'M')
+                                    {
+                                        <span class="app-required" aria-hidden="true">*</span>
+                                    }
+                                </label>
+                                @if (ViewBag.TypeLookUp == 'M')
+                                {
+                                    <input class="govuk-input govuk-!-font-size-16 govuk-!-width-full"
+                                           asp-for="Number" type="text"
+                                           autocomplete="off" aria-required="true" required />
+                                }
+                                else
+                                {
+                                    <input class="govuk-input govuk-!-font-size-16 govuk-!-width-full"
+                                           asp-for="Number" type="text"
+                                           autocomplete="off" aria-required="false" />
+                                }
+                                <span asp-validation-for="Number" id="NumberValidationMessage" class="govuk-error-message"></span>
+                            </div>
+                        </div>
+                        <div class="govuk-grid-column-one-half">
+                            <div class="govuk-form-group sup_margin_bottom_10">
+                                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" for="ImportDateDueDisplay">
+                                    Date Due <span class="app-required" aria-hidden="true">*</span>
+                                </label>
+                                <div style="position:relative; display:flex; align-items:center; width:stretch;">
+                                    <input type="text"
+                                           id="ImportDateDueDisplay"
+                                           class="govuk-input govuk-!-font-size-16 govuk-!-width-full"
+                                           value="@(Model.DateDue != default ? Model.DateDue.ToString("dd/MM/yyyy") : string.Empty)"
+                                           placeholder="dd/mm/yyyy"
+                                           maxlength="10"
+                                           autocomplete="off"
+                                           oninput="formatDateInput(this)"
+                                           onblur="validateAndSyncDate('ImportDateDueDisplay', 'ImportDateDueBinding', 'ImportDateDueError')"
+                                           style="flex:1;" aria-required="true">
+                                    <button type="button"
+                                            onclick="openImportDatePicker('ImportDateDuePicker')"
+                                            style="margin-left:4px; padding:6px 10px; cursor:pointer; background:#f3f2f1; border:2px solid #0b0c0c; font-size:1rem; line-height:1;"
+                                            aria-label="Open date picker for Due date">&#128197;</button>
+                                    <input type="hidden"
+                                           name="DateDue"
+                                           id="ImportDateDueBinding"
+                                           value="@(Model.DateDue != default ? Model.DateDue.ToString("yyyy-MM-dd") : string.Empty)">
+                                    <input type="date"
+                                           id="ImportDateDuePicker"
+                                           value="@(Model.DateDue != default ? Model.DateDue.ToString("yyyy-MM-dd") : string.Empty)"
+                                           style="position:absolute; top:0; left:0; opacity:0; width:1px; height:1px; pointer-events:auto;"
+                                           aria-label="Date Due picker"
+                                           onchange="syncImportDateToText('ImportDateDuePicker', 'ImportDateDueDisplay', 'ImportDateDueBinding', 'ImportDateDueError')">
+                                </div>
+                                <span id="ImportDateDueError" class="govuk-error-message" style="display:none;"></span>
+                                <span asp-validation-for="DateDue" class="govuk-error-message"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="govuk-grid-row">
+                        <div class="govuk-grid-column-full">
+                            <div class="govuk-form-group sup_margin_bottom_10">
+                                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="Description">
+                                    Description <span class="app-required" aria-hidden="true">*</span>
+                                </label>
+                                <textarea class="govuk-textarea govuk-!-font-size-16 sup_margin_0"
+                                          asp-for="Description" rows="3"
+                                          aria-required="true"></textarea>
+                                <span asp-validation-for="Description" class="govuk-error-message"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                </fieldset>
+            </form>
+        </div>
+
+        <div class="govuk-edit-modal__footer">
+            <button type="button" class="govuk-button govuk-button--secondary sup_margin_0"
+                    data-module="govuk-button" onclick="closeImportEditModal()">Cancel</button>
+            <button type="button" class="govuk-button sup_margin_0"
+                    data-module="govuk-button" onclick="saveImport()">
+                @(ViewBag.IsAddingNew == true ? "Save" : "Update")
+            </button>
+        </div>
+
+    </div>
+</dialog>
+
+<script>
+    function setNumberRequiredByTypeLookUp() {
+        var typeLookUp = document.getElementById('hdnModalTypeLookUp')?.value;
+        var numberInput = document.getElementById('Number');
+        var numberValidationMessage = document.getElementById('NumberValidationMessage');
+        if (!numberInput) return;
+
+        if (typeLookUp === 'M') {
+            numberInput.setAttribute('required', 'required');
+            numberInput.setAttribute('aria-required', 'true');
+        } else {
+            numberInput.removeAttribute('required');
+            numberInput.setAttribute('aria-required', 'false');
+            if (numberValidationMessage) {
+                numberValidationMessage.textContent = '';
+                numberValidationMessage.style.display = 'none';
+            }
+        }
+    }
+
+    setNumberRequiredByTypeLookUp();
+
+    function openImportDatePicker(pickerId) {
+        var picker = document.getElementById(pickerId);
+        if (picker) {
+            try { picker.showPicker(); } catch (e) { picker.click(); }
+        }
+    }
+
+    function syncImportDateToText(pickerId, displayId, hiddenId, errorId) {
+        var picker = document.getElementById(pickerId);
+        if (picker.value) {
+            var parts = picker.value.split('-');
+            document.getElementById(displayId).value = parts[2] + '/' + parts[1] + '/' + parts[0];
+            document.getElementById(hiddenId).value = picker.value;
+        } else {
+            document.getElementById(displayId).value = '';
+            document.getElementById(hiddenId).value = '';
+        }
+
+        if (errorId) {
+            var err = document.getElementById(errorId);
+            if (err) { err.style.display = 'none'; err.textContent = ''; }
+        }
+    }
+
+    function formatDateInput(input) {
+        var val = input.value.replace(/[^\d\/\-]/g, '');
+        if (val.length > 10) val = val.substring(0, 10);
+        input.value = val;
+    }
+
+    function validateAndSyncDate(displayId, hiddenId, errorId) {
+        var display = document.getElementById(displayId);
+        var hidden  = document.getElementById(hiddenId);
+        var errorEl = document.getElementById(errorId);
+        var val = display.value.trim();
+
+        if (!val) {
+            hidden.value = '';
+            errorEl.style.display = 'none';
+            errorEl.textContent = '';
+            return;
+        }
+
+        if (/^\d{4}[\/\-]\d{2}[\/\-]\d{2}$/.test(val)) {
+            hidden.value = '';
+            errorEl.textContent = 'Enter the date in dd/mm/yyyy format, not yyyy/mm/dd';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        var usMatch = val.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+        if (usMatch && parseInt(usMatch[2], 10) > 12) {
+            hidden.value = '';
+            errorEl.textContent = 'Enter the date in dd/mm/yyyy format, not mm/dd/yyyy';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        var match = val.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+        if (!match) {
+            hidden.value = '';
+            errorEl.textContent = 'Enter the date in dd/mm/yyyy format';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        var day   = parseInt(match[1], 10);
+        var month = parseInt(match[2], 10);
+        var year  = parseInt(match[3], 10);
+        var date  = new Date(year, month - 1, day);
+
+        if (date.getFullYear() !== year || date.getMonth() !== (month - 1) || date.getDate() !== day) {
+            hidden.value = '';
+            errorEl.textContent = 'Enter a valid date in dd/mm/yyyy format';
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        var mm = String(month).padStart(2, '0');
+        var dd = String(day).padStart(2, '0');
+        hidden.value = year + '-' + mm + '-' + dd;
+        errorEl.style.display = 'none';
+        errorEl.textContent = '';
+    }
+</script>

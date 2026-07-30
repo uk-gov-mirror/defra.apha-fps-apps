@@ -890,51 +890,35 @@ namespace Apha.FPSApps.Application.UnitTests.Services.PIMS.MilestoneServiceTest
         #region GetStagingRowsAsync
 
         [Fact]
-        public async Task GetStagingRowsAsync_WithProject_ReturnsRows()
+        public async Task GetStagingRowsAsync_WithId_ReturnsRows()
         {
             // Arrange
-            const string project = "PP001";
-            var data = new List<StagingMilestoneDto> { new() { Id = 1, Project = project, Number = "M1" } };
+            const int id = 1;
+            var data = new List<StagingMilestoneDto> { new() { Id = id, Project = "PP001", Number = "M1" } };
             var expected = ApiResponseDto<List<StagingMilestoneDto>>.SuccessResponse(data);
 
-            _pimsMilestoneApiClient.GetStagingRowsAsync(project).Returns(expected);
+            _pimsMilestoneApiClient.GetStagingRowsAsync(id).Returns(expected);
 
             // Act
-            var result = await _sut.GetStagingRowsAsync(project);
+            var result = await _sut.GetStagingRowsAsync(id);
 
             // Assert
             Assert.True(result.Success);
             Assert.Single(result.Data!);
-            await _pimsMilestoneApiClient.Received(1).GetStagingRowsAsync(project);
-        }
-
-        [Fact]
-        public async Task GetStagingRowsAsync_WithNullProject_PassesNullToClient()
-        {
-            // Arrange
-            var expected = ApiResponseDto<List<StagingMilestoneDto>>.SuccessResponse([]);
-
-            _pimsMilestoneApiClient.GetStagingRowsAsync(null).Returns(expected);
-
-            // Act
-            var result = await _sut.GetStagingRowsAsync(null);
-
-            // Assert
-            Assert.True(result.Success);
-            await _pimsMilestoneApiClient.Received(1).GetStagingRowsAsync(Arg.Is<string?>(p => p == null));
+            await _pimsMilestoneApiClient.Received(1).GetStagingRowsAsync(id);
         }
 
         [Fact]
         public async Task GetStagingRowsAsync_WhenApiFails_ReturnsFailureResponse()
         {
             // Arrange
-            const string project = "PP001";
+            const int id = 1;
             var expected = ApiResponseDto<List<StagingMilestoneDto>>.FailureResponse(OneError("Not found", "NOT_FOUND"), new ApiMetaDto());
 
-            _pimsMilestoneApiClient.GetStagingRowsAsync(project).Returns(expected);
+            _pimsMilestoneApiClient.GetStagingRowsAsync(id).Returns(expected);
 
             // Act
-            var result = await _sut.GetStagingRowsAsync(project);
+            var result = await _sut.GetStagingRowsAsync(id);
 
             // Assert
             Assert.False(result.Success);
@@ -1174,13 +1158,12 @@ namespace Apha.FPSApps.Application.UnitTests.Services.PIMS.MilestoneServiceTest
         #region ValidateStagingAsync
 
         [Fact]
-        public async Task ValidateStagingAsync_WithSuccessResponse_ReturnsValidationRows()
+        public async Task ValidateStagingAsync_WithSuccessResponse_ReturnsSuccess()
         {
             // Arrange
             const string project = "PP001";
             const string typeId = "M";
-            var data = new List<StagingMilestoneDto> { new() { Id = 1, Project = project, TypeId = typeId } };
-            var expected = ApiResponseDto<List<StagingMilestoneDto>>.SuccessResponse(data);
+            var expected = ApiResponseDto<object>.SuccessResponse(new { success = true });
 
             _pimsMilestoneApiClient.ValidateStagingAsync(project, typeId, true).Returns(expected);
 
@@ -1189,7 +1172,6 @@ namespace Apha.FPSApps.Application.UnitTests.Services.PIMS.MilestoneServiceTest
 
             // Assert
             Assert.True(result.Success);
-            Assert.Single(result.Data!);
             await _pimsMilestoneApiClient.Received(1).ValidateStagingAsync(project, typeId, true);
         }
 
@@ -1198,7 +1180,7 @@ namespace Apha.FPSApps.Application.UnitTests.Services.PIMS.MilestoneServiceTest
         {
             // Arrange
             const string project = "PP001";
-            var expected = ApiResponseDto<List<StagingMilestoneDto>>.FailureResponse(OneError("Validation error", "VALIDATION_ERROR"), new ApiMetaDto());
+            var expected = ApiResponseDto<object>.FailureResponse(OneError("Validation error", "VALIDATION_ERROR"), new ApiMetaDto());
 
             _pimsMilestoneApiClient.ValidateStagingAsync(project, null, false).Returns(expected);
 
@@ -1215,7 +1197,7 @@ namespace Apha.FPSApps.Application.UnitTests.Services.PIMS.MilestoneServiceTest
         {
             // Arrange
             const string project = "PP123";
-            var expected = ApiResponseDto<List<StagingMilestoneDto>>.SuccessResponse([]);
+            var expected = ApiResponseDto<object>.SuccessResponse(new { success = true });
 
             _pimsMilestoneApiClient.ValidateStagingAsync(project, null, false).Returns(expected);
 

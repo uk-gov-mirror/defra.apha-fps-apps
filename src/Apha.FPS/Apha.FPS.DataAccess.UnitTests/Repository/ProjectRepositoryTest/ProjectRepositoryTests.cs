@@ -443,7 +443,7 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.ProjectRepositoryTest
         }
 
         [Fact]
-        public async Task GetProjectByIdAsync_IsCaseSensitive()
+        public async Task GetProjectByIdAsync_IsCaseInsensitive()
         {
             // Arrange — match is on exact ParentProject string
             var projects = new List<Project>
@@ -456,7 +456,9 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.ProjectRepositoryTest
             var result = await repo.GetProjectByIdAsync("pp001");
 
             // Assert
-            Assert.Null(result);
+            Assert.NotNull(result);
+            Assert.Equal("PP001", result.ParentProject);
+            Assert.Equal("Project One", result.ProjectTitle);
         }
 
         [Fact]

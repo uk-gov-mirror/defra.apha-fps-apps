@@ -1,30 +1,4 @@
-// TRANSFORMENGINE: human_review — verify before running
-
-/*
- * TRANSFORMENGINE MIGRATION — RequestMapper.cs
- * Pattern  : stack-upgrade/msaccess-frm-to-dotnet10-mvc-e2e  Phase 5 — API Layer - Controller + RequestMapper + DI (Steps 8-9)
- * Migrated : 2026-06-11
- *
- * CHANGED:
- *   - No new mapping entries required for WorkGroupEmployee in this phase.
- *     WorkGroupEmployeeDto <-> WorkGroupEmployeeReq and WorkGroupEmployeeDto <-> WorkGroupEmployeeRes
- *     were already registered (lines 77-78). AutoMapper resolves the new fields
- *     (TimeRecorder, StartDate, EndDate, HoursPerWeek) by name convention without explicit
- *     ForMember configuration, because field names are identical across Req, Res, and Dto.
- *
- * PRESERVED:
- *   - All existing CreateMap entries for StaffJob, Animal, Project, Division, WorkGroupEmployee,
- *     ProfitCentre, PaginationReq/Res, and all other FPS domain mappings unchanged.
- *
- * DEFERRED / REQUIRES HUMAN REVIEW:
- *   - TRANSFORMENGINE TODO: Run AutoMapper configuration validation (AssertConfigurationIsValid)
- *     in a test to confirm WorkGroupEmployeeReq -> WorkGroupEmployeeDto covers all new fields
- *     (TimeRecorder, StartDate, EndDate, HoursPerWeek) without unmapped-member warnings.
- *   - TRANSFORMENGINE TODO: If AutoMapper strict mode is enabled project-wide, explicitly confirm
- *     that no ForMember entries are needed for the new nullable/int fields.
- */
-
-using Apha.Common.Contracts;
+﻿using Apha.Common.Contracts;
 using Apha.Common.Contracts.FPS;
 using Apha.FPS.Application.Dtos;
 using Apha.FPS.Application.Pagination;
@@ -101,6 +75,10 @@ namespace Apha.FPS.Api.Mappings
             CreateMap<AccountCategoryDto, AccountCategoryRes>().ReverseMap();
             CreateMap<MonthlyOutputDto, MonthlyOutputRes>().ReverseMap();
             CreateMap<CostCentreWorkgroup, CostCentreWorkgroupRes>().ReverseMap();
+            //   CostCentreReq → CostCentreDto (POST create, PUT update request binding; FpsYear excluded from Req — set server-side)
+            //   CostCentreDto → CostCentreRes (GET paged, GET by id, POST, PUT response)
+            CreateMap<CostCentreReq, CostCentreDto>().ReverseMap();
+            CreateMap<CostCentreDto, CostCentreRes>().ReverseMap();
             CreateMap<WorkGroupPersonDto, WorkGroupPersonRes>().ReverseMap();
 
             // ResourceSetUp
@@ -111,7 +89,6 @@ namespace Apha.FPS.Api.Mappings
             CreateMap<ProfitCentreGradeReq, ProfitCentreGradeDto>().ReverseMap();
             CreateMap<WorkgroupGradeDto, WorkgroupGradeRes>().ReverseMap();
 
-            // TRANSFORMENGINE: WorkGroupEmployee mappings verified — covers all CRUD operations including
             // POST CreateWorkGroupEmployeeAsync added in Phase 5. New fields (TimeRecorder, StartDate,
             // EndDate, HoursPerWeek) are resolved by AutoMapper name convention — no ForMember needed.
             CreateMap<WorkGroupEmployeeDto, WorkGroupEmployeeReq>().ReverseMap();
@@ -121,6 +98,9 @@ namespace Apha.FPS.Api.Mappings
 
             CreateMap<ProjectStaffPlanViewDto, ProjectStaffPlanViewRes>().ReverseMap();
             CreateMap<PaginatedResult<ProjectStaffPlanViewDto>, PaginationRes<ProjectStaffPlanViewRes>>();
+
+            CreateMap<ProjectStaffPlanDetailsViewDto, ProjectStaffPlanDetailsViewRes>().ReverseMap();
+            CreateMap<PaginatedResult<ProjectStaffPlanDetailsViewDto>, PaginationRes<ProjectStaffPlanDetailsViewRes>>();
 
             CreateMap<ProjectGroupStaffPlanViewDto, ProjectGroupStaffPlanViewRes>().ReverseMap();
             CreateMap<PaginatedResult<ProjectGroupStaffPlanViewDto>, PaginationRes<ProjectGroupStaffPlanViewRes>>();
@@ -143,11 +123,23 @@ namespace Apha.FPS.Api.Mappings
             CreateMap<PurchaseDto, PurchaseReq>().ReverseMap();
             CreateMap<PurchaseDto, PurchaseRes>().ReverseMap();
 
-            // TimeSellerPC — frmTimeSellerPC
+            // TimeSellerPC - frmTimeSellerPC
             CreateMap<ContributionSummaryRowDto, ContributionSummaryRowRes>().ReverseMap();
             CreateMap<ContributionSummaryTotalsDto, ContributionSummaryTotalsRes>().ReverseMap();
 
-          
+
+            //   TestRCCostReq and TestRCCostRes both map bidirectionally to TestRCCostDto.
+            //   PaginatedResult<TestRCCostDto> -> PaginationRes<TestRCCostRes> for paged list endpoint.
+            CreateMap<TestRCCostReq, TestRCCostDto>().ReverseMap();
+            CreateMap<TestRCCostRes, TestRCCostDto>().ReverseMap();
+            CreateMap<PaginatedResult<TestRCCostDto>, PaginationRes<TestRCCostRes>>();
+
+            //   TestRequirementRCCostReq and TestRequirementRCCostRes both map bidirectionally to TestRequirementRCCostDto.
+            //   PaginatedResult<TestRequirementRCCostDto> -> PaginationRes<TestRequirementRCCostRes> for paged list endpoint.
+            CreateMap<TestRequirementRCCostReq, TestRequirementRCCostDto>().ReverseMap();
+            CreateMap<TestRequirementRCCostRes, TestRequirementRCCostDto>().ReverseMap();
+            CreateMap<PaginatedResult<TestRequirementRCCostDto>, PaginationRes<TestRequirementRCCostRes>>();
+
             // 5 log tables: project_log, staffjob_log, testreq_log, animalreq_log, additionalcosts_log
             CreateMap<ProjectLogDto, ProjectLogRes>().ReverseMap();
             CreateMap<PaginatedResult<ProjectLogDto>, PaginationRes<ProjectLogRes>>();
@@ -163,9 +155,22 @@ namespace Apha.FPS.Api.Mappings
 
             CreateMap<AdditionalCostLogDto, AdditionalCostLogRes>().ReverseMap();
             CreateMap<PaginatedResult<AdditionalCostLogDto>, PaginationRes<AdditionalCostLogRes>>();
+
             // MaintTotalBusinessOverheads
             CreateMap<TotalBusinessOverheadsDto, TotalBusinessOverheadsReq>().ReverseMap();
             CreateMap<TotalBusinessOverheadsDto, TotalBusinessOverheadsRes>().ReverseMap();
+            // StaffResourceUtilisation
+            CreateMap<StaffResourceUtilisationDto, StaffResourceUtilisationRes>().ReverseMap();
+
+
+
+            // ResourceAllocation — Stage 2 Check Resource Allocation
+            CreateMap<ResourceStaffAllocationDto, ResourceStaffAllocationRes>().ReverseMap();
+            CreateMap<ResourceStaffJobDto, ResourceStaffJobRes>().ReverseMap();
+            CreateMap<ResourceStaffJobDetailDto, ResourceStaffJobDetailRes>().ReverseMap();
+
+            // Resource Replan — project staff replan
+            CreateMap<ProjectStaffReplanDto, ProjectStaffReplanRes>().ReverseMap();
         }
     }
 }

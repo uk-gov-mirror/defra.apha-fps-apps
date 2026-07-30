@@ -1138,6 +1138,37 @@ namespace Apha.PIMS.Application.UnitTests.Services.MilestoneServiceTest
         }
 
         [Fact]
+        public async Task GetLogMilestonesAsync_DelegatesToRepository_WithMappedParameters()
+        {
+            // Arrange
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var paginationParams = new PaginationParameters<string>(page: 1, pageSize: 10);
+            var entities = new List<LogMilestone>
+            {
+                new() { Id = 1, Project = "PP001", Number = "M1", UpdateType = 'I' }
+            };
+            var pagedData = new PagedData<LogMilestone>(entities, new PaginationData { TotalRecords = 1 });
+            var dtos = new List<LogMilestoneDto>
+            {
+                new() { Project = "PP001", Number = "M1", UpdateType = "I" }
+            };
+            var paginationDto = new PaginationDto { TotalRecords = 1 };
+
+            _mockMapper.Map<PaginationParameters<string>>(query).Returns(paginationParams);
+            _mockRepository.GetLogMilestonesAsync(paginationParams, "PP001", "M", "1").Returns(pagedData);
+            _mockMapper.Map<List<LogMilestoneDto>>(pagedData.Data).Returns(dtos);
+            _mockMapper.Map<PaginationDto>(pagedData.PaginationData).Returns(paginationDto);
+
+            // Act
+            var result = await _sut.GetLogMilestonesAsync(query, "PP001", "M", "1");
+
+            // Assert
+            result.Data.Should().ContainSingle();
+            result.PaginationData.TotalRecords.Should().Be(1);
+            await _mockRepository.Received(1).GetLogMilestonesAsync(paginationParams, "PP001", "M", "1");
+        }
+
+        [Fact]
         public async Task GetLogMilestonesAsync_WithNullOptionalParams_PassesNullsToRepository()
         {
             // Arrange
@@ -1291,35 +1322,36 @@ namespace Apha.PIMS.Application.UnitTests.Services.MilestoneServiceTest
         #region GetStagingRowsAsync
 
         [Fact]
-        public async Task GetStagingRowsAsync_ReturnsMappedList()
+        public async Task GetStagingRowsAsync_ReturnsMappedList_WhenProjectProvided()
         {
             // Arrange
             var entities = new List<StagingMilestone> { new() { Id = 1, Project = "PP001", Number = "M1" } };
             var dtos = new List<StagingMilestoneDto> { new() { Id = 1, Project = "PP001", Number = "M1" } };
 
-            _mockRepository.GetStagingRowsAsync("PP001").Returns(entities);
+            _mockRepository.GetStagingRowsAsync(1).Returns(entities);
             _mockMapper.Map<List<StagingMilestoneDto>>(entities).Returns(dtos);
 
             // Act
-            var result = await _sut.GetStagingRowsAsync("PP001");
+            var result = await _sut.GetStagingRowsAsync(1);
 
             // Assert
             result.Should().ContainSingle(r => r.Number == "M1");
-            await _mockRepository.Received(1).GetStagingRowsAsync("PP001");
+            await _mockRepository.Received(1).GetStagingRowsAsync(1);
         }
 
         [Fact]
-        public async Task GetStagingRowsAsync_WithNullProject_PassesNullToRepository()
+        public async Task GetStagingRowsAsync_ReturnsEmpty_WhenNoRowsFound()
         {
             // Arrange
-            _mockRepository.GetStagingRowsAsync(null).Returns(new List<StagingMilestone>());
+            _mockRepository.GetStagingRowsAsync(99).Returns(new List<StagingMilestone>());
             _mockMapper.Map<List<StagingMilestoneDto>>(Arg.Any<List<StagingMilestone>>()).Returns(new List<StagingMilestoneDto>());
 
             // Act
-            await _sut.GetStagingRowsAsync(null);
+            var result = await _sut.GetStagingRowsAsync(99);
 
             // Assert
-            await _mockRepository.Received(1).GetStagingRowsAsync(Arg.Is<string?>(p => p == null));
+            result.Should().BeEmpty();
+            await _mockRepository.Received(1).GetStagingRowsAsync(99);
         }
 
         #endregion
@@ -1341,6 +1373,8 @@ namespace Apha.PIMS.Application.UnitTests.Services.MilestoneServiceTest
             var created = new StagingMilestone { Project = "PP001", Number = "M9", Description = "Desc", DateDue = dto.DateDue };
             var resultDto = new StagingMilestoneDto { Project = "PP001", Number = "M9", Description = "Desc", DateDue = dto.DateDue };
 
+            // Mock program retrieval to return a program ending in "surv"
+            _mockRepository.GetProgramByProjectAsync("PP001").Returns("TestSurv");
             _mockRepository.GetNextMilestoneNumberAsync("PP001", 2025).Returns("M9");
             _mockMapper.Map<StagingMilestone>(dto).Returns(entity);
             _mockRepository.AddStagingRowAsync(entity).Returns(created);
@@ -1352,6 +1386,7 @@ namespace Apha.PIMS.Application.UnitTests.Services.MilestoneServiceTest
             // Assert
             result.Number.Should().Be("M9");
             dto.Number.Should().Be("M9");
+            await _mockRepository.Received(1).GetProgramByProjectAsync("PP001");
             await _mockRepository.Received(1).GetNextMilestoneNumberAsync("PP001", 2025);
             await _mockRepository.Received(1).AddStagingRowAsync(entity);
         }

@@ -1,81 +1,190 @@
 @using Microsoft.AspNetCore.Mvc.Rendering
 @model Apha.FPSApps.Web.Areas.CostBook.Models.ProjectYearRateItem
 
+@{
+    bool isCommProgramme = Convert.ToString(Model.Programme ?? "").ToLower() == "comm";
+}
+
 <div class="modal-header">
-    <h5 class="modal-title"> Project Rates</h5>
+    <h5 class="modal-title govuk-!-margin-bottom-0 govuk-heading-s"> Project Rates</h5>
     <button type="button" class="close project-close-btn" aria-label="Close" onclick="closeModal()">×</button>
 </div>
-<div class="modal-body">
-    <form id="addNewProjectYearForm">
+<div class="modal-body isAddNewYearModal">
+    <form id="addNewProjectYearForm" novalidate>
         <input asp-for="Programme" type="hidden">
+        <div class="govuk-error-summary" role="alert"
+             aria-labelledby="addProjectYearErrorTitle" tabindex="-1" style="display: none;">
+            <h2 class="govuk-error-summary__title" id="addProjectYearErrorTitle">There is a problem</h2>
+            <div class="govuk-error-summary__body">
+                <ul class="govuk-list govuk-error-summary__list"></ul>
+            </div>
+        </div>
 
         <div class="govuk-grid-row">
             <div class="govuk-grid-column-one-half">
                 <div class="input-group project-inline-input-group">
-                    <label asp-for="Project" class="govuk-label project-inline-label">Project</label>
+                    <label asp-for="Project" class="govuk-label project-inline-label govuk-!-font-weight-bold">Project</label>
                     <input asp-for="Project" class="govuk-input" readonly>
                 </div>
             </div>
             <div class="govuk-grid-column-one-half">
                 <div class="input-group project-inline-input-group">
-                    <label asp-for="YearValue" class="govuk-label project-inline-label-wide">Year</label>
+                    <label asp-for="YearValue" class="govuk-label project-inline-label-wide govuk-!-font-weight-bold">Year</label>
                     <input asp-for="YearValue" class="govuk-input" readonly>
                 </div>
             </div>
         </div>
-        @if (Convert.ToString(Model.Programme??"").ToLower() == "comm")
-            {
-                <div class="govuk-grid-row govuk-!-margin-top-2">
-                    <div class="govuk-grid-column-one-half">
+        @if (isCommProgramme)
+        {
+            <div class="govuk-grid-row govuk-!-margin-top-2">
+                <div class="govuk-grid-column-one-half">
 
-                        <div class="rates-section">
-                            <h3 class="govuk-heading-s">Contingency Mark-up %</h3>
-                            <div class="rate-row">
-                                <label asp-for="MarkupTime" class="govuk-label">Time</label>
-                                <input asp-for="MarkupTime" type="number" step="any" class="govuk-input">
-                            </div>
-                            <div class="rate-row">
-                                <label asp-for="MarkupTests" class="govuk-label">Tests</label>
-                                <input asp-for="MarkupTests" type="number" step="any" class="govuk-input">
-                            </div>
-                            <div class="rate-row">
-                                <label asp-for="MarkupAnimals" class="govuk-label">Animals</label>
-                                <input asp-for="MarkupAnimals" type="number" step="any" class="govuk-input">
-                            </div>
-                            <div class="rate-row">
-                                <label asp-for="MarkupAdditional" class="govuk-label">Additional</label>
-                                <input asp-for="MarkupAdditional" type="number" step="any" class="govuk-input">
-                            </div>
-                        </div>
+                    <div class="rates-section">
+                        <h3 class="govuk-heading-s">Contingency Mark-up %</h3>
 
-                    </div>
-                    <div class="govuk-grid-column-one-half">
+                        <table class="govuk-table govuk-!-margin-bottom-0">
+                            <tbody class="govuk-table__body">
+                                <tr class="govuk-table__row">
+                                    <td scope="row" asp-for="MarkupTime" class="govuk-table__header">Time</td>
+                                    <td class="govuk-table__cell govuk-form-group">
+                                        @if (isCommProgramme)
+                                        {
+                                            <input asp-for="MarkupTime" type="number" step="any" class="govuk-input" required data-val-required="Time is required." />
+                                        }
+                                        else
+                                        {
+                                            <input asp-for="MarkupTime" type="number" step="any" class="govuk-input" />
+                                        }
+                                        <span asp-validation-for="MarkupTime" class="govuk-error-message" style="display:none;"></span>
+                                    </td>
+                                </tr>
 
-                        <div class="rates-section">
-                            <h3 class="govuk-heading-s">Profit Margin %</h3>
-                            <div class="rate-row">
-                                <label asp-for="ProfitTime" class="govuk-label">Time</label>
-                                <input asp-for="ProfitTime" type="number" step="any" class="govuk-input">
-                            </div>
-                            <div class="rate-row">
-                                <label asp-for="ProfitTests" class="govuk-label">Tests</label>
-                                <input asp-for="ProfitTests" type="number" step="any" class="govuk-input">
-                            </div>
-                            <div class="rate-row">
-                                <label asp-for="ProfitAnimals" class="govuk-label">Animals</label>
-                                <input asp-for="ProfitAnimals" type="number" step="any" class="govuk-input">
-                            </div>
-                            <div class="rate-row">
-                                <label asp-for="ProfitAdditional" class="govuk-label">Additional</label>
-                                <input asp-for="ProfitAdditional" type="number" step="any" class="govuk-input">
-                            </div>
-                        </div>
+                                <tr class="govuk-table__row">
+                                    <td scope="row" asp-for="MarkupTests" class="govuk-table__header">Tests</td>
+                                    <td class="govuk-table__cell govuk-form-group">
+                                        @if (isCommProgramme)
+                                        {
+                                            <input asp-for="MarkupTests" type="number" step="any" class="govuk-input" required data-val-required="Tests is required." />
+                                        }
+                                        else
+                                        {
+                                            <input asp-for="MarkupTests" type="number" step="any" class="govuk-input" />
+                                        }
+                                        <span asp-validation-for="MarkupTests" class="govuk-error-message" style="display:none;"></span>
+                                    </td>
+                                </tr>
 
+                                <tr class="govuk-table__row">
+                                    <td asp-for="MarkupAnimals" scope="row" class="govuk-table__header">Animals</td>
+                                    <td class="govuk-table__cell govuk-form-group">
+                                        @if (isCommProgramme)
+                                        {
+                                            <input asp-for="MarkupAnimals" type="number" step="any" class="govuk-input" required data-val-required="Animals is required." />
+                                        }
+                                        else
+                                        {
+                                            <input asp-for="MarkupAnimals" type="number" step="any" class="govuk-input" />
+                                        }
+                                        <span asp-validation-for="MarkupAnimals" class="govuk-error-message" style="display:none;"></span>
+                                    </td>
+                                </tr>
+
+                                <tr class="govuk-table__row">
+                                    <td asp-for="MarkupAdditional" scope="row" class="govuk-table__header">Additional</td>
+                                    <td class="govuk-table__cell govuk-form-group">
+                                        @if (isCommProgramme)
+                                        {
+                                            <input asp-for="MarkupAdditional" type="number" step="any" class="govuk-input" required data-val-required="Additional is required." />
+                                        }
+                                        else
+                                        {
+                                            <input asp-for="MarkupAdditional" type="number" step="any" class="govuk-input" />
+                                        }
+                                        <span asp-validation-for="MarkupAdditional" class="govuk-error-message" style="display:none;"></span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                       
                     </div>
                 </div>
-            }
 
-        <button type="submit" id="btnAddNewProjectYear" class="govuk-button">Save</button>
-        <button type="button" class="govuk-button govuk-button--secondary sup_margin_0" onclick="closeModal()">Cancel</button>
+                @* Profit Margin % *@
+                <div class="govuk-grid-column-one-half">
+                    <div class="rates-section">
+                        <h3 class="govuk-heading-s">Profit Margin %</h3>
+                        <table class="govuk-table govuk-!-margin-bottom-0">
+                            <tbody class="govuk-table__body">
+                                <tr class="govuk-table__row">
+                                    <td scope="row" asp-for="ProfitTime" class="govuk-table__header">Time</td>
+                                    <td class="govuk-table__cell govuk-form-group">
+                                        @if (isCommProgramme)
+                                        {
+                                            <input asp-for="ProfitTime" type="number" step="any" class="govuk-input" required data-val-required="Time is required." />
+                                        }
+                                        else
+                                        {
+                                            <input asp-for="ProfitTime" type="number" step="any" class="govuk-input" />
+                                        }
+                                        <span asp-validation-for="ProfitTime" class="govuk-error-message" style="display:none;"></span>
+                                    </td>
+                                </tr>
+
+                                <tr class="govuk-table__row">
+                                    <td scope="row" asp-for="ProfitTests" class="govuk-table__header">Tests</td>
+                                    <td class="govuk-table__cell govuk-form-group">
+                                        @if (isCommProgramme)
+                                        {
+                                            <input asp-for="ProfitTests" type="number" step="any" class="govuk-input" required data-val-required="Tests is required." />
+                                        }
+                                        else
+                                        {
+                                            <input asp-for="ProfitTests" type="number" step="any" class="govuk-input" />
+                                        }
+                                        <span asp-validation-for="ProfitTests" class="govuk-error-message" style="display:none;"></span>
+                                    </td>
+                                </tr>
+
+                                <tr class="govuk-table__row">
+                                    <td asp-for="ProfitAnimals" scope="row" class="govuk-table__header">Animals</td>
+                                    <td class="govuk-table__cell govuk-form-group">
+                                        @if (isCommProgramme)
+                                        {
+                                            <input asp-for="ProfitAnimals" type="number" step="any" class="govuk-input" required data-val-required="Animals is required." />
+                                        }
+                                        else
+                                        {
+                                            <input asp-for="ProfitAnimals" type="number" step="any" class="govuk-input" />
+                                        }
+                                        <span asp-validation-for="ProfitAnimals" class="govuk-error-message" style="display:none;"></span>
+                                    </td>
+                                </tr>
+
+                                <tr class="govuk-table__row">
+                                    <td asp-for="ProfitAdditional" scope="row" class="govuk-table__header">Additional</td>
+                                    <td class="govuk-table__cell govuk-form-group">
+                                        @if (isCommProgramme)
+                                        {
+                                            <input asp-for="ProfitAdditional" type="number" step="any" class="govuk-input" required data-val-required="Additional is required." />
+                                        }
+                                        else
+                                        {
+                                            <input asp-for="ProfitAdditional" type="number" step="any" class="govuk-input" />
+                                        }
+                                        <span asp-validation-for="ProfitAdditional" class="govuk-error-message" style="display:none;"></span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                       
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="govuk-!-margin-top-3">
+            <button type="submit" id="btnAddNewProjectYear" class="govuk-button govuk-!-margin-bottom-0 isBtnSave">Save</button>
+            <button type="button" class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0" onclick="closeModal()">Cancel</button>
+        </div>
     </form>
 </div>

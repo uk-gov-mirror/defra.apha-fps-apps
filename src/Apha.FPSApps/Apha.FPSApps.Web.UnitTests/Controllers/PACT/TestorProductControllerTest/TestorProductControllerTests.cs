@@ -453,24 +453,6 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PACT.TestListControllerTest
         }
 
         [Fact]
-        public async Task DeleteTestOrProduct_WhenServiceReturnsFalse_ReturnsJsonWithFailure()
-        {
-            // Arrange
-            var itemCode = "T001";
-            var expectedResponse = ApiResponseDto<bool>.SuccessResponse(false);
-            _testListService.DeleteTestOrProductAsync(itemCode).Returns(Task.FromResult(expectedResponse));
-
-            // Act
-            var result = await _controller.DeleteTestOrProduct(itemCode);
-
-            // Assert
-            var jsonResult = Assert.IsType<JsonResult>(result);
-            var resultValue = jsonResult.Value;
-            var successProperty = resultValue?.GetType().GetProperty("success")?.GetValue(resultValue);
-            Assert.False((bool)successProperty!);
-        }
-
-        [Fact]
         public async Task DeleteTestOrProduct_WhenServiceFails_ReturnsJsonWithFailure()
         {
             // Arrange

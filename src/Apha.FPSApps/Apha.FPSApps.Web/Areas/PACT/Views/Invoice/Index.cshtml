@@ -7,14 +7,14 @@
 }
 
 <div class="govuk-grid-row sup_margin_left_right_0">
-    <div class="govuk-grid-column-full">
-        <h1 class="govuk-heading-l">Invoice Records</h1>
+    <div class="govuk-grid-column-full sup_border-bottom">
+        <h1 class="heading_with_txtbox govuk-heading-s govuk-!-margin-top-2 govuk-!-margin-bottom-2">Invoice Recording</h1>
     </div>
 </div>
 
-<div class="govuk-grid-row sup_margin_left_right_0 sup_margin_bottom_20">
+<div class="govuk-grid-row sup_margin_left_right_0 govuk-!-margin-top-2 ">
     <div class="govuk-grid-column-full">
-        <div class="govuk-form-group">
+        <div class="govuk-form-group govuk-!-margin-bottom-3">
             <fieldset class="govuk-fieldset">
                 <div style="display: flex; gap: 20px; align-items: flex-end;">
                     <div class="govuk-form-group" style="margin-bottom: 0; flex: 1;">
@@ -66,7 +66,7 @@
         </div>
     </div>
 </div>
-<div class="govuk-grid-row sup_margin_left_right_0">
+<div class="govuk-grid-row sup_margin_left_right_0 ">
     <div class="govuk-grid-column-full">
         <div id="gridContainer_invoicesGrid">
             @await Html.PartialAsync("_DataGrid", Model.InvoicesGrid)

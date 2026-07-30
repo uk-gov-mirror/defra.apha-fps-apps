@@ -10,7 +10,7 @@ namespace Apha.FPS.Core.Interfaces
         Task<List<AccountCategory>> GetAccountCategoriesAsync();
         Task<AdditionalCost?> GetByIdAsync(string jobCode, string account, string description);
         Task<AdditionalCost> AddAsync(AdditionalCost additionalCost);
-        Task<AdditionalCost> UpdateAsync(AdditionalCost additionalCost);
+        Task<AdditionalCost> UpdateAsync(AdditionalCost additionalCost, string originalAccount, string originalDescription);
         Task<bool> DeleteAsync(string jobCode, string account, string description);
     }
 }

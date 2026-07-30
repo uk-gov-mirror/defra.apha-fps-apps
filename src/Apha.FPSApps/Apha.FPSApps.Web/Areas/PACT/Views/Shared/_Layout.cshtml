@@ -41,11 +41,11 @@
     @await Component.InvokeAsync("AppFooter")
 
     <!-- ── Shared modal popup (for add/edit forms) ───────────────────── -->
-    <div id="modalPopup" tabindex="-1" aria-labelledby="modalPopupLabel"         
+    <div id="modalPopup" tabindex="-1" aria-label="Modal dialog"         
          style="display:none; position:fixed; inset:0; z-index:1050;
                 background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
         <div class="modal-dialog modal-lg" style="margin:auto; width:100%; max-width:700px;">
-            <div id="modaPopupBody" class="modal-content" style="border-radius:4px;">
+            <div id="modaPopupBody" class="govuk-grid-column-full modal-content" style="border-radius:4px;">
             </div>
         </div>
     </div>

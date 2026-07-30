@@ -1,4 +1,5 @@
-using Apha.Common.Utilities.ExcelExport;
+﻿using Apha.Common.Utilities.ExcelExport;
+using Apha.Common.Utilities.ExcelImport;
 using Apha.Common.Utilities.StateManagement;
 using Apha.FPSApps.Application.Interfaces.Costbook;
 using Apha.FPSApps.Application.Interfaces.FPS;
@@ -45,6 +46,8 @@ namespace Apha.FPSApps.Web.Extensions
             services.AddScoped<ICostBookYearlyDetailsService, CostBookYearlyDetailsService>();
             services.AddScoped<ICostBookProjectSummaryService, CostBookProjectSummaryService>();
             services.AddScoped<ICostBookSettingsService, CostBookSettingsService>();
+            // frmMaintCostCentres frontend CRUD service; AddScoped follows request-scoped API client pattern
+            services.AddScoped<ICostCentreService, CostCentreService>();
             services.AddScoped<IGradeService, GradeService>();
             services.AddScoped<IYearMasterService, YearMasterService>();
             services.AddScoped<IDivisionService, DivisionService>();
@@ -55,8 +58,12 @@ namespace Apha.FPSApps.Web.Extensions
             services.AddScoped<ICalenderMonthService, CalenderMonthService>();
             services.AddScoped<ITestCapabilityService, TestCapabilityService>();
             services.AddScoped<ITestRequirementService, TestRequirementService>();
+            //   TestListVlaService delegates to IPactApiClient.PactTestList (PACT API).
+            //   FpsYear filtering is handled by the PACT DbContext global query filter.
+            services.AddScoped<ITestListVlaService, TestListVlaService>();
             services.AddScoped<ITimeCostCalcsService, TimeCostCalcsService>();
             services.AddScoped<IExcelExportService, ExcelExportService>();
+            services.AddScoped<IExcelImportService, ExcelImportService>();
             services.AddScoped<IAppStateService, AppStateService>();
             services.AddScoped<IAdditionalCostService, AdditionalCostService>();
             services.AddScoped<IAccountCategoryService, AccountCategoryService>();
@@ -71,6 +78,8 @@ namespace Apha.FPSApps.Web.Extensions
             services.AddScoped<IProjectYearCostsService, ProjectYearCostsService>();
             services.AddScoped<IMilestoneService, MilestoneService>();
             services.AddScoped<IRadTrackInvoiceService, RadTrackInvoiceService>();
+         
+            services.AddScoped<IYearlyFinancialDataService, YearlyFinancialDataService>();
 
             services.AddScoped<IProfitCentreService, ProfitCentreService>();
             services.AddScoped<IProfitCentreGradeService, ProfitCentreGradeService>();
@@ -84,14 +93,21 @@ namespace Apha.FPSApps.Web.Extensions
             services.AddScoped<IProjectMonthService, ProjectMonthService>();
             services.AddScoped<ICalenderMonthService, CalenderMonthService>();
             services.AddScoped<IWorkGroupReportEmailService, WorkGroupReportEmailService>();
+            // TRANSFORMENGINE: IWorkgroupMaintenanceService registered — Phase 10 (Step 15c)
+            // FPS CRUD maintenance service for frmMaintWorkGroup2 (distinct from PACT IWorkGroupService read-only lookup)
+            services.AddScoped<IWorkgroupMaintenanceService, WorkgroupMaintenanceService>();
             services.AddScoped<Apha.FPSApps.Application.Interfaces.PACT.IWorkGroupService, Apha.FPSApps.Application.Services.PACT.WorkGroupService>();
             services.AddScoped<IDivisionGradeService, DivisionGradeService>();
             services.AddScoped<IProjectStaffPlanService, ProjectStaffPlanService>();
+            services.AddScoped<IProjectStaffPlanDetailsService, ProjectStaffPlanDetailsService>();
+            services.AddScoped<ITestReqBreakdownService, TestReqBreakdownService>();
+            services.AddScoped<ITestActualBreakdownService, TestActualBreakdownService>();
+            services.AddScoped<ITestPlanCrossTabService, TestPlanCrossTabService>();
             services.AddScoped<IProjectGroupStaffPlanService, ProjectGroupStaffPlanService>();
             services.AddScoped<ISummarisedWorkgroupTimeService, SummarisedWgTimeService>();
             services.AddScoped<IAnimalService, AnimalService>();
             services.AddScoped<Apha.FPSApps.Application.Interfaces.FPS.IUserService, Apha.FPSApps.Application.Services.FPS.UserService>();
-            services.AddScoped<IRecreateAndReleaseSummaryService, RecreateAndReleaseSummaryService>();
+            services.AddScoped<IRecreateSummaryService, RecreateSummaryService>();
             services.AddScoped<IBudgetBidsService, BudgetBidsService>();
             services.AddScoped<IPurchasesService, PurchasesService>();
             services.AddScoped<ITotalBusinessOverheadsService, TotalBusinessOverheadsService>();
@@ -100,7 +116,7 @@ namespace Apha.FPSApps.Web.Extensions
             services.AddScoped<IContributionSummaryService, ContributionSummaryService>();
             services.AddScoped<IProjectAuditTrailService, ProjectAuditTrailService>();
             services.AddScoped<IBosworthInterfaceService, BosworthInterfaceService>();
-            services.AddScoped<IBulkRatesService, BulkRatesService>();
+            services.AddScoped<IResourceAllocationService, ResourceAllocationService>();
             return services;
         }
         public static IServiceCollection AddRepositories(this IServiceCollection services)

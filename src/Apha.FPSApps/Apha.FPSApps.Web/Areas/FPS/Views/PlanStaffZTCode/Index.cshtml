@@ -22,7 +22,14 @@
                     <dd class="isFloatLeft" id="staff-grade">@Model.WorkGroupGrade</dd>
                 </div>
             </dl>
-            <a href="JavaScript:history.back()" class="govuk-back-link isFloatRight">Back</a>
+            @if (Model.ReturnToSsr)
+            {
+                <a href="@Url.Action("Index", "SetUpStaffResources", new { area = "FPS" })" class="govuk-back-link isFloatRight">Back</a>
+            }
+            else
+            {
+                <a href="JavaScript:history.back()" class="govuk-back-link isFloatRight">Back</a>
+            }
         </div>
     </div>
 </div>

@@ -15,5 +15,9 @@ namespace Apha.PACT.Application.Interfaces
         Task<bool> DeleteTestReqmtAsync(string testCode, string buyer);
         Task<PaginatedResult<TestSupplierViewDto>> GetPagedBySupplierTestCodeAsync(
             QueryParameters<string> query, string testCode, bool showRejected);
+
+        // TestReqBreakdown
+        Task<PaginatedResult<TestReqBreakdownDto>> GetPlannedTestsByWorkgroupAsync(QueryParameters<string> query);
+        Task<PaginatedResult<TestActualBreakdownDto>> GetActualsTestsWithPlannedDataByWorkgroupAsync(QueryParameters<string> query);
     }
 }

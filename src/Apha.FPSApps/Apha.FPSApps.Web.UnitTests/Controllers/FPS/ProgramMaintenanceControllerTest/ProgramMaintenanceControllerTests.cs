@@ -64,7 +64,7 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.FPS.ProgramMaintenanceControlle
             var viewResult = Assert.IsType<ViewResult>(result);
             var model = Assert.IsType<DataGridConfig<ProgramViewModel>>(viewResult.Model);
             Assert.Equal("programGrid", model.GridId);
-            Assert.Equal("Programs", model.Title);
+            Assert.Equal("Program Maintenance", model.Title);
         }
 
         [Fact]
@@ -351,7 +351,7 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.FPS.ProgramMaintenanceControlle
             var gridConfig = Assert.IsType<DataGridConfig<ProgramViewModel>>(partialViewResult.Model);
 
             Assert.Equal("programGrid", gridConfig.GridId);
-            Assert.Equal("Programs", gridConfig.Title);
+            Assert.Equal("Program Maintenance", gridConfig.Title);
             Assert.False(gridConfig.ShowCheckboxColumn);
             Assert.True(gridConfig.ShowPagination);
             Assert.Equal("ProgramNo", gridConfig.KeyProperty);

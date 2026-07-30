@@ -44,13 +44,7 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
         /// <returns>The Invoice Index view populated with grid configuration and filter options.</returns>
         public async Task<IActionResult> Index(string? parentProject, int? month)
         {
-            var defaultRequest = new PaginationFilter<string>
-            {
-                Page = 1,
-                PageSize = 50,
-                SortBy = "Month",
-                Descending = false
-            };
+            var defaultRequest = new PaginationFilter<string>{};
 
             // Apply month filter via the Filter property
             if (month.HasValue)

@@ -1,0 +1,103 @@
+@model Apha.FPSApps.Web.Areas.PACT.Models.RecreateSummariesViewModel
+
+@{
+    ViewData["Title"] = "Recreate Summaries";
+    var btnDisabled = Model.CanRunJob ? (string?)null : "disabled";
+}
+
+<div class="govuk-grid-row sup_margin_left_right_0 sup_margin_top_10">
+    <div class="govuk-grid-column-full sup_flex_center_start sup_border-bottom sup_margin_bottom_10">
+        <h1 class="govuk-heading-m sup_margin_bottom_10">Recreate Summaries</h1>
+    </div>
+</div>
+
+<div id="recreate-form-scope" class="govuk-grid-row sup_margin_left_right_0 sup_margin_top_10">
+    <div class="govuk-grid-column-three-quarters govuk-!-padding-2">
+
+        @* Error summary — shown for validation and server errors *@
+        <div class="govuk-error-summary" role="alert" tabindex="-1" style="display:none;" aria-labelledby="recreate-error-summary-title">
+            <h2 class="govuk-error-summary__title" id="recreate-error-summary-title">There is a problem</h2>
+            <div class="govuk-error-summary__body">
+                <ul class="govuk-list govuk-error-summary__list"></ul>
+            </div>
+        </div>
+
+        @* Success banner — shown in green at the same position on job trigger success *@
+        <div id="recreate-success-banner"
+             class="govuk-notification-banner govuk-notification-banner--success"
+             role="alert"
+             aria-labelledby="recreate-success-banner-title"
+             style="display:none;">
+            <div class="govuk-notification-banner__header">
+                <h2 class="govuk-notification-banner__title" id="recreate-success-banner-title">Success</h2>
+            </div>
+            <div class="govuk-notification-banner__content">
+                <p id="recreate-success-banner-message" class="govuk-body"></p>
+            </div>
+        </div>
+
+        <table class="govuk-table govuk-!-margin-bottom-0 isCustomPivotGrid">
+            <tbody class="govuk-table__body">
+                <tr class="govuk-table__row">
+                    <td class="govuk-table__cell sup_border_0">
+                        @* Bug 2 + 3 fix: govuk-form-group wrapper, named hidden input, valmsg span *@
+                        <div class="govuk-form-group" id="month-form-group">
+                            <label class="govuk-label govuk-!-margin-bottom-1 isFontBold" for="month">
+                                Select Summary Period:
+                            </label>
+                            @* Hidden input with name="month" so validation library can locate the field *@
+                            <input type="hidden" id="month" name="month" />
+                            <div id="select-period-container" style="min-width:280px;"></div>
+                            @* Inline error span below the field (Bug 2 fix) *@
+                            <span data-valmsg-for="month"
+                                  class="govuk-error-message field-validation-valid"
+                                  style="display:none;"></span>
+                        </div>
+                    </td>
+                    <td class="govuk-table__cell sup_border_0 govuk-!-padding-left-3 recreate-summaries__action-cell">
+                        <div class="govuk-button-group govuk-!-margin-bottom-0">
+                            <button type="button"
+                                    id="btnCreateSummary"
+                                    class="govuk-button govuk-!-margin-bottom-0"
+                                    data-module="govuk-button"
+                                    data-prevent-double-click="true"
+                                    disabled="@btnDisabled"
+                                    onclick="triggerCreateSummary()">
+                                Create Summary
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="govuk-grid-row sup_margin_left_right_0 govuk-!-margin-top-4" id="summary-history-section">
+    <div class="govuk-grid-column-full govuk-!-padding-2">
+        <div id="gridContainer_summaryHistoryGrid">
+            @await Html.PartialAsync("_DataGrid", Model.HistoryGrid)
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/common/multicolumn-dropdown.css" />
+}
+@section Scripts {
+<script>
+    // ── Config bridge: Razor-rendered data exposed to the external JS file ──
+    window.RecreateSummariesConfig = {
+        periodData: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            Model.Months.Select(m => new {
+                value     = m.Value,
+                period    = m.Value,
+                monthName = m.Text.Contains(" - ") ? m.Text.Split(" - ", 2)[1] : m.Text
+            })
+        ))
+    };
+</script>
+<script src="~/js/common/multicolumn-dropdown.component.js"></script>
+<script src="~/js/ajax-form-validation.js"></script>
+<script src="~/js/pact_js/recreate-summaries.js"></script>
+}

@@ -50,7 +50,7 @@ namespace Apha.Costbook.Api.Middleware
             };
 
             var errorType = _configuration["ExceptionTypes:General"]
-                            ?? "COSTBOOK.GENERAL_EXCEPTION";
+                            ?? "FPSAPPS.EXCEPTION.COSTBOOK.GENERAL";
 
             switch (ex)
             {

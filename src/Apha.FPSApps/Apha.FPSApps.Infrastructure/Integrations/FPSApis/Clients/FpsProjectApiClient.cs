@@ -1,4 +1,4 @@
-﻿using Apha.Common.Constants;
+using Apha.Common.Constants;
 using Apha.Common.Contracts.FPS;
 using Apha.Common.Utilities.Query;
 using Apha.FPSApps.Application.Dtos;
@@ -330,7 +330,6 @@ namespace Apha.FPSApps.Infrastructure.Integrations.FPSApis.Clients
             return ApiResponseDto<List<ProjectProfitabilityDto>>.FailureResponse(dto.Errors, dto.Meta);
         }
 
-        // TRANSFORMENGINE: new method — Phase 9 implementation of IFpsProjectApiClient.GetProjectProfitabilityVlaAsync
         //   HTTP GET api/v1/project/profitability-vla (backend Phase 5 controller route [HttpGet("profitability-vla")])
         //   All four filter params are optional flat query-string params; pagination via QueryParameters<string>.
         public async Task<ApiResponseDto<List<ProjectProfitabilityVlaDto>>> GetProjectProfitabilityVlaAsync(
@@ -342,8 +341,7 @@ namespace Apha.FPSApps.Infrastructure.Integrations.FPSApis.Clients
         {
             try
             {
-                // TRANSFORMENGINE: base URL matches backend [Route("api/v{version:apiVersion}/project")]
-                //   + [HttpGet("profitability-vla")] → "api/v1/project/profitability-vla"
+                //   + [HttpGet("profitability-vla")] ? "api/v1/project/profitability-vla"
                 var url = QueryStringHelper.AddQueryString(FpsApiEndpoints.GetProjectProfitabilityVla, query);
 
                 if (!string.IsNullOrEmpty(projectStatus))
@@ -364,11 +362,23 @@ namespace Apha.FPSApps.Infrastructure.Integrations.FPSApis.Clients
             }
             catch (Exception)
             {
-                // TRANSFORMENGINE: catch block returns FailureResponse per Phase 9 error-handling pattern (Sonar S2139)
                 return ApiResponseDto<List<ProjectProfitabilityVlaDto>>.FailureResponse(
                     new List<ApiErrorDto> { new ApiErrorDto { Message = "Failed to retrieve Project Profitability VLA data", Code = InternalCodeError } },
                     new ApiMetaDto());
             }
+        }
+
+        public async Task<ApiResponseDto<List<ProjectStaffReplanDto>>> GetProjectGroupStaffReplanAsync(QueryParameters<string> query, string workgroup)
+        {
+            var baseUrl = string.Format(FpsApiEndpoints.GetWorkgroupStaffReplan, Uri.EscapeDataString(workgroup));
+            var url = QueryStringHelper.AddQueryString(baseUrl, query);
+
+            var response = await _http.GetAsync<List<ProjectStaffReplanRes>>(url);
+            if (response.Success)
+                return _mapper.Map<ApiResponseDto<List<ProjectStaffReplanDto>>>(response);
+
+            var dto = _mapper.Map<ApiResponseDto<List<ProjectStaffReplanDto>>>(response);
+            return ApiResponseDto<List<ProjectStaffReplanDto>>.FailureResponse(dto.Errors, dto.Meta);
         }
     }
 }

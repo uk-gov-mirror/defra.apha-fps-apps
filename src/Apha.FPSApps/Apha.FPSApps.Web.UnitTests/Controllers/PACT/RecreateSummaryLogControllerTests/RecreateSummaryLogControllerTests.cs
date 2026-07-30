@@ -21,13 +21,13 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PACT.RecreateSummariesLogContro
         private const int DefaultPageSize = 10;
 
         private readonly IMapper _mapper;
-        private readonly IRecreateAndReleaseSummaryService _logService;
+        private readonly IRecreateSummaryService _logService;
         private readonly RecreateSummaryLogController _controller;
 
         public RecreateSummaryLogControllerTests()
         {
             _mapper = Substitute.For<IMapper>();
-            _logService = Substitute.For<IRecreateAndReleaseSummaryService>();
+            _logService = Substitute.For<IRecreateSummaryService>();
             _controller = new RecreateSummaryLogController(_mapper, _logService);
         }
 

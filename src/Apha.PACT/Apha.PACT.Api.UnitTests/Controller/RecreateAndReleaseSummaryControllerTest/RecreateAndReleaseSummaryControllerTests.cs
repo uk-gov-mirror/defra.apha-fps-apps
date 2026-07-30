@@ -4,6 +4,8 @@ using Apha.PACT.Api.Controllers;
 using Apha.PACT.Application.Dtos;
 using Apha.PACT.Application.Interfaces;
 using Apha.PACT.Application.Pagination;
+using Apha.PACT.Application.Validation;
+using Apha.PACT.Core.Interfaces;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using NSubstitute;
@@ -13,6 +15,8 @@ namespace Apha.PACT.Api.UnitTests.Controller.RecreateAndReleaseSummaryController
     public class RecreateAndReleaseSummaryControllerTests
     {
         private readonly IRecreateAndReleaseSummaryService _mockService;
+        private readonly IBatchJobService _mockBatchJobService;
+        private readonly IFpsRequestContext _mockfpsRequestContext;
         private readonly IMapper _mockMapper;
         private readonly RecreateAndReleaseSummaryController _controller;
 
@@ -22,8 +26,10 @@ namespace Apha.PACT.Api.UnitTests.Controller.RecreateAndReleaseSummaryController
         public RecreateAndReleaseSummaryControllerTests()
         {
             _mockService = Substitute.For<IRecreateAndReleaseSummaryService>();
+            _mockBatchJobService = Substitute.For<IBatchJobService>();
+            _mockfpsRequestContext = Substitute.For<IFpsRequestContext>();
             _mockMapper = Substitute.For<IMapper>();
-            _controller = new RecreateAndReleaseSummaryController(_mockService, _mockMapper);
+            _controller = new RecreateAndReleaseSummaryController(_mockService, _mockBatchJobService, _mockfpsRequestContext, _mockMapper);
         }
 
         #region GetRecreateSummariesLogs
@@ -749,6 +755,260 @@ namespace Apha.PACT.Api.UnitTests.Controller.RecreateAndReleaseSummaryController
 
             // Act & Assert
             await Assert.ThrowsAsync<InvalidOperationException>(() => _controller.SetFinalSummaryRun(request));
+        }
+
+        #endregion
+
+        #region GetBatchJobHistory
+
+        [Fact]
+        public async Task GetBatchJobHistory_WithResults_ReturnsOkWithPaginatedResponse()
+        {
+            // Arrange
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            const string jobName = "RecreateSummary";
+
+            var dtos = new List<BatchJobHistoryDto>
+            {
+                new() { JobId = 1, JobName = jobName, Status = "Completed", RequestedBy = TestUserId, StartDateTime = DateTime.UtcNow },
+                new() { JobId = 1, JobName = jobName, Status = "Running",   RequestedBy = TestUserId, StartDateTime = DateTime.UtcNow.AddMinutes(-5) }
+            };
+            var paginationDto = new PaginationDto { PageNumber = 1, PageSize = 10, TotalPages = 1, TotalRecords = 2 };
+            var paginatedResult = new PaginatedResult<BatchJobHistoryDto>(dtos, paginationDto);
+
+            var responses = dtos.Select(d => new BatchJobHistoryRes
+            {
+                JobId = d.JobId, JobName = d.JobName, Status = d.Status, RequestedBy = d.RequestedBy, StartDateTime = d.StartDateTime
+            }).ToList();
+            var pagination = new Pagination { PageNumber = 1, PageSize = 10, TotalPages = 1, TotalRecords = 2 };
+            var paginationRes = new PaginationRes<BatchJobHistoryRes>(responses, pagination);
+
+            _mockBatchJobService.GetBatchJobsHistoryAsync(query, jobName).Returns(paginatedResult);
+            _mockMapper.Map<PaginationRes<BatchJobHistoryRes>>(paginatedResult).Returns(paginationRes);
+
+            // Act
+            var result = await _controller.GetBatchJobHistory(query, jobName);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var returnValue = Assert.IsType<PaginationRes<BatchJobHistoryRes>>(okResult.Value);
+            Assert.Equal(2, returnValue.Data.Count());
+            await _mockBatchJobService.Received(1).GetBatchJobsHistoryAsync(query, jobName);
+            _mockMapper.Received(1).Map<PaginationRes<BatchJobHistoryRes>>(paginatedResult);
+        }
+
+        [Fact]
+        public async Task GetBatchJobHistory_EmptyResults_ReturnsOkWithEmptyPaginatedResponse()
+        {
+            // Arrange
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            const string jobName = "RecreateSummary";
+
+            var paginatedResult = new PaginatedResult<BatchJobHistoryDto>(
+                [], new PaginationDto { PageNumber = 1, PageSize = 10, TotalPages = 0, TotalRecords = 0 });
+            var paginationRes = new PaginationRes<BatchJobHistoryRes>(
+                [], new Pagination { PageNumber = 1, PageSize = 10, TotalPages = 0, TotalRecords = 0 });
+
+            _mockBatchJobService.GetBatchJobsHistoryAsync(query, jobName).Returns(paginatedResult);
+            _mockMapper.Map<PaginationRes<BatchJobHistoryRes>>(paginatedResult).Returns(paginationRes);
+
+            // Act
+            var result = await _controller.GetBatchJobHistory(query, jobName);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var returnValue = Assert.IsType<PaginationRes<BatchJobHistoryRes>>(okResult.Value);
+            Assert.Empty(returnValue.Data);
+            Assert.Equal(0, returnValue.PaginationData.TotalRecords);
+        }
+
+        [Fact]
+        public async Task GetBatchJobHistory_ServiceThrowsException_PropagatesException()
+        {
+            // Arrange
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            const string jobName = "RecreateSummary";
+
+            _mockBatchJobService.GetBatchJobsHistoryAsync(query, jobName)
+                .Returns(Task.FromException<PaginatedResult<BatchJobHistoryDto>>(new InvalidOperationException("Service error")));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(() => _controller.GetBatchJobHistory(query, jobName));
+        }
+
+        #endregion
+
+        #region CanRunBatchJob
+
+        [Fact]
+        public async Task CanRunBatchJob_WhenJobCanRun_ReturnsOkWithTrue()
+        {
+            // Arrange
+            const string jobName = "RecreateSummary";
+            _mockBatchJobService.CanRunBatchJobAsync(jobName).Returns(true);
+
+            // Act
+            var result = await _controller.CanRunBatchJob(jobName);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.True((bool)okResult.Value!);
+            await _mockBatchJobService.Received(1).CanRunBatchJobAsync(jobName);
+        }
+
+        [Fact]
+        public async Task CanRunBatchJob_WhenJobIsRunning_ReturnsOkWithFalse()
+        {
+            // Arrange
+            const string jobName = "RecreateSummary";
+            _mockBatchJobService.CanRunBatchJobAsync(jobName).Returns(false);
+
+            // Act
+            var result = await _controller.CanRunBatchJob(jobName);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.False((bool)okResult.Value!);
+            await _mockBatchJobService.Received(1).CanRunBatchJobAsync(jobName);
+        }
+
+        [Fact]
+        public async Task CanRunBatchJob_ServiceThrowsException_PropagatesException()
+        {
+            // Arrange
+            const string jobName = "RecreateSummary";
+            _mockBatchJobService.CanRunBatchJobAsync(jobName)
+                .Returns(Task.FromException<bool>(new InvalidOperationException("Service error")));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(() => _controller.CanRunBatchJob(jobName));
+        }
+
+        #endregion
+
+        #region TriggerRecreateSummariesJob
+
+        [Fact]
+        public async Task TriggerRecreateSummariesJob_ValidRequest_ReturnsOkWithMappedResult()
+        {
+            // Arrange
+            var request = new RecreateSummariesReq { Month = 6 };
+            const string correlationId = "corr-123";
+            const int fpsYear = 2024;
+            const string userEmail = "user@test.com";
+
+            _mockfpsRequestContext.FpsYear.Returns(fpsYear);
+            _mockfpsRequestContext.UserEmailId.Returns(userEmail);
+
+            var dto = new BatchJobEventTriggerDto { EventId = "event-abc" };
+            var response = new BatchJobEventTriggerRes { EventId = "event-abc" };
+
+            _mockBatchJobService
+                .TriggerRecreateSummariesJobAsync(request.Month, fpsYear, userEmail, correlationId)
+                .Returns(dto);
+            _mockMapper.Map<BatchJobEventTriggerRes>(dto).Returns(response);
+
+            // Act
+            var result = await _controller.TriggerRecreateSummariesJob(request, correlationId);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var returnValue = Assert.IsType<BatchJobEventTriggerRes>(okResult.Value);
+            Assert.Equal("event-abc", returnValue.EventId);
+
+            await _mockBatchJobService.Received(1).TriggerRecreateSummariesJobAsync(
+                request.Month, fpsYear, userEmail, correlationId);
+            _mockMapper.Received(1).Map<BatchJobEventTriggerRes>(dto);
+        }
+
+        [Fact]
+        public async Task TriggerRecreateSummariesJob_PassesFpsYearAndUserEmailFromContext()
+        {
+            // Arrange
+            var request = new RecreateSummariesReq { Month = 3 };
+            const string correlationId = "corr-456";
+            const int expectedYear = 2025;
+            const string expectedEmail = "admin@test.com";
+
+            _mockfpsRequestContext.FpsYear.Returns(expectedYear);
+            _mockfpsRequestContext.UserEmailId.Returns(expectedEmail);
+
+            var dto = new BatchJobEventTriggerDto { EventId = "ev" };
+            _mockBatchJobService
+                .TriggerRecreateSummariesJobAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<string>(), Arg.Any<string>())
+                .Returns(dto);
+            _mockMapper.Map<BatchJobEventTriggerRes>(dto).Returns(new BatchJobEventTriggerRes());
+
+            // Act
+            await _controller.TriggerRecreateSummariesJob(request, correlationId);
+
+            // Assert – ensure context values were forwarded to the service
+            await _mockBatchJobService.Received(1).TriggerRecreateSummariesJobAsync(
+                request.Month,
+                Arg.Is<int>(y => y == expectedYear),
+                Arg.Is<string>(u => u == expectedEmail),
+                correlationId);
+        }
+
+        [Fact]
+        public async Task TriggerRecreateSummariesJob_ServiceThrowsBusinessValidation_PropagatesException()
+        {
+            // Arrange
+            var request = new RecreateSummariesReq { Month = 0 }; // invalid month
+            const string correlationId = "corr-789";
+
+            _mockfpsRequestContext.FpsYear.Returns(2024);
+            _mockfpsRequestContext.UserEmailId.Returns("user@test.com");
+
+            _mockBatchJobService
+                .TriggerRecreateSummariesJobAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<string>(), Arg.Any<string>())
+                .Returns(Task.FromException<BatchJobEventTriggerDto>(
+                    new BusinessValidationErrorException([new BusinessValidationError("Month must be between 1 and 12.", "INVALID_MONTH")])));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<BusinessValidationErrorException>(
+                () => _controller.TriggerRecreateSummariesJob(request, correlationId));
+        }
+
+        [Fact]
+        public async Task TriggerRecreateSummariesJob_ServiceThrowsGenericException_PropagatesException()
+        {
+            // Arrange
+            var request = new RecreateSummariesReq { Month = 6 };
+            const string correlationId = "corr-999";
+
+            _mockfpsRequestContext.FpsYear.Returns(2024);
+            _mockfpsRequestContext.UserEmailId.Returns("user@test.com");
+
+            _mockBatchJobService
+                .TriggerRecreateSummariesJobAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<string>(), Arg.Any<string>())
+                .Returns(Task.FromException<BatchJobEventTriggerDto>(new InvalidOperationException("Unexpected error")));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => _controller.TriggerRecreateSummariesJob(request, correlationId));
+        }
+
+        [Fact]
+        public async Task TriggerRecreateSummariesJob_MapperThrowsException_PropagatesException()
+        {
+            // Arrange
+            var request = new RecreateSummariesReq { Month = 6 };
+            const string correlationId = "corr-map";
+            var dto = new BatchJobEventTriggerDto { EventId = "ev" };
+
+            _mockfpsRequestContext.FpsYear.Returns(2024);
+            _mockfpsRequestContext.UserEmailId.Returns("user@test.com");
+
+            _mockBatchJobService
+                .TriggerRecreateSummariesJobAsync(Arg.Any<int>(), Arg.Any<int>(), Arg.Any<string>(), Arg.Any<string>())
+                .Returns(dto);
+            _mockMapper.When(m => m.Map<BatchJobEventTriggerRes>(dto))
+                .Do(_ => throw new InvalidOperationException("Mapper error"));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => _controller.TriggerRecreateSummariesJob(request, correlationId));
         }
 
         #endregion

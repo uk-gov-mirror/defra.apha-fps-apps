@@ -76,6 +76,17 @@ namespace Apha.FPSApps.Infrastructure.Integrations.FPSApis.Clients
             return ApiResponseDto<List<StaffJobZtViewDto>>.FailureResponse(responseDto.Errors, responseDto.Meta);
         }
 
+        public async Task<ApiResponseDto<List<StaffJobViewDto>>> GetStaffJobsAllocationByJobCodeWgGradePagedAsync(QueryParameters<string> query, string jobcode, string wgGrade)
+        {
+            var url = QueryStringHelper.AddQueryString(FpsApiEndpoints.GetStaffJobsAllocationByJobCodeWgGradePaged, query);
+            url = QueryStringHelper.AddQueryString(url, new { jobcode, wgGrade });
+            var response = await _http.GetAsync<List<StaffJobViewRes>>(url);
+            if (response.Success)
+                return _mapper.Map<ApiResponseDto<List<StaffJobViewDto>>>(response);
+            var responseDto = _mapper.Map<ApiResponseDto<List<StaffJobViewDto>>>(response);
+            return ApiResponseDto<List<StaffJobViewDto>>.FailureResponse(responseDto.Errors, responseDto.Meta);
+        }
+
         public async Task<ApiResponseDto<StaffJobZtViewDto>> GetZtStaffJobDetailsByIdAsync(string staffId, string jobCode)
         {
             var response = await _http.GetAsync<StaffJobZtViewRes>(string.Format(FpsApiEndpoints.GetZtStaffJobDetailsById, staffId, jobCode));
@@ -193,6 +204,19 @@ namespace Apha.FPSApps.Infrastructure.Integrations.FPSApis.Clients
                 var responseDto = _mapper.Map<ApiResponseDto<StaffJobViewDto?>>(response);
                 return ApiResponseDto<StaffJobViewDto?>.FailureResponse(responseDto.Errors, responseDto.Meta);
             }
+        }
+
+        public async Task<ApiResponseDto<List<StaffResourceUtilisationDto>>> GetStaffResourceUtilisationAsync(QueryParameters<string> query, string workgroup)
+        {
+            var url = QueryStringHelper.AddQueryString(FpsApiEndpoints.GetStaffResourceUtilisation, query);
+            url = QueryStringHelper.AddQueryString(url, new { workgroup });
+            var response = await _http.GetAsync<List<StaffResourceUtilisationRes>>(url);
+
+            if (response.Success)
+                return _mapper.Map<ApiResponseDto<List<StaffResourceUtilisationDto>>>(response);
+
+            var responseDto = _mapper.Map<ApiResponseDto<List<StaffResourceUtilisationDto>>>(response);
+            return ApiResponseDto<List<StaffResourceUtilisationDto>>.FailureResponse(responseDto.Errors, responseDto.Meta);
         }
     }
 }

@@ -108,5 +108,15 @@ namespace Apha.FPS.Api.Controllers
             return Ok(result);
         }
 
-            }
+        /// <summary>Returns distinct WorkgroupGrade records for a given workgroup, ordered by WGGrade.</summary>
+        /// <param name="query">Pagination and filter parameters.</param>
+        /// <param name="workGroup">The workgroup name to filter by.</param>
+        [HttpGet("byworkgroup")]
+        public async Task<ActionResult> GetWorkgroupGradesByWorkGroupAsync(
+            [FromQuery] string workGroup)
+        {
+            var result = await _WorkGroupGradeService.GetWorkgroupGradesByWorkGroupAsync(workGroup);
+            return Ok(_mapper.Map<List<WorkgroupGradeRes>>(result));
         }
+    }
+}

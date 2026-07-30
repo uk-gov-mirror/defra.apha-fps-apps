@@ -52,6 +52,12 @@ namespace Apha.FPSApps.Web.Areas.FPS.Models
         public double PlannedAdminZT { get; set; }   // sum of planned ZT hours = Admin
         public double FreeForChargeableWork => HrsAvail - PlannedAdminZT;  // Remainder
 
+        /// <summary>
+        /// True when the user arrived from the SetUpStaffResources page.
+        /// Controls which Back link is rendered.
+        /// </summary>
+        public bool ReturnToSsr { get; set; }
+
         // Grid configuration
         public DataGridConfig<PlanStaffZTCodeItemViewModel> GridConfig { get; set; } = new();
 

@@ -13,6 +13,7 @@ namespace Apha.PIMS.DataAccess.Repository
     public class MilestoneRepository : BaseRepository, IMilestoneRepository
     {
         private readonly PimsDbContext _dbContext;
+        private const string ExistingMilestoneNote = "This Project Milestone already exists";
 
         public MilestoneRepository(PimsDbContext dbContext) : base(dbContext)
         {
@@ -20,21 +21,51 @@ namespace Apha.PIMS.DataAccess.Repository
         }
         public async Task<PagedData<Milestone>> GetAllMilestonesAsync(PaginationParameters<string> parameters, string project)
         {
-            IQueryable<Milestone> query = _dbContext.Milestones
-                .AsNoTracking()
-                .Where(m => m.Project == project);
+            IQueryable<Milestone> query =
+                from milestone in _dbContext.Milestones.AsNoTracking()
+                join milestoneType in _dbContext.MilestoneTypes.AsNoTracking()
+                    on milestone.IdType equals milestoneType.IdType.ToString() into milestoneTypeGroup
+                from milestoneType in milestoneTypeGroup.DefaultIfEmpty()
+                where milestone.Project == project
+                select new Milestone
+                {
+                    Project = milestone.Project,
+                    Number = milestone.Number,
+                    Description = milestone.Description,
+                    DateDue = milestone.DateDue,
+                    DateCompleted = milestone.DateCompleted,
+                    DateFormReceived = milestone.DateFormReceived,
+                    UnderSdReview = milestone.UnderSdReview,
+                    OnTarget = milestone.OnTarget,
+                    ProjectLeaderComment = milestone.ProjectLeaderComment,
+                    CapsComment = milestone.CapsComment,
+                    IdType = milestoneType != null ? milestoneType.Type : milestone.IdType
+                };
 
             query = ApplyFilter(query, parameters.Filter);
             query = ApplySorting(query, parameters.SortBy, parameters.Descending);
 
-           
             return await ApplyPaging(query, parameters.Page, parameters.PageSize);
-        }
+        }               
 
         public async Task<Milestone?> GetMilestoneAsync(string project, string number)
             => await _dbContext.Milestones
                 .AsNoTracking()
                 .FirstOrDefaultAsync(m => m.Project == project && m.Number == number);
+
+        public async Task<string> GetProgramByProjectAsync(string project)
+        {
+            string? program = await _dbContext.ProjectRadTrackData
+                .AsNoTracking()
+                .Where(g => g.Parentproject == project)
+                .Join(_dbContext.ProjectLatestDetails,
+                      g => g.Parentproject,
+                      v => v.ParentProject,
+                      (g, v) => v.Program)
+                .FirstOrDefaultAsync();
+
+            return program ?? string.Empty;
+        }
 
         public async Task<Milestone> AddMilestoneAsync(Milestone entity, string? changedBy)
         {
@@ -46,7 +77,10 @@ namespace Apha.PIMS.DataAccess.Repository
                 _dbContext.LogMilestones.Add(BuildLogEntry(entity, 'I', changedBy));
                 await _dbContext.SaveChangesAsync();
             }
-            catch { /* log write failure must not affect the milestone operation */ }
+            catch (Exception)
+            {
+                // Log entry creation failure should not affect milestone addition
+            }
 
             return entity;
         }
@@ -61,7 +95,10 @@ namespace Apha.PIMS.DataAccess.Repository
                 _dbContext.LogMilestones.Add(BuildLogEntry(entity, 'U', changedBy));
                 await _dbContext.SaveChangesAsync();
             }
-            catch { /* log write failure must not affect the milestone operation */ }
+            catch (Exception)
+            {
+                // Log entry creation failure should not affect milestone update
+            }
 
             return entity;
         }
@@ -249,13 +286,16 @@ namespace Apha.PIMS.DataAccess.Repository
             };
 
         // ── Staging / Import ─────────────────────────────────────────────────
-        public async Task<PagedData<StagingMilestone>> GetAllStagingRowsAsync(PaginationParameters<string> parameters)
+        public async Task<PagedData<StagingMilestone>> GetAllStagingRowsAsync(PaginationParameters<string> parameters, string? createdBy = null)
         {
 
             IQueryable<StagingMilestone> query = _dbContext.StagingMilestones
                .AsNoTracking();
 
-            //query = ApplyFilter(query, parameters.Filter);
+            if (!string.IsNullOrWhiteSpace(createdBy))
+                query = query.Where(s => s.CreatedBy == createdBy);
+
+            query = ApplyStagingFilter(query, parameters.Filter);
             query = ApplyStagingSorting(query, parameters.SortBy, parameters.Descending);
 
 
@@ -264,73 +304,107 @@ namespace Apha.PIMS.DataAccess.Repository
 
         }
 
-        public async Task<List<StagingMilestone>> GetStagingRowsAsync(string? project)
+        private static IQueryable<StagingMilestone> ApplyStagingFilter(IQueryable<StagingMilestone> query, string? filter)
         {
-            IQueryable<StagingMilestone> query = _dbContext.StagingMilestones.AsNoTracking();
-            if (!string.IsNullOrWhiteSpace(project))
-                query = query.Where(s => s.Project == project);
-            return await query.ToListAsync();
+            if (string.IsNullOrWhiteSpace(filter) || filter == "{}")
+                return query;
+
+            dynamic? filterModel = JsonConvert.DeserializeObject<ExpandoObject>(filter);
+            if (filterModel == null)
+                return query;
+
+            var dict = (IDictionary<string, object>)filterModel;
+
+            if (dict.TryGetValue("Number", out var number) && number != null)
+            {
+                string val = number.ToString()!;
+                query = query.Where(x => EF.Functions.ILike(x.Number!, $"%{val}%"));
+            }
+
+            return query;
         }
 
-        public async Task<StagingMilestone> AddStagingRowAsync(StagingMilestone entity)
+        public async Task<List<StagingMilestone>> GetStagingRowsAsync(int id)
         {
+            return await _dbContext.StagingMilestones
+                .AsNoTracking()
+                .Where(s => s.Id == id)
+                .ToListAsync();
+        }
+
+        public async Task<StagingMilestone> AddStagingRowAsync(StagingMilestone entity, string? createdBy = null)
+        {
+            if (!string.IsNullOrWhiteSpace(createdBy))
+                entity.CreatedBy = createdBy;
+
             _dbContext.StagingMilestones.Add(entity);
             await _dbContext.SaveChangesAsync();
             return entity;
         }
 
-        public async Task<StagingMilestone> UpdateStagingRowAsync(StagingMilestone entity)
+        public async Task<StagingMilestone> UpdateStagingRowAsync(StagingMilestone entity, string? createdBy = null)
         {
+            string? existingCreatedBy = await _dbContext.StagingMilestones
+                .AsNoTracking()
+                .Where(s => s.Id == entity.Id)
+                .Select(s => s.CreatedBy)
+                .FirstOrDefaultAsync();
+
+            entity.CreatedBy = !string.IsNullOrWhiteSpace(createdBy)
+                ? createdBy
+                : existingCreatedBy;
+
             _dbContext.StagingMilestones.Update(entity);
             await _dbContext.SaveChangesAsync();
             return entity;
         }
 
-        public async Task<bool> DeleteStagingRowAsync(int id)
+        public async Task<bool> DeleteStagingRowAsync(int id, string? createdBy = null)
         {
-            int rows = await _dbContext.StagingMilestones
-                .Where(s => s.Id == id)
-                .ExecuteDeleteAsync();
+            IQueryable<StagingMilestone> query = _dbContext.StagingMilestones
+                .Where(s => s.Id == id);
+
+            if (!string.IsNullOrWhiteSpace(createdBy))
+                query = query.Where(s => s.CreatedBy == createdBy);
+
+            int rows = await query.ExecuteDeleteAsync();
             return rows > 0;
         }
 
-        public async Task<int> ClearStagingAsync(string project)
-            => await _dbContext.StagingMilestones
-                .ExecuteDeleteAsync();
-
-        public async Task ValidateStagingAsync(string project, string? typeId, bool isDeliverableMode)
+        public async Task<int> ClearStagingAsync(string project, string? createdBy = null)
         {
-            List<StagingMilestone> rows = await _dbContext.StagingMilestones
-                .Where(s => s.Project == project)
-                .ToListAsync();
+            IQueryable<StagingMilestone> query = _dbContext.StagingMilestones;
+              
+
+            if (!string.IsNullOrWhiteSpace(createdBy))
+                query = query.Where(s => s.CreatedBy == createdBy);
+
+            return await query.ExecuteDeleteAsync();
+        }
+
+        public async Task ValidateStagingAsync(string project, string? typeId, bool isDeliverableMode, string? createdBy = null)
+        {
+            IQueryable<StagingMilestone> query = _dbContext.StagingMilestones;
+               
+
+            if (!string.IsNullOrWhiteSpace(createdBy))
+                query = query.Where(s => s.CreatedBy == createdBy);
+
+            List<StagingMilestone> rows = await query.ToListAsync();
 
             foreach (StagingMilestone row in rows)
             {
                 // Skip fully empty rows
                 if (string.IsNullOrWhiteSpace(row.Description) &&
-                    //string.IsNullOrWhiteSpace(row.AltDescription) &&
                     string.IsNullOrWhiteSpace(row.Number)
-                    //&& string.IsNullOrWhiteSpace(row.AltNumber)
                     )
                 {
                     _dbContext.StagingMilestones.Remove(row);
                     continue;
                 }
 
-                //// Deliverable mode: swap alt fields into primary fields
-                //if (isDeliverableMode && string.IsNullOrWhiteSpace(row.Number) && !string.IsNullOrWhiteSpace(row.AltNumber))
-                //{
-                //    row.Description = row.AltDescription;
-                //    row.DateDue     = DateTime.TryParse(row.AltDate, out DateTime altDt) ? altDt : row.DateDue;
-                //    row.Number      = row.AltNumber;
-                //}
-
                 row.TypeId = typeId;
                 row.Note = null;
-
-                // Deliverable mode: auto-assign next number when number is missing
-                //if (isDeliverableMode && string.IsNullOrWhiteSpace(row.Number) && year.HasValue)
-                //    row.Number = await GetNextMilestoneNumberAsync(project, year.Value);
 
                 // Validate date
                 if (row.DateDue == default)
@@ -348,7 +422,7 @@ namespace Apha.PIMS.DataAccess.Repository
                     bool exists = await _dbContext.Milestones
                         .AnyAsync(m => m.Project == project && m.Number == trimmed);
                     if (exists)
-                        row.Note = (row.Note ?? string.Empty) + " This Project Milestone already exists.";
+                        row.Note = (row.Note ?? string.Empty) + $" {ExistingMilestoneNote}.";
                     else
                         row.Number = trimmed;
                 }
@@ -357,24 +431,43 @@ namespace Apha.PIMS.DataAccess.Repository
             await _dbContext.SaveChangesAsync();
         }
 
-        public async Task<int> ImportStagingAsync(string project, string? changedBy)
+        public async Task<int> ImportStagingAsync(string project, string? changedBy, string? createdBy = null)
         {
-            List<StagingMilestone> validRows = await _dbContext.StagingMilestones
+            IQueryable<StagingMilestone> validQuery = _dbContext.StagingMilestones
                 .AsNoTracking()
-                .Where(s => s.Project == project && s.Note == null)
-                .ToListAsync();
+                .Where(s => s.Note == null && !string.IsNullOrWhiteSpace(s.Number));
+
+            if (!string.IsNullOrWhiteSpace(createdBy))
+                validQuery = validQuery.Where(s => s.CreatedBy == createdBy);
+
+            List<StagingMilestone> validRows = await validQuery.ToListAsync();
 
             if (validRows.Count == 0)
                 return 0;
 
-            List<Milestone> newMilestones = validRows.Select(s => new Milestone
-            {
-                Project = project,
-                Number = s.Number!,
-                Description = s.Description,
-                DateDue = DateTime.SpecifyKind(s.DateDue, DateTimeKind.Unspecified),
-                IdType = s.TypeId
-            }).ToList();
+            HashSet<string> existingNumbers = await _dbContext.Milestones
+                .AsNoTracking()
+                .Where(m => m.Project == project)
+                .Select(m => m.Number)
+                .ToHashSetAsync();
+
+            List<StagingMilestone> rowsToInsert = validRows
+                .Where(s => !existingNumbers.Contains(s.Number!))
+                .ToList();
+
+            List<Milestone> newMilestones = rowsToInsert
+                .Select(s => new Milestone
+                {
+                    Project = project,
+                    Number = s.Number!,
+                    Description = s.Description,
+                    DateDue = DateTime.SpecifyKind(s.DateDue, DateTimeKind.Unspecified),
+                    IdType = s.TypeId
+                })
+                .ToList();
+
+            if (newMilestones.Count == 0)
+                return 0;
 
             await _dbContext.Milestones.AddRangeAsync(newMilestones);
             await _dbContext.SaveChangesAsync();
@@ -385,27 +478,53 @@ namespace Apha.PIMS.DataAccess.Repository
                 {
                     _dbContext.LogMilestones.Add(BuildLogEntry(m, 'I', changedBy));
                 }
-                catch { /* log write failure must not affect the import */ }
+                catch (Exception)
+                {
+                    // Log entry creation failure should not affect import
+                }
             }
 
-            try { await _dbContext.SaveChangesAsync(); }
-            catch { /* log write failure must not affect the import */ }
+            try
+            {
+                await _dbContext.SaveChangesAsync();
+            }
+            catch (Exception)
+            {
+                // Log save failure must not affect the import operation
+            }
+
+            List<int> insertedStagingIds = rowsToInsert.Select(r => r.Id).ToList();
+            if (insertedStagingIds.Count > 0)
+            {
+                await _dbContext.StagingMilestones
+                    .Where(s => insertedStagingIds.Contains(s.Id))
+                    .ExecuteDeleteAsync();
+            }
 
             return newMilestones.Count;
         }
 
-        public async Task<int> ImportWithOverwriteAsync(string project, string? changedBy)
+        public async Task<int> ImportWithOverwriteAsync(string project, string? changedBy, string? createdBy = null)
         {
-            // Set project on all staging rows first
-            await _dbContext.StagingMilestones
-                .Where(s => s.Project == null || s.Project == string.Empty)
-                .ExecuteUpdateAsync(s => s.SetProperty(x => x.Project, project));
+            IQueryable<StagingMilestone> updateQuery = _dbContext.StagingMilestones;
 
-            // Find staging rows that match an existing milestone (by project + number)
-            List<StagingMilestone> stagingRows = await _dbContext.StagingMilestones
+            if (!string.IsNullOrWhiteSpace(createdBy))
+                updateQuery = updateQuery.Where(s => s.CreatedBy == createdBy);
+            else
+                updateQuery = updateQuery.Where(_ => false);
+
+            await updateQuery.ExecuteUpdateAsync(s => s.SetProperty(x => x.Project, project));
+
+            IQueryable<StagingMilestone> stagingRowsQuery = _dbContext.StagingMilestones
                 .AsNoTracking()
-                .Where(s => s.Project == project)
-                .ToListAsync();
+                .Where(s => s.Project == project
+                            && (s.Note == null || EF.Functions.Like(s.Note, $"%{ExistingMilestoneNote}%"))
+                            && _dbContext.Milestones.Any(m => m.Project == project && m.Number == s.Number));
+
+            if (!string.IsNullOrWhiteSpace(createdBy))
+                stagingRowsQuery = stagingRowsQuery.Where(s => s.CreatedBy == createdBy);
+
+            List<StagingMilestone> stagingRows = await stagingRowsQuery.ToListAsync();
 
             int updated = 0;
             foreach (StagingMilestone stagingRow in stagingRows)
@@ -426,10 +545,13 @@ namespace Apha.PIMS.DataAccess.Repository
                     _dbContext.LogMilestones.Add(BuildLogEntry(existing, 'U', changedBy));
                     await _dbContext.SaveChangesAsync();
                 }
-                catch { /* log write failure must not affect the overwrite */ }
+                catch (Exception)
+                {
+                    // Log write failure must not affect the overwrite operation
+                }
 
                 await _dbContext.StagingMilestones
-                    .Where(s => s.Project == project && s.Number == stagingRow.Number)
+                    .Where(s => s.Id == stagingRow.Id)
                     .ExecuteDeleteAsync();
 
                 updated++;
@@ -467,6 +589,72 @@ namespace Apha.PIMS.DataAccess.Repository
             int slash = number.IndexOf('/');
             if (slash < 0 || slash >= number.Length - 1) return 0;
             return int.TryParse(number[(slash + 1)..], out int seq) ? seq : 0;
+        }
+
+        // ── Project Year Manager ─────────────────────────────────────────────────
+
+        /// <summary>
+        /// Gets project year manager details by filtering projects by year and joining with manager information
+        /// </summary>
+        /// <param name="year">The year to filter projects</param>
+        /// <returns>List of project year manager details</returns>
+        public async Task<List<ProjectYearManager>> GetProjectYearManagersAsync(int year)
+        {
+            var query = from project in _dbContext.MyTlkpProjects.AsNoTracking()
+                        join manager in _dbContext.ProjectManagers.AsNoTracking()
+                            on project.Manager equals manager.Projectmanager into managerGroup
+                        from manager in managerGroup.DefaultIfEmpty()
+                        where project.Year == year
+                        select new ProjectYearManager
+                        {
+                            ProjectYear = project.Year,
+                            ParentProject = project.Parentproject,
+                            Manager = project.Manager,
+                            ManagerNumber = manager != null ? manager.Mnumber : null
+                        };
+
+            return await query.ToListAsync();
+        }
+        public async Task<PagedData<Milestone>> GetPMDMilestonesAsync(PaginationParameters<string> parameters, string project)
+        {
+            DateTime fyStart = GetFYStart();
+            DateTime fyEnd = fyStart.AddYears(1).AddDays(-1);
+
+            IQueryable<Milestone> query =
+                from milestone in _dbContext.Milestones.AsNoTracking()
+                join milestoneType in _dbContext.MilestoneTypes.AsNoTracking()
+                    on milestone.IdType equals milestoneType.IdType.ToString()
+                where milestone.Project == project
+                      && milestone.DateDue >= fyStart
+                      && milestone.DateDue <= fyEnd
+                select new Milestone
+                {
+                    Project = milestone.Project,
+                    Number = milestone.Number,
+                    Description = milestone.Description,
+                    DateDue = milestone.DateDue,
+                    DateCompleted = milestone.DateCompleted,
+                    UnderSdReview = milestone.UnderSdReview,
+                    OnTarget = milestone.OnTarget,
+                    ProjectLeaderComment = milestone.ProjectLeaderComment,
+                    IdType = milestoneType.MilestoneDeliverable.HasValue
+                        ? milestoneType.MilestoneDeliverable.Value.ToString()
+                        : null
+                };
+
+            query = ApplyFilter(query, parameters.Filter);
+            query = ApplySorting(query, parameters.SortBy, parameters.Descending);
+
+            return await ApplyPaging(query, parameters.Page, parameters.PageSize);
+        }
+
+        private static DateTime GetFYStart()
+        {
+            int currentYear = DateTime.Today.Year;
+            int currentMonth = DateTime.Today.Month;
+
+            int fyYear = currentMonth < 6 ? currentYear - 1 : currentYear;
+            return new DateTime(fyYear, 4, 1);
         }
     }
 }

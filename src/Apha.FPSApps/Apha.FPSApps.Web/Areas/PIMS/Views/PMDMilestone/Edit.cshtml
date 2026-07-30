@@ -1,0 +1,129 @@
+﻿@model Apha.FPSApps.Web.Areas.PIMS.Models.MilestoneItem
+@{
+    ViewData["Title"] = "PIMS : PMD Milestone Details";
+    string parentproject = Model?.Project ?? string.Empty;
+}
+
+@if (Model != null)
+{
+<div class="govuk-grid-row govuk-!-margin-bottom-3 sup_border-bottom govuk-!-padding-left-1 govuk-!-padding-right-1">
+    <div class="govuk-grid-column-full sup_flex_between_center">
+        <h1 class="govuk-heading-s sup_margin_0 govuk-!-padding-top-2 govuk-!-padding-bottom-2">
+            Milestone List Details
+        </h1>
+        <a href="@Url.Action("Index", "PMDMilestone", new { area = "PIMS", parentproject })"
+           class="govuk-back-link govuk-!-margin-top-0 govuk-!-margin-bottom-0 govuk-!-margin-left-3 govuk-!-margin-right-3">Back</a>
+    </div>
+</div>
+
+<div class="govuk-grid-row sup_margin_left_right_10">
+    <div class="govuk-grid-column-full">
+
+        <div id="dbErrorSummary" class="govuk-error-summary govuk-!-display-none" role="alert"
+             aria-labelledby="dbErrorSummaryTitle" tabindex="-1">
+            <h2 class="govuk-error-summary__title govuk-!-font-size-16" id="dbErrorSummaryTitle">There is a problem</h2>
+            <div class="govuk-error-summary__body">
+                <ul class="govuk-list govuk-error-summary__list" id="dbErrorSummaryList"></ul>
+            </div>
+        </div>
+
+        <form id="milestoneDetailsForm" novalidate class="govuk-grid-column-one-third govuk-!-padding-left-0">
+            @Html.AntiForgeryToken()
+            <p class="app-mandatory-note govuk-!-font-size-14">
+                <span class="app-required" aria-hidden="true">*</span>&nbsp;Mandatory Fields
+            </p>
+
+            <div class="govuk-form-group" id="fg-projectcode">
+                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="Project">Project</label>
+                <input class="govuk-input govuk-!-font-size-16" asp-for="Project" readonly>
+            </div>
+
+            <div class="govuk-form-group" id="fg-milestone">
+                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="Number">
+                    Milestone <span class="app-required" aria-hidden="true">*</span>
+                </label>
+                <input class="govuk-input govuk-!-font-size-16" asp-for="Number" readonly>
+                <span asp-validation-for="Number" class="govuk-error-message govuk-!-display-none"></span>
+            </div>
+
+            <div class="govuk-form-group" id="fg-description">
+                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="Description">
+                    Description <span class="app-required" aria-hidden="true">*</span>
+                </label>
+                <input class="govuk-input govuk-!-font-size-16" asp-for="Description">
+                <span asp-validation-for="Description" class="govuk-error-message govuk-!-display-none"></span>
+            </div>
+
+            <div class="govuk-form-group" id="fg-datedue">
+                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="DateDue">
+                    Date Due <span class="app-required" aria-hidden="true">*</span>
+                </label>
+                <input class="govuk-input govuk-!-font-size-16" asp-for="DateDue" type="date">
+                <span asp-validation-for="DateDue" class="govuk-error-message govuk-!-display-none"></span>
+            </div>
+
+            <div class="govuk-form-group">
+                <input type="hidden" asp-for="UnderSdReview" id="underreviewValue" />
+                <div class="govuk-checkboxes govuk-checkboxes--small" data-module="govuk-checkboxes">
+                    <div class="govuk-checkboxes__item">
+                        <input class="govuk-checkboxes__input" id="underreview" type="checkbox" value="-1"
+                               @(Model?.UnderSdReview != 0 ? "checked" : "") onchange="syncCheckboxValues()">
+                        <label class="govuk-checkboxes__label govuk-!-font-size-16" for="underreview">Under Review</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="govuk-form-group">
+                <input type="hidden" asp-for="OnTarget" id="ontargetValue" />
+                <div class="govuk-checkboxes govuk-checkboxes--small" data-module="govuk-checkboxes">
+                    <div class="govuk-checkboxes__item">
+                        <input class="govuk-checkboxes__input" id="ontarget" type="checkbox" value="-1"
+                               @(Model?.OnTarget != 0 ? "checked" : "") onchange="syncCheckboxValues()">
+                        <label class="govuk-checkboxes__label govuk-!-font-size-16" for="ontarget">On Target</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="govuk-form-group" id="fg-datecompleted">
+                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="DateCompleted">Date Completed</label>
+                <input class="govuk-input govuk-!-font-size-16" asp-for="DateCompleted" type="date">
+            </div>
+
+            <div class="govuk-form-group" id="fg-comment">
+                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="ProjectLeaderComment">
+                    Project Leaders Comment <span class="app-required" aria-hidden="true">*</span>
+                </label>
+                <textarea class="govuk-textarea govuk-!-font-size-16" asp-for="ProjectLeaderComment" rows="4"></textarea>
+                <span asp-validation-for="ProjectLeaderComment" class="govuk-error-message govuk-!-display-none"></span>
+            </div>
+
+            <div class="govuk-button-group">
+                <button type="button" class="govuk-button govuk-!-font-size-16" onclick="submitMilestoneDetails()">Update</button>
+                <button type="button" class="govuk-button govuk-button--secondary govuk-!-font-size-16"
+                        onclick="window.location.href='@Url.Action("Index", "PMDMilestone", new { area = "PIMS", parentproject })'">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+}
+else
+{
+    <div class="govuk-grid-row sup_margin_left_right_10">
+        <div class="govuk-grid-column-full">
+            <p class="govuk-body">No milestone data available.</p>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        function syncCheckboxValues() {
+            document.getElementById('underreviewValue').value = document.getElementById('underreview').checked ? -1 : 0;
+            document.getElementById('ontargetValue').value = document.getElementById('ontarget').checked ? -1 : 0;
+        }
+
+        syncCheckboxValues();
+    </script>
+}
+
+

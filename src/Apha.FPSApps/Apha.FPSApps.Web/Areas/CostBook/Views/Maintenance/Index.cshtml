@@ -13,28 +13,26 @@
     <div class="govuk-grid-row sup_margin_left_right_0">
         <div class="govuk-grid-column-full sup_border-bottom">
             <h1 class="govuk-heading-s sup_margin_0 govuk-grid-row govuk-!-padding-top-2">
-                Maintenance Screen
-                <a asp-area="CostBook" asp-controller="Home" asp-action="Index"
-                   class="govuk-back-link sup_align_right">Back</a>
+                Maintenance Screen               
             </h1>
         </div>
     </div>
 
-    <div class="sup_flex">
+    <div>
         <div class="govuk-grid-row sup_margin_left_right_0">
             <div class="govuk-grid-column-full sup_p_0">
                 <div class="main-content-cs">
                     <div class="govuk-tabs" data-module="govuk-tabs">
                         <ul class="govuk-tabs__list" role="tablist" aria-label="Costbook Maintainance tabs">
 
-                            <li class="govuk-tabs__list-item govuk-tabs__list-item--selected" role="presentation">
+                            <li class="govuk-tabs__list-item govuk-tabs__list-item--selected">
                                 <a class="govuk-tabs__tab" href="#tab-inflation" id="tab-link-inflation"
                                    role="tab" aria-controls="tab-inflation" aria-selected="true" tabindex="0">
                                     Inflation
                                 </a>
                             </li>
 
-                            <li class="govuk-tabs__list-item" role="presentation">
+                            <li class="govuk-tabs__list-item">
                                 <a class="govuk-tabs__tab" href="#tab-account-categories"
                                    id="tab-link-account-categories" role="tab"
                                    aria-controls="tab-account-categories" aria-selected="false" tabindex="-1">
@@ -42,21 +40,21 @@
                                 </a>
                             </li>
 
-                            <li class="govuk-tabs__list-item" role="presentation">
+                            <li class="govuk-tabs__list-item">
                                 <a class="govuk-tabs__tab" href="#tab-csg7" id="tab-link-csg7"
                                    role="tab" aria-controls="tab-csg7" aria-selected="false" tabindex="-1">
                                     CSG7 Inflation Options
                                 </a>
                             </li>
 
-                            <li class="govuk-tabs__list-item" role="presentation">
+                            <li class="govuk-tabs__list-item">
                                 <a class="govuk-tabs__tab" href="#tab-profit-margins" id="tab-link-profit-margins"
                                    role="tab" aria-controls="tab-profit-margins" aria-selected="false" tabindex="-1">
                                     Profit Margins
                                 </a>
                             </li>
 
-                            <li class="govuk-tabs__list-item" role="presentation">
+                            <li class="govuk-tabs__list-item">
                                 <a class="govuk-tabs__tab" href="#tab-caps-staff" id="tab-link-caps-staff"
                                    role="tab" aria-controls="tab-caps-staff" aria-selected="false" tabindex="-1">
                                     CAPS Staff
@@ -559,6 +557,16 @@
         // -----------------------------
         // CSG7 GROUP
         // -----------------------------
+        function handleCsg7GroupSaveError(response, fallbackMessage, $modal) {
+        var message = fallbackMessage || 'Save failed.';
+        if (response) {
+        message = response.message || response.title || response.detail || message;
+        }
+
+        showAlertMessage(message, AlertType.ERROR);
+        displayServerValidationErrors(response ? response.errors : null, message, $modal);
+        }
+
         function addCsg7Group() {
         $.get('@Url.Action("CreateCsg7Group", "Maintenance", new { area = "CostBook" })',
         function (html) {
@@ -644,11 +652,11 @@
         closeModal();
         reloadCsg7Grid();
         } else {
-        displayServerValidationErrors(data.errors, data.message || 'Save failed.', $modal);
+        handleCsg7GroupSaveError(data, 'Save failed.', $modal);
         }
         },
-        error: function () {
-        showAlertMessage('An error occurred while saving.', AlertType.ERROR);
+        error: function (xhr) {
+        handleCsg7GroupSaveError(xhr && xhr.responseJSON ? xhr.responseJSON : null, 'An error occurred while saving.', $modal);
         }
         });
         }
@@ -661,6 +669,16 @@
         // -----------------------------
         // CAPS STAFF
         // -----------------------------
+        function handleCapsStaffSaveError(response, fallbackMessage, $modal) {
+        var message = fallbackMessage || 'Save failed.';
+        if (response) {
+        message = response.message || response.title || response.detail || message;
+        }
+
+        showAlertMessage(message, AlertType.ERROR);
+        displayServerValidationErrors(response ? response.errors : null, message, $modal);
+        }
+
         function addCapsStaff() {
         $.get('@Url.Action("CreateCapsStaff", "Maintenance", new { area = "CostBook" })',
         function (html) {
@@ -746,11 +764,11 @@
         closeModal();
         reloadCapsStaffGrid();
         } else {
-        displayServerValidationErrors(data.errors, data.message || 'Save failed.', $modal);
+        handleCapsStaffSaveError(data, 'Save failed.', $modal);
         }
         },
-        error: function () {
-        showAlertMessage('An error occurred while saving.', AlertType.ERROR);
+        error: function (xhr) {
+        handleCapsStaffSaveError(xhr && xhr.responseJSON ? xhr.responseJSON : null, 'An error occurred while saving.', $modal);
         }
         });
         }
@@ -791,7 +809,9 @@
         { id: 'inflAnimals',           errorId: 'inflAnimals-error',           wrapId: 'fg-inflAnimals',           label: 'Animals' },
         { id: 'inflExceptionalCosts',  errorId: 'inflExceptionalCosts-error',  wrapId: 'fg-inflExceptionalCosts',  label: 'Exceptional Costs' },
         { id: 'inflStaff',             errorId: 'inflStaff-error',             wrapId: 'fg-inflStaff',             label: 'Staff' },
-        { id: 'inflTests',             errorId: 'inflTests-error',             wrapId: 'fg-inflTests',             label: 'Tests' }
+        { id: 'inflTests',             errorId: 'inflTests-error',             wrapId: 'fg-inflTests',             label: 'Tests' },
+        { id: 'inflWorkingHoursInDay', errorId: 'inflWorkingHoursInDay-error', wrapId: 'fg-inflWorkingHoursInDay', label: 'Working Hours in Day' },
+        { id: 'inflWorkingDaysInYear', errorId: 'inflWorkingDaysInYear-error', wrapId: 'fg-inflWorkingDaysInYear', label: 'Working Days in Year' }
         ];
         inflFields.forEach(function (f) {
         var val = document.getElementById(f.id) ? document.getElementById(f.id).value : '';

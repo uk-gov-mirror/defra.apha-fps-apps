@@ -823,5 +823,91 @@ namespace Apha.FPS.Api.UnitTests.Controller.StaffJobControllerTest
         }
 
         #endregion
+
+        #region GetStaffResourceUtilisationAsync
+
+        [Fact]
+        public async Task GetStaffResourceUtilisationAsync_HappyPath_ReturnsOk()
+        {
+            // Arrange
+            var query = new PaginationReq<string>();
+            const string workgroup = "WG01";
+            var queryParams = new QueryParameters<string>();
+            var serviceResult = new PaginatedResult<StaffResourceUtilisationDto>
+            {
+                Data = new List<StaffResourceUtilisationDto>
+                {
+                    new() { WorkGroup = workgroup, Name = "John Doe", WgGrade = "GR1", HrsAvail = 37.5 }
+                },
+                PaginationData = new PaginationDto { TotalRecords = 1, PageNumber = 1, PageSize = 10 }
+            };
+            var mappedRes = new PaginationRes<StaffResourceUtilisationRes>
+            {
+                Data = new List<StaffResourceUtilisationRes>
+                {
+                    new() { WorkGroup = workgroup, Name = "John Doe", WgGrade = "GR1", HrsAvail = 37.5 }
+                }
+            };
+
+            _mapperMock.Map<QueryParameters<string>>(query).Returns(queryParams);
+            _serviceMock.GetStaffResourceUtilisationAsync(queryParams, workgroup).Returns(serviceResult);
+            _mapperMock.Map<PaginationRes<StaffResourceUtilisationRes>>(serviceResult).Returns(mappedRes);
+
+            // Act
+            var result = await _controller.GetStaffResourceUtilisationAsync(query, workgroup);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(mappedRes, okResult.Value);
+        }
+
+        [Fact]
+        public async Task GetStaffResourceUtilisationAsync_EmptyResult_ReturnsOkWithEmptyData()
+        {
+            // Arrange
+            var query = new PaginationReq<string>();
+            const string workgroup = "WG_NONE";
+            var queryParams = new QueryParameters<string>();
+            var emptyServiceResult = new PaginatedResult<StaffResourceUtilisationDto>
+            {
+                Data = new List<StaffResourceUtilisationDto>(),
+                PaginationData = new PaginationDto { TotalRecords = 0, PageNumber = 1, PageSize = 10 }
+            };
+            var emptyRes = new PaginationRes<StaffResourceUtilisationRes> { Data = new List<StaffResourceUtilisationRes>() };
+
+            _mapperMock.Map<QueryParameters<string>>(query).Returns(queryParams);
+            _serviceMock.GetStaffResourceUtilisationAsync(queryParams, workgroup).Returns(emptyServiceResult);
+            _mapperMock.Map<PaginationRes<StaffResourceUtilisationRes>>(emptyServiceResult).Returns(emptyRes);
+
+            // Act
+            var result = await _controller.GetStaffResourceUtilisationAsync(query, workgroup);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(emptyRes, okResult.Value);
+        }
+
+        [Fact]
+        public async Task GetStaffResourceUtilisationAsync_CallsServiceOnce()
+        {
+            // Arrange
+            var query = new PaginationReq<string>();
+            const string workgroup = "WG01";
+            var queryParams = new QueryParameters<string>();
+            var serviceResult = new PaginatedResult<StaffResourceUtilisationDto>();
+            var mappedRes = new PaginationRes<StaffResourceUtilisationRes>();
+
+            _mapperMock.Map<QueryParameters<string>>(query).Returns(queryParams);
+            _serviceMock.GetStaffResourceUtilisationAsync(queryParams, workgroup).Returns(serviceResult);
+            _mapperMock.Map<PaginationRes<StaffResourceUtilisationRes>>(serviceResult).Returns(mappedRes);
+
+            // Act
+            await _controller.GetStaffResourceUtilisationAsync(query, workgroup);
+
+            // Assert
+            await _serviceMock.Received(1).GetStaffResourceUtilisationAsync(queryParams, workgroup);
+        }
+
+        #endregion
     }
 }

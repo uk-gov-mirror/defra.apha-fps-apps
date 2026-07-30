@@ -40,6 +40,11 @@ namespace Apha.FPS.DataAccess.Data
                 .HasMaxLength(50)
                 .HasColumnName("profitcentre");
             entity.Property(e => e.SendEmail).HasColumnName("sendemail");
+
+            // SysTimestamp has no matching column in the fps.workgroup DDL.
+            // Omitting a property does NOT unmap it (EF maps by convention),
+            // so it must be explicitly ignored to avoid a non-existent column in SQL.
+            entity.Ignore(e => e.SysTimestamp);
             }
     }
 }

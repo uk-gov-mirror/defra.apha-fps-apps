@@ -78,7 +78,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
         }
 
         // POST: Create
-        [HttpPost]        
+        [HttpPost]
         public async Task<IActionResult> Create([FromBody] ProgramViewModel model)
         {
 
@@ -97,7 +97,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
                         }))
                 });
             }
-            
+
             // Ensure Target is always stored as a positive value
             if (model.Target.HasValue)
                 model.Target = Math.Abs(model.Target.Value);
@@ -133,7 +133,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
         }
 
         // POST: Edit
-        [HttpPost]        
+        [HttpPost]
         public async Task<IActionResult> Edit([FromBody]ProgramViewModel model)
         {
             if (!ModelState.IsValid)
@@ -222,7 +222,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             var programGridConfig = new DataGridConfig<ProgramViewModel>
             {
                 GridId = "programGrid",
-                Title = "Programs",
+                Title = "Program Maintenance",
                 ShowCheckboxColumn = false,
                 ShowPagination = true,
                 KeyProperty = "ProgramNo",
@@ -264,10 +264,11 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             // Manager dropdown — blank first item
             var managerResponse = await _employeeService.GetAllManagersAsync();
             model.ManagerList = (managerResponse.Data ?? new List<ManagerDto>())
+                .Where(m => !string.IsNullOrEmpty(m.Name))
                 .Select(m => new SelectListItem
                 {
                     Value = m.Name,
-                    Text = m.Name,
+                    Text = $"{m.Name} | {m.WorkGroup ?? string.Empty} | {m.GradeCode ?? string.Empty}",
                     Selected = string.Equals(model.Manager, m.Name, StringComparison.OrdinalIgnoreCase)
                 })
                 .Prepend(new SelectListItem { Value = string.Empty, Text = string.Empty, Selected = string.IsNullOrEmpty(model.Manager) })

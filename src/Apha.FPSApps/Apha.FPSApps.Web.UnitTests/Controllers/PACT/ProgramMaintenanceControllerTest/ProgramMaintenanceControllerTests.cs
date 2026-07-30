@@ -7,6 +7,7 @@ using Apha.FPSApps.Web.Areas.PACT.Models;
 using Apha.FPSApps.Web.Models.Components.DataGrid;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using NSubstitute;
 using System.Text.Json;
 
@@ -25,6 +26,9 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PACT.ProgramMaintenanceControll
             _programService = Substitute.For<IProgramService>();
             _projectService = Substitute.For<IProjectService>();
             _controller = new ProgramMaintenanceController(_mapper, _programService, _projectService);
+
+            // Setup TempData
+            _controller.TempData = Substitute.For<ITempDataDictionary>();
         }
 
         [Fact]
@@ -32,9 +36,9 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PACT.ProgramMaintenanceControll
         {
             // Arrange
             SetupProgramList();
+            SetupProjectsGridMapper();
             _projectService.GetPagedPactProjectsByProgramAsync(Arg.Any<QueryParameters<string>>(), "P001")
                 .Returns(ApiResponseDto<List<ProjectDto>>.SuccessResponse([], new PaginationDto()));
-            SetupProjectsGridMapper();
 
             // Act
             var result = await _controller.Index();
@@ -56,9 +60,9 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PACT.ProgramMaintenanceControll
                 new() { ProgramNo = "P002", ProgramName = "Two" }
             };
             SetupProgramList(programs);
+            SetupProjectsGridMapper();
             _projectService.GetPagedPactProjectsByProgramAsync(Arg.Any<QueryParameters<string>>(), "P002")
                 .Returns(ApiResponseDto<List<ProjectDto>>.SuccessResponse([], new PaginationDto()));
-            SetupProjectsGridMapper();
 
             // Act
             var result = await _controller.Index("P002");
@@ -74,9 +78,9 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PACT.ProgramMaintenanceControll
         {
             // Arrange
             SetupProgramList();
-            _projectService.GetPagedPactProjectsByProgramAsync(Arg.Any<QueryParameters<string>>(), Arg.Any<string>())
-                .Returns(ApiResponseDto<List<ProjectDto>>.SuccessResponse([], new PaginationDto()));
             SetupProjectsGridMapper();
+            _projectService.GetPagedPactProjectsByProgramAsync(Arg.Any<QueryParameters<string>>(), "INVALID")
+                .Returns(ApiResponseDto<List<ProjectDto>>.SuccessResponse([], new PaginationDto()));
 
             // Act
             var result = await _controller.Index("INVALID");
@@ -85,6 +89,8 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PACT.ProgramMaintenanceControll
             var viewResult = Assert.IsType<ViewResult>(result);
             var model = Assert.IsType<PactProgramMaintenanceViewModel>(viewResult.Model);
             Assert.Equal("P001", model.SelectedProgramNo);
+            // Verify the project service was called with the invalid program (current controller behavior)
+            await _projectService.Received(1).GetPagedPactProjectsByProgramAsync(Arg.Any<QueryParameters<string>>(), "INVALID");
         }
 
         [Fact]
@@ -117,9 +123,9 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PACT.ProgramMaintenanceControll
                 new() { ProgramNo = "P002", ProgramName = "Two" }
             };
             SetupProgramList(programs);
+            SetupProjectsGridMapper();
             _projectService.GetPagedPactProjectsByProgramAsync(Arg.Any<QueryParameters<string>>(), Arg.Any<string>())
                 .Returns(ApiResponseDto<List<ProjectDto>>.SuccessResponse([], new PaginationDto()));
-            SetupProjectsGridMapper();
 
             // Act
             var result = await _controller.Index();

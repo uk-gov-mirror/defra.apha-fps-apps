@@ -64,6 +64,21 @@
 
     $(function () { calculateTotals(); });
 
+    // Extra filters merged into the grid's own sort/filter/pagination requests.
+    function getTestSupplierExtraFilters() {
+        return {
+            testCode: currentTestCode,
+            showRejected: currentShowRejected
+        };
+    }
+
+    // Recalculate totals after the grid reloads itself (sort/filter/pagination).
+    document.addEventListener('gridReloaded', function (e) {
+        if (e.detail && e.detail.gridId === 'testSupplierGrid') {
+            calculateTotals();
+        }
+    });
+
     // ── Filter changes ────────────────────────────────────────────────────────
 
     function onTestCodeChange(testCode) {

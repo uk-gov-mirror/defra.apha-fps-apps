@@ -7,9 +7,9 @@
 }
 
 <div class="govuk-grid-row sup_margin_left_right_0 sup_margin_bottom_20" style="margin-top: 5pt;">
-    <div class="govuk-grid-column-full">
-        <div style="display: flex; align-items: flex-end; gap: 120px;">
-            <h1 class="govuk-heading-l" style="margin-bottom: 0; font-size: calc(1em + 5pt);">Sub Contracts</h1>
+    <div class="govuk-grid-column-full sup_border-bottom">
+        <div class="govuk-!-margin-bottom-2" style="display: flex; align-items: flex-end; gap: 120px;">
+            <h1 class="govuk-heading-s" style="margin-bottom: 5px;">SubContracts</h1>
             <div class="govuk-form-group" style="margin-bottom: 0;">
                 <fieldset class="govuk-fieldset">
                     <div style="display: flex; gap: 20px; align-items: center;">
@@ -71,7 +71,12 @@
     </div>
 </div>
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/common/multicolumn-dropdown.css" />
+}
+
 @section Scripts {
+    <script src="~/js/common/multicolumn-dropdown.component.js"></script>
     <script src="~/js/ajax-form-validation.js"></script>
     <script>
         // State variables for JavaScript access - must be declared BEFORE subcontract.js loads

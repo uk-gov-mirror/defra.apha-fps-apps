@@ -236,7 +236,7 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.FPS.ProjectProfitabilityControl
         }
 
         [Fact]
-        public async Task LoadProjectProfitabilityGrid_WhenProgramNoIsNull_ReturnsBadRequest()
+        public async Task LoadProjectProfitabilityGrid_WhenProgramNoIsNull_ReturnsEmptyGrid()
         {
             // Arrange
             var request = MakeGridRequest();
@@ -245,14 +245,20 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.FPS.ProjectProfitabilityControl
             var result = await _controller.LoadProjectProfitabilityGrid(request, null, null, "all");
 
             // Assert
-            var badRequest = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal("programNo is required.", badRequest.Value);
+            var partialResult = Assert.IsType<PartialViewResult>(result);
+            Assert.Equal("_DataGrid", partialResult.ViewName);
+            var gridConfig = Assert.IsType<DataGridConfig<ProjectProfitabilityItem>>(partialResult.Model);
+            Assert.Empty(gridConfig.Data);
+            Assert.Equal("isProjectProfitGrid", gridConfig.GridId);
+            Assert.Equal("Project Profitability", gridConfig.Title);
+            await _projectService.DidNotReceive()
+                .GetProjectProfitabilityAsync(Arg.Any<QueryParameters<string>>(), Arg.Any<string>(), Arg.Any<string>());
         }
 
         [Theory]
         [InlineData("")]
         [InlineData("   ")]
-        public async Task LoadProjectProfitabilityGrid_WhenProgramNoIsWhitespace_ReturnsBadRequest(string programNo)
+        public async Task LoadProjectProfitabilityGrid_WhenProgramNoIsWhitespace_ReturnsEmptyGrid(string programNo)
         {
             // Arrange
             var request = MakeGridRequest();
@@ -261,7 +267,31 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.FPS.ProjectProfitabilityControl
             var result = await _controller.LoadProjectProfitabilityGrid(request, programNo, null, "all");
 
             // Assert
-            Assert.IsType<BadRequestObjectResult>(result);
+            var partialResult = Assert.IsType<PartialViewResult>(result);
+            var gridConfig = Assert.IsType<DataGridConfig<ProjectProfitabilityItem>>(partialResult.Model);
+            Assert.Empty(gridConfig.Data);
+        }
+
+        [Fact]
+        public async Task LoadProjectProfitabilityGrid_WhenProgramNoIsEmpty_EmptyGridPreservesRequestFilters()
+        {
+            // Arrange
+            var request = MakeGridRequest();
+            request.SortBy = "JobCode";
+            request.Descending = true;
+            request.Filter = "{\"ParentProject\":\"PP001\"}";
+
+            // Act
+            var result = await _controller.LoadProjectProfitabilityGrid(request, null, null, "all");
+
+            // Assert
+            var partialResult = Assert.IsType<PartialViewResult>(result);
+            var gridConfig = Assert.IsType<DataGridConfig<ProjectProfitabilityItem>>(partialResult.Model);
+            Assert.Empty(gridConfig.Data);
+            Assert.Equal("JobCode", gridConfig.Pagination.SortColumn);
+            Assert.True(gridConfig.Pagination.SortDirection);
+            Assert.NotNull(gridConfig.CurrentFilters);
+            Assert.Equal("PP001", gridConfig.CurrentFilters!["ParentProject"]);
         }
 
         [Fact]

@@ -109,5 +109,16 @@ namespace Apha.PACT.Api.Controllers
             var result = await _service.GetPagedWgTestCapabilitiesWithDescriptionAsync(query, workGroup);
             return Ok(_mapper.Map<PaginationRes<WgTestCapabilitiesWithDescriptionRes>>(result));
         }
+
+        // ── PLAN CROSSTAB ────────────────────────────────────────────────────
+
+        /// <summary>Retrieves a paged list of Test Plan CrossTab records with all dynamic columns.</summary>
+        [HttpGet("paged/plantestcrosstab")]
+        public async Task<IActionResult> GetPagedTestPlanCrossTab(
+            [FromQuery] QueryParameters<string> query)
+        {
+            var result = await _service.GetPagedTestPlanCrossTabAsync(query);
+            return Ok(result);
+        }
     }
 }

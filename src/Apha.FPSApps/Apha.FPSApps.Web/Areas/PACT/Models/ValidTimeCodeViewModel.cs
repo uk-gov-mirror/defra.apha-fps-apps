@@ -34,7 +34,7 @@ namespace Apha.FPSApps.Web.Areas.PACT.Models
         [Display(Name = "Project")]
         [Required(ErrorMessage = "Project is required")]
         [StringLength(50)]
-        [GridColumn(Order = 4, Width = 160, Type = GridColumnType.Text, IsFilterable = true)]
+        [GridColumn(Order = 4, Width = 160, Type = GridColumnType.Text)]
         public string? Project { get; set; }
 
         [Display(Name = "Job Code")]

@@ -345,7 +345,7 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.FPS.ProjectProfitabilityControl
         }
 
         [Fact]
-        public async Task LoadProjectProfitabilityGrid_WithNullBothProgramNoAndProjectGroup_ReturnsBadRequest()
+        public async Task LoadProjectProfitabilityGrid_WithNullBothProgramNoAndProjectGroup_ReturnsEmptyGrid()
         {
             // Arrange
             var request = MakeGridRequest();
@@ -354,7 +354,9 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.FPS.ProjectProfitabilityControl
             var result = await _controller.LoadProjectProfitabilityGrid(request, null, null, "all");
 
             // Assert
-            Assert.IsType<BadRequestObjectResult>(result);
+            var partialResult = Assert.IsType<PartialViewResult>(result);
+            var gridConfig = Assert.IsType<DataGridConfig<ProjectProfitabilityItem>>(partialResult.Model);
+            Assert.Empty(gridConfig.Data);
         }
 
         #endregion

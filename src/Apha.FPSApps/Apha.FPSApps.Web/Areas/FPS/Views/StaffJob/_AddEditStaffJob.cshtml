@@ -12,14 +12,13 @@
     <button type="button" class="btn-close btn-red" onclick="closeModal()">X</button>
 </div>
 <div class="modal-body" style="overflow-y: auto; max-height: calc(80vh - 120px);">
-    <div asp-validation-summary="ModelOnly" class="govuk-error-summary" role="alert"
+    <div class="govuk-error-summary" role="alert"
          aria-labelledby="error-summary-title" tabindex="-1" style="display:none;">
         <h2 class="govuk-error-summary__title" id="error-summary-title">
             There is a problem
         </h2>
         <div class="govuk-error-summary__body">
-            <ul class="govuk-list govuk-error-summary__list">
-            </ul>
+            <ul class="govuk-list govuk-error-summary__list" id="modalErrorList"></ul>
         </div>
     </div>
     <form class="row" id="@formId">
@@ -33,17 +32,66 @@
                 <label for="Name" class="govuk-label p-0">Staff Name <span class="sup_color_red">*</span></label>
                 @if (isEditMode)
                 {
-                    <input type="text" class="govuk-input sup_width_100" asp-for="@Model.Name" readonly />
+                    <input type="text" class="govuk-input sup_width_100" asp-for="Name" readonly />
                 }
                 else
                 {
-                    <select id="Name" name="Name" required class="govuk-select sup_width_100" onchange="onStaffSelected(this)">
+                    <div style="position: relative;">
+                        <input type="text" id="StaffDisplay" placeholder="Select Staff" autocomplete="off"
+                               class="govuk-input govuk-!-font-size-16 down-arrow-img" style="width:100%; cursor:pointer;" readonly
+                               onclick="toggleStaffPanel()" />
+                        <div id="StaffDropdownPanel" style="display:none; position:absolute; top:100%; left:0; width:100%;
+                                max-height:260px; overflow-y:auto; background:#fff; border:1px solid #b1b4b6;
+                                box-shadow:0 4px 8px rgba(0,0,0,.2); z-index:2000;">
+                            <input type="text" id="StaffSearchBox" placeholder="Type to search staff..."
+                                   style="width:100%; padding:6px 8px; border:0; border-bottom:1px solid #b1b4b6; outline:none; box-sizing:border-box;"
+                                   oninput="filterStaffPanel(this.value)" />
+                            <table style="width:100%; border-collapse:collapse; font-size:14px;">
+                                <thead style="background:#f3f2f1; position:sticky; top:0; z-index:10;">
+                                    <tr>
+                                        <th style="padding:6px 8px; text-align:left;">Name</th>
+                                        <th style="padding:6px 8px; text-align:left;">Grade</th>
+                                        <th style="padding:6px 8px; text-align:left;">Hrs Avail</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="StaffDropdownBody">
+                                    @if (Model.StaffList != null)
+                                    {
+                                        foreach (var staff in Model.StaffList.Where(s => !string.IsNullOrEmpty(s.Value)))
+                                        {
+                                            var parts = staff.Text.Split('|');
+                                            var sName = parts.Length > 0 ? parts[0].Trim() : string.Empty;
+                                            var sGrade = parts.Length > 1 ? parts[1].Trim() : string.Empty;
+                                            var sHrsAvail = parts.Length > 2 ? parts[2].Trim() : string.Empty;
+                                            <tr data-staffid="@staff.Value" data-name="@sName"
+                                                onclick="selectStaff('@staff.Value', '@Html.Raw(sName.Replace("'", "\\'"))', this)"
+                                                style="cursor:pointer;">
+                                                <td style="padding:6px 8px; border-bottom:1px solid #f3f2f1;">@sName</td>
+                                                <td style="padding:6px 8px; border-bottom:1px solid #f3f2f1;">@sGrade</td>
+                                                <td style="padding:6px 8px; border-bottom:1px solid #f3f2f1;">@sHrsAvail</td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    @* hidden select — keeps Name field binding + server-side validation *@
+                    <select id="Name" name="Name" required style="display:none;" onchange="onStaffSelected(this)">
                         <option value="">-- Select Staff --</option>
                         @if (Model.StaffList != null)
                         {
                             foreach (var staff in Model.StaffList)
                             {
-                                <option value="@staff.Value" data-name="@staff.Text">@staff.Text</option>
+                                var dn = staff.Text.Split('|')[0].Trim();
+                                if (staff.Selected)
+                                {
+                                    <option value="@staff.Value" data-name="@dn" selected>@dn</option>
+                                }
+                                else
+                                {
+                                    <option value="@staff.Value" data-name="@dn">@dn</option>
+                                }
                             }
                         }
                     </select>
@@ -57,38 +105,37 @@
                 <div class="govuk-input__wrapper">
                     <div class="govuk-input__prefix" aria-hidden="true">£</div>
                     <input type="number" step="0.01" asp-for="ChargeRate" class="govuk-input" id="ChargeRate" readonly>
-                    </div>
-                    <span asp-validation-for="ChargeRate" class="govuk-error-message" style="display:none;"></span>
                 </div>
+                <span asp-validation-for="ChargeRate" class="govuk-error-message" style="display:none;"></span>
             </div>
-            <div class="col-12">
-                <div class="govuk-form-group sup_margin_0">
-                    <label for="PlannedHours" class="govuk-label" asp-for="PlannedHours">Hrs</label>
-                    <input type="number" step="0.01" asp-for="PlannedHours" class="govuk-input" id="PlannedHours" inputmode="decimal" pattern="[0-9]*\.?[0-9]*">
-                        <span asp-validation-for="PlannedHours" class="govuk-error-message" style="display:none;"></span>
-                    </div>
+        </div>
+        <div class="col-12">
+            <div class="govuk-form-group sup_margin_0">
+                <label for="PlannedHours" class="govuk-label" asp-for="PlannedHours">Hrs</label>
+                <input type="number" step="0.01" asp-for="PlannedHours" class="govuk-input" id="PlannedHours" inputmode="decimal" pattern="[0-9]*\.?[0-9]*">
+                <span asp-validation-for="PlannedHours" class="govuk-error-message" style="display:none;"></span>
+            </div>
+        </div>
+        <div class="col-12">
+            <div class="govuk-form-group sup_margin_0">
+                <label for="Days" class="govuk-label" asp-for="Days">Days</label>
+                <input type="number" step="0.01" asp-for="Days" class="govuk-input" id="Days" inputmode="decimal" pattern="[0-9]*\.?[0-9]*">
+                <span asp-validation-for="Days" class="govuk-error-message" style="display:none;"></span>
+            </div>
+        </div>
+        <div class="col-12">
+            <div class="govuk-form-group sup_margin_0">
+                <label for="StaffCost" class="govuk-label" asp-for="StaffCost">Staff Cost</label>
+                <div class="govuk-input__wrapper">
+                    <div class="govuk-input__prefix" aria-hidden="true">£</div>
+                    <input type="number" step="0.01" asp-for="StaffCost" class="govuk-input" id="StaffCost" readonly>
                 </div>
-                <div class="col-12">
-                    <div class="govuk-form-group sup_margin_0">
-                        <label for="Days" class="govuk-label" asp-for="Days">Days</label>
-                        <input type="number" step="0.01" asp-for="Days" class="govuk-input" id="Days" inputmode="decimal" pattern="[0-9]*\.?[0-9]*">
-                            <span asp-validation-for="Days" class="govuk-error-message" style="display:none;"></span>
-                        </div>
-                    </div>
-                    <div class="col-12">
-                        <div class="govuk-form-group sup_margin_0">
-                            <label for="StaffCost" class="govuk-label" asp-for="StaffCost">Staff Cost</label>
-                            <div class="govuk-input__wrapper">
-                                <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                                <input type="number" step="0.01" asp-for="StaffCost" class="govuk-input" id="StaffCost" readonly>
-                                </div>
-                                <span asp-validation-for="StaffCost" class="govuk-error-message" style="display:none;"></span>
-
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer sup_flex_space_center">
-                    <button class="govuk-button govuk-button--secondary sup_margin_0" data-module="govuk-button" onclick="closeModal()">Cancel</button>
-                    <button class="govuk-button sup_margin_0" data-module="govuk-button" type="button" onclick="@saveAction">@saveLabel</button>
-                </div>
+                <span asp-validation-for="StaffCost" class="govuk-error-message" style="display:none;"></span>
+            </div>
+        </div>
+    </form>
+</div>
+<div class="modal-footer sup_flex_space_center">
+    <button class="govuk-button govuk-button--secondary sup_margin_0" data-module="govuk-button" onclick="closeModal()">Cancel</button>
+    <button class="govuk-button sup_margin_0" data-module="govuk-button" type="button" onclick="@saveAction">@saveLabel</button>
+</div>

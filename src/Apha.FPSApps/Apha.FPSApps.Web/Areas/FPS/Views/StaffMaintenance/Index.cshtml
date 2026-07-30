@@ -10,7 +10,7 @@
         <!-- Title section -->
         <div class="govuk-grid-row">
             <div class="govuk-grid-column-full">
-                <h1 class="govuk-heading-s sup_border-bottom govuk-!-margin-top-2 govuk-!-padding-bottom-2 govuk-!-padding-left-4">Staff Maintenance</h1>
+                <h1 class="govuk-heading-s sup_border-bottom govuk-!-margin-top-2 govuk-!-padding-bottom-2">Staff Maintenance</h1>
             </div>
         </div>
 
@@ -91,6 +91,14 @@
                                                 <!-- Grid Container -->
                                                 <div id="@($"gridContainer_{Model.StaffGrid.GridId}")">
                                                     @await Html.PartialAsync("_DataGrid", Model.StaffGrid)
+                                                </div>
+
+                                                <div class="govuk-grid-row">
+                                                    <div class="govuk-grid-column-full">
+                                                        <div class="govuk-!-margin-top-1 govuk-!-padding-2 isInfoSec">
+                                                            Use this to add/edit staff names and SP numbers as per Paris printout.
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>

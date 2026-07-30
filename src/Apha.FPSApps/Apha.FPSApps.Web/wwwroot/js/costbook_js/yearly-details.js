@@ -198,6 +198,12 @@ function bindAddYearForm(pid, year) {
     if (!form) return;
     form.addEventListener('submit', function (e) {
         e.preventDefault();
+
+        var $form = $('#addNewProjectYearForm');
+        var $modal = $('#project1ModalContent');
+        clearValidationErrors($modal);
+        if (!isFormValid($form)) { displayClientValidationErrors($form, $modal); return; }
+
         fetch(yearlyDetailsUrls.addProjectYear, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': getAntiForgeryToken() },
@@ -206,10 +212,12 @@ function bindAddYearForm(pid, year) {
             .then(function (r) { return r.json(); })
             .then(function (data) {
                 if (data.success) { closeModal(); selectYear(pid, data.year); }
-                else { showAlertMessage('Failed to add project year.', AlertType.ERROR); }
-            });
+                else if (data.errors) { _showModalErrors(data.errors, $modal); }
+                else { showAlertMessage(data.message || 'Failed to add project year.', AlertType.ERROR); }
+            })
+            .catch(function (err) { console.error('Add project year error:', err); showAlertMessage('Failed to add project year.', AlertType.ERROR); });
     });
-}
+    }
 
 // ── DataGrid bridge functions ──────────────────────────────────────
 function gridAddStaff() { openAddStaffModal(projectId, selectedYear); }
@@ -282,31 +290,36 @@ function saveStaff() {
     var url = _staffIsAddingNew
         ? yearlyDetailsUrls.createStaff + '?projectId=' + encodeURIComponent(projectId) + '&year=' + selectedYear
         : yearlyDetailsUrls.editStaff + '?projectId=' + encodeURIComponent(projectId) + '&year=' + selectedYear + '&srIdentity=' + _staffCurrentIdentity;
+
+    showLoader();
     fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': token },
         body: new URLSearchParams(new FormData(form)).toString()
     })
-        .then(function (r) { return r.json(); })
+        .then(function (r) { hideLoader(); return r.json(); })
         .then(function (d) {
-            if (d.success) { showAlertMessage(d.message, AlertType.SUCCESS).then(function () { closeModal(); loadStaffGrid(); }); }
+            if (d.success) { closeModal(); showAlertMessage(d.message, AlertType.SUCCESS).then(function () { loadStaffGrid(); }); }
             else if (d.errors) { _showModalErrors(d.errors, $modal); }
             else { showAlertMessage(d.message || 'Failed to save staff requirement.', AlertType.ERROR); }
         })
-        .catch(function (err) { console.error('Staff save error:', err); showAlertMessage('Failed to save staff requirement.', AlertType.ERROR); });
+        .catch(function (err) { hideLoader(); console.error('Staff save error:', err); showAlertMessage('Failed to save staff requirement.', AlertType.ERROR); });
 }
 function deleteStaff(pid, year, srIdentity) {
     showGovukConfirm('Delete this staff entry?').then(function (result) {
         if (!result) return;
+
+        showLoader();
         fetch(yearlyDetailsUrls.deleteStaff + '?projectId=' + encodeURIComponent(pid) + '&year=' + year + '&srIdentity=' + srIdentity, {
             method: 'DELETE',
             headers: { 'RequestVerificationToken': getAntiForgeryToken() }
         })
-            .then(function (r) { return r.json(); })
+            .then(function (r) { hideLoader(); return r.json(); })
             .then(function (d) {
                 if (d.success) { showAlertMessage(d.message, AlertType.SUCCESS).then(function () { loadStaffGrid(); }); }
                 else { showAlertMessage(d.message || 'Failed to delete Staff entry.', AlertType.ERROR); }
-            });
+            })
+            .catch(function (err) { hideLoader(); console.error('Staff delete error:', err); showAlertMessage('Failed to delete Staff entry.', AlertType.ERROR); });
     });
 }
 
@@ -352,31 +365,36 @@ function saveTest() {
     var url = _testIsAddingNew
         ? yearlyDetailsUrls.createTest + '?projectId=' + encodeURIComponent(projectId) + '&year=' + selectedYear
         : yearlyDetailsUrls.editTest + '?projectId=' + encodeURIComponent(projectId) + '&year=' + selectedYear + '&testCode=' + encodeURIComponent(_testCurrentCode);
+
+    showLoader();
     fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': token },
         body: new URLSearchParams(new FormData(form)).toString()
     })
-        .then(function (r) { return r.json(); })
+        .then(function (r) { hideLoader(); return r.json(); })
         .then(function (d) {
-            if (d.success) { showAlertMessage(d.message, AlertType.SUCCESS).then(function () { closeModal(); loadTestGrid(); }); }
+            if (d.success) { closeModal(); showAlertMessage(d.message, AlertType.SUCCESS).then(function () { loadTestGrid(); }); }
             else if (d.errors) { _showModalErrors(d.errors, $modal); }
             else { showAlertMessage(d.message || 'Failed to save test requirement.', AlertType.ERROR); }
         })
-        .catch(function (err) { console.error('Test save error:', err); showAlertMessage('Failed to save test requirement.', AlertType.ERROR); });
+        .catch(function (err) { hideLoader(); console.error('Test save error:', err); showAlertMessage('Failed to save test requirement.', AlertType.ERROR); });
 }
 function deleteTest(pid, year, testCode) {
     showGovukConfirm('Delete this test entry?').then(function (result) {
         if (!result) return;
+
+        showLoader();
         fetch(yearlyDetailsUrls.deleteTest + '?projectId=' + encodeURIComponent(pid) + '&year=' + year + '&testCode=' + encodeURIComponent(testCode), {
             method: 'DELETE',
             headers: { 'RequestVerificationToken': getAntiForgeryToken() }
         })
-            .then(function (r) { return r.json(); })
+            .then(function (r) { hideLoader(); return r.json(); })
             .then(function (d) {
                 if (d.success) { showAlertMessage(d.message, AlertType.SUCCESS).then(function () { loadTestGrid(); }); }
                 else { showAlertMessage(d.message || 'Failed to delete Test entry.', AlertType.ERROR); }
-            });
+            })
+            .catch(function (err) { hideLoader(); console.error('Test delete error:', err); showAlertMessage('Failed to delete Test entry.', AlertType.ERROR); });
     })
 }
 
@@ -422,33 +440,38 @@ function saveAnimal() {
     var url = _animalIsAddingNew
         ? yearlyDetailsUrls.createAnimal + '?projectId=' + encodeURIComponent(projectId) + '&year=' + selectedYear
         : yearlyDetailsUrls.editAnimal + '?projectId=' + encodeURIComponent(projectId) + '&year=' + selectedYear + '&arIdentity=' + _animalCurrentIdentity;
+
+    showLoader();
     fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': token },
         body: new URLSearchParams(new FormData(form)).toString()
     })
-        .then(function (r) { return r.json(); })
+        .then(function (r) { hideLoader(); return r.json(); })
         .then(function (d) {
             if (d.success) {
-                showAlertMessage(d.message, AlertType.SUCCESS).then(function () { closeModal(); loadAnimalGrid(); });
+                closeModal(); showAlertMessage(d.message, AlertType.SUCCESS).then(function () { loadAnimalGrid(); });
             }
             else if (d.errors) { _showModalErrors(d.errors, $modal); }
             else { showAlertMessage(d.message || 'Failed to save animal requirement.', AlertType.ERROR); }
         })
-        .catch(function (err) { console.error('Animal save error:', err); showAlertMessage('Failed to save animal requirement.', AlertType.ERROR); });
+        .catch(function (err) { hideLoader(); console.error('Animal save error:', err); showAlertMessage('Failed to save animal requirement.', AlertType.ERROR); });
 }
 function deleteAnimal(pid, year, arIdentity) {
     showGovukConfirm('Delete this animal entry?').then(function (result) {
         if (!result) return;
+
+        showLoader();
         fetch(yearlyDetailsUrls.deleteAnimal + '?projectId=' + encodeURIComponent(pid) + '&year=' + year + '&arIdentity=' + arIdentity, {
             method: 'DELETE',
             headers: { 'RequestVerificationToken': getAntiForgeryToken() }
         })
-            .then(function (r) { return r.json(); })
+            .then(function (r) { hideLoader(); return r.json(); })
             .then(function (d) {
                 if (d.success) { showAlertMessage(d.message, AlertType.SUCCESS).then(function () { loadAnimalGrid(); }); }
                 else { showAlertMessage(d.message || 'Failed to delete animal entry.', AlertType.ERROR); }
-            });
+            })
+            .catch(function (err) { hideLoader(); console.error('Animal delete error:', err); showAlertMessage('Failed to delete animal entry.', AlertType.ERROR); });
     });
 }
 
@@ -494,31 +517,36 @@ function saveAdditionalCost() {
     var url = _additionalCostIsAddingNew
         ? yearlyDetailsUrls.createAdditionalCost + '?projectId=' + encodeURIComponent(projectId) + '&year=' + selectedYear
         : yearlyDetailsUrls.editAdditionalCost + '?projectId=' + encodeURIComponent(projectId) + '&year=' + selectedYear + '&acIdentity=' + _additionalCostCurrentIdentity;
+
+    showLoader();
     fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': token },
         body: new URLSearchParams(new FormData(form)).toString()
     })
-        .then(function (r) { return r.json(); })
+        .then(function (r) { hideLoader(); return r.json(); })
         .then(function (d) {
-            if (d.success) { showAlertMessage(d.message, AlertType.SUCCESS).then(function () { closeModal(); loadAdditionalCostGrid(); }); }
+            if (d.success) { closeModal(); showAlertMessage(d.message, AlertType.SUCCESS).then(function () { loadAdditionalCostGrid(); }); }
             else if (d.errors) { _showModalErrors(d.errors, $modal); }
             else { showAlertMessage(d.message || 'Failed to save additional cost.', AlertType.ERROR); }
         })
-        .catch(function (err) { console.error('Additional cost save error:', err); showAlertMessage('Failed to save additional cost.', AlertType.ERROR); });
+        .catch(function (err) { hideLoader(); console.error('Additional cost save error:', err); showAlertMessage('Failed to save additional cost.', AlertType.ERROR); });
 }
 function deleteAdditionalCost(pid, year, acIdentity) {
     showGovukConfirm('Delete this additional cost entry?').then(function (result) {
         if (!result) return;
+
+        showLoader();
         fetch(yearlyDetailsUrls.deleteAdditionalCost + '?projectId=' + encodeURIComponent(pid) + '&year=' + year + '&acIdentity=' + acIdentity, {
             method: 'DELETE',
             headers: { 'RequestVerificationToken': getAntiForgeryToken() }
         })
-            .then(function (r) { return r.json(); })
+            .then(function (r) { hideLoader(); return r.json(); })
             .then(function (d) {
                 if (d.success) { showAlertMessage(d.message, AlertType.SUCCESS).then(function () { loadAdditionalCostGrid(); }); }
                 else { showAlertMessage(d.message || 'Failed to delete Additional cost entry.', AlertType.ERROR); }
-            });
+            })
+            .catch(function (err) { hideLoader(); console.error('Additional cost delete error:', err); showAlertMessage('Failed to delete Additional cost entry.', AlertType.ERROR); });
     });
 }
 
@@ -555,6 +583,12 @@ function bindMarkupAndProfitForm(pid, yearVal) {
     if (!form) return;
     form.addEventListener('submit', function (e) {
         e.preventDefault();
+
+        var $form = $('#addNewProjectYearForm');
+        var $modal = $('#project1ModalContent');
+        clearValidationErrors($modal);
+        if (!isFormValid($form)) { displayClientValidationErrors($form, $modal); return; }
+
         fetch(yearlyDetailsUrls.updateProjectYearRate + '?projectId=' + encodeURIComponent(pid) + '&year=' + yearVal, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': getAntiForgeryToken() },
@@ -563,8 +597,10 @@ function bindMarkupAndProfitForm(pid, yearVal) {
             .then(function (r) { return r.json(); })
             .then(function (d) {
                 if (d.success) { closeModal(); loadMarkupAndProfitGrid(); }
-                else { showAlertMessage('Failed to save markup and profit rates.', AlertType.ERROR); }
-            });
+                else if (d.errors) { _showModalErrors(d.errors, $modal); }
+                else { showAlertMessage(d.message || 'Failed to save markup and profit rates.', AlertType.ERROR); }
+            })
+            .catch(function (err) { console.error('Update markup and profit error:', err); showAlertMessage('Failed to save markup and profit rates.', AlertType.ERROR); });
     });
 }
 
@@ -828,9 +864,11 @@ function initWgGradeDropdown() {
             input.setAttribute('data-current-value', grade);
             document.getElementById('WgGrade').value = grade;
             document.getElementById('Chargerate').value = chargeRate;
-            document.getElementById('Payrate').value = row.getAttribute('data-payrate');
-            document.getElementById('Npr').value = row.getAttribute('data-npr');
-            document.getElementById('Ohr').value = row.getAttribute('data-ohr');
+            // document.getElementById('Payrate').value = row.getAttribute('data-payrate');
+            // document.getElementById('Npr').value = row.getAttribute('data-npr');
+            // document.getElementById('Ohr').value = row.getAttribute('data-ohr');
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
             calcStaffCost();
         }
     });
@@ -877,9 +915,9 @@ function calcStaffCost() {
     var hours = hoursStr !== '' ? parseFloat(hoursStr) : 0;
     var rate = parseFloat(rateEl.value);
     if (daysEl && document.activeElement !== daysEl) {
-        daysEl.value = (_hoursPerDay > 0) ? (hours / _hoursPerDay).toFixed(2) : '0.00';
+        daysEl.value = (_hoursPerDay > 0) ? (hours / _hoursPerDay) : '0.00';
     }
-    costEl.value = !isNaN(rate) ? (hours * rate).toFixed(2) : '';
+    costEl.value = !isNaN(rate) ? (hours * rate) : '';
 }
 function calcStaffCostFromDays() {
     if (_calcStaffGuard) return;
@@ -892,11 +930,11 @@ function calcStaffCostFromDays() {
     var days = daysStr !== '' ? parseFloat(daysStr) : 0;
     _calcStaffGuard = true;
     if (document.activeElement !== hoursEl) {
-        hoursEl.value = (_hoursPerDay > 0) ? (days * _hoursPerDay).toFixed(2) : '0.00';
+        hoursEl.value = (_hoursPerDay > 0) ? (days * _hoursPerDay) : '0.00';
     }
     var hours = parseFloat(hoursEl.value);
     var rate = parseFloat(rateEl.value);
-    costEl.value = !isNaN(rate) ? (hours * rate).toFixed(2) : '';
+    costEl.value = !isNaN(rate) ? (hours * rate) : '';
     _calcStaffGuard = false;
 }
 
@@ -914,6 +952,8 @@ function initTestCodeDropdown() {
             input.value = code;
             document.getElementById('TestCode').value = code;
             document.getElementById('UnitPrice').value = unitPrice;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
             calcTestCost();
         }
     });
@@ -955,6 +995,8 @@ function initAnimalTypeDropdown() {
             input.value = animalType;
             document.getElementById('AnimalType').value = animalType;
             document.getElementById('DailyRate').value = dailyRate;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
             calcAnimalCost();
         }
     });
@@ -1000,6 +1042,8 @@ function initAccountCatDropdown() {
             var cat = row.getAttribute('data-value');
             input.value = cat;
             document.getElementById('AccountCat').value = cat;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
         }
     });
 

@@ -90,9 +90,9 @@
                             </thead>
                             <tbody class="govuk-table__body" id="staffNameTableBody">
                                 @foreach (var staff in (Model?.StaffLookupOptions ?? System.Linq.Enumerable.Empty<Apha.FPSApps.Web.Areas.FPS.Models.WorkGroupStaffLookupItem>())
-                                   .Where(x => !string.IsNullOrWhiteSpace(x.Name))
-                                   .GroupBy(x => x.Name)
-                                   .Select(g => g.First()))
+                                                                   .Where(x => !string.IsNullOrWhiteSpace(x.Name))
+                                                                   .GroupBy(x => x.Name)
+                                                                   .Select(g => g.First()))
                                 {
                                     <tr class="govuk-table__row staff-name-row"
                                         data-pactid="@staff.PactId"
@@ -303,11 +303,15 @@
 <div class="modal-footer sup_flex_space_center">
     <button class="govuk-button govuk-button--secondary sup_margin_0"
             data-module="govuk-button"
-            onclick="closeModal()">Cancel</button>
+            onclick="closeModal()">
+        Cancel
+    </button>
     <button class="govuk-button sup_margin_0"
             data-module="govuk-button"
             type="button"
-            onclick="saveMaintWGStaff()">@saveLabel</button>
+            onclick="saveMaintWGStaff()">
+        @saveLabel
+    </button>
 </div>
 
 <script>

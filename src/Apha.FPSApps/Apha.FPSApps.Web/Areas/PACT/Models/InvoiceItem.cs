@@ -5,7 +5,8 @@ namespace Apha.FPSApps.Web.Areas.PACT.Models
 {
     public class InvoiceItem
     {
-        [GridColumn(Type = GridColumnType.ReadOnly, IsVisible = false)]
+        [Display(Name = "InvCntr")]
+        [GridColumn(Order = 8, Width = 100, Type = GridColumnType.ReadOnly, IsVisible = true)]
         public int InvoiceCounter { get; set; }
 
         [Required(ErrorMessage = "Project is required")]

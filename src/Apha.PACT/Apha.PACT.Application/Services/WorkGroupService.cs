@@ -2,9 +2,11 @@ using Apha.PACT.Application.Dtos;
 using Apha.PACT.Application.Interfaces;
 using Apha.PACT.Application.Pagination;
 using Apha.PACT.Application.Validation;
+using Apha.PACT.Core.Entities;
 using Apha.PACT.Core.Interfaces;
 using Apha.PACT.Core.Pagination;
 using AutoMapper;
+using Npgsql;
 
 namespace Apha.PACT.Application.Services
 {
@@ -455,6 +457,210 @@ namespace Apha.PACT.Application.Services
                 GrandTotalTime = rows.Sum(r => r.TotalTime),
                 GrandTotalCost = rows.Sum(r => r.TotalCost)
             };
+        }
+
+        // ─── WorkGroup Maintenance CRUD + lookups (migrated from FPS) ───────────────
+
+        public async Task<PaginatedResult<WorkGroupDto>> GetPagedAsync(QueryParameters<string> query)
+        {
+            if (query is null)
+            {
+                throw new BusinessValidationErrorException(
+                [
+                    new BusinessValidationError("Query parameters cannot be null.", "WORKGROUP_INVALID_QUERY")
+                ]);
+            }
+
+            var filter = _mapper.Map<PaginationParameters<string>>(query);
+            var result = await _repository.GetPagedAsync(filter);
+            return _mapper.Map<PaginatedResult<WorkGroupDto>>(result);
+        }
+
+        public async Task<WorkGroupDto?> GetByKeyAsync(string workGroupName)
+        {
+            if (string.IsNullOrWhiteSpace(workGroupName))
+            {
+                throw new BusinessValidationErrorException(
+                [
+                    new BusinessValidationError("WorkGroupName cannot be null or empty.", "WORKGROUP_INVALID_KEY")
+                ]);
+            }
+
+            var entity = await _repository.GetByKeyAsync(workGroupName);
+            return entity is null ? null : _mapper.Map<WorkGroupDto>(entity);
+        }
+
+        public async Task<WorkGroupDto> CreateAsync(WorkGroupDto dto)
+        {
+            if (dto is null)
+            {
+                throw new BusinessValidationErrorException(
+                [
+                    new BusinessValidationError("Workgroup data cannot be null.", "WORKGROUP_INVALID_DATA")
+                ]);
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.WorkGroupName))
+            {
+                throw new BusinessValidationErrorException(
+                [
+                    new BusinessValidationError("WorkGroupName is required.", "WORKGROUP_NAME_REQUIRED")
+                ]);
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.ProfitCentre))
+            {
+                throw new BusinessValidationErrorException(
+                [
+                    new BusinessValidationError("ProfitCentre is required.", "WORKGROUP_PROFITCENTRE_REQUIRED")
+                ]);
+            }
+
+            var exists = await _repository.ExistsAsync(dto.WorkGroupName);
+            if (exists)
+            {
+                throw new BusinessValidationErrorException(
+                [
+                    new BusinessValidationError(
+                        $"A workgroup with the name '{dto.WorkGroupName}' already exists for the active FPS year.",
+                        "WORKGROUP_DUPLICATE_NAME")
+                ]);
+            }
+
+            var entity = _mapper.Map<WorkGroup>(dto);
+            try
+            {
+                var created = await _repository.CreateAsync(entity);
+                return _mapper.Map<WorkGroupDto>(created);
+            }
+            catch (Exception ex) when (IsForeignKeyViolation(ex))
+            {
+                throw BuildCostCentreValidationException();
+            }
+        }
+
+        public async Task<WorkGroupDto> UpdateAsync(string originalWorkGroupName, WorkGroupDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(originalWorkGroupName))
+            {
+                throw new BusinessValidationErrorException(
+                [
+                    new BusinessValidationError("Original WorkGroupName cannot be null or empty.", "WORKGROUP_INVALID_KEY")
+                ]);
+            }
+
+            if (dto is null)
+            {
+                throw new BusinessValidationErrorException(
+                [
+                    new BusinessValidationError("Workgroup data cannot be null.", "WORKGROUP_INVALID_DATA")
+                ]);
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.WorkGroupName))
+            {
+                throw new BusinessValidationErrorException(
+                [
+                    new BusinessValidationError("WorkGroupName is required.", "WORKGROUP_NAME_REQUIRED")
+                ]);
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.ProfitCentre))
+            {
+                throw new BusinessValidationErrorException(
+                [
+                    new BusinessValidationError("ProfitCentre is required.", "WORKGROUP_PROFITCENTRE_REQUIRED")
+                ]);
+            }
+
+            var exists = await _repository.ExistsAsync(originalWorkGroupName);
+            if (!exists)
+            {
+                throw new KeyNotFoundException(
+                    $"Workgroup '{originalWorkGroupName}' not found for the active FPS year.");
+            }
+
+            var entity = _mapper.Map<WorkGroup>(dto);
+            try
+            {
+                var updated = await _repository.UpdateAsync(originalWorkGroupName, entity);
+                return _mapper.Map<WorkGroupDto>(updated);
+            }
+            catch (Exception ex) when (IsForeignKeyViolation(ex))
+            {
+                throw BuildCostCentreValidationException();
+            }
+        }
+
+        public async Task<bool> DeleteAsync(string workGroupName)
+        {
+            if (string.IsNullOrWhiteSpace(workGroupName))
+            {
+                throw new BusinessValidationErrorException(
+                [
+                    new BusinessValidationError("WorkGroupName cannot be null or empty.", "WORKGROUP_INVALID_KEY")
+                ]);
+            }
+
+            try
+            {
+                return await _repository.DeleteAsync(workGroupName);
+            }
+            catch (Exception ex) when (IsForeignKeyViolation(ex))
+            {
+                throw new BusinessValidationErrorException(new List<BusinessValidationError>
+                {
+                    new BusinessValidationError(
+                        "There are associated records in the system so this record cannot be deleted.",
+                        "WORKGROUPGRADE_FK_VIOLATION")
+                });
+            }
+        }
+
+        public async Task<IEnumerable<string>> GetAllProfitCentresAsync()
+            => await _repository.GetAllProfitCentresAsync();
+
+        public async Task<IEnumerable<OwnerDto>> GetOwnersAsync()
+        {
+            var owners = await _repository.GetOwnersAsync();
+            return _mapper.Map<IEnumerable<OwnerDto>>(owners);
+        }
+
+        public async Task<IEnumerable<double?>> GetCostCentresByProfitCentreAsync(string profitCentre)
+        {
+            if (string.IsNullOrWhiteSpace(profitCentre))
+            {
+                throw new BusinessValidationErrorException(
+                [
+                    new BusinessValidationError("ProfitCentre cannot be null or empty.", "WORKGROUP_PROFITCENTRE_REQUIRED")
+                ]);
+            }
+
+            return await _repository.GetCostCentresByProfitCentreAsync(profitCentre);
+        }
+
+        private static BusinessValidationErrorException BuildCostCentreValidationException()
+        {
+            return new BusinessValidationErrorException(new List<BusinessValidationError>
+            {
+                new BusinessValidationError(
+                    "The Cost center is not present in the Cost Center table. Please input Cost center which is already present in CostCenter table.",
+                    "COSTCENTRE_FK_VIOLATION")
+            });
+        }
+
+        private static bool IsForeignKeyViolation(Exception? ex)
+        {
+            for (var current = ex; current is not null; current = current.InnerException)
+            {
+                if (current is PostgresException pgEx
+                    && pgEx.SqlState == PostgresErrorCodes.ForeignKeyViolation)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

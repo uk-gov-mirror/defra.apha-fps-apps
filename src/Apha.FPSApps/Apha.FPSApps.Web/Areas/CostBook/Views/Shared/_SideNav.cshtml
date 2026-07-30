@@ -6,11 +6,7 @@
     <button class="toggle-btn project-toggle-btn" onclick="toggleSidebar()" aria-label="Toggle side navigation">
         <img src="~/images/chevron-left-solid-full.svg" alt="side nav menu arrow" width="24">
     </button>
-    <ul>
-        <li><a class="dropdown-item sidenav-title">Reports</a></li>
-        <li><a class="dropdown-item" href="#">Summary Report</a></li>
-        <li><a class="dropdown-item" href="#">Detail Report</a></li>
-        <li><a class="dropdown-item" href="#">SID3 Staff Effort</a></li>
+    <ul>        
         <li><a class="dropdown-item sidenav-title">Queries</a></li>
             <li><a class="dropdown-item" asp-area="CostBook" asp-controller="ProjectCosts" asp-action="Index" asp-route-projectId="@Model.ProjectHeaderDto.ProjectId">Project Costs Query</a></li>
         <li><a class="dropdown-item" asp-area="CostBook" asp-controller="StaffYears" asp-action="Index" asp-route-projectId="@Model.ProjectHeaderDto.ProjectId">CSG7 Staff Years</a></li>

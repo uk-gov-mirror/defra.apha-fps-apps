@@ -9,7 +9,9 @@ using Apha.FPSApps.Web.Areas.PACT.Controllers;
 using Apha.FPSApps.Web.Areas.PACT.Models;
 using Apha.FPSApps.Web.Models.Components.DataGrid;
 using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using NSubstitute;
 using System.Text.Json;
 
@@ -43,6 +45,10 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PACT.BosworthInterfaceControlle
                 _profitCentreService,
                 _excelExportService,
                 _testCapabilityService);
+
+            _controller.TempData = new TempDataDictionary(
+                new DefaultHttpContext(),
+                Substitute.For<ITempDataProvider>());
         }
 
         private void SetupDropdownsSuccess()

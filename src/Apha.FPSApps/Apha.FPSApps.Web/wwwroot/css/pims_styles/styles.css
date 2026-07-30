@@ -966,7 +966,7 @@ select {
 
 .govuk-tabs__list-item--selected,
 .govuk-tabs__list-item {
-    padding: 5px !important;
+    padding: 12px !important;
 
 }
 
@@ -1047,7 +1047,7 @@ select {
     border: none;
     font-size: 21px;
     color: white;
-    background-color: red;
+    background-color: #ca3535;
     opacity: 1;
     cursor: pointer;
     padding: 2px;
@@ -1134,7 +1134,7 @@ th.col-resizable {
     display: flex;
     justify-content: flex-start;
     align-items: center;
-    gap: 3rem;
+/*    gap: 3rem;*/
     margin-bottom: 5px;
 }
 
@@ -1305,7 +1305,7 @@ th.sorted-desc {
 .inv-toolbar {
     padding: 8px 12px 4px 12px;
     border-bottom: 1px solid #b1b4b6;
-    background-color: #f3f2f1;
+    background-color: #ffffff;
 }
 
 .inv-toolbar__row {
@@ -1318,6 +1318,13 @@ th.sorted-desc {
 .inv-toolbar__item {
     display: flex;
     flex-direction: column;
+}
+
+.inv-toolbar__item label {
+    font-weight: 700;
+    color: #0b0c0c;
+    margin-bottom: 4px;
+
 }
 
 #tblInv .govuk-table__header,
@@ -1472,6 +1479,19 @@ th.sorted-desc {
     overflow-x: auto;
 }
 
+/* Totals row must not show its own scrollbar — its scroll position is driven
+   programmatically (via JS) to stay in lockstep with the data grid's scroll. */
+#yfdTotalsScrollWrapper {
+    overflow-x: hidden;
+}
+
+/* Invoice totals row — same behaviour as the Yearly Financial Data totals row:
+   scroll position is driven programmatically (via JS) to stay in lockstep
+   with the invoices grid's scroll. */
+#invTotalsScrollWrapper {
+    overflow-x: hidden;
+}
+
 /* Inner vertical-scroll container for data table */
 .yfd-data-scroll {
     max-height: 300px;
@@ -1497,11 +1517,11 @@ th.sorted-desc {
 
 /* Column widths — applied via colgroup in both tables (% of 1800px total) */
 .yfd-col-year {
-    width: 8%;
+    width: 8% ;
 }
 
 .yfd-col-ppacc {
-    width: 15%;
+    width: 5% ;
 }
 
 .yfd-col-income {
@@ -1509,7 +1529,7 @@ th.sorted-desc {
 }
 
 .yfd-col-budget {
-    width: 15%;
+    width: 10%;
 }
 
 .yfd-col-actexp {
@@ -1561,17 +1581,27 @@ th.sorted-desc {
     background: #f4f8fb !important;
     font-weight: bold;
     font-size: 13px;
-    white-space: normal;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
     padding: 12px 8px;
-    text-align: right;
-    height: 48px;
+    text-align: left;
+   
 }
 
 .yfd-totals-table .yfd-total-label {
-    text-align: left;
+    text-align: right;
     color: #505a5f;
+}
+
+
+
+
+/* Blank out empty placeholder cells in the totals row (e.g. VLA Budget, Seedcorn,
+   Man Hours, Adjustment Comment, Actions) as whitespace — keep them in layout
+   so column widths/positions stay synced with the DataGrid's colgroup. */
+.yfd-totals-table .yfd-total-hidden {
+    background: transparent !important;
+    border: none !important;
+    color: transparent;
+    visibility: hidden;
 }
 
 /* Modal input prefix (£) */
@@ -2953,10 +2983,11 @@ th.sorted-desc {
     height: 300px !important;
     max-height: 300px !important;
 }
-
+#gridContainer_pmdMilestonesGrid > .editable-grid-container > div > .grid-scroll-container,
+#gridContainer_invoicesGrid > .editable-grid-container > div > .grid-scroll-container,
 #gridContainer_milestoneFormDatesGrid > .editable-grid-container > div > .grid-scroll-container {
-    height: 250px !important;
-    max-height: 250px !important;
+    height: 270px !important;
+    max-height: 270px !important;
 }
 
 .isProjectList {
@@ -2964,5 +2995,8 @@ th.sorted-desc {
         width: calc(100%/4) !important;
     }
 }
-
+.yfd-modal-min-width-height {
+    min-width: 900px;
+    min-height: 500px;
+}
 

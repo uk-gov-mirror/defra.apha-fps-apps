@@ -32,7 +32,7 @@ function reloadInvoicesGrid() {
         type: 'POST',
         data: {
             Page: 1,
-            PageSize: 50,
+            PageSize: 10,
             SortBy: 'Month',
             Descending: false,
             Filter: '{}',

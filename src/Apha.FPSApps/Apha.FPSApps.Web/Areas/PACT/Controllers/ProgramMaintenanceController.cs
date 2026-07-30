@@ -31,6 +31,7 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
 
         public async Task<IActionResult> Index(string? programNo = null)
         {
+            TempData["NavigationSource"] = "ProgramMaintenance";
             var programList = await GetProgramListInternalAsync();
 
             var isValid = !string.IsNullOrWhiteSpace(programNo)

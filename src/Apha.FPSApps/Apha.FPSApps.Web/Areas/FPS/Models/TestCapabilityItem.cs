@@ -9,42 +9,36 @@ namespace Apha.FPSApps.Web.Areas.FPS.Models
     /// </summary>
     public class TestCapabilityItem
     {
-        [Display(Name = "Test Code")]
-        [Required(ErrorMessage = "Test Code is required.")]
-        [GridColumn(Order = 1, Width = 120, Type = GridColumnType.Text, IsFilterable = true)]
-        public string TestCode { get; set; } = null!;
-
-        [Display(Name = "Description")]
-        [GridColumn(Order = 2, Width = 200, Type = GridColumnType.Text, IsFilterable = true)]
-        public string? ItemDescription { get; set; }
-
         [Display(Name = "Work Group")]
         [Required(ErrorMessage = "Work Group is required.")]
-        [GridColumn(Order = 3, Width = 150, Type = GridColumnType.Text, IsFilterable = true)]
+        [GridColumn(Order = 1, Width = 150, Type = GridColumnType.Text, IsFilterable = true)]
         public string WorkGroup { get; set; } = null!;
 
+        [Display(Name = "Portfolio")]
+        [Required(ErrorMessage = "Plan Portfolio is required.")]
+        [GridColumn(Order = 2, Width = 150, Type = GridColumnType.Text, IsFilterable = true)]
+        public string PlanPortfolio { get; set; } = null!;
+
         [Display(Name = "Unit Cost")]
-        [GridColumn(Order = 4, Width = 110, Type = GridColumnType.GbpValue)]
+        [GridColumn(Order = 3, Width = 110, Type = GridColumnType.GbpValue)]
         public decimal? UnitCost { get; set; }
 
-        [Display(Name = "Pred Outturn")]
-        [GridColumn(Order = 5, Width = 100, Type = GridColumnType.DecimalNumber, IsVisible = false)]
+        // ── Hidden ────────────────────────────────────────────────────────────
+
+        [GridColumn(IsVisible = false)]
+        public string TestCode { get; set; } = null!;
+
+        [GridColumn(IsVisible = false)]
+        public string? ItemDescription { get; set; }
+
+        [GridColumn(IsVisible = false)]
         public double? PredOutturn { get; set; }
 
-        [Display(Name = "SOP")]
-        [GridColumn(Order = 6, Width = 100, Type = GridColumnType.Text)]
+        [GridColumn(IsVisible = false)]
         public string? Sop { get; set; }
 
-        [Display(Name = "SMS Code")]
-        [GridColumn(Order = 7, Width = 100, Type = GridColumnType.Text)]
-        public string? SmsCode { get; set; }
-
-        // ── Hidden — used by Add modal only ──────────────────────────────────
-
-        [Display(Name = "Plan Portfolio")]
-        [Required(ErrorMessage = "Plan Portfolio is required.")]
         [GridColumn(IsVisible = false)]
-        public string PlanPortfolio { get; set; } = null!;
+        public string? SmsCode { get; set; }
 
         [GridColumn(IsVisible = false)]
         public int FpsYear { get; set; }

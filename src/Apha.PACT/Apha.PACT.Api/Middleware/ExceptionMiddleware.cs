@@ -50,7 +50,7 @@ namespace Apha.PACT.Api.Middleware
             };
 
             var errorType = _configuration["ExceptionTypes:General"]
-                            ?? "FPS.GENERAL_EXCEPTION";
+                            ?? "PACT.GENERAL_EXCEPTION";
 
             switch (ex)
             {

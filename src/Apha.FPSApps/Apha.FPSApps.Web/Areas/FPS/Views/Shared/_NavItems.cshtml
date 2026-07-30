@@ -1,3 +1,8 @@
+@inject IConfiguration Configuration
+@{
+    var fpsPowerBiReportUrl = Configuration["PowerBiReports:FPS"];
+}
+
 @* FPS navigation items — referenced by Views/Shared/Components/AppNav/Default.cshtml *@
 
 <!-- Programme Management -->
@@ -32,18 +37,6 @@
                             <a class="dropdown-item" asp-area="FPS" asp-controller="StaffPlan" asp-action="Index">Staff Plan Pivot</a>
                         </div>
                     </div>
-                    <div class="sub-dropdown">
-                        <button class="sub-dropdown-toggle" data-subdropdown="summary-printouts">
-                            Summary Printouts
-                            <img src="~/images/right-arrow.png" class="sub-right-arrow" alt="expand" width="14" />
-                        </button>
-                        <div class="sub-dropdown-menu" id="summary-printouts">
-                            <a class="dropdown-item" href="#">Programme Profitability Report</a>
-                            <a class="dropdown-item" href="#">Summarized by Disease</a>
-                            <a class="dropdown-item" href="#">Summarized by Customer</a>
-                            <a class="dropdown-item" href="#">Project Specifics</a>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -54,7 +47,6 @@
         <span class="arrow"><img src="~/images/arrow-down.svg" alt="down arrow" width="12" /></span>
     </button>
     <div class="dropdown-menu" id="resource-management">
-        <a class="dropdown-item" href="#">Create Resource Centre</a>
         <div class="sub-dropdown">
             <button class="sub-dropdown-toggle" data-subdropdown="setup-resource">
                 Setup Resource
@@ -62,9 +54,7 @@
             </button>
             <div class="sub-dropdown-menu" id="setup-resource">
                 <a class="dropdown-item" asp-area="FPS" asp-controller="ResourceSetUp" asp-action="Index">Enter Staff Resources (by Resource Centre)</a>
-                <a class="dropdown-item" href="#">WorkGroup Resources</a>
-                <a class="dropdown-item" href="#">Resource Set-Up Report</a>
-                <a class="dropdown-item" href="#">High Level Summary</a>
+                <a class="dropdown-item" asp-area="FPS" asp-controller="SetUpStaffResources" asp-action="Index">WorkGroup Resources</a>
             </div>
         </div>
         <div class="sub-dropdown">
@@ -73,11 +63,10 @@
                 <img src="~/images/right-arrow.png" class="sub-right-arrow" alt="expand" width="14" />
             </button>
             <div class="sub-dropdown-menu" id="rm-review-plans">
-                <a class="dropdown-item" href="#">Recalculate Rates</a>
                 <a class="dropdown-item" asp-area="FPS" asp-controller="ContributionSummary" asp-action="Index">Contribution Summary</a>
-                <a class="dropdown-item" href="#">Staff Plan Pivot</a>
-                <a class="dropdown-item" href="#">Resource Utilization View</a>
-                <a class="dropdown-item" href="#">View/Replan Staff Hours</a>
+                <a class="dropdown-item" asp-area="FPS" asp-controller="StaffPlanDetails" asp-action="Index">Staff Plan Pivot</a>
+                <a class="dropdown-item" asp-area="FPS" asp-controller="StaffResource" asp-action="Index">Resource Utilization View</a>
+                <a class="dropdown-item" asp-area="FPS" asp-controller="ResourceMgmtReplan" asp-action="Index">View/Replan Staff Hours</a>
             </div>
         </div>
         <a class="dropdown-item" href="#">Reports</a>
@@ -135,10 +124,9 @@
                             <img src="~/images/right-arrow.png" class="sub-right-arrow" alt="expand" width="14" />
                         </button>
                         <div class="sub-dropdown-menu" id="requirements-for-tests">
-                            <a class="dropdown-item" href="#">Test List</a>
+                            <a class="dropdown-item" asp-area="FPS" asp-controller="TestListVla" asp-action="Index">Test List</a>
                             <a class="dropdown-item" asp-area="FPS" asp-controller="TestSupplier" asp-action="Index">Test Supplier View</a>
                             <a class="dropdown-item" asp-area="FPS" asp-controller="TestPriceCheck" asp-action="Index">Test Price Check</a>
-                            <a class="dropdown-item" href="#">Log of Test Requirement Changes</a>
                         </div>
                      </div>
                      <div class="sub-dropdown">
@@ -147,8 +135,18 @@
                             <img src="~/images/right-arrow.png" class="sub-right-arrow" alt="expand" width="14" />
                         </button>
                         <div class="sub-dropdown-menu" id="setup-supply-of-tests">
-                            <a class="dropdown-item" href="#">Create New Portfolios</a>
                             <a class="dropdown-item" asp-area="FPS" asp-controller="TestCapability" asp-action="Index">Set Up Portfolio Components</a>
+                        </div>
+                     </div>
+                     <div class="sub-dropdown">
+                         <button class="sub-dropdown-toggle" data-subdropdown="test-manager-pivots">
+                            Test Manager Pivots 
+                            <img src="~/images/right-arrow.png" class="sub-right-arrow" alt="expand" width="14" />
+                        </button>
+                        <div class="sub-dropdown-menu" id="test-manager-pivots">
+                            <a class="dropdown-item" asp-area="FPS" asp-controller="TestReqBreakdown" asp-action="Index">Planned Test By WG</a>
+                            <a class="dropdown-item" asp-area="FPS" asp-controller="TestActualBreakdown" asp-action="Index">Actual Test By WG</a>
+                            <a class="dropdown-item" asp-area="FPS" asp-controller="TestPlanCrossTab" asp-action="Index">Plan Cross-Tab</a>
                         </div>
                      </div>
                 </div>
@@ -161,13 +159,6 @@
     </a>
 </div>
 
-<!-- Project Group -->
-@* <div class="nav-item">
-    <a class="nav-button" href="#" allow-edit="true">
-        <div class="align-menu-text"><span>Project Group</span></div>
-    </a>
-</div>
- *@
 
 <!-- Project Management -->
 <div class="nav-item dropdown">
@@ -197,5 +188,25 @@
                 <a class="dropdown-item" asp-area="FPS" asp-controller="ProjectGroupStaffPlan" asp-action="Index">Staff Plan Pivot</a>
             </div>
         </div>        
+    </div>
+</div>
+
+
+<!-- FPS Power Bi Report -->
+<div class="nav-item dropdown">
+    <button class="nav-button dropdown-toggle" data-dropdown="Report" allow-edit="true">
+        <div class="align-menu-text"><span>Reports</span></div>
+        <span class="arrow"><img src="~/images/arrow-down.svg" alt="down arrow" width="12" /></span>
+    </button>
+    <div class="dropdown-menu" id="Report">
+        @if (!string.IsNullOrWhiteSpace(fpsPowerBiReportUrl))
+        {
+            <a href="@fpsPowerBiReportUrl"
+               class="dropdown-item"
+               target="_blank"
+               rel="noopener noreferrer">
+                FPS Power BI Report
+            </a>
+        }
     </div>
 </div>

@@ -34,12 +34,26 @@
                                         <option value="">-- Select Project Group --</option>
                                     </select>
                                     <label class="govuk-label govuk-!-margin-bottom-0" for="projectSearchInput" style="white-space:nowrap; font-weight:bold;">Project</label>
-                                    <input type="text" id="projectSearchInput"
-                                           class="govuk-input"
-                                           style="width:220px;"
-                                           placeholder="Filter project..."
-                                           aria-label="Filter project"
-                                           oninput="reloadProjectsGrid()" />
+                                    <div style="position:relative;">
+                                        <input type="text" id="projectSearchInput" placeholder="Select Project" autocomplete="off"
+                                               class="govuk-input down-arrow-img" style="width:220px; cursor:pointer;"
+                                               value="@Model.ProjectSearch" aria-label="Filter project" readonly />
+                                        <div id="ProjectDropdownPanel" style="display:none; position:absolute; top:100%; left:0; width:420px;
+                                                max-height:260px; overflow-y:auto; background:#fff; border:1px solid #b1b4b6;
+                                                box-shadow:0 4px 8px rgba(0,0,0,.2); z-index:2000;">
+                                            <input type="text" id="ProjectSearchBox" placeholder="Type to search project"
+                                                   style="width:100%; padding:6px 8px; border:0; border-bottom:1px solid #b1b4b6; outline:none; box-sizing:border-box;" />
+                                            <table style="width:100%; border-collapse:collapse; font-size:14px;">
+                                                <thead style="background:#f3f2f1; position:sticky; top:0; z-index:10;">
+                                                    <tr>
+                                                        <th style="padding:6px 8px; text-align:left;">Project</th>
+                                                        <th style="padding:6px 8px; text-align:left;">Project Group</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="ProjectDropdownBody"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div id="@($"gridContainer_{Model.ProjectsGrid!.GridId}")">
@@ -56,10 +70,23 @@
 
 @section Scripts {
     <script>
+        var allProjectLookup = [];
+
         function filterProjectGroup() {
             var projectGroup = document.getElementById('projectGroupDropdown').value;
+            // Clear the project field when project group changes
+            var projectSearchInput = document.getElementById('projectSearchInput');
+            if (projectSearchInput) projectSearchInput.value = '';
             if (projectGroup) {
                 fpsNavigateTo('@Url.Action("Index", "ProjectGroupSelection", new { area = "FPS" })?projectGroup=' + encodeURIComponent(projectGroup));
+            } else {
+                fetch('@Url.Action("SaveProjectGroupSession", "ProjectGroupSelection", new { area = "FPS" })', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '' },
+                    body: JSON.stringify('')
+                }).finally(function () {
+                    fpsNavigateTo('@Url.Action("Index", "ProjectGroupSelection", new { area = "FPS" })');
+                });
             }
         }
 
@@ -86,7 +113,16 @@
 
         function editProject(btn) {
             var parentProject = $(btn).data('id');
-            fpsNavigateTo('@Url.Action("Edit", "Project", new { area = "FPS" })' + '?parentProject=' + encodeURIComponent(parentProject));
+            var projectGroup = document.getElementById('projectGroupDropdown')?.value ?? '';
+            var projectSearch = document.getElementById('projectSearchInput')?.value ?? '';
+
+            var returnUrl = '@Url.Action("Index", "ProjectGroupSelection", new { area = "FPS" })'
+                + '?projectGroup=' + encodeURIComponent(projectGroup)
+                + '&projectSearch=' + encodeURIComponent(projectSearch);
+
+            fpsNavigateTo('@Url.Action("Edit", "Project", new { area = "FPS" })'
+                + '?parentProject=' + encodeURIComponent(parentProject)
+                + '&returnUrl=' + encodeURIComponent(returnUrl));
         }
 
         document.addEventListener('DOMContentLoaded', function () {
@@ -106,6 +142,97 @@
             }
 
             applyButtonTitles();
+
+            // ── Project multi-column dropdown ──────────────────────────────────
+            var projectDisplay = document.getElementById('projectSearchInput');
+            var projectPanel   = document.getElementById('ProjectDropdownPanel');
+            var projectSearch  = document.getElementById('ProjectSearchBox');
+            var projectBody    = document.getElementById('ProjectDropdownBody');
+
+            function getFilteredProjectRows() {
+                var q = (projectSearch ? projectSearch.value : '').toLowerCase();
+                var filtered = allProjectLookup;
+                if (q) {
+                    filtered = filtered.filter(function (p) {
+                        return p.parentProject.toLowerCase().indexOf(q) !== -1
+                            || (p.projectGroup || '').toLowerCase().indexOf(q) !== -1;
+                    });
+                }
+                return filtered;
+            }
+
+            function renderProjectRows(data) {
+                projectBody.innerHTML = '';
+                data.forEach(function (item) {
+                    var tr = document.createElement('tr');
+                    tr.style.cursor = 'pointer';
+                    tr.setAttribute('data-value', item.parentProject);
+                    tr.innerHTML = '<td style="padding:6px 8px; border-bottom:1px solid #f3f2f1;">' + item.parentProject + '</td>'
+                                 + '<td style="padding:6px 8px; border-bottom:1px solid #f3f2f1;">' + (item.projectGroup || '') + '</td>';
+                    tr.addEventListener('click', function () {
+                        projectDisplay.value = item.parentProject;
+                        projectPanel.style.display = 'none';
+
+                        var projectGroupDropdown = document.getElementById('projectGroupDropdown');
+                        var currentProjectGroup = projectGroupDropdown ? projectGroupDropdown.value : '';
+
+                        if (item.projectGroup && item.projectGroup !== currentProjectGroup) {
+                            // Project belongs to a different group — switch group and navigate
+                            if (projectGroupDropdown) {
+                                Array.from(projectGroupDropdown.options).forEach(function (o) {
+                                    o.selected = o.value === item.projectGroup;
+                                });
+                            }
+                            fpsNavigateTo('@Url.Action("Index", "ProjectGroupSelection", new { area = "FPS" })?projectGroup='
+                                + encodeURIComponent(item.projectGroup)
+                                + '&projectSearch=' + encodeURIComponent(item.parentProject));
+                        } else {
+                            reloadProjectsGrid();
+                        }
+                    });
+                    tr.addEventListener('mouseenter', function () { this.style.backgroundColor = '#f3f2f1'; });
+                    tr.addEventListener('mouseleave', function () { this.style.backgroundColor = ''; });
+                    projectBody.appendChild(tr);
+                });
+            }
+
+            function refreshProjectDropdown() {
+                renderProjectRows(getFilteredProjectRows());
+            }
+
+            if (projectDisplay && projectPanel && projectSearch && projectBody) {
+                projectDisplay.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    if (projectPanel.style.display !== 'none') {
+                        projectPanel.style.display = 'none';
+                        return;
+                    }
+                    if (allProjectLookup.length === 0) {
+                        fetch('@Url.Action("GetProjectLookup", "ProjectGroupSelection", new { area = "FPS" })')
+                            .then(function (r) { return r.json(); })
+                            .then(function (data) {
+                                allProjectLookup = data;
+                                projectSearch.value = '';
+                                refreshProjectDropdown();
+                                projectPanel.style.display = 'block';
+                                projectSearch.focus();
+                            });
+                    } else {
+                        projectSearch.value = '';
+                        refreshProjectDropdown();
+                        projectPanel.style.display = 'block';
+                        projectSearch.focus();
+                    }
+                });
+
+                projectSearch.addEventListener('input', refreshProjectDropdown);
+
+                document.addEventListener('click', function (e) {
+                    if (!projectDisplay.contains(e.target) && !projectPanel.contains(e.target)) {
+                        projectPanel.style.display = 'none';
+                    }
+                });
+            }
 
             var observer = new MutationObserver(function (mutations) {
                 var hasNewNodes = mutations.some(function (m) {

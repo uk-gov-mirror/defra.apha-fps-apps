@@ -76,6 +76,23 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             return Ok();
         }
 
+        /// <summary>
+        /// Returns a lightweight list of all project codes + programme for the Project lookup dropdown.
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetProjectLookup()
+        {
+            var response = await _projectService.GetProjectLookupAsync();
+            if (!response.Success || response.Data == null)
+                return Json(new List<object>());
+
+            var data = response.Data
+                .Select(p => new { parentProject = p.ParentProject, program = p.Program ?? string.Empty })
+                .ToList();
+
+            return Json(data);
+        }
+
         [HttpPost]
         public async Task<IActionResult> LoadProjectsGrid(PaginationFilter<string> request, string programNo, string? projectName = null)
         {

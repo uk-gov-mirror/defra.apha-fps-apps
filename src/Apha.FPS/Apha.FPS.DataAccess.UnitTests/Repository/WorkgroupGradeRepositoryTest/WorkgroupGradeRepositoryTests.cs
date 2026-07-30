@@ -608,5 +608,65 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.WorkGroupGradeRepositoryTest
         }
 
         #endregion
+
+        #region GetWorkgroupGradesByWorkGroupAsync Tests
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task GetWorkgroupGradesByWorkGroupAsync_ThrowsArgumentException_WhenWorkGroupIsNullOrWhitespace(string wg)
+        {
+            var repo = CreateRepository();
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                repo.GetWorkgroupGradesByWorkGroupAsync(wg));
+        }
+
+        [Fact]
+        public async Task GetWorkgroupGradesByWorkGroupAsync_ReturnsOnlyMatchingWorkgroup()
+        {
+            var grades = new List<WorkgroupGrade>
+            {
+                BuildGrade("WG01", workgroup: "TeamA"),
+                BuildGrade("WG02", workgroup: "TeamB"),
+                BuildGrade("WG03", workgroup: "TeamA")
+            };
+            var repo = CreateRepository(grades: grades);
+
+            var result = await repo.GetWorkgroupGradesByWorkGroupAsync("TeamA");
+
+            Assert.Equal(2, result.Count);
+            Assert.All(result, g => Assert.Equal("TeamA", g.Workgroup));
+        }
+
+        [Fact]
+        public async Task GetWorkgroupGradesByWorkGroupAsync_ReturnsEmptyData_WhenNoMatchingWorkgroup()
+        {
+            var grades = new List<WorkgroupGrade> { BuildGrade("WG01", workgroup: "TeamB") };
+            var repo  = CreateRepository(grades: grades);
+
+            var result = await repo.GetWorkgroupGradesByWorkGroupAsync("TeamA");
+
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public async Task GetWorkgroupGradesByWorkGroupAsync_ReturnsOrderedByWgGrade()
+        {
+            var grades = new List<WorkgroupGrade>
+            {
+                BuildGrade("WG03", workgroup: "TeamA"),
+                BuildGrade("WG01", workgroup: "TeamA"),
+                BuildGrade("WG02", workgroup: "TeamA")
+            };
+            var repo = CreateRepository(grades: grades);
+
+            var result = await repo.GetWorkgroupGradesByWorkGroupAsync("TeamA");
+
+            Assert.Equal("WG01", result[0].WgGrade);
+            Assert.Equal("WG02", result[1].WgGrade);
+            Assert.Equal("WG03", result[2].WgGrade);
+        }
+
+        #endregion
     }
 }

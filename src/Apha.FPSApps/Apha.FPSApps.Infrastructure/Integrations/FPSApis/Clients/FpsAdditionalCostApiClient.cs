@@ -91,6 +91,10 @@ namespace Apha.FPSApps.Infrastructure.Integrations.FPSApis.Clients
         public async Task<ApiResponseDto<AdditionalCostDto>> UpdateAdditionalCostAsync(AdditionalCostDto additionalCost)
         {
             var req = _mapper.Map<AdditionalCostReq>(additionalCost);
+
+            if (string.IsNullOrWhiteSpace(additionalCost.OriginalDescription))
+                throw new InvalidOperationException("OriginalDescription must be set before calling UpdateAdditionalCostAsync.");
+
             var response = await _http.PutAsync<AdditionalCostReq, AdditionalCostRes>(FpsApiEndpoints.UpdateAdditionalCost, req);
 
             if (response.Success)

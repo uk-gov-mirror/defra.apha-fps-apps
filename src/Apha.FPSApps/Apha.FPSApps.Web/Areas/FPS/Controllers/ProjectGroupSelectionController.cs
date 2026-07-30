@@ -35,7 +35,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
         /// <summary>
         /// Displays the Project Group Selection - a read-only project selection interface filtered by project group.
         /// </summary>
-        public async Task<IActionResult> Index(string? projectGroup = null)
+        public async Task<IActionResult> Index(string? projectGroup = null, string? projectSearch = null)
         {
             var projectGroupList = await GetProjectGroupListAsync();
 
@@ -49,16 +49,34 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
                 await _appStateService.SetSessionAsync(SessionKeys.SelectedProjectGroup, selectedProjectGroup);
 
             var defaultRequest = new PaginationFilter<string>();
-            var grid = await BuildProjectsGridAsync(defaultRequest, selectedProjectGroup);
+            var grid = await BuildProjectsGridAsync(defaultRequest, selectedProjectGroup, projectSearch);
 
             var model = new ProjectGroupSelectionViewModel
             {
                 SelectedProjectGroup = selectedProjectGroup,
+                ProjectSearch = projectSearch ?? string.Empty,
                 ProjectGroupList = projectGroupList,
                 ProjectsGrid = grid
             };
 
             return View(model);
+        }
+
+        /// <summary>
+        /// Returns a lightweight list of all project codes + project group for the Project lookup dropdown.
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetProjectLookup()
+        {
+            var response = await _projectService.GetProjectLookupAsync();
+            if (!response.Success || response.Data == null)
+                return Json(new List<object>());
+
+            var data = response.Data
+                .Select(p => new { parentProject = p.ParentProject, projectGroup = p.ProjectGroup ?? string.Empty })
+                .ToList();
+
+            return Json(data);
         }
 
         /// <summary>

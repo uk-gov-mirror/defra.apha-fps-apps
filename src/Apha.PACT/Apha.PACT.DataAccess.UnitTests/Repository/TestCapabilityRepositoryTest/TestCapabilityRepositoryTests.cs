@@ -68,6 +68,49 @@ namespace Apha.PACT.DataAccess.UnitTests.Repository.TestCapabilityRepositoryTest
             return new TestCapabilityRepository(mockContext.Object, fpsRequestContext);
         }
 
+        private static TestCapabilityRepository CreateRepositoryForCrossTab(
+            IEnumerable<TestCapability>       testCapabilities,
+            IEnumerable<TestRequirement>      testRequirements,
+            IEnumerable<TestorProduct>        testorProducts,
+            IEnumerable<ProjectView>          projectViews,
+            IEnumerable<Apha.PACT.Core.Entities.Program> programs,
+            IEnumerable<WorkGroupGeneralView> workGroupGeneralViews,
+            IEnumerable<TestReqBreakdownView> testReqBreakdownViews,
+            int fpsYear = DefaultFpsYear)
+        {
+            var fpsRequestContext = Substitute.For<IFpsRequestContext>();
+            fpsRequestContext.FpsYear.Returns(fpsYear);
+
+            var mockContext = RepositoryTestHelper.CreateMockDbContext<FpsDbContext>(fpsRequestContext);
+
+            var tcDbSet   = RepositoryTestHelper.CreateMockDbSet(testCapabilities);
+            var trDbSet   = RepositoryTestHelper.CreateMockDbSet(testRequirements);
+            var tpDbSet   = RepositoryTestHelper.CreateMockDbSet(testorProducts);
+            var pvDbSet   = RepositoryTestHelper.CreateMockDbSet(projectViews);
+            var pgDbSet   = RepositoryTestHelper.CreateMockDbSet(programs);
+            var wgDbSet   = RepositoryTestHelper.CreateMockDbSet(workGroupGeneralViews);
+            var rbDbSet   = RepositoryTestHelper.CreateMockDbSet(testReqBreakdownViews);
+
+            RepositoryTestHelper.SetupDbSetOperations(tcDbSet);
+            RepositoryTestHelper.SetupDbSetOperations(trDbSet);
+            RepositoryTestHelper.SetupDbSetOperations(tpDbSet);
+            RepositoryTestHelper.SetupDbSetOperations(pvDbSet);
+            RepositoryTestHelper.SetupDbSetOperations(pgDbSet);
+            RepositoryTestHelper.SetupDbSetOperations(wgDbSet);
+            RepositoryTestHelper.SetupDbSetOperations(rbDbSet);
+            RepositoryTestHelper.SetupSaveChanges(mockContext);
+
+            mockContext.Setup(x => x.TestCapabilities).Returns(tcDbSet.Object);
+            mockContext.Setup(x => x.TestRequirements).Returns(trDbSet.Object);
+            mockContext.Setup(x => x.TestorProducts).Returns(tpDbSet.Object);
+            mockContext.Setup(x => x.ProjectViews).Returns(pvDbSet.Object);
+            mockContext.Setup(x => x.Programs).Returns(pgDbSet.Object);
+            mockContext.Setup(x => x.WorkGroupGeneralViews).Returns(wgDbSet.Object);
+            mockContext.Setup(x => x.TestReqBreakdownViews).Returns(rbDbSet.Object);
+
+            return new TestCapabilityRepository(mockContext.Object, fpsRequestContext);
+        }
+
         #region GetPagedByWorkGroupAsync
 
         [Fact]
@@ -1403,5 +1446,334 @@ namespace Apha.PACT.DataAccess.UnitTests.Repository.TestCapabilityRepositoryTest
         }
 
         #endregion
-    }
-}
+
+        #region BuildTestPlanSummaryAsync
+
+        [Fact]
+        public async Task BuildTestPlanSummaryAsync_CompletesWithoutException()
+        {
+            var repo = CreateRepository([]);
+
+            var ex = await Record.ExceptionAsync(() => repo.BuildTestPlanSummaryAsync());
+
+            Assert.Null(ex);
+        }
+
+        [Fact]
+        public async Task BuildTestPlanSummaryAsync_ReturnsCompletedTask()
+        {
+            var repo = CreateRepository([]);
+
+            await repo.BuildTestPlanSummaryAsync(); // should complete synchronously
+        }
+
+        #endregion
+
+        #region GetPagedTestPlanCrossTabAsync
+
+        [Fact]
+        public async Task GetPagedTestPlanCrossTabAsync_WithAllEmptyTables_ReturnsEmptyResult()
+        {
+            // Arrange
+            var repo  = CreateRepositoryForCrossTab([], [], [], [], [], [], []);
+            var query = new PaginationParameters<string> { Page = 1, PageSize = 20 };
+
+            // Act
+            var result = await repo.GetPagedTestPlanCrossTabAsync(query);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Empty(result.Rows);
+            Assert.Equal(0, result.TotalCount);
+        }
+
+        [Fact]
+        public async Task GetPagedTestPlanCrossTabAsync_WithMatchingData_ReturnsPivotRow()
+        {
+            // Arrange — minimal valid data that produces one pivot row
+            var capabilities       = new List<TestCapability>
+                { new() { TestCode = "PT001", WorkGroup = "SV01", FpsYear = DefaultFpsYear } };
+            var requirements       = new List<TestRequirement>
+                { new() { TestCode = "PT001", Buyer = "PROJ01", UnitPrice = 100m, NoRequired = 2, FpsYear = DefaultFpsYear } };
+            var products           = new List<TestorProduct>
+                { new() { ItemCode = "PT001" } };
+            var projects           = new List<ProjectView>
+                { new() { ParentProject = "PROJ01", Program = "PROG01", FpsYear = DefaultFpsYear } };
+            var programs           = new List<Apha.PACT.Core.Entities.Program>
+                { new() { ProgramNo = "PROG01", FpsYear = DefaultFpsYear } };
+            var workGroupGeneral   = new List<WorkGroupGeneralView>
+                { new() { WorkGroup = "SV01", FpsYear = DefaultFpsYear } };
+            var reqBreakdownViews  = new List<TestReqBreakdownView>
+                { new() { TestCode = "PT001", ShortDescription = "Test description", Pc = "COMM", TotalCost = 150m, FpsYear = DefaultFpsYear } };
+
+            var repo  = CreateRepositoryForCrossTab(capabilities, requirements, products, projects, programs, workGroupGeneral, reqBreakdownViews);
+            var query = new PaginationParameters<string> { Page = 1, PageSize = 20 };
+
+            // Act
+            var result = await repo.GetPagedTestPlanCrossTabAsync(query);
+
+            // Assert
+            Assert.Equal(1, result.TotalCount);
+            Assert.Single(result.Rows);
+            Assert.Equal("PT001", result.Rows[0]["testcode"]);
+            Assert.Equal("Test description", result.Rows[0]["shortdescription"]);
+        }
+
+        [Fact]
+        public async Task GetPagedTestPlanCrossTabAsync_WithMatchingData_ColumnsContainProgrammeAndProfitCentre()
+        {
+            // Arrange
+            var capabilities      = new List<TestCapability>
+                { new() { TestCode = "PT001", WorkGroup = "SV01", FpsYear = DefaultFpsYear } };
+            var requirements      = new List<TestRequirement>
+                { new() { TestCode = "PT001", Buyer = "PROJ01", UnitPrice = 100m, NoRequired = 2, FpsYear = DefaultFpsYear } };
+            var products          = new List<TestorProduct>
+                { new() { ItemCode = "PT001" } };
+            var projects          = new List<ProjectView>
+                { new() { ParentProject = "PROJ01", Program = "PROG01", FpsYear = DefaultFpsYear } };
+            var programs          = new List<Apha.PACT.Core.Entities.Program>
+                { new() { ProgramNo = "PROG01", FpsYear = DefaultFpsYear } };
+            var workGroupGeneral  = new List<WorkGroupGeneralView>
+                { new() { WorkGroup = "SV01", FpsYear = DefaultFpsYear } };
+            var reqBreakdownViews = new List<TestReqBreakdownView>
+                { new() { TestCode = "PT001", ShortDescription = "Test description", Pc = "COMM", TotalCost = 150m, FpsYear = DefaultFpsYear } };
+
+            var repo  = CreateRepositoryForCrossTab(capabilities, requirements, products, projects, programs, workGroupGeneral, reqBreakdownViews);
+            var query = new PaginationParameters<string> { Page = 1, PageSize = 20 };
+
+            // Act
+            var result = await repo.GetPagedTestPlanCrossTabAsync(query);
+
+            // Assert
+            Assert.Contains("testcode",         result.Columns);
+            Assert.Contains("shortdescription", result.Columns);
+            Assert.Contains("plan_total",       result.Columns);
+            Assert.Contains("PROG01",           result.Columns);
+            Assert.Contains("req_totalcost",    result.Columns);
+            Assert.Contains("pc_COMM",          result.Columns);
+        }
+
+        [Fact]
+        public async Task GetPagedTestPlanCrossTabAsync_WithTestcodeFilter_FiltersRows()
+        {
+            // Arrange — two test codes; filter for only "PT001"
+            var capabilities = new List<TestCapability>
+            {
+                new() { TestCode = "PT001", WorkGroup = "SV01", FpsYear = DefaultFpsYear },
+                new() { TestCode = "PT002", WorkGroup = "SV01", FpsYear = DefaultFpsYear }
+            };
+            var requirements = new List<TestRequirement>
+            {
+                new() { TestCode = "PT001", Buyer = "PROJ01", UnitPrice = 100m, NoRequired = 1, FpsYear = DefaultFpsYear },
+                new() { TestCode = "PT002", Buyer = "PROJ01", UnitPrice = 50m,  NoRequired = 1, FpsYear = DefaultFpsYear }
+            };
+            var products = new List<TestorProduct>
+            {
+                new() { ItemCode = "PT001" },
+                new() { ItemCode = "PT002" }
+            };
+            var projects          = new List<ProjectView> { new() { ParentProject = "PROJ01", Program = "PROG01", FpsYear = DefaultFpsYear } };
+            var programs          = new List<Apha.PACT.Core.Entities.Program> { new() { ProgramNo = "PROG01", FpsYear = DefaultFpsYear } };
+            var workGroupGeneral  = new List<WorkGroupGeneralView> { new() { WorkGroup = "SV01", FpsYear = DefaultFpsYear } };
+            var reqBreakdownViews = new List<TestReqBreakdownView>
+            {
+                new() { TestCode = "PT001", ShortDescription = "First",  Pc = "COMM", TotalCost = 100m, FpsYear = DefaultFpsYear },
+                new() { TestCode = "PT002", ShortDescription = "Second", Pc = "COMM", TotalCost = 50m,  FpsYear = DefaultFpsYear }
+            };
+
+            var repo  = CreateRepositoryForCrossTab(capabilities, requirements, products, projects, programs, workGroupGeneral, reqBreakdownViews);
+            var query = new PaginationParameters<string>
+            {
+                Page     = 1,
+                PageSize = 20,
+                Filter   = "{\"testcode\":\"PT001\"}"
+            };
+
+            // Act
+            var result = await repo.GetPagedTestPlanCrossTabAsync(query);
+
+            // Assert
+            Assert.Equal(1, result.TotalCount);
+            Assert.Single(result.Rows);
+            Assert.Equal("PT001", result.Rows[0]["testcode"]);
+        }
+
+        [Fact]
+        public async Task GetPagedTestPlanCrossTabAsync_WithShortDescriptionFilter_FiltersRows()
+        {
+            // Arrange — two test codes; filter by shortdescription
+            var capabilities = new List<TestCapability>
+            {
+                new() { TestCode = "PT001", WorkGroup = "SV01", FpsYear = DefaultFpsYear },
+                new() { TestCode = "PT002", WorkGroup = "SV01", FpsYear = DefaultFpsYear }
+            };
+            var requirements = new List<TestRequirement>
+            {
+                new() { TestCode = "PT001", Buyer = "PROJ01", UnitPrice = 100m, NoRequired = 1, FpsYear = DefaultFpsYear },
+                new() { TestCode = "PT002", Buyer = "PROJ01", UnitPrice = 50m,  NoRequired = 1, FpsYear = DefaultFpsYear }
+            };
+            var products = new List<TestorProduct>
+            {
+                new() { ItemCode = "PT001" },
+                new() { ItemCode = "PT002" }
+            };
+            var projects          = new List<ProjectView> { new() { ParentProject = "PROJ01", Program = "PROG01", FpsYear = DefaultFpsYear } };
+            var programs          = new List<Apha.PACT.Core.Entities.Program> { new() { ProgramNo = "PROG01", FpsYear = DefaultFpsYear } };
+            var workGroupGeneral  = new List<WorkGroupGeneralView> { new() { WorkGroup = "SV01", FpsYear = DefaultFpsYear } };
+            var reqBreakdownViews = new List<TestReqBreakdownView>
+            {
+                new() { TestCode = "PT001", ShortDescription = "EVA serology", Pc = "COMM", TotalCost = 100m, FpsYear = DefaultFpsYear },
+                new() { TestCode = "PT002", ShortDescription = "Bact test",    Pc = "COMM", TotalCost = 50m,  FpsYear = DefaultFpsYear }
+            };
+
+            var repo  = CreateRepositoryForCrossTab(capabilities, requirements, products, projects, programs, workGroupGeneral, reqBreakdownViews);
+            var query = new PaginationParameters<string>
+            {
+                Page     = 1,
+                PageSize = 20,
+                Filter   = "{\"shortdescription\":\"EVA\"}"
+            };
+
+            // Act
+            var result = await repo.GetPagedTestPlanCrossTabAsync(query);
+
+            // Assert
+            Assert.Equal(1, result.TotalCount);
+            Assert.Equal("PT001", result.Rows[0]["testcode"]);
+        }
+
+        [Fact]
+        public async Task GetPagedTestPlanCrossTabAsync_PaginationApplied_ReturnsCorrectPage()
+        {
+            // Arrange — three test codes, page size 2
+            var capabilities = new List<TestCapability>
+            {
+                new() { TestCode = "PT001", WorkGroup = "SV01", FpsYear = DefaultFpsYear },
+                new() { TestCode = "PT002", WorkGroup = "SV01", FpsYear = DefaultFpsYear },
+                new() { TestCode = "PT003", WorkGroup = "SV01", FpsYear = DefaultFpsYear }
+            };
+            var requirements = new List<TestRequirement>
+            {
+                new() { TestCode = "PT001", Buyer = "PROJ01", UnitPrice = 100m, NoRequired = 1, FpsYear = DefaultFpsYear },
+                new() { TestCode = "PT002", Buyer = "PROJ01", UnitPrice = 100m, NoRequired = 1, FpsYear = DefaultFpsYear },
+                new() { TestCode = "PT003", Buyer = "PROJ01", UnitPrice = 100m, NoRequired = 1, FpsYear = DefaultFpsYear }
+            };
+            var products = new List<TestorProduct>
+            {
+                new() { ItemCode = "PT001" },
+                new() { ItemCode = "PT002" },
+                new() { ItemCode = "PT003" }
+            };
+            var projects          = new List<ProjectView> { new() { ParentProject = "PROJ01", Program = "PROG01", FpsYear = DefaultFpsYear } };
+            var programs          = new List<Apha.PACT.Core.Entities.Program> { new() { ProgramNo = "PROG01", FpsYear = DefaultFpsYear } };
+            var workGroupGeneral  = new List<WorkGroupGeneralView> { new() { WorkGroup = "SV01", FpsYear = DefaultFpsYear } };
+            var reqBreakdownViews = new List<TestReqBreakdownView>
+            {
+                new() { TestCode = "PT001", ShortDescription = "A", Pc = "COMM", TotalCost = 100m, FpsYear = DefaultFpsYear },
+                new() { TestCode = "PT002", ShortDescription = "B", Pc = "COMM", TotalCost = 100m, FpsYear = DefaultFpsYear },
+                new() { TestCode = "PT003", ShortDescription = "C", Pc = "COMM", TotalCost = 100m, FpsYear = DefaultFpsYear }
+            };
+
+            var repo  = CreateRepositoryForCrossTab(capabilities, requirements, products, projects, programs, workGroupGeneral, reqBreakdownViews);
+            var query = new PaginationParameters<string> { Page = 2, PageSize = 2 };
+
+            // Act
+            var result = await repo.GetPagedTestPlanCrossTabAsync(query);
+
+            // Assert
+            Assert.Equal(3, result.TotalCount);
+            Assert.Single(result.Rows); // page 2 of 2 per page with 3 total = 1 row
+            Assert.Equal(2, result.Page);
+            Assert.Equal(2, result.PageSize);
+        }
+
+        [Fact]
+        public async Task GetPagedTestPlanCrossTabAsync_TestCodeExcludedWhenWorkgroupNotInGeneralView()
+        {
+            // Arrange — workgroup "ZZ01" is NOT in WorkGroupGeneralViews → test code excluded
+            var capabilities      = new List<TestCapability>
+                { new() { TestCode = "PT001", WorkGroup = "ZZ01", FpsYear = DefaultFpsYear } };
+            var requirements      = new List<TestRequirement>
+                { new() { TestCode = "PT001", Buyer = "PROJ01", UnitPrice = 100m, NoRequired = 1, FpsYear = DefaultFpsYear } };
+            var products          = new List<TestorProduct> { new() { ItemCode = "PT001" } };
+            var projects          = new List<ProjectView> { new() { ParentProject = "PROJ01", Program = "PROG01", FpsYear = DefaultFpsYear } };
+            var programs          = new List<Apha.PACT.Core.Entities.Program> { new() { ProgramNo = "PROG01", FpsYear = DefaultFpsYear } };
+            var workGroupGeneral  = new List<WorkGroupGeneralView> { new() { WorkGroup = "SV01", FpsYear = DefaultFpsYear } }; // "ZZ01" missing
+            var reqBreakdownViews = new List<TestReqBreakdownView>
+                { new() { TestCode = "PT001", ShortDescription = "Test", Pc = "COMM", TotalCost = 100m, FpsYear = DefaultFpsYear } };
+
+            var repo  = CreateRepositoryForCrossTab(capabilities, requirements, products, projects, programs, workGroupGeneral, reqBreakdownViews);
+            var query = new PaginationParameters<string> { Page = 1, PageSize = 20 };
+
+            // Act
+            var result = await repo.GetPagedTestPlanCrossTabAsync(query);
+
+            // Assert
+            Assert.Equal(0, result.TotalCount);
+            Assert.Empty(result.Rows);
+        }
+
+        [Fact]
+        public async Task GetPagedTestPlanCrossTabAsync_TestCodeExcludedWhenNoMatchingProduct()
+        {
+            // Arrange — TestorProduct for "PT001" missing → test code excluded from planCostRows
+            var capabilities      = new List<TestCapability>
+                { new() { TestCode = "PT001", WorkGroup = "SV01", FpsYear = DefaultFpsYear } };
+            var requirements      = new List<TestRequirement>
+                { new() { TestCode = "PT001", Buyer = "PROJ01", UnitPrice = 100m, NoRequired = 1, FpsYear = DefaultFpsYear } };
+            var products          = new List<TestorProduct>(); // no matching product
+            var projects          = new List<ProjectView> { new() { ParentProject = "PROJ01", Program = "PROG01", FpsYear = DefaultFpsYear } };
+            var programs          = new List<Apha.PACT.Core.Entities.Program> { new() { ProgramNo = "PROG01", FpsYear = DefaultFpsYear } };
+            var workGroupGeneral  = new List<WorkGroupGeneralView> { new() { WorkGroup = "SV01", FpsYear = DefaultFpsYear } };
+            var reqBreakdownViews = new List<TestReqBreakdownView>
+                { new() { TestCode = "PT001", ShortDescription = "Test", Pc = "COMM", TotalCost = 100m, FpsYear = DefaultFpsYear } };
+
+            var repo  = CreateRepositoryForCrossTab(capabilities, requirements, products, projects, programs, workGroupGeneral, reqBreakdownViews);
+            var query = new PaginationParameters<string> { Page = 1, PageSize = 20 };
+
+            // Act
+            var result = await repo.GetPagedTestPlanCrossTabAsync(query);
+
+            // Assert
+            Assert.Equal(0, result.TotalCount);
+            Assert.Empty(result.Rows);
+        }
+
+        [Fact]
+        public async Task GetPagedTestPlanCrossTabAsync_LtWorkgroupHasHighestPriority()
+        {
+            // Arrange — two capabilities for PT001: "SV01" (level 2) and "LT01" (level 3)
+            // LT01 should win as default workgroup; LT01 must be in workGroupGeneral to produce a row
+            var capabilities = new List<TestCapability>
+            {
+                new() { TestCode = "PT001", WorkGroup = "SV01", FpsYear = DefaultFpsYear },
+                new() { TestCode = "PT001", WorkGroup = "LT01", FpsYear = DefaultFpsYear }
+            };
+            var requirements      = new List<TestRequirement>
+                { new() { TestCode = "PT001", Buyer = "PROJ01", UnitPrice = 100m, NoRequired = 1, FpsYear = DefaultFpsYear } };
+            var products          = new List<TestorProduct> { new() { ItemCode = "PT001" } };
+            var projects          = new List<ProjectView> { new() { ParentProject = "PROJ01", Program = "PROG01", FpsYear = DefaultFpsYear } };
+            var programs          = new List<Apha.PACT.Core.Entities.Program> { new() { ProgramNo = "PROG01", FpsYear = DefaultFpsYear } };
+            var workGroupGeneral  = new List<WorkGroupGeneralView>
+            {
+                new() { WorkGroup = "SV01", FpsYear = DefaultFpsYear },
+                new() { WorkGroup = "LTM",  FpsYear = DefaultFpsYear }  // LT01 maps to "LTM"
+            };
+            var reqBreakdownViews = new List<TestReqBreakdownView>
+                { new() { TestCode = "PT001", ShortDescription = "Test", Pc = "COMM", TotalCost = 100m, FpsYear = DefaultFpsYear } };
+
+            var repo  = CreateRepositoryForCrossTab(capabilities, requirements, products, projects, programs, workGroupGeneral, reqBreakdownViews);
+            var query = new PaginationParameters<string> { Page = 1, PageSize = 20 };
+
+            // Act
+            var result = await repo.GetPagedTestPlanCrossTabAsync(query);
+
+            // Assert — LT01 resolves to "LTM" which IS in workGroupGeneral, so row should appear
+            Assert.Equal(1, result.TotalCount);
+            Assert.Single(result.Rows);
+        }
+
+        #endregion
+
+            }
+        }

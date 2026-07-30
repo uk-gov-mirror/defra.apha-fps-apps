@@ -36,6 +36,16 @@ namespace Apha.FPS.Application.Services
             return _mapper.Map<PaginatedResult<WorkGroupEmployeeDto>>(pagedData);
         }
 
+        public async Task<PaginatedResult<WorkGroupEmployeeDto>> GetAllActiveWorkGroupEmployeesAsync(QueryParameters<string> query, string wgGrade)
+        {
+            ArgumentNullException.ThrowIfNull(query);
+            ArgumentException.ThrowIfNullOrWhiteSpace(wgGrade);
+
+            var filter = _mapper.Map<PaginationParameters<string>>(query);
+            var pagedData = await _repository.GetAllActiveWorkGroupEmployeesAsync(filter, wgGrade);
+            return _mapper.Map<PaginatedResult<WorkGroupEmployeeDto>>(pagedData);
+        }
+
         public async Task<WorkGroupEmployeeDto?> GetWorkGroupEmployeeByIdAsync(string pactId)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(pactId);

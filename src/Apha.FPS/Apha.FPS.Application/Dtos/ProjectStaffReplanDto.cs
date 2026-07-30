@@ -1,0 +1,32 @@
+namespace Apha.FPS.Application.Dtos
+{
+    public class ProjectStaffReplanDto
+    {
+        /// <summary>Workgroup name. Maps to <c>tWorkgroupGrade.Workgroup</c>.</summary>
+        public string? WorkGroup { get; set; }
+
+        /// <summary>Grade code. Maps to <c>tWorkgroupGrade.GradeCode</c>.</summary>
+        public string? GradeCode { get; set; }
+
+        /// <summary>Workgroup grade identifier. Maps to <c>tWorkgroupGrade.WgGrade</c>.</summary>
+        public string? WgGrade { get; set; }
+
+        /// <summary>
+        /// Full name of the staff member, formatted as "LastName, FirstName".
+        /// Derived from <c>tEmployee.LastName</c> and <c>tEmployee.FirstName</c>.
+        /// </summary>
+        public string? Name { get; set; }
+
+        /// <summary>
+        /// Planned hours for the staff–project allocation.
+        /// Maps to <c>tStaffJob.PlannedHours</c>.
+        /// </summary>
+        public double? PlannedHours { get; set; }
+
+        /// <summary>Parent project code. Maps to <c>tlkpProject.ParentProject</c>.</summary>
+        public string? ParentProject { get; set; }
+
+        /// <summary>Programme number. Maps to <c>tlkpProject.Program</c>.</summary>
+        public string? Program { get; set; }
+    }
+}

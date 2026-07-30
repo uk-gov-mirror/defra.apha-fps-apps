@@ -63,12 +63,22 @@
             <select class="govuk-select govuk-!-font-size-16"
                     id="modal-acccat-csg7group"
                     name="csg7Group"
-                    asp-for="Csg7Group"
-                    asp-items="csg7GroupList"
                     required aria-required="true"
                     style="width:100%;"
+                    data-val-required="CSG7 Group is required"
                     aria-describedby="modal-acccat-csg7group-error">
                 <option value="">-- Select --</option>
+                @foreach (var item in csg7GroupList)
+                {
+                    if (item.Value?.Trim() == Model?.Csg7Group?.Trim())
+                    {
+                        <option value="@item.Value" selected>@item.Text</option>
+                    }
+                    else
+                    {
+                        <option value="@item.Value">@item.Text</option>
+                    }
+                }
             </select>
             <span data-valmsg-for="csg7Group" class="govuk-error-message field-validation-valid" style="display:none;"></span>
         </div>

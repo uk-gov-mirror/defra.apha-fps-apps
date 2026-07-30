@@ -12,7 +12,7 @@ namespace Apha.PACT.DataAccess.Repository
         {
             return await _context.Projects
                 .AsNoTracking()
-                .AnyAsync(p => p.ParentProject == parentProject);
+                .AnyAsync(p => p.ParentProject.ToLower() == parentProject.ToLower());
         }
     }
 }

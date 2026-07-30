@@ -35,7 +35,7 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PIMSApis.Clients
 
             var dto = _mapper.Map<ApiResponseDto<List<MilestoneDto>>>(response);
             return ApiResponseDto<List<MilestoneDto>>.FailureResponse(dto.Errors, dto.Meta);
-        }
+        }       
 
         public async Task<ApiResponseDto<MilestoneDto>> GetMilestoneAsync(string project, string number)
         {
@@ -189,17 +189,28 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PIMSApis.Clients
             return ApiResponseDto<List<StagingMilestoneDto>>.FailureResponse(dto.Errors, dto.Meta);
         }
 
-        public async Task<ApiResponseDto<List<StagingMilestoneDto>>> GetStagingRowsAsync(string? project)
+        public async Task<ApiResponseDto<List<StagingMilestoneDto>>> GetStagingRowsAsync(int id)
         {
-            string url = PimsApiEndpoints.GetStagingMilestones;
-            if (!string.IsNullOrWhiteSpace(project))
-                url += $"?project={Uri.EscapeDataString(project)}";
+            string url = PimsApiEndpoints.GetStagingMilestones + "?id=" + id;
             var response = await _http.GetAsync<List<StagingMilestoneRes>>(url);
             if (response.Success && response.Data != null)
                 return _mapper.Map<ApiResponseDto<List<StagingMilestoneDto>>>(response);
             var dto = _mapper.Map<ApiResponseDto<List<StagingMilestoneDto>>>(response);
             return ApiResponseDto<List<StagingMilestoneDto>>.FailureResponse(dto.Errors, dto.Meta);
         }
+
+        //public async Task<ApiResponseDto<List<StagingMilestoneDto>>> GetStagingRowsAsync(string? project)
+        //{
+        //    string url = PimsApiEndpoints.GetStagingMilestones;
+        //    if (!string.IsNullOrWhiteSpace(project))
+        //        url += "?project=" + Uri.EscapeDataString(project);
+
+        //    var response = await _http.GetAsync<List<StagingMilestoneRes>>(url);
+        //    if (response.Success && response.Data != null)
+        //        return _mapper.Map<ApiResponseDto<List<StagingMilestoneDto>>>(response);
+        //    var dto = _mapper.Map<ApiResponseDto<List<StagingMilestoneDto>>>(response);
+        //    return ApiResponseDto<List<StagingMilestoneDto>>.FailureResponse(dto.Errors, dto.Meta);
+        //}
 
         public async Task<ApiResponseDto<StagingMilestoneDto>> AddStagingRowAsync(StagingMilestoneDto dto, int year)
         {
@@ -243,7 +254,7 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PIMSApis.Clients
             return ApiResponseDto<object>.FailureResponse(dto.Errors, dto.Meta);
         }
 
-        public async Task<ApiResponseDto<List<StagingMilestoneDto>>> ValidateStagingAsync(
+        public async Task<ApiResponseDto<object>> ValidateStagingAsync(
             string project, string? typeId, bool isDeliverableMode)
         {
             string url = string.Format(PimsApiEndpoints.ValidateStagingMilestones, Uri.EscapeDataString(project));
@@ -251,11 +262,11 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PIMSApis.Clients
                 url += $"?typeId={Uri.EscapeDataString(typeId)}";
             url += $"{(url.Contains('?') ? "&" : "?")}isDeliverableMode={isDeliverableMode}";
 
-            var response = await _http.PostAsync<object, List<StagingMilestoneRes>>(url, new object());
-            if (response.Success && response.Data != null)
-                return _mapper.Map<ApiResponseDto<List<StagingMilestoneDto>>>(response);
-            var dto = _mapper.Map<ApiResponseDto<List<StagingMilestoneDto>>>(response);
-            return ApiResponseDto<List<StagingMilestoneDto>>.FailureResponse(dto.Errors, dto.Meta);
+            var response = await _http.PostAsync<object, object>(url, new object());
+            if (response.Success)
+                return _mapper.Map<ApiResponseDto<object>>(response);
+            var dto = _mapper.Map<ApiResponseDto<object>>(response);
+            return ApiResponseDto<object>.FailureResponse(dto.Errors, dto.Meta);
         }
 
         public async Task<ApiResponseDto<object>> ImportStagingAsync(string project)
@@ -280,6 +291,28 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PIMSApis.Clients
             return ApiResponseDto<object>.FailureResponse(dto.Errors, dto.Meta);
         }
 
-       
+        public async Task<ApiResponseDto<List<ProjectYearManagerDto>>> GetProjectYearManagersAsync(int year)
+        {
+            var response = await _http.GetAsync<List<ProjectYearManagerRes>>(
+                string.Format(PimsApiEndpoints.GetProjectYearManagers, year));
+            if (response.Success && response.Data != null)
+                return _mapper.Map<ApiResponseDto<List<ProjectYearManagerDto>>>(response);
+
+            var dto = _mapper.Map<ApiResponseDto<List<ProjectYearManagerDto>>>(response);
+            return ApiResponseDto<List<ProjectYearManagerDto>>.FailureResponse(dto.Errors, dto.Meta);
+        }
+        public async Task<ApiResponseDto<List<MilestoneDto>>> GetPMDMilestonesAsync(QueryParameters<string> query, string project)
+        {
+            string url = QueryStringHelper.AddQueryString(PimsApiEndpoints.GetPMDMilestones, query);
+            url += $"{(url.Contains('?') ? "&" : "?")}project={Uri.EscapeDataString(project)}";
+            var response = await _http.GetAsync<List<MilestoneRes>>(url);
+
+            if (response.Success && response.Data != null)
+                return _mapper.Map<ApiResponseDto<List<MilestoneDto>>>(response);
+
+            var dto = _mapper.Map<ApiResponseDto<List<MilestoneDto>>>(response);
+            return ApiResponseDto<List<MilestoneDto>>.FailureResponse(dto.Errors, dto.Meta);
+        }
+
     }
 }

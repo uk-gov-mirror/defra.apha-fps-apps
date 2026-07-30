@@ -8,7 +8,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Models
     {
         [Required(ErrorMessage = "Program number is required")]
         [StringLength(10, ErrorMessage = "Program number cannot exceed 10 characters")]
-        [Display(Name = "Program Number")]
+        [Display(Name = "Program")]
         [GridColumn(IsFilterable = true)]
         public required string ProgramNo { get; set; }
         

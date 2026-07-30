@@ -305,7 +305,7 @@ namespace Apha.FPS.Application.UnitTests.Services.AdditionalCostServiceTest
 
             _mockRepository.GetByIdAsync("JOB001", "ACC1", "Desc1").Returns(existing);
             _mockMapper.Map<AdditionalCost>(dto).Returns(entity);
-            _mockRepository.UpdateAsync(entity).Returns(entity);
+            _mockRepository.UpdateAsync(entity, "ACC1", "Desc1").Returns(entity);
             _mockMapper.Map<AdditionalCostDto>(entity).Returns(dto);
 
             // Act
@@ -314,7 +314,7 @@ namespace Apha.FPS.Application.UnitTests.Services.AdditionalCostServiceTest
             // Assert
             result.Should().NotBeNull();
             result.ItemCost.Should().Be(200m);
-            await _mockRepository.Received(1).UpdateAsync(entity);
+            await _mockRepository.Received(1).UpdateAsync(entity, "ACC1", "Desc1");
         }
 
         [Fact]
@@ -329,7 +329,7 @@ namespace Apha.FPS.Application.UnitTests.Services.AdditionalCostServiceTest
                 .Should().ThrowAsync<InvalidOperationException>()
                 .WithMessage("*JOB001*ACC1*Ghost*");
 
-            await _mockRepository.DidNotReceive().UpdateAsync(Arg.Any<AdditionalCost>());
+            await _mockRepository.DidNotReceive().UpdateAsync(Arg.Any<AdditionalCost>(), Arg.Any<string>(), Arg.Any<string>());
         }
 
         [Fact]
@@ -349,6 +349,92 @@ namespace Apha.FPS.Application.UnitTests.Services.AdditionalCostServiceTest
             // Act & Assert
             await _sut.Invoking(s => s.UpdateAsync(dto))
                 .Should().ThrowAsync<ArgumentOutOfRangeException>();
+        }
+
+        [Fact]
+        public async Task UpdateAsync_WithOriginalDescription_UsesOriginalDescriptionAsLookupKey()
+        {
+            // Arrange — OriginalDescription differs from Description (rename scenario)
+            var dto = new AdditionalCostDto
+            {
+                JobCode = "JOB001",
+                Account = "ACC1",
+                Description = "NewDesc",
+                OriginalDescription = "OldDesc",
+                ItemCost = 100m
+            };
+            var entity = new AdditionalCost { JobCode = "JOB001", Account = "ACC1", Description = "NewDesc", ItemCost = 100m };
+            var existing = new AdditionalCost { JobCode = "JOB001", Account = "ACC1", Description = "OldDesc", ItemCost = 100m };
+
+            // GetByIdAsync must be called with the ORIGINAL description
+            _mockRepository.GetByIdAsync("JOB001", "ACC1", "OldDesc").Returns(existing);
+            // No duplicate exists under the new description
+            _mockRepository.GetByIdAsync("JOB001", "ACC1", "NewDesc").Returns((AdditionalCost?)null);
+            _mockMapper.Map<AdditionalCost>(dto).Returns(entity);
+            _mockRepository.UpdateAsync(entity, "ACC1", "OldDesc").Returns(entity);
+            _mockMapper.Map<AdditionalCostDto>(entity).Returns(dto);
+
+            // Act
+            var result = await _sut.UpdateAsync(dto);
+
+            // Assert
+            result.Should().NotBeNull();
+            await _mockRepository.Received(1).GetByIdAsync("JOB001", "ACC1", "OldDesc");
+            await _mockRepository.Received(1).UpdateAsync(entity, "ACC1", "OldDesc");
+        }
+
+        [Fact]
+        public async Task UpdateAsync_WhenDescriptionChangedAndNewDescriptionAlreadyExists_ThrowsInvalidOperationException()
+        {
+            // Arrange — renaming to a description that is already taken
+            var dto = new AdditionalCostDto
+            {
+                JobCode = "JOB001",
+                Account = "ACC1",
+                Description = "TakenDesc",
+                OriginalDescription = "OldDesc",
+                ItemCost = 100m
+            };
+            var existing = new AdditionalCost { JobCode = "JOB001", Account = "ACC1", Description = "OldDesc" };
+            var duplicate = new AdditionalCost { JobCode = "JOB001", Account = "ACC1", Description = "TakenDesc" };
+
+            _mockRepository.GetByIdAsync("JOB001", "ACC1", "OldDesc").Returns(existing);
+            _mockRepository.GetByIdAsync("JOB001", "ACC1", "TakenDesc").Returns(duplicate);
+
+            // Act & Assert
+            await _sut.Invoking(s => s.UpdateAsync(dto))
+                .Should().ThrowAsync<InvalidOperationException>()
+                .WithMessage("*JOB001*ACC1*TakenDesc*already exists*");
+
+            await _mockRepository.DidNotReceive().UpdateAsync(Arg.Any<AdditionalCost>(), Arg.Any<string>(), Arg.Any<string>());
+        }
+
+        [Fact]
+        public async Task UpdateAsync_WhenOriginalDescriptionIsWhitespace_FallsBackToDescription()
+        {
+            // Arrange — OriginalDescription is whitespace; service should fall back to Description
+            var dto = new AdditionalCostDto
+            {
+                JobCode = "JOB001",
+                Account = "ACC1",
+                Description = "Desc1",
+                OriginalDescription = "   ",
+                ItemCost = 50m
+            };
+            var entity = new AdditionalCost { JobCode = "JOB001", Account = "ACC1", Description = "Desc1" };
+            var existing = new AdditionalCost { JobCode = "JOB001", Account = "ACC1", Description = "Desc1" };
+
+            _mockRepository.GetByIdAsync("JOB001", "ACC1", "Desc1").Returns(existing);
+            _mockMapper.Map<AdditionalCost>(dto).Returns(entity);
+            _mockRepository.UpdateAsync(entity, "ACC1", "Desc1").Returns(entity);
+            _mockMapper.Map<AdditionalCostDto>(entity).Returns(dto);
+
+            // Act
+            var result = await _sut.UpdateAsync(dto);
+
+            // Assert
+            result.Should().NotBeNull();
+            await _mockRepository.Received(1).GetByIdAsync("JOB001", "ACC1", "Desc1");
         }
 
         #endregion

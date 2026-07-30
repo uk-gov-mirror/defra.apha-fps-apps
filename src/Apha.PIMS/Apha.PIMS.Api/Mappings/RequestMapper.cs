@@ -59,6 +59,15 @@ namespace Apha.PIMS.Api.Mappings
             CreateMap<RadTrackInvoiceDto, RadTrackInvoiceRes>().ReverseMap();
             CreateMap<StagingMilestoneDto, StagingMilestoneReq>().ReverseMap();
             CreateMap<StagingMilestoneDto, StagingMilestoneRes>().ReverseMap();
+            
+            CreateMap<YearlyFinancialDataDto, YearlyFinancialDataReq>().ReverseMap();
+            CreateMap<YearlyFinancialDataDto, YearlyFinancialDataRes>().ReverseMap();
+            CreateMap<PactProjectYearCostsDto, PactProjectYearCostsRes>()
+                .ForMember(dest => dest.Year, opt => opt.MapFrom(src => (short)src.Year))
+                .ReverseMap()
+                .ForMember(dest => dest.Year, opt => opt.MapFrom(src => (double)src.Year));
+
+            CreateMap<ProjectYearManagerDto, ProjectYearManagerRes>().ReverseMap();
         }
     }
 }

@@ -50,9 +50,14 @@
             </div>
             <div class="govuk-form-group sup_margin_0">
                 <label class="govuk-label" asp-for="Manager">Manager</label>
-                            <select asp-for="Manager" asp-items="@Model.ManagerList" class="govuk-select govuk-!-font-size-16 sup_width_100">
-                </select>
-                            <span asp-validation-for="Manager" class="govuk-error-message" style="display:none;"></span>
+                @await Html.PartialAsync("_ManagerPicker", new Apha.FPSApps.Web.Areas.FPS.Models.ManagerPickerViewModel
+                {
+                    ManagerList = Model.ManagerList,
+                    FieldName = "Manager",
+                    ShowGrade = true,
+                    Required = false,
+                    SelectCssClass = "govuk-select govuk-!-font-size-16 sup_width_100"
+                })
             </div>
         </form>
     </div>
@@ -61,3 +66,4 @@
     <button class="govuk-button govuk-button--secondary sup_margin_0" data-module="govuk-button" data-bs-dismiss="modal" onclick="closeModal()">Cancel</button>
     <button class="govuk-button sup_margin_0" data-module="govuk-button" type="button" onclick="@saveAction">@saveLabel</button>
 </div>
+

@@ -213,5 +213,122 @@ namespace Apha.PACT.Api.Controllers
             var success = await _service.UpdateWorkGroupEmailAsync(workGroupName, request.SendEmail, request.EmailRecipient);
             return Ok(success);
         }
+
+        /// <summary>
+        /// Returns a paginated, optionally filtered and sorted list of workgroups for maintenance.
+        /// </summary>
+        [HttpGet("paged")]
+        public async Task<ActionResult<PaginationRes<WorkGroupMaintenanceRes>>> GetPagedAsync(
+            [FromQuery] QueryParameters<string> query)
+        {
+            var result = await _service.GetPagedAsync(query);
+            if (result == null)
+            {
+                throw new ArgumentException("Workgroup records not found.");
+            }
+            return Ok(_mapper.Map<PaginationRes<WorkGroupMaintenanceRes>>(result));
+        }
+
+        /// <summary>
+        /// Returns a single workgroup by its WorkGroupName.
+        /// </summary>
+        [HttpGet("maintenance/{workGroupName}")]
+        public async Task<ActionResult<WorkGroupMaintenanceRes>> GetByKeyAsync(string workGroupName)
+        {
+            if (string.IsNullOrWhiteSpace(workGroupName))
+            {
+                throw new ArgumentException("WorkGroupName cannot be null or empty.", nameof(workGroupName));
+            }
+
+            var dto = await _service.GetByKeyAsync(workGroupName);
+            if (dto == null)
+            {
+                throw new KeyNotFoundException($"Workgroup '{workGroupName}' not found.");
+            }
+            return Ok(_mapper.Map<WorkGroupMaintenanceRes>(dto));
+        }
+
+        /// <summary>
+        /// Creates a new workgroup record.
+        /// </summary>
+        [HttpPost("maintenance")]
+        public async Task<ActionResult<WorkGroupMaintenanceRes>> CreateAsync([FromBody] WorkGroupMaintenanceReq request)
+        {
+            var dto = _mapper.Map<WorkGroupDto>(request);
+            var created = await _service.CreateAsync(dto);
+            return Ok(_mapper.Map<WorkGroupMaintenanceRes>(created));
+        }
+
+        /// <summary>
+        /// Updates an existing workgroup identified by the original WorkGroupName in the route.
+        /// </summary>
+        [HttpPut("maintenance/{workGroupName}")]
+        public async Task<ActionResult<WorkGroupMaintenanceRes>> UpdateAsync(
+            string workGroupName,
+            [FromBody] WorkGroupMaintenanceReq request)
+        {
+            if (string.IsNullOrWhiteSpace(workGroupName))
+            {
+                throw new ArgumentException("WorkGroupName cannot be null or empty.", nameof(workGroupName));
+            }
+
+            var dto = _mapper.Map<WorkGroupDto>(request);
+            var updated = await _service.UpdateAsync(workGroupName, dto);
+            return Ok(_mapper.Map<WorkGroupMaintenanceRes>(updated));
+        }
+
+        /// <summary>
+        /// Deletes the workgroup with the given WorkGroupName.
+        /// </summary>
+        [HttpDelete("maintenance/{workGroupName}")]
+        public async Task<IActionResult> DeleteAsync(string workGroupName)
+        {
+            if (string.IsNullOrWhiteSpace(workGroupName))
+            {
+                throw new ArgumentException("WorkGroupName cannot be null or empty.", nameof(workGroupName));
+            }
+
+            var deleted = await _service.DeleteAsync(workGroupName);
+            if (!deleted)
+            {
+                throw new KeyNotFoundException($"Workgroup '{workGroupName}' not found.");
+            }
+            return Ok(true);
+        }
+
+        /// <summary>
+        /// Returns all available profit centre identifiers for the ResourceCentre dropdown.
+        /// </summary>
+        [HttpGet("profitcentres")]
+        public async Task<ActionResult<IEnumerable<string>>> GetProfitCentresAsync()
+        {
+            var result = await _service.GetAllProfitCentresAsync();
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Returns all manager records for the Owner dropdown.
+        /// </summary>
+        [HttpGet("owners")]
+        public async Task<ActionResult<IEnumerable<OwnerRes>>> GetOwnersAsync()
+        {
+            var ownerDtos = await _service.GetOwnersAsync();
+            return Ok(_mapper.Map<IEnumerable<OwnerRes>>(ownerDtos));
+        }
+
+        /// <summary>
+        /// Returns cost centre values linked to the given profit centre for the cascading dropdown.
+        /// </summary>
+        [HttpGet("costcentres")]
+        public async Task<ActionResult<IEnumerable<double?>>> GetCostCentresAsync([FromQuery] string profitCentre)
+        {
+            if (string.IsNullOrWhiteSpace(profitCentre))
+            {
+                throw new ArgumentException("ProfitCentre cannot be null or empty.", nameof(profitCentre));
+            }
+
+            var result = await _service.GetCostCentresByProfitCentreAsync(profitCentre);
+            return Ok(result);
+        }
     }
 }

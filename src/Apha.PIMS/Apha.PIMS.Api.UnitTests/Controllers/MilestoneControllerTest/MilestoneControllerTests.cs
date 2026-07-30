@@ -944,48 +944,32 @@ namespace Apha.PIMS.Api.UnitTests.Controllers.MilestoneControllerTest
         public async Task GetStagingRows_ReturnsOkResult_WithMappedList()
         {
             // Arrange
-            const string project = "PP001";
-            var dtos = new List<StagingMilestoneDto> { new() { Id = 1, Project = project, Number = "M1" } };
-            var resList = new List<StagingMilestoneRes> { new() { Id = 1, Project = project, Number = "M1" } };
+            const int id = 1;
+            var dtos = new List<StagingMilestoneDto> { new() { Id = id, Project = "PP001", Number = "M1" } };
+            var resList = new List<StagingMilestoneRes> { new() { Id = id, Project = "PP001", Number = "M1" } };
 
-            _service.GetStagingRowsAsync(project).Returns(dtos);
+            _service.GetStagingRowsAsync(id).Returns(dtos);
             _mapper.Map<List<StagingMilestoneRes>>(dtos).Returns(resList);
 
             // Act
-            var result = await _controller.GetStagingRows(project);
+            var result = await _controller.GetStagingRows(id);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
             Assert.Equal(resList, okResult.Value);
-            await _service.Received(1).GetStagingRowsAsync(project);
-        }
-
-        [Fact]
-        public async Task GetStagingRows_WithNullProject_PassesNullToService()
-        {
-            // Arrange
-            var dtos = new List<StagingMilestoneDto>();
-            var resList = new List<StagingMilestoneRes>();
-
-            _service.GetStagingRowsAsync(null).Returns(dtos);
-            _mapper.Map<List<StagingMilestoneRes>>(dtos).Returns(resList);
-
-            // Act
-            await _controller.GetStagingRows(null);
-
-            // Assert
-            await _service.Received(1).GetStagingRowsAsync(Arg.Is<string?>(p => p == null));
+            await _service.Received(1).GetStagingRowsAsync(id);
         }
 
         [Fact]
         public async Task GetStagingRows_WhenServiceThrowsException_PropagatesException()
         {
             // Arrange
-            _service.GetStagingRowsAsync(null).Throws(new Exception("Database error"));
+            const int id = 1;
+            _service.GetStagingRowsAsync(id).Throws(new Exception("Database error"));
 
             // Act & Assert
-            await Assert.ThrowsAsync<Exception>(() => _controller.GetStagingRows());
-            await _service.Received(1).GetStagingRowsAsync(null);
+            await Assert.ThrowsAsync<Exception>(() => _controller.GetStagingRows(id));
+            await _service.Received(1).GetStagingRowsAsync(id);
             _mapper.DidNotReceive().Map<List<StagingMilestoneRes>>(Arg.Any<List<StagingMilestoneDto>>());
         }
 
@@ -1145,40 +1129,34 @@ namespace Apha.PIMS.Api.UnitTests.Controllers.MilestoneControllerTest
         #region ValidateStaging
 
         [Fact]
-        public async Task ValidateStaging_ReturnsOkResult_WithMappedRows_AndCallsServiceMethods()
+        public async Task ValidateStaging_ReturnsOkResult_WithSuccessTrue()
         {
             // Arrange
             const string project = "PP001";
             const string typeId = "M";
             const bool isDeliverableMode = true;
-            var rows = new List<StagingMilestoneDto> { new() { Id = 1, Project = project, Number = "M1" } };
-            var rowsRes = new List<StagingMilestoneRes> { new() { Id = 1, Project = project, Number = "M1" } };
 
-            _service.ValidateStagingAsync(project, typeId, isDeliverableMode).Returns(Task.CompletedTask);
-            _service.GetStagingRowsAsync(project).Returns(rows);
-            _mapper.Map<List<StagingMilestoneRes>>(rows).Returns(rowsRes);
+            _service.ValidateStagingAsync(project, typeId, isDeliverableMode, Arg.Any<string?>()).Returns(Task.CompletedTask);
 
             // Act
             var result = await _controller.ValidateStaging(project, typeId, isDeliverableMode);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.Equal(rowsRes, okResult.Value);
-            await _service.Received(1).ValidateStagingAsync(project, typeId, isDeliverableMode);
-            await _service.Received(1).GetStagingRowsAsync(project);
+            Assert.NotNull(okResult.Value);
+            await _service.Received(1).ValidateStagingAsync(project, typeId, isDeliverableMode, Arg.Any<string?>());
         }
 
         [Fact]
-        public async Task ValidateStaging_WhenValidationThrows_PropagatesException_AndDoesNotFetchRows()
+        public async Task ValidateStaging_WhenValidationThrows_PropagatesException()
         {
             // Arrange
             const string project = "PP001";
-            _service.ValidateStagingAsync(project, null, false).Throws(new Exception("Validation failed"));
+            _service.ValidateStagingAsync(project, null, false, Arg.Any<string?>()).Throws(new Exception("Validation failed"));
 
             // Act & Assert
             await Assert.ThrowsAsync<Exception>(() => _controller.ValidateStaging(project));
-            await _service.Received(1).ValidateStagingAsync(project, null, false);
-            await _service.DidNotReceive().GetStagingRowsAsync(Arg.Any<string?>());
+            await _service.Received(1).ValidateStagingAsync(project, null, false, Arg.Any<string?>());
         }
 
         #endregion
@@ -1186,36 +1164,36 @@ namespace Apha.PIMS.Api.UnitTests.Controllers.MilestoneControllerTest
         #region ImportStaging
 
         [Fact]
-        public async Task ImportStaging_ReturnsOkResult_AndPassesTruncatedChangedBy()
+        public async Task ImportStaging_ReturnsOkResult_AndPassesTruncatedChangedByAndCreatedBy()
         {
             // Arrange
             const string project = "PP001";
             var identity = new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, "ABCDEFGHIJKL") }, "TestAuth");
             _controller.ControllerContext.HttpContext.User = new ClaimsPrincipal(identity);
 
-            _service.ImportStagingAsync(project, "ABCDEFGHIJ").Returns(5);
+            _service.ImportStagingAsync(project, "ABCDEFGHIJ", "ABCDEFGHIJKL").Returns(5);
 
             // Act
             var result = await _controller.ImportStaging(project);
 
             // Assert
             Assert.IsType<OkObjectResult>(result);
-            await _service.Received(1).ImportStagingAsync(project, "ABCDEFGHIJ");
+            await _service.Received(1).ImportStagingAsync(project, "ABCDEFGHIJ", "ABCDEFGHIJKL");
         }
 
         [Fact]
-        public async Task ImportStaging_WhenNoIdentity_PassesNullChangedBy()
+        public async Task ImportStaging_WhenNoIdentity_PassesNullValues()
         {
             // Arrange
             const string project = "PP001";
             _controller.ControllerContext.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity());
-            _service.ImportStagingAsync(project, null).Returns(1);
+            _service.ImportStagingAsync(project, null, null).Returns(1);
 
             // Act
             await _controller.ImportStaging(project);
 
             // Assert
-            await _service.Received(1).ImportStagingAsync(project, null);
+            await _service.Received(1).ImportStagingAsync(project, null, null);
         }
 
         [Fact]
@@ -1223,11 +1201,11 @@ namespace Apha.PIMS.Api.UnitTests.Controllers.MilestoneControllerTest
         {
             // Arrange
             const string project = "PP001";
-            _service.ImportStagingAsync(project, Arg.Any<string?>()).Throws(new Exception("Import failed"));
+            _service.ImportStagingAsync(project, Arg.Any<string?>(), Arg.Any<string?>()).Throws(new Exception("Import failed"));
 
             // Act & Assert
             await Assert.ThrowsAsync<Exception>(() => _controller.ImportStaging(project));
-            await _service.Received(1).ImportStagingAsync(project, Arg.Any<string?>());
+            await _service.Received(1).ImportStagingAsync(project, Arg.Any<string?>(), Arg.Any<string?>());
         }
 
         #endregion
@@ -1235,21 +1213,21 @@ namespace Apha.PIMS.Api.UnitTests.Controllers.MilestoneControllerTest
         #region ImportWithOverwrite
 
         [Fact]
-        public async Task ImportWithOverwrite_ReturnsOkResult_AndPassesTruncatedChangedBy()
+        public async Task ImportWithOverwrite_ReturnsOkResult_AndPassesTruncatedChangedByAndCreatedBy()
         {
             // Arrange
             const string project = "PP001";
             var identity = new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, "USERLONGNAME") }, "TestAuth");
             _controller.ControllerContext.HttpContext.User = new ClaimsPrincipal(identity);
 
-            _service.ImportWithOverwriteAsync(project, "USERLONGNA").Returns(7);
+            _service.ImportWithOverwriteAsync(project, "USERLONGNA", "USERLONGNAME").Returns(7);
 
             // Act
             var result = await _controller.ImportWithOverwrite(project);
 
             // Assert
             Assert.IsType<OkObjectResult>(result);
-            await _service.Received(1).ImportWithOverwriteAsync(project, "USERLONGNA");
+            await _service.Received(1).ImportWithOverwriteAsync(project, "USERLONGNA", "USERLONGNAME");
         }
 
         [Fact]
@@ -1257,11 +1235,11 @@ namespace Apha.PIMS.Api.UnitTests.Controllers.MilestoneControllerTest
         {
             // Arrange
             const string project = "PP001";
-            _service.ImportWithOverwriteAsync(project, Arg.Any<string?>()).Throws(new Exception("Overwrite failed"));
+            _service.ImportWithOverwriteAsync(project, Arg.Any<string?>(), Arg.Any<string?>()).Throws(new Exception("Overwrite failed"));
 
             // Act & Assert
             await Assert.ThrowsAsync<Exception>(() => _controller.ImportWithOverwrite(project));
-            await _service.Received(1).ImportWithOverwriteAsync(project, Arg.Any<string?>());
+            await _service.Received(1).ImportWithOverwriteAsync(project, Arg.Any<string?>(), Arg.Any<string?>());
         }
 
         #endregion

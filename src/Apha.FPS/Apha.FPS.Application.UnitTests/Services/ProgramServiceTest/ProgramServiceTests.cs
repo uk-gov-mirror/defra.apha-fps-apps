@@ -6,6 +6,8 @@ using Apha.FPS.Core.Interfaces;
 using Apha.FPS.Core.Pagination;
 using AutoMapper;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 
@@ -192,5 +194,70 @@ namespace Apha.FPS.Application.UnitTests.Services.ProgramServiceTest
 
             await Assert.ThrowsAsync<KeyNotFoundException>(() => _sut.DeleteProgramAsync("P2"));
         }       
+
+        [Fact]
+        public async Task AddProgramAsync_DuplicateKey_PostgresException_ThrowsFriendlyInvalidOperationException()
+        {
+            var dto = new ProgramDto { ProgramNo = "P1", ProgramName = "Test" };
+            var entity = new Program { ProgramNo = "P1", ProgramName = "Test" };
+            var duplicate = BuildUniqueViolation();
+
+            _mockMapper.Map<Program>(dto).Returns(entity);
+            _mockRepository.AddProgramAsync(entity).ThrowsAsync(duplicate);
+
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.AddProgramAsync(dto));
+            ex.Message.Should().Contain("P1");
+            ex.Message.Should().Contain("already exists");
+            ex.InnerException.Should().BeSameAs(duplicate);
+        }
+
+        [Fact]
+        public async Task AddProgramAsync_DuplicateKey_WrappedInDbUpdateException_ThrowsFriendlyInvalidOperationException()
+        {
+            var dto = new ProgramDto { ProgramNo = "P1", ProgramName = "Test" };
+            var entity = new Program { ProgramNo = "P1", ProgramName = "Test" };
+            var wrapped = new DbUpdateException("save failed", BuildUniqueViolation());
+
+            _mockMapper.Map<Program>(dto).Returns(entity);
+            _mockRepository.AddProgramAsync(entity).ThrowsAsync(wrapped);
+
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.AddProgramAsync(dto));
+            ex.Message.Should().Contain("already exists");
+            ex.InnerException.Should().BeSameAs(wrapped);
+        }
+
+        [Fact]
+        public async Task AddProgramAsync_NonUniqueViolation_RethrowsOriginalException()
+        {
+            var dto = new ProgramDto { ProgramNo = "P1", ProgramName = "Test" };
+            var entity = new Program { ProgramNo = "P1", ProgramName = "Test" };
+            var original = new InvalidOperationException("some other failure");
+
+            _mockMapper.Map<Program>(dto).Returns(entity);
+            _mockRepository.AddProgramAsync(entity).ThrowsAsync(original);
+
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.AddProgramAsync(dto));
+            ex.Should().BeSameAs(original);
+        }
+
+        // Builds a PostgresException carrying a unique/primary key violation (SqlState 23505),
+        // mimicking how Npgsql surfaces a duplicate key error.
+        private static PostgresException BuildUniqueViolation() =>
+            new(
+                messageText: "duplicate key value violates unique constraint",
+                severity: "ERROR",
+                invariantSeverity: "ERROR",
+                sqlState: PostgresErrorCodes.UniqueViolation,
+                detail: null,
+                hint: null,
+                position: 0,
+                internalPosition: 0,
+                internalQuery: null,
+                where: null,
+                schemaName: null,
+                tableName: null,
+                columnName: null,
+                dataTypeName: null,
+                constraintName: "tbluser_program_y2025_pkey");
     }
 }

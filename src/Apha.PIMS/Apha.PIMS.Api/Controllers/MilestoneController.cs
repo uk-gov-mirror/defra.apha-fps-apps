@@ -1,4 +1,4 @@
-﻿    using Apha.Common.Contracts;
+﻿using Apha.Common.Contracts;
 using Apha.Common.Contracts.PIMS;
 using Apha.PIMS.Application.Dtos;
 using Apha.PIMS.Application.Interfaces;
@@ -141,16 +141,19 @@ namespace Apha.PIMS.Api.Controllers
         [HttpGet("allstaging")]
         public async Task<IActionResult> GetAllStagingRows([FromQuery] QueryParameters<string> parameters)
         {
-            PaginatedResult<StagingMilestoneDto> result = await _service.GetAllStagingRowsAsync(parameters);
+            string? createdBy = User.Identity?.Name;
+            PaginatedResult<StagingMilestoneDto> result = await _service.GetAllStagingRowsAsync(parameters, createdBy);
             return Ok(_mapper.Map<PaginationRes<StagingMilestoneRes>>(result));
         }
 
         /// <summary>Get staging milestone rows, optionally filtered by project.</summary>
         [HttpGet("staging")]
-        public async Task<IActionResult> GetStagingRows([FromQuery] string? project = null)
-        {
-            List<StagingMilestoneDto> result = await _service.GetStagingRowsAsync(project);
-            return Ok(_mapper.Map<List<StagingMilestoneRes>>(result));
+        public async Task<IActionResult> GetStagingRows([FromQuery] int id)
+        {  
+               
+            List<StagingMilestoneDto> byId = await _service.GetStagingRowsAsync(id);
+            return Ok(_mapper.Map<List<StagingMilestoneRes>>(byId));          
+
         }
 
         /// <summary>Add a staging milestone row.</summary>
@@ -158,7 +161,8 @@ namespace Apha.PIMS.Api.Controllers
         public async Task<IActionResult> AddStagingRow(int year, [FromBody] StagingMilestoneReq request)
         {
             StagingMilestoneDto dto = _mapper.Map<StagingMilestoneDto>(request);
-            StagingMilestoneDto result = await _service.AddStagingRowAsync(dto, year);
+            string? createdBy = User.Identity?.Name;
+            StagingMilestoneDto result = await _service.AddStagingRowAsync(dto, year, createdBy);
             return Ok(_mapper.Map<StagingMilestoneRes>(result));
         }
 
@@ -168,7 +172,8 @@ namespace Apha.PIMS.Api.Controllers
         {
             StagingMilestoneDto dto = _mapper.Map<StagingMilestoneDto>(request);
             dto.Id = id;
-            StagingMilestoneDto result = await _service.UpdateStagingRowAsync(dto);
+            string? createdBy = User.Identity?.Name;
+            StagingMilestoneDto result = await _service.UpdateStagingRowAsync(dto, createdBy);
             return Ok(_mapper.Map<StagingMilestoneRes>(result));
         }
 
@@ -176,7 +181,8 @@ namespace Apha.PIMS.Api.Controllers
         [HttpDelete("staging/{id:int}")]
         public async Task<IActionResult> DeleteStagingRow(int id)
         {
-            bool deleted = await _service.DeleteStagingRowAsync(id);
+            string? createdBy = User.Identity?.Name;
+            bool deleted = await _service.DeleteStagingRowAsync(id, createdBy);
             return Ok(new { success = deleted });
         }
 
@@ -184,7 +190,8 @@ namespace Apha.PIMS.Api.Controllers
         [HttpDelete("{project}/staging")]
         public async Task<IActionResult> ClearStaging(string project)
         {
-            int rows = await _service.ClearStagingAsync(project);
+            string? createdBy = User.Identity?.Name;
+            int rows = await _service.ClearStagingAsync(project, createdBy);
             return Ok(new { deleted = rows });
         }
 
@@ -196,9 +203,9 @@ namespace Apha.PIMS.Api.Controllers
             [FromQuery] bool isDeliverableMode = false
             )
         {
-            await _service.ValidateStagingAsync(project, typeId, isDeliverableMode);
-            List<StagingMilestoneDto> rows = await _service.GetStagingRowsAsync(project);
-            return Ok(_mapper.Map<List<StagingMilestoneRes>>(rows));
+            string? createdBy = User.Identity?.Name;
+            await _service.ValidateStagingAsync(project, typeId, isDeliverableMode, createdBy);
+            return Ok(new { success = true });
         }
 
         /// <summary>Import validated staging rows (Note IS NULL) into tblMilestone.</summary>
@@ -206,7 +213,8 @@ namespace Apha.PIMS.Api.Controllers
         public async Task<IActionResult> ImportStaging(string project)
         {
             string? changedBy = User.Identity?.Name is { } name ? name[..Math.Min(10, name.Length)] : null;
-            int imported = await _service.ImportStagingAsync(project, changedBy);
+            string? createdBy = User.Identity?.Name;
+            int imported = await _service.ImportStagingAsync(project, changedBy, createdBy);
             return Ok(new { imported });
         }
 
@@ -215,7 +223,8 @@ namespace Apha.PIMS.Api.Controllers
         public async Task<IActionResult> ImportWithOverwrite(string project)
         {
             string? changedBy = User.Identity?.Name is { } name ? name[..Math.Min(10, name.Length)] : null;
-            int updated = await _service.ImportWithOverwriteAsync(project, changedBy);
+            string? createdBy = User.Identity?.Name;
+            int updated = await _service.ImportWithOverwriteAsync(project, changedBy, createdBy);
             return Ok(new { updated });
         }
 

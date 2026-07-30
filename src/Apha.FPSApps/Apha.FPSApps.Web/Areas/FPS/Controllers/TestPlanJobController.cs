@@ -126,6 +126,20 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
                 return Json(new { success = true, message = "Test plan item created successfully." });
             }
 
+            var duplicateError = (result.Errors ?? new List<ApiErrorDto>())
+                .FirstOrDefault(e => IsDuplicateError(e));
+
+            if (duplicateError != null)
+            {
+                const string friendlyMessage = "This test code has already been added to this project. Please update the existing entry instead.";
+                return Json(new
+                {
+                    success = false,
+                    message = friendlyMessage,
+                    errors = new[] { new { field = string.Empty, message = friendlyMessage } }
+                });
+            }
+
             return Json(new
             {
                 success = false,
@@ -268,6 +282,19 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
 
         // ── PRIVATE HELPERS ───────────────────────────────────────────────────
 
+        private static bool IsDuplicateError(ApiErrorDto error)
+        {
+            var code = error.Code ?? string.Empty;
+            if (code.Equals("CONFLICT", StringComparison.OrdinalIgnoreCase) ||
+                code.Equals("DUPLICATE", StringComparison.OrdinalIgnoreCase) ||
+                code.Equals("BUSINESS_RULE_VIOLATION", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return (error.Message ?? string.Empty).Contains("already exists", StringComparison.OrdinalIgnoreCase);
+        }
+
         private async Task PopulateTestCodeDropdownAsync(TestPlanItem model)
         {
             ApiResponseDto<List<TestorProductDto>> response =
@@ -279,7 +306,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
                     .Select(t => new SelectListItem
                     {
                         Value = t.ItemCode,
-                        Text = t.ItemDescription ?? string.Empty,
+                        Text  = $"{t.ItemCode}|{t.ItemDescription ?? string.Empty}|{t.UnitPriceVla?.ToString("F2") ?? "0.00"}",
                         Selected = string.Equals(model.TestCode, t.ItemCode, StringComparison.OrdinalIgnoreCase)
                     })
                     .ToList();

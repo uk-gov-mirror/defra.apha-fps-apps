@@ -25,6 +25,7 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.StaffJobRepositoryTest
         private static StaffJobRepository CreateRepository(
             IEnumerable<StaffJob>? staffJobs = null,
             IEnumerable<StaffJobTblView>? staffJobTblViews = null,
+            IEnumerable<StaffJobRmView>? staffJobRmViews = null,
             IEnumerable<StaffGeneralView>? staffGeneralViews = null,
             IEnumerable<WorkgroupGrade>? workgroupGrades = null,
             IEnumerable<ProfitCentreGrade>? profitCentreGrades = null,
@@ -51,6 +52,12 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.StaffJobRepositoryTest
             {
                 var mockSet = RepositoryTestHelper.CreateMockDbSet(staffJobTblViews);
                 mockContext.Setup(x => x.StaffJobTblViews).Returns(mockSet.Object);
+            }
+
+            if (staffJobRmViews != null)
+            {
+                var mockSet = RepositoryTestHelper.CreateMockDbSet(staffJobRmViews);
+                mockContext.Setup(x => x.StaffJobRmViews).Returns(mockSet.Object);
             }
 
             if (staffGeneralViews != null)
@@ -912,6 +919,265 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.StaffJobRepositoryTest
 
             // Assert
             Assert.Null(result);
+        }
+
+        #endregion
+
+        #region GetStaffResourceUtilisationAsync Tests
+
+        private static (List<WorkgroupGrade> WorkgroupGrades,
+                        List<StaffView> StaffViews,
+                        List<ProfitCentreGrade> ProfitCentreGrades,
+                        List<StaffJobRmView> StaffJobRmViews,
+                        List<Project> Projects)
+            BuildUtilisationDataset(double? hrsAvail = 100)
+        {
+            var workgroupGrades = new List<WorkgroupGrade>
+            {
+                new() { WgGrade = "WG01", ProfitCentreGrade = "PC01", Workgroup = "IT", FpsYear = DefaultTestFpsYear }
+            };
+            var staffViews = new List<StaffView>
+            {
+                new()
+                {
+                    StaffId = "S001",
+                    Name = "John General",
+                    WorkgroupGrade = "WG01",
+                    FpsYear = DefaultTestFpsYear,
+                    UserEmail = DefaultUserEmail,
+                    HrsAvail = hrsAvail
+                }
+            };
+            var profitCentreGrades = new List<ProfitCentreGrade>
+            {
+                new() { PcGrade = "PC01", ProfitCentre = "PC-Alpha", FpsYear = DefaultTestFpsYear }
+            };
+            var staffJobRmViews = new List<StaffJobRmView>
+            {
+                new() { StaffId = "S001", JobCode = "JOB001", PlannedHours = 40, FpsYear = DefaultTestFpsYear },
+                new() { StaffId = "S001", JobCode = "JOB002", PlannedHours = 10, FpsYear = DefaultTestFpsYear },
+                new() { StaffId = "S001", JobCode = "ZTJOB",  PlannedHours = 5,  FpsYear = DefaultTestFpsYear }
+            };
+            var projects = new List<Project>
+            {
+                new() { ParentProject = "JOB001", Program = "prog",    ProjectStatus = "Approved",     FpsYear = DefaultTestFpsYear },
+                new() { ParentProject = "JOB002", Program = "prog",    ProjectStatus = "Not Approved", FpsYear = DefaultTestFpsYear },
+                new() { ParentProject = "ZTJOB",  Program = "zt_prog", ProjectStatus = "Approved",     FpsYear = DefaultTestFpsYear }
+            };
+
+            return (workgroupGrades, staffViews, profitCentreGrades, staffJobRmViews, projects);
+        }
+
+        [Fact]
+        public async Task GetStaffResourceUtilisationAsync_ReturnsAggregatedData_WithValidWorkgroup()
+        {
+            // Arrange
+            var data = BuildUtilisationDataset();
+            var repo = CreateRepository(
+                workgroupGrades: data.WorkgroupGrades,
+                staffViews: data.StaffViews,
+                profitCentreGrades: data.ProfitCentreGrades,
+                staffJobRmViews: data.StaffJobRmViews,
+                projects: data.Projects);
+
+            var query = new PaginationParameters<string> { Page = 1, PageSize = 10 };
+
+            // Act
+            var result = await repo.GetStaffResourceUtilisationAsync(query, "IT");
+
+            // Assert
+            Assert.NotNull(result);
+            var row = Assert.Single(result.Data);
+            Assert.Equal("S001", row.StaffId);
+            Assert.Equal("PC-Alpha", row.ProfitCentre);
+            Assert.Equal("IT", row.WorkGroup);
+            Assert.Equal(100, row.HrsAvail);
+            // plannedZt = 5 (zt_prog), approvedRaw = 40+5 = 45, nApproved = 10
+            Assert.Equal(5, row.PlannedZt);
+            Assert.Equal(40, row.ApprovedSoct);   // 45 - 5
+            Assert.Equal(95, row.AvailSoct);      // 100 - 5
+            Assert.Equal(10, row.NotApprovedSoct);
+            Assert.Equal(45, row.Left);           // 95 - 40 - 10
+            Assert.Equal(40, row.ApprovedUtilPct);
+            Assert.Equal(10, row.NotApprovedUtilPct);
+            Assert.Equal(50, row.TotalUtilPct);
+        }
+
+        [Fact]
+        public async Task GetStaffResourceUtilisationAsync_ReturnsNullPercentages_WhenHrsAvailIsZero()
+        {
+            // Arrange
+            var data = BuildUtilisationDataset(hrsAvail: 0);
+            var repo = CreateRepository(
+                workgroupGrades: data.WorkgroupGrades,
+                staffViews: data.StaffViews,
+                profitCentreGrades: data.ProfitCentreGrades,
+                staffJobRmViews: data.StaffJobRmViews,
+                projects: data.Projects);
+
+            var query = new PaginationParameters<string> { Page = 1, PageSize = 10 };
+
+            // Act
+            var result = await repo.GetStaffResourceUtilisationAsync(query, "IT");
+
+            // Assert
+            var row = Assert.Single(result.Data);
+            Assert.Null(row.ApprovedUtilPct);
+            Assert.Null(row.NotApprovedUtilPct);
+            Assert.Null(row.TotalUtilPct);
+        }
+
+        [Fact]
+        public async Task GetStaffResourceUtilisationAsync_ReturnsEmpty_WhenWorkgroupDoesNotMatch()
+        {
+            // Arrange
+            var data = BuildUtilisationDataset();
+            var repo = CreateRepository(
+                workgroupGrades: data.WorkgroupGrades,
+                staffViews: data.StaffViews,
+                profitCentreGrades: data.ProfitCentreGrades,
+                staffJobRmViews: data.StaffJobRmViews,
+                projects: data.Projects);
+
+            var query = new PaginationParameters<string> { Page = 1, PageSize = 10 };
+
+            // Act
+            var result = await repo.GetStaffResourceUtilisationAsync(query, "HR");
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Empty(result.Data);
+        }
+
+        [Fact]
+        public async Task GetStaffResourceUtilisationAsync_AppliesWgGradeAndNameFilter()
+        {
+            // Arrange
+            var data = BuildUtilisationDataset();
+            var repo = CreateRepository(
+                workgroupGrades: data.WorkgroupGrades,
+                staffViews: data.StaffViews,
+                profitCentreGrades: data.ProfitCentreGrades,
+                staffJobRmViews: data.StaffJobRmViews,
+                projects: data.Projects);
+
+            var query = new PaginationParameters<string>
+            {
+                Page = 1,
+                PageSize = 10,
+                Filter = "{\"WgGrade\":\"WG01\",\"Name\":\"John\"}"
+            };
+
+            // Act
+            var result = await repo.GetStaffResourceUtilisationAsync(query, "IT");
+
+            // Assert
+            Assert.Single(result.Data);
+            Assert.Equal("S001", result.Data.First().StaffId);
+        }
+
+        [Fact]
+        public async Task GetStaffResourceUtilisationAsync_FiltersOut_WhenNameDoesNotMatch()
+        {
+            // Arrange
+            var data = BuildUtilisationDataset();
+            var repo = CreateRepository(
+                workgroupGrades: data.WorkgroupGrades,
+                staffViews: data.StaffViews,
+                profitCentreGrades: data.ProfitCentreGrades,
+                staffJobRmViews: data.StaffJobRmViews,
+                projects: data.Projects);
+
+            var query = new PaginationParameters<string>
+            {
+                Page = 1,
+                PageSize = 10,
+                Filter = "{\"Name\":\"Nonexistent\"}"
+            };
+
+            // Act
+            var result = await repo.GetStaffResourceUtilisationAsync(query, "IT");
+
+            // Assert
+            Assert.Empty(result.Data);
+        }
+
+        [Fact]
+        public async Task GetStaffResourceUtilisationAsync_IgnoresNullFilterValues()
+        {
+            // Arrange
+            var data = BuildUtilisationDataset();
+            var repo = CreateRepository(
+                workgroupGrades: data.WorkgroupGrades,
+                staffViews: data.StaffViews,
+                profitCentreGrades: data.ProfitCentreGrades,
+                staffJobRmViews: data.StaffJobRmViews,
+                projects: data.Projects);
+
+            var query = new PaginationParameters<string>
+            {
+                Page = 1,
+                PageSize = 10,
+                Filter = "{\"WgGrade\":null,\"Name\":null}"
+            };
+
+            // Act
+            var result = await repo.GetStaffResourceUtilisationAsync(query, "IT");
+
+            // Assert
+            Assert.Single(result.Data);
+        }
+
+        [Theory]
+        [InlineData("Name", false)]
+        [InlineData("Name", true)]
+        [InlineData("HrsAvail", true)]
+        [InlineData("PlannedZt", false)]
+        [InlineData("AvailSoct", true)]
+        [InlineData("NotApprovedSoct", false)]
+        [InlineData("ApprovedSoct", true)]
+        [InlineData("Left", false)]
+        [InlineData("ApprovedUtilPct", true)]
+        [InlineData("NotApprovedUtilPct", false)]
+        [InlineData("TotalUtilPct", true)]
+        [InlineData("Unknown", true)]
+        [InlineData(null, false)]
+        public async Task GetStaffResourceUtilisationAsync_AppliesSorting_ForEachSortKey(string? sortBy, bool descending)
+        {
+            // Arrange - two staff so ordering is exercised
+            var (workgroupGrades, staffViews, profitCentreGrades, staffJobRmViews, projects) = BuildUtilisationDataset();
+            workgroupGrades.Add(new WorkgroupGrade { WgGrade = "WG02", ProfitCentreGrade = "PC01", Workgroup = "IT", FpsYear = DefaultTestFpsYear });
+            staffViews.Add(new StaffView
+            {
+                StaffId = "S002",
+                Name = "Amy General",
+                WorkgroupGrade = "WG02",
+                FpsYear = DefaultTestFpsYear,
+                UserEmail = DefaultUserEmail,
+                HrsAvail = 80
+            });
+            staffJobRmViews.Add(new StaffJobRmView { StaffId = "S002", JobCode = "JOB001", PlannedHours = 20, FpsYear = DefaultTestFpsYear });
+
+            var repo = CreateRepository(
+                workgroupGrades: workgroupGrades,
+                staffViews: staffViews,
+                profitCentreGrades: profitCentreGrades,
+                staffJobRmViews: staffJobRmViews,
+                projects: projects);
+
+            var query = new PaginationParameters<string>
+            {
+                Page = 1,
+                PageSize = 10,
+                SortBy = sortBy,
+                Descending = descending
+            };
+
+            // Act
+            var result = await repo.GetStaffResourceUtilisationAsync(query, "IT");
+
+            // Assert
+            Assert.Equal(2, result.Data.Count());
         }
 
         #endregion

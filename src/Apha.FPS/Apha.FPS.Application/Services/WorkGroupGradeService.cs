@@ -112,6 +112,14 @@ namespace Apha.FPS.Application.Services
         public async Task<List<string>> GetAllGradeCodesAsync()
             => await _repository.GetAllGradeCodesAsync();
 
+        public async Task<List<WorkgroupGradeDto>> GetWorkgroupGradesByWorkGroupAsync(
+            string workGroup)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(workGroup);
+            var result = await _repository.GetWorkgroupGradesByWorkGroupAsync(workGroup);
+            return _mapper.Map<List<WorkgroupGradeDto>>(result);
+        }
+
         // Existing methods for backward compatibility
         public async Task<PaginatedResult<WorkgroupGradeDto>> GetWorkGroupGradeAsync(QueryParameters<string> query, string profitCentreGrade)
         {

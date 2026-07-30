@@ -8,5 +8,6 @@
         public GridColumnType Type { get; set; } = GridColumnType.Text;
         public bool IsVisible { get; set; } = true;
         public bool IsFilterable { get; set; } = false;
+        public string CssClass { get; set; } = string.Empty;
     }
 }

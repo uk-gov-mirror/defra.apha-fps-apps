@@ -14,7 +14,7 @@
     <form id="additionalCostForm">
         @Html.AntiForgeryToken()
         <input asp-for="AcIdentity" type="hidden" />
-        <input type="hidden" id="AccountCat" name="AccountCat" value="@Model.AccountCat" />
+        <input type="hidden" id="AccountCat" value="@Model.AccountCat" />
         <div class="govuk-error-summary" role="alert"
              aria-labelledby="additionalCostFormErrorTitle" tabindex="-1" style="display: none;">
             <h2 class="govuk-error-summary__title" id="additionalCostFormErrorTitle">There is a problem</h2>
@@ -27,9 +27,9 @@
                 Account Cat <span class="sup_color_red">*</span>
             </label>
             <div style="position: relative; z-index: 50;">
-                <input type="text" id="accountCatSelect" placeholder="-- Select Account Category --" aria-label="Search Account Category" autocomplete="off"
+                <input asp-for="AccountCat" type="text" id="accountCatSelect" placeholder="-- Select Account Category --" aria-label="Search Account Category" autocomplete="off"
                        class="govuk-input govuk-!-font-size-16 down-arrow-img" style="width: 100%; cursor: pointer;"
-                       value="@Model.AccountCat" readonly />
+                       required readonly />
                 <div id="accountCatDropdownPanel" style="display:none; position:absolute; top:100%; left:0; width:100%;
                         max-height:220px; overflow-y:auto; background:#fff; border:1px solid #b1b4b6;
                         box-shadow:0 4px 8px rgba(0,0,0,.2); z-index:2000;">
@@ -83,7 +83,7 @@
             </label>
             <div class="govuk-input__wrapper">
                 <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                <input asp-for="ItemCost" type="text" readonly class="govuk-input" />
+                <input asp-for="ItemCost" type="text" readonly class="govuk-input" value="@(Model.ItemCost ?? 0)" />
             </div>           
         </div>
     </form>

@@ -12,14 +12,13 @@
     <button type="button" class="btn-close btn-red" onclick="closeModal()">X</button>
 </div>
 <div class="modal-body" style="overflow-y: auto; max-height: calc(80vh - 120px);">
-    <div asp-validation-summary="ModelOnly" class="govuk-error-summary" role="alert"
-         aria-labelledby="tp-error-summary-title" tabindex="-1" style="display:none;">
-        <h2 class="govuk-error-summary__title" id="tp-error-summary-title">
+    <div class="govuk-error-summary" role="alert"
+         aria-labelledby="error-summary-title" tabindex="-1" style="display:none;">
+        <h2 class="govuk-error-summary__title" id="error-summary-title">
             There is a problem
         </h2>
         <div class="govuk-error-summary__body">
-            <ul class="govuk-list govuk-error-summary__list">
-            </ul>
+            <ul class="govuk-list govuk-error-summary__list" id="modalErrorList"></ul>
         </div>
     </div>
     <form class="row" id="@formId">
@@ -37,13 +36,59 @@
             <!-- Test Code (editable only on add) -->
             <div class="col-12">
                 <div class="govuk-form-group sup_margin_0">
-                    <label for="TestCode" class="govuk-label p-0">Test Code <span class="sup_color_red">*</span></label>
-                    <select id="TestCode" name="TestCode" required class="govuk-select" style="width:100%;"
-                            onchange="onTestCodeSelected(this)">
+                    <label for="TestCodeDisplay" class="govuk-label p-0">Test Code <span class="sup_color_red">*</span></label>
+                    <div style="position: relative;">
+                        <input type="text" id="TestCodeDisplay" placeholder="Select Test Code" autocomplete="off"
+                               class="govuk-input govuk-!-font-size-16 down-arrow-img" style="width:100%; cursor:pointer;" readonly
+                               onclick="toggleTestCodePanel()" />
+                        <div id="TestCodeDropdownPanel" style="display:none; position:absolute; top:100%; left:0; width:100%;
+                                max-height:260px; overflow-y:auto; background:#fff; border:1px solid #b1b4b6;
+                                box-shadow:0 4px 8px rgba(0,0,0,.2); z-index:2000;">
+                            <input type="text" id="TestCodeSearchBox" placeholder="Type to search..."
+                                   style="width:100%; padding:6px 8px; border:0; border-bottom:1px solid #b1b4b6; outline:none; box-sizing:border-box;"
+                                   oninput="filterTestCodePanel(this.value)" />
+                            <table style="width:100%; border-collapse:collapse; font-size:14px;">
+                                <thead style="background:#f3f2f1; position:sticky; top:0; z-index:10;">
+                                    <tr>
+                                        <th style="padding:6px 8px; text-align:left;">Item Code</th>
+                                        <th style="padding:6px 8px; text-align:left;">Description</th>
+                                        <th style="padding:6px 8px; text-align:left;">Unit Price VLA</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="TestCodeDropdownBody">
+                                    @foreach (var option in Model.TestCodeOptions.Where(o => !string.IsNullOrEmpty(o.Value)))
+                                    {
+                                        var parts = option.Text.Split('|');
+                                        var tCode = parts.Length > 0 ? parts[0].Trim() : string.Empty;
+                                        var tDesc = parts.Length > 1 ? parts[1].Trim() : string.Empty;
+                                        var tUnitPrice = parts.Length > 2 ? parts[2].Trim() : "0.00";
+                                        <tr data-value="@option.Value" data-description="@tDesc" data-unitprice="@tUnitPrice"
+                                            onclick="selectTestCode('@option.Value', '@Html.Raw(tCode.Replace("'", "\\'"))', '@Html.Raw(tDesc.Replace("'", "\\'"))', '@tUnitPrice', this)"
+                                            style="cursor:pointer;">
+                                            <td style="padding:6px 8px; border-bottom:1px solid #f3f2f1;">@tCode</td>
+                                            <td style="padding:6px 8px; border-bottom:1px solid #f3f2f1;">@tDesc</td>
+                                            <td style="padding:6px 8px; border-bottom:1px solid #f3f2f1;">£@tUnitPrice</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    @* hidden select — keeps TestCode binding + server-side validation *@
+                    <select id="TestCode" name="TestCode" required style="display:none;" onchange="onTestCodeSelected(this)">
                         <option value="">-- Select Test Code --</option>
                         @foreach (var option in Model.TestCodeOptions)
                         {
-                            <option value="@option.Value" data-description="@option.Text" selected="@(option.Selected ? "selected" : null)">@option.Value</option>
+                            var tCode = option.Text.Split('|')[0].Trim();
+                            var tDesc = option.Text.Split('|').Length > 1 ? option.Text.Split('|')[1].Trim() : string.Empty;
+                            if (option.Selected)
+                            {
+                                <option value="@option.Value" data-description="@tDesc" selected>@tCode</option>
+                            }
+                            else
+                            {
+                                <option value="@option.Value" data-description="@tDesc">@tCode</option>
+                            }
                         }
                     </select>
                     <span asp-validation-for="TestCode" class="govuk-error-message" style="display:none;"></span>

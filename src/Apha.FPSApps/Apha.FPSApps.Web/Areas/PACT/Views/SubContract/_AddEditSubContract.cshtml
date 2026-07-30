@@ -41,18 +41,11 @@
         <div class="govuk-grid-row sup_margin_top_10">
             <div class="govuk-grid-column-one-half">
                 <div class="govuk-form-group sup_margin_bottom_10">
-                    <label class="govuk-label" asp-for="Project">
+                    <label class="govuk-label" for="projectMultiDropdown_input">
                         Project:<span class="sup_color_red">*</span>
                     </label>
-                    @{
-                        var projects = ViewBag.Projects as IEnumerable<SelectListItem> ?? new List<SelectListItem>();
-                    }
-                    <select class="govuk-select sup_select_option_width_100 govuk-!-font-size-16"
-                            asp-for="Project"
-                            asp-items="@projects"
-                            required>
-                        <option value="">-- select project --</option>
-                    </select>
+                    <div id="projectMultiDropdown"></div>
+                    <input type="hidden" asp-for="Project" id="Project" required />
                     <span asp-validation-for="Project" class="govuk-error-message"></span>
                 </div>
             </div>
@@ -149,3 +142,15 @@
         @(isEdit ? "Update" : "Save")
     </button>
 </div>
+
+<script>
+    $(document).ready(function () {
+        var projectsData = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.Projects ?? new List<object>()));
+        var selectedProject = '@Html.Raw(Model.Project ?? "")';
+
+        initializeSubContractProjectDropdown({
+            projectsData: projectsData,
+            selectedProject: selectedProject
+        });
+    });
+</script>

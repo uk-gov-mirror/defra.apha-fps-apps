@@ -172,7 +172,7 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.FPS.TestPlanJobControllerTest
             Assert.Equal(0, model.NoRequired);
             Assert.Equal(2, model.TestCodeOptions.Count);
             Assert.Equal("BLOOD", model.TestCodeOptions[0].Value);
-            Assert.Equal("Blood Test", model.TestCodeOptions[0].Text);
+            Assert.Equal("BLOOD|Blood Test|0.00", model.TestCodeOptions[0].Text);
         }
 
         [Fact]
@@ -236,7 +236,7 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.FPS.TestPlanJobControllerTest
         }
 
         [Fact]
-        public async Task Create_Post_WhenServiceFails_ReturnsFailureJson()
+        public async Task Create_Post_WhenServiceReturnsDuplicateErrorCode_ReturnsFriendlyDuplicateMessage()
         {
             // Arrange
             var item = new TestPlanItem { TestCode = "BLOOD", Buyer = "PRJ1" };
@@ -254,7 +254,85 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.FPS.TestPlanJobControllerTest
             var jsonResult = Assert.IsType<JsonResult>(result);
             var value = GetJsonResultElement(jsonResult);
             Assert.False(value.GetProperty("success").GetBoolean());
-            Assert.Equal("Duplicate test code", value.GetProperty("message").GetString());
+            const string expectedMessage = "This test code has already been added to this project. Please update the existing entry instead.";
+            Assert.Equal(expectedMessage, value.GetProperty("message").GetString());
+            // errors array must contain field="" so the error renders in the summary banner, not inline
+            var errorsArray = value.GetProperty("errors");
+            Assert.Equal(1, errorsArray.GetArrayLength());
+            Assert.Equal(string.Empty, errorsArray[0].GetProperty("field").GetString());
+            Assert.Equal(expectedMessage, errorsArray[0].GetProperty("message").GetString());
+        }
+
+        [Theory]
+        [InlineData("CONFLICT")]
+        [InlineData("BUSINESS_RULE_VIOLATION")]
+        public async Task Create_Post_WhenServiceReturnsDuplicateVariantErrorCode_ReturnsFriendlyDuplicateMessage(string errorCode)
+        {
+            // Arrange
+            var item = new TestPlanItem { TestCode = "BLOOD", Buyer = "PRJ1" };
+            var dto = new TestRequirementDto { TestCode = "BLOOD", Buyer = "PRJ1" };
+            var errors = new List<ApiErrorDto> { new() { Message = "Some conflict message", Code = errorCode } };
+            var serviceResponse = ApiResponseDto<TestRequirementDto>.FailureResponse(errors, new ApiMetaDto());
+
+            _mapper.Map<TestRequirementDto>(item).Returns(dto);
+            _testRequirementService.CreateTestReqmtAsync(dto).Returns(serviceResponse);
+
+            // Act
+            var result = await _controller.Create(item);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            var value = GetJsonResultElement(jsonResult);
+            Assert.False(value.GetProperty("success").GetBoolean());
+            Assert.Equal(
+                "This test code has already been added to this project. Please update the existing entry instead.",
+                value.GetProperty("message").GetString());
+        }
+
+        [Fact]
+        public async Task Create_Post_WhenServiceErrorMessageContainsAlreadyExists_ReturnsFriendlyDuplicateMessage()
+        {
+            // Arrange – mirrors the exact message thrown by TestRequirementService.cs:97
+            var item = new TestPlanItem { TestCode = "BLOOD", Buyer = "PRJ1" };
+            var dto = new TestRequirementDto { TestCode = "BLOOD", Buyer = "PRJ1" };
+            var errors = new List<ApiErrorDto> { new() { Message = "A record with the same TestCode and Buyer already exists.", Code = "UNKNOWN" } };
+            var serviceResponse = ApiResponseDto<TestRequirementDto>.FailureResponse(errors, new ApiMetaDto());
+
+            _mapper.Map<TestRequirementDto>(item).Returns(dto);
+            _testRequirementService.CreateTestReqmtAsync(dto).Returns(serviceResponse);
+
+            // Act
+            var result = await _controller.Create(item);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            var value = GetJsonResultElement(jsonResult);
+            Assert.False(value.GetProperty("success").GetBoolean());
+            Assert.Equal(
+                "This test code has already been added to this project. Please update the existing entry instead.",
+                value.GetProperty("message").GetString());
+        }
+
+        [Fact]
+        public async Task Create_Post_WhenServiceFailsWithNonDuplicateError_ReturnsRawErrorMessage()
+        {
+            // Arrange
+            var item = new TestPlanItem { TestCode = "BLOOD", Buyer = "PRJ1" };
+            var dto = new TestRequirementDto { TestCode = "BLOOD", Buyer = "PRJ1" };
+            var errors = new List<ApiErrorDto> { new() { Message = "This workgroup is not setup to do this test.", Code = "VALIDATION_ERROR" } };
+            var serviceResponse = ApiResponseDto<TestRequirementDto>.FailureResponse(errors, new ApiMetaDto());
+
+            _mapper.Map<TestRequirementDto>(item).Returns(dto);
+            _testRequirementService.CreateTestReqmtAsync(dto).Returns(serviceResponse);
+
+            // Act
+            var result = await _controller.Create(item);
+
+            // Assert – non-duplicate errors fall through to the generic handler
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            var value = GetJsonResultElement(jsonResult);
+            Assert.False(value.GetProperty("success").GetBoolean());
+            Assert.Equal("This workgroup is not setup to do this test.", value.GetProperty("message").GetString());
         }
 
         #endregion
@@ -586,6 +664,58 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.FPS.TestPlanJobControllerTest
             var value = GetJsonResultElement(jsonResult);
             Assert.True(value.GetProperty("success").GetBoolean());
             Assert.Equal(0m, value.GetProperty("totalTestCost").GetDecimal());
+        }
+
+        #endregion
+
+        #region IsDuplicateError — null Code and null Message branch coverage
+
+        [Fact]
+        public async Task Create_Post_WhenErrorCodeIsNullAndMessageContainsAlreadyExists_ReturnsFriendlyDuplicateMessage()
+        {
+            // Arrange — Code is null; IsDuplicateError must fall through to Message.Contains("already exists")
+            var item = new TestPlanItem { TestCode = "BLOOD", Buyer = "PRJ1" };
+            var dto = new TestRequirementDto { TestCode = "BLOOD", Buyer = "PRJ1" };
+            var errors = new List<ApiErrorDto> { new() { Code = string.Empty, Message = "A record already exists for this test code." } };
+            var serviceResponse = ApiResponseDto<TestRequirementDto>.FailureResponse(errors, new ApiMetaDto());
+
+            _mapper.Map<TestRequirementDto>(item).Returns(dto);
+            _testRequirementService.CreateTestReqmtAsync(dto).Returns(serviceResponse);
+
+            // Act
+            var result = await _controller.Create(item);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            var value = GetJsonResultElement(jsonResult);
+            Assert.False(value.GetProperty("success").GetBoolean());
+            const string expectedMessage = "This test code has already been added to this project. Please update the existing entry instead.";
+            Assert.Equal(expectedMessage, value.GetProperty("message").GetString());
+            var errorsArray = value.GetProperty("errors");
+            Assert.Equal(string.Empty, errorsArray[0].GetProperty("field").GetString());
+        }
+
+        [Fact]
+        public async Task Create_Post_WhenErrorCodeIsNullAndMessageIsNull_ReturnsGenericFailureWithFallbackMessage()
+        {
+            // Arrange — Code and Message are both empty strings → IsDuplicateError returns false, fallback message used
+            var item = new TestPlanItem { TestCode = "BLOOD", Buyer = "PRJ1" };
+            var dto = new TestRequirementDto { TestCode = "BLOOD", Buyer = "PRJ1" };
+            var errors = new List<ApiErrorDto> { new() { Code = string.Empty, Message = string.Empty } };
+            var serviceResponse = ApiResponseDto<TestRequirementDto>.FailureResponse(errors, new ApiMetaDto());
+
+            _mapper.Map<TestRequirementDto>(item).Returns(dto);
+            _testRequirementService.CreateTestReqmtAsync(dto).Returns(serviceResponse);
+
+            // Act
+            var result = await _controller.Create(item);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            var value = GetJsonResultElement(jsonResult);
+            Assert.False(value.GetProperty("success").GetBoolean());
+            // Message is empty string (not null), so the ?? fallback does not trigger
+            Assert.Equal(string.Empty, value.GetProperty("message").GetString());
         }
 
         #endregion

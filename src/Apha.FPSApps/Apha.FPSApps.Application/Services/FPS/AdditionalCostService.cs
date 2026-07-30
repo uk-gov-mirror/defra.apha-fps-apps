@@ -42,6 +42,9 @@ namespace Apha.FPSApps.Application.Services.FPS
 
         public async Task<ApiResponseDto<AdditionalCostDto>> UpdateAdditionalCostAsync(string jobCode, string account, AdditionalCostDto additionalCost)
         {
+            additionalCost.JobCode = jobCode;
+            if (string.IsNullOrWhiteSpace(additionalCost.OriginalAccount))
+                additionalCost.OriginalAccount = account;
             return await _fpsClient.FpsAdditionalCost.UpdateAdditionalCostAsync(additionalCost);
         }
 

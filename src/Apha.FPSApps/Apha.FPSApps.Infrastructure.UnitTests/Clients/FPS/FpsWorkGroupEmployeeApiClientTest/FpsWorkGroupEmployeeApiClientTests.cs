@@ -161,6 +161,47 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.FPS.FpsWorkGroupEmployee
         }
 
         [Fact]
+        public async Task GetAllActiveWorkGroupEmployeesAsync_WithSuccessResponse_ReturnsMappedActiveEmployeeList()
+        {
+            var query   = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var resList = new List<WorkGroupEmployeeRes>
+            {
+                new() { PactId = DefaultPactId, SpNumber = "SP001", WorkGroupGrade = DefaultWgGrade }
+            };
+            var apiResponse = new ApiResponse<List<WorkGroupEmployeeRes>> { Success = true, Data = resList };
+            var dtoList     = new List<WorkGroupEmployeeStaffDto>
+            {
+                new() { PactId = DefaultPactId, SpNumber = "SP001", WorkGroupGrade = DefaultWgGrade }
+            };
+            var expectedDto = ApiResponseDto<List<WorkGroupEmployeeStaffDto>>.SuccessResponse(dtoList);
+
+            _http.GetAsync<List<WorkGroupEmployeeRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<WorkGroupEmployeeStaffDto>>>(apiResponse).Returns(expectedDto);
+
+            var result = await _client.GetAllActiveWorkGroupEmployeesAsync(query, DefaultWgGrade);
+
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Single(result.Data!);
+        }
+
+        [Fact]
+        public async Task GetAllActiveWorkGroupEmployeesAsync_WithFailureResponse_ReturnsFailureDto()
+        {
+            var query       = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var apiResponse = new ApiResponse<List<WorkGroupEmployeeRes>> { Success = false };
+            var expectedDto = ApiResponseDto<List<WorkGroupEmployeeStaffDto>>.FailureResponse([], new ApiMetaDto());
+
+            _http.GetAsync<List<WorkGroupEmployeeRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<WorkGroupEmployeeStaffDto>>>(apiResponse).Returns(expectedDto);
+
+            var result = await _client.GetAllActiveWorkGroupEmployeesAsync(query, DefaultWgGrade);
+
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+        }
+
+        [Fact]
         public async Task DeleteWorkGroupEmployeeAsync_WithSuccessResponse_ReturnsSuccess()
         {
             var apiResponse = new ApiResponse<bool> { Success = true, Data = true };

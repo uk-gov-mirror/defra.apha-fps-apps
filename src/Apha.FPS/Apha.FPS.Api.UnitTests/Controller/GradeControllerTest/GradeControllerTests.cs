@@ -25,7 +25,6 @@ namespace Apha.FPS.Api.UnitTests.Controller.GradeControllerTest
             _controller  = new GradeController(_serviceMock, _mapperMock);
         }
 
-        // TRANSFORMENGINE: static helpers — minimal valid objects for test setup
         private static GradeDto BuildDto(string code = "A") =>
             new() { GradeCode = code, Description = "Grade A", AvSalary = 50000m, FpsYear = 2025 };
 

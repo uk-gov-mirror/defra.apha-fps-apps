@@ -18,12 +18,10 @@ namespace Apha.FPSApps.Application.UnitTests.Services.FPS.GradeServiceTest
         {
             _mockFpsClient       = Substitute.For<IFpsApiClient>();
             _mockGradeApiClient  = Substitute.For<IFpsGradeApiClient>();
-            // TRANSFORMENGINE: wire sub-client so _fpsClient.FpsGrade returns mock
             _mockFpsClient.FpsGrade.Returns(_mockGradeApiClient);
             _sut = new GradeService(_mockFpsClient);
         }
 
-        // TRANSFORMENGINE: static helper for concise DTO construction
         private static GradeDto BuildDto(string code = "A") =>
             new() { GradeCode = code, Description = "Grade A", AvSalary = 50000m, FpsYear = 2025 };
 
@@ -213,7 +211,6 @@ namespace Apha.FPSApps.Application.UnitTests.Services.FPS.GradeServiceTest
             var dto         = BuildDto("B");   // renaming A → B
             var apiResponse = ApiResponseDto<GradeDto>.SuccessResponse(dto);
 
-            // TRANSFORMENGINE: originalCode "A" must be forwarded unchanged to the API client
             _mockGradeApiClient.UpdateAsync("A", dto).Returns(apiResponse);
 
             // Act

@@ -23,7 +23,7 @@
                     <a class="dropdown-item" asp-area="PACT" asp-controller="Invoice" asp-action="Index">Project Invoices (Manual)</a>
                     <a class="dropdown-item" asp-area="PACT" asp-controller="InvoiceByMonth" asp-action="Index">Invoices by Month</a>
                     <a class="dropdown-item" asp-area="PACT" asp-controller="SubContract" asp-action="Index">SubContracts (Exceptional Costs) (Manual)</a>
-                    <a class="dropdown-item" href="#">SubContracts (Exceptional Costs) (Batch mode from RMS)</a>
+                    <a class="dropdown-item" asp-area="PACT" asp-controller="SubContractRms" asp-action="Index">SubContracts (Exceptional Costs) (Batch mode from RMS)</a>
                     <a class="dropdown-item" asp-area="PACT" asp-controller="SubContractByMonth" asp-action="Index">SubContracts By Month</a>
                 </div>
             </div>
@@ -58,7 +58,7 @@
                     <a class="dropdown-item" href="#">Time record data entry</a>
                     <a class="dropdown-item" href="#">Output record data entry</a>
                     <a class="dropdown-item" asp-area="PACT" asp-controller="WorkGroupReport" asp-action="Index">Create &amp; email time &amp; output summaries</a>
-                    <a class="dropdown-item" href="#">Create &amp; print individual COS90s</a>
+                    @* <a class="dropdown-item" href="#">Create &amp; print individual COS90s</a> *@
                     <a class="dropdown-item" asp-area="PACT" asp-controller="MonthlyOutputLog" asp-action="Index">Search Audit Log for Monthly Output Change</a>
                     <a class="dropdown-item" asp-area="PACT" asp-controller="MonthlyTimeLog" asp-action="Index">Search Audit Log for Monthly Time Change</a>
                 </div>
@@ -73,9 +73,9 @@
                 </button>
                 <div class="dropdown-menu" id="report">
                     <a class="dropdown-item" asp-area="PACT" asp-controller="ReleaseSummary" asp-action="Index">Release Summaries</a>
-                    <a class="dropdown-item" href="#">Recreate Summaries</a>
+                    <a class="dropdown-item" asp-area="PACT" asp-controller="RecreateSummary" asp-action="Index">Recreate Summaries</a>
                     <a class="dropdown-item" asp-area="PACT" asp-controller="RecreateSummaryLog" asp-action="Index">Log of Releases</a>
-                    <a class="dropdown-item" asp-area="PACT" asp-controller="ProfitCenterCostSummary" asp-action="Index">PC SOCT query</a>
+                    <a class="dropdown-item" asp-area="PACT" asp-controller="ProfitCenterCostSummary" asp-action="Index">PC SOCT Query</a>
                     <a class="dropdown-item" href="#">Report</a>
                 </div>
             </div>

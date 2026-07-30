@@ -5,6 +5,7 @@ using Apha.FPS.Application.Validation;
 using Apha.FPS.Core.Interfaces;
 using Apha.FPS.Core.Pagination;
 using AutoMapper;
+using Npgsql;
 
 namespace Apha.FPS.Application.Services
 {
@@ -52,8 +53,18 @@ namespace Apha.FPS.Application.Services
             }           
 
             var program = _mapper.Map<Core.Entities.Program>(programDto);
-            var addedProgram = await _programRepository.AddProgramAsync(program);
-            return _mapper.Map<ProgramDto>(addedProgram);
+
+            try
+            {
+                var addedProgram = await _programRepository.AddProgramAsync(program);
+                return _mapper.Map<ProgramDto>(addedProgram);
+            }
+            catch (Exception ex) when (IsUniqueViolation(ex))
+            {
+                throw new InvalidOperationException(
+                    $"Program '{programDto.ProgramNo}' already exists. " +
+                    "Please use a different program.", ex);
+            }
         }
 
         public async Task<ProgramDto> UpdateProgramAsync(ProgramDto programDto)
@@ -100,5 +111,21 @@ namespace Apha.FPS.Application.Services
 
             return await _programRepository.DeleteProgramAsync(programNo);
         }       
+
+        // Detects a unique/primary key constraint violation (SqlState 23505) which surfaces
+        // as a PostgresException, usually wrapped inside a DbUpdateException.
+        private static bool IsUniqueViolation(Exception? ex)
+        {
+            for (var current = ex; current is not null; current = current.InnerException)
+            {
+                if (current is PostgresException pgEx
+                    && pgEx.SqlState == PostgresErrorCodes.UniqueViolation)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 }

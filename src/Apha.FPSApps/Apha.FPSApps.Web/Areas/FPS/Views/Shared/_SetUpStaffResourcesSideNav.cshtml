@@ -1,0 +1,54 @@
+<script>
+    function toggleSidebar() {
+        const sidebar = document.querySelector('.sidenav');
+        sidebar.classList.toggle('collapsed');
+    }
+
+    function toggleSidenavGroup(btn) {
+        const expanded = btn.getAttribute('aria-expanded') === 'true';
+        btn.setAttribute('aria-expanded', !expanded);
+        const childList = document.getElementById(btn.getAttribute('aria-controls'));
+        if (childList) {
+            childList.classList.toggle('sidenav-children--hidden', expanded);
+        }
+    }
+</script>
+<nav class="sidenav flex-column flex-shrink-0" id="shortnav" aria-label="WorkGroup Resources navigation">
+    <button class="toggle-btn" onclick="toggleSidebar()" style="right: -8px; top: 30px;" aria-label="Toggle sidebar">
+        <img src="~/images/chevron-left-solid-full.svg" alt="side nav menu arrow" width="24" />
+    </button>
+    <ul>
+        <li>
+            <a class="dropdown-item sidenav-title"
+               asp-area="FPS" asp-controller="SetUpStaffResources" asp-action="Index">
+                Set Up Resources
+            </a>
+        </li>
+        @* Parent Node *@
+        <li class="sidenav-parent">
+            <a class="dropdown-item"
+               href="#"
+               role="button"
+               aria-expanded="false"
+               aria-controls="reviewPlansChildren"
+               onclick="toggleSidenavGroup(this); return false;">
+                Review Plans
+                <span class="sidenav-toggle-icon" aria-hidden="true">&#9660;</span>
+            </a>
+            @* Child Nodes *@
+            <ul id="reviewPlansChildren" class="sidenav-children sidenav-children--hidden">
+                <li>
+                    <a class="dropdown-item sidenav-child"
+                       asp-area="FPS" asp-controller="ResourceAllocation" asp-action="Index">
+                        Stage 2 Check Resource Allocation
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item sidenav-child" href="#">
+                        Staff/Project Pivot Table
+                    </a>
+                </li>
+            </ul>
+        </li>
+    </ul>
+</nav>

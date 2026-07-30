@@ -17,5 +17,15 @@ namespace Apha.PACT.Application.Interfaces
         Task<bool> SetSendEmailForProfitCentreWorkGroupsAsync(string profitCentre, short flag);
         Task<bool> SetSendEmailForAllWorkGroupsAsync(short flag);
         Task<bool> UpdateWorkGroupEmailAsync(string workGroupName, short sendEmail, string? emailRecipient);
+
+        // WorkGroup Maintenance CRUD + lookup operations (migrated from FPS).
+        Task<PaginatedResult<WorkGroupDto>> GetPagedAsync(QueryParameters<string> query);
+        Task<WorkGroupDto?> GetByKeyAsync(string workGroupName);
+        Task<WorkGroupDto> CreateAsync(WorkGroupDto dto);
+        Task<WorkGroupDto> UpdateAsync(string originalWorkGroupName, WorkGroupDto dto);
+        Task<bool> DeleteAsync(string workGroupName);
+        Task<IEnumerable<string>> GetAllProfitCentresAsync();
+        Task<IEnumerable<OwnerDto>> GetOwnersAsync();
+        Task<IEnumerable<double?>> GetCostCentresByProfitCentreAsync(string profitCentre);
     }
 }

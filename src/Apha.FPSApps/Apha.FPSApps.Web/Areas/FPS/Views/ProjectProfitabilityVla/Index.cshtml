@@ -25,13 +25,10 @@
                 <div class="govuk-form-group sup_margin_bottom_10">
                     <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16"
                            for="filterProjectStatus">Project Status Filter</label>
-                    @* TRANSFORMENGINE: static Status options rendered with manual <option> elements
-                           matching HTML prototype. asp-for binds to SelectedStatus for round-trip state. *@
                     <select class="govuk-select govuk-!-font-size-16 sup_select_option_width_100"
                             id="filterProjectStatus"
                             asp-for="SelectedStatus"
                             onchange="reloadProjectProfitabilityVlaGrid()">
-                        @* TRANSFORMENGINE: safe Razor option rendering — no @(...) in attribute area *@
                         @if (Model.SelectedStatus == "Approved")
                         {
                             <option value="">All statuses</option>
@@ -69,7 +66,6 @@
                 <div class="govuk-form-group sup_margin_bottom_10">
                     <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16"
                            for="filterProgram">Program Filter</label>
-                    @* TRANSFORMENGINE: dynamic program dropdown — asp-items bound to Model.ProgramList *@
                     <select class="govuk-select govuk-!-font-size-16 sup_select_option_width_100"
                             id="filterProgram"
                             asp-for="SelectedProgram"
@@ -85,7 +81,6 @@
                 <div class="govuk-form-group sup_margin_bottom_10">
                     <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16"
                            for="filterManager">Manager Filter</label>
-                    @* TRANSFORMENGINE: dynamic manager dropdown — asp-items bound to Model.ManagerList *@
                     <select class="govuk-select govuk-!-font-size-16 sup_select_option_width_100"
                             id="filterManager"
                             asp-for="SelectedManager"
@@ -101,7 +96,6 @@
                 <div class="govuk-form-group sup_margin_bottom_10">
                     <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16"
                            for="filterCustomer">Project Customer Filter</label>
-                    @* TRANSFORMENGINE: dynamic customer dropdown — asp-items bound to Model.CustomerList *@
                     <select class="govuk-select govuk-!-font-size-16 sup_select_option_width_100"
                             id="filterCustomer"
                             asp-for="SelectedCustomer"
@@ -125,12 +119,6 @@
         </div>
 
         @* ── DataGrid ────────────────────────────────────────────────────────── *@
-        @* TRANSFORMENGINE: DataGrid rendered via shared _DataGrid partial.
-               GridId = "projectProfitabilityVlaGrid" (from controller DataGridConfig).
-               AllowAdd/Edit/Delete = false — JS showAddButton:false; no edit/delete buttons.
-               ExtraFilterMethod = "getProjectProfitabilityVlaExtraFilters" merges 4 filter values
-               into each AJAX POST to LoadProjectProfitabilityVlaGrid.
-               gm.reloadGrid({ page: 1 }) used — NOT gm.reload() (does not exist). *@
         <div class="govuk-grid-row sup_margin_left_right_10 sup_margin_bottom_10">
             <div class="govuk-grid-column-full sup_p_0">
                 <div id="gridContainer_projectProfitabilityVlaGrid">
@@ -140,10 +128,6 @@
         </div>
 
         @* ── Summary totals bar ──────────────────────────────────────────────── *@
-        @* TRANSFORMENGINE: 9 read-only currency inputs matching HTML prototype ppf-total-* elements.
-               Populated via AJAX call to GetProjectProfitabilityVlaSummary after grid reload.
-               fps-profit-offtarget CSS class toggled on ppf-total-off-target when value is negative
-               (mirrors JS: classList.toggle('fps-profit-offtarget', totals.offTarget < 0)). *@
         <div id="projectProfitabilitySummary"
              class="sup_margin_left_right_10 financial-summary govuk-!-margin-bottom-2">
             <div class="summary-row ppf-total-summary-row govuk-!-margin-top-0 govuk-!-margin-bottom-0">
@@ -261,8 +245,6 @@
                 </div>
 
                 @* Off-Target — fps-profit-offtarget CSS class applied when value is negative *@
-                @* TRANSFORMENGINE: negative-value red highlight toggled via JS after AJAX summary reload;
-                       initial server-side render also applies the class if TotalOffTarget < 0. *@
                 <div class="govuk-form-group ppf-total-summary-item govuk-!-margin-bottom-0 govuk-!-margin-left-2">
                     <label class="govuk-label govuk-!-font-weight-bold sup_margin_0"
                            for="ppf-total-off-target">Off-Target</label>
@@ -296,7 +278,6 @@
 @section Scripts {
     <script>
         // ── Grid reload ──────────────────────────────────────────────────────────
-        // TRANSFORMENGINE: gm.reloadGrid({ page: 1 }) — NOT gm.reload() (does not exist).
         //   GridId = "projectProfitabilityVlaGrid" (matches controller DataGridConfig).
         function reloadProjectProfitabilityVlaGrid() {
             var gm = window['gridManager_projectProfitabilityVlaGrid'];
@@ -306,7 +287,6 @@
         }
 
         // ── Extra filter method ──────────────────────────────────────────────────
-        // TRANSFORMENGINE: called automatically by _DataGrid on every reload (ExtraFilterMethod).
         //   Returns the 4 filter values as query params to merge into the DataGrid AJAX POST body.
         //   Parameter names match controller LoadProjectProfitabilityVlaGrid action params exactly:
         //   projectStatus, programNo, manager, customer.
@@ -320,7 +300,6 @@
         }
 
         // ── Clear filters ────────────────────────────────────────────────────────
-        // TRANSFORMENGINE: resets all 4 filter dropdowns and triggers grid reload.
         //   Mirrors projectprofitability_vla.js clearFilters() behaviour.
         function clearProjectProfitabilityVlaFilters() {
             ['filterProjectStatus', 'filterProgram', 'filterManager', 'filterCustomer'].forEach(function (id) {
@@ -331,7 +310,6 @@
         }
 
         // ── Summary totals update ────────────────────────────────────────────────
-        // TRANSFORMENGINE: fetches aggregate totals from GetProjectProfitabilityVlaSummary AJAX endpoint
         //   and updates the 9 ppf-total-* readonly inputs.
         //   Mirrors projectprofitability_vla.js updateSummary() + formatCurrency() behaviour.
         //   Called on page load and after every grid reload.
@@ -360,7 +338,6 @@
                 document.getElementById('ppf-total-target-profit').value = formatSummaryValue(data.totalTargetProfit);
                 document.getElementById('ppf-total-off-target').value    = formatSummaryValue(data.totalOffTarget);
 
-                // TRANSFORMENGINE: toggle fps-profit-offtarget CSS class when off-target is negative
                 //   mirrors: classList.toggle('fps-profit-offtarget', totals.offTarget < 0)
                 var offTargetEl = document.getElementById('ppf-total-off-target');
                 if (offTargetEl) {

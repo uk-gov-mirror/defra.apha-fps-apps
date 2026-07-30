@@ -966,7 +966,6 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PIMS.PimsMilestoneApiCli
             var result = await _client.DeleteMilestoneFormDatesAsync(parent, year);
 
             // Assert
-            Assert.NotNull(result);
             Assert.True(result.Success);
             await _http.Received(1).DeleteAsync<object>(url);
             _mapper.Received(1).Map<ApiResponseDto<object>>(apiResponse);
@@ -1123,7 +1122,6 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PIMS.PimsMilestoneApiCli
             var result = await _client.GetLogMilestonesAsync(parameters, null, null, null);
 
             // Assert
-            Assert.NotNull(result);
             Assert.False(result.Success);
         }
 
@@ -1271,11 +1269,11 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PIMS.PimsMilestoneApiCli
         #region GetStagingRowsAsync
 
         [Fact]
-        public async Task GetStagingRowsAsync_WithProject_AppendsProjectToUrl()
+        public async Task GetStagingRowsAsync_WithId_ReturnsRows()
         {
             // Arrange
-            const string project = "PP001";
-            var expectedUrl = $"{PimsApiEndpoints.GetStagingMilestones}?project={Uri.EscapeDataString(project)}";
+            const int id = 1;
+            var expectedUrl = $"{PimsApiEndpoints.GetStagingMilestones}?id={id}";
             var apiResponse = new ApiResponse<List<StagingMilestoneRes>> { Success = true, Data = new List<StagingMilestoneRes>() };
             var mappedDto   = ApiResponseDto<List<StagingMilestoneDto>>.SuccessResponse(new List<StagingMilestoneDto>());
 
@@ -1283,37 +1281,19 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PIMS.PimsMilestoneApiCli
             _mapper.Map<ApiResponseDto<List<StagingMilestoneDto>>>(apiResponse).Returns(mappedDto);
 
             // Act
-            var result = await _client.GetStagingRowsAsync(project);
+            var result = await _client.GetStagingRowsAsync(id);
 
             // Assert
             Assert.True(result.Success);
             await _http.Received(1).GetAsync<List<StagingMilestoneRes>>(Arg.Is<string>(u => u == expectedUrl));
         }
 
-        [Theory]
-        [InlineData(null)]
-        [InlineData("")]
-        [InlineData("   ")]
-        public async Task GetStagingRowsAsync_WhenProjectNullOrWhitespace_UsesBaseUrl(string? project)
-        {
-            // Arrange
-            var apiResponse = new ApiResponse<List<StagingMilestoneRes>> { Success = true, Data = new List<StagingMilestoneRes>() };
-            var mappedDto   = ApiResponseDto<List<StagingMilestoneDto>>.SuccessResponse(new List<StagingMilestoneDto>());
-
-            _http.GetAsync<List<StagingMilestoneRes>>(PimsApiEndpoints.GetStagingMilestones).Returns(apiResponse);
-            _mapper.Map<ApiResponseDto<List<StagingMilestoneDto>>>(apiResponse).Returns(mappedDto);
-
-            // Act
-            await _client.GetStagingRowsAsync(project);
-
-            // Assert
-            await _http.Received(1).GetAsync<List<StagingMilestoneRes>>(Arg.Is<string>(u => u == PimsApiEndpoints.GetStagingMilestones));
-        }
-
         [Fact]
         public async Task GetStagingRowsAsync_WhenApiReturnsFailure_ReturnsFailureResponse()
         {
             // Arrange
+            const int id = 1;
+            var expectedUrl = $"{PimsApiEndpoints.GetStagingMilestones}?id={id}";
             var errors      = new List<ApiError> { new() { Message = "Not found", Code = "NOT_FOUND" } };
             var apiResponse = new ApiResponse<List<StagingMilestoneRes>> { Success = false, Errors = errors };
             var mappedDto   = new ApiResponseDto<List<StagingMilestoneDto>>
@@ -1323,11 +1303,11 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PIMS.PimsMilestoneApiCli
                 Meta    = new ApiMetaDto()
             };
 
-            _http.GetAsync<List<StagingMilestoneRes>>(PimsApiEndpoints.GetStagingMilestones).Returns(apiResponse);
+            _http.GetAsync<List<StagingMilestoneRes>>(expectedUrl).Returns(apiResponse);
             _mapper.Map<ApiResponseDto<List<StagingMilestoneDto>>>(apiResponse).Returns(mappedDto);
 
             // Act
-            var result = await _client.GetStagingRowsAsync(null);
+            var result = await _client.GetStagingRowsAsync(id);
 
             // Assert
             Assert.False(result.Success);
@@ -1573,18 +1553,18 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PIMS.PimsMilestoneApiCli
             var expectedUrl = string.Format(PimsApiEndpoints.ValidateStagingMilestones, Uri.EscapeDataString(project)) +
                               $"?typeId={Uri.EscapeDataString(typeId)}&isDeliverableMode={isDeliverableMode}";
 
-            var apiResponse = new ApiResponse<List<StagingMilestoneRes>> { Success = true, Data = new List<StagingMilestoneRes> { new() { Id = 1 } } };
-            var mappedDto   = ApiResponseDto<List<StagingMilestoneDto>>.SuccessResponse(new List<StagingMilestoneDto> { new() { Id = 1 } });
+            var apiResponse = new ApiResponse<object> { Success = true, Data = new object() };
+            var mappedDto   = ApiResponseDto<object>.SuccessResponse(new object());
 
-            _http.PostAsync<object, List<StagingMilestoneRes>>(expectedUrl, Arg.Any<object>()).Returns(apiResponse);
-            _mapper.Map<ApiResponseDto<List<StagingMilestoneDto>>>(apiResponse).Returns(mappedDto);
+            _http.PostAsync<object, object>(expectedUrl, Arg.Any<object>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<object>>(apiResponse).Returns(mappedDto);
 
             // Act
             var result = await _client.ValidateStagingAsync(project, typeId, isDeliverableMode);
 
             // Assert
             Assert.True(result.Success);
-            await _http.Received(1).PostAsync<object, List<StagingMilestoneRes>>(Arg.Is<string>(u => u == expectedUrl), Arg.Any<object>());
+            await _http.Received(1).PostAsync<object, object>(Arg.Is<string>(u => u == expectedUrl), Arg.Any<object>());
         }
 
         [Fact]
@@ -1595,17 +1575,17 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PIMS.PimsMilestoneApiCli
             const bool isDeliverableMode = false;
             var expectedUrl = string.Format(PimsApiEndpoints.ValidateStagingMilestones, Uri.EscapeDataString(project)) +
                               $"?isDeliverableMode={isDeliverableMode}";
-            var apiResponse = new ApiResponse<List<StagingMilestoneRes>> { Success = true, Data = new List<StagingMilestoneRes>() };
-            var mappedDto   = ApiResponseDto<List<StagingMilestoneDto>>.SuccessResponse(new List<StagingMilestoneDto>());
+            var apiResponse = new ApiResponse<object> { Success = true, Data = new object() };
+            var mappedDto   = ApiResponseDto<object>.SuccessResponse(new object());
 
-            _http.PostAsync<object, List<StagingMilestoneRes>>(expectedUrl, Arg.Any<object>()).Returns(apiResponse);
-            _mapper.Map<ApiResponseDto<List<StagingMilestoneDto>>>(apiResponse).Returns(mappedDto);
+            _http.PostAsync<object, object>(expectedUrl, Arg.Any<object>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<object>>(apiResponse).Returns(mappedDto);
 
             // Act
             await _client.ValidateStagingAsync(project, null, isDeliverableMode);
 
             // Assert
-            await _http.Received(1).PostAsync<object, List<StagingMilestoneRes>>(Arg.Is<string>(u => u == expectedUrl), Arg.Any<object>());
+            await _http.Received(1).PostAsync<object, object>(Arg.Is<string>(u => u == expectedUrl), Arg.Any<object>());
         }
 
         [Fact]
@@ -1616,16 +1596,16 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PIMS.PimsMilestoneApiCli
             var expectedUrl = string.Format(PimsApiEndpoints.ValidateStagingMilestones, Uri.EscapeDataString(project)) +
                               "?isDeliverableMode=True";
             var errors = new List<ApiError> { new() { Message = "Validation failed", Code = "VALIDATION_ERROR" } };
-            var apiResponse = new ApiResponse<List<StagingMilestoneRes>> { Success = false, Errors = errors };
-            var mappedDto = new ApiResponseDto<List<StagingMilestoneDto>>
+            var apiResponse = new ApiResponse<object> { Success = false, Errors = errors };
+            var mappedDto = new ApiResponseDto<object>
             {
                 Success = false,
                 Errors = new List<ApiErrorDto> { new() { Message = "Validation failed", Code = "VALIDATION_ERROR" } },
                 Meta = new ApiMetaDto()
             };
 
-            _http.PostAsync<object, List<StagingMilestoneRes>>(expectedUrl, Arg.Any<object>()).Returns(apiResponse);
-            _mapper.Map<ApiResponseDto<List<StagingMilestoneDto>>>(apiResponse).Returns(mappedDto);
+            _http.PostAsync<object, object>(expectedUrl, Arg.Any<object>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<object>>(apiResponse).Returns(mappedDto);
 
             // Act
             var result = await _client.ValidateStagingAsync(project, null, true);

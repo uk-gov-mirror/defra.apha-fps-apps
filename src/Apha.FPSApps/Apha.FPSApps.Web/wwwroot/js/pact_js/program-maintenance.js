@@ -188,6 +188,8 @@ function initializeMultiColumnDropdown() {
         dropdownId: 'programmSelectDropdown',
         containerSelector: '#programSelectMultiDropdown',//name as per cshtml div id
         placeholder: 'Select a Program',
+        ariaLabelledBy: 'programSelectLabel',
+        searchLabelText: 'Search programs by code or description',
         showSerialNumber: false,
         searchPlaceholder: 'Search by code or description',
         labelText: '',//this label will come at the top of dropdown, can be set as per requirement

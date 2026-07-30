@@ -35,7 +35,6 @@ namespace Apha.FPS.Application.UnitTests.Services.GradeServiceTest
                 _mockMapper);
         }
 
-        // TRANSFORMENGINE: static helpers — minimal valid objects for test setup
         private static GradeDto BuildDto(string code = "A") =>
             new() { GradeCode = code, Description = "Grade A", AvSalary = 50000m, FpsYear = 2025 };
 
@@ -201,7 +200,6 @@ namespace Apha.FPS.Application.UnitTests.Services.GradeServiceTest
             var dto    = BuildDto("A");
             var entity = BuildEntity("A");
 
-            // TRANSFORMENGINE: duplicate guard — GetByIdAsync returns non-null → service throws
             _mockRepository.GetByIdAsync("A").Returns(entity);
 
             // Act & Assert
@@ -216,7 +214,6 @@ namespace Apha.FPS.Application.UnitTests.Services.GradeServiceTest
             var entity  = BuildEntity("A");
             var created = BuildEntity("A");
 
-            // TRANSFORMENGINE: duplicate guard — GetByIdAsync returns null → no duplicate
             _mockRepository.GetByIdAsync("A").Returns((Grade?)null);
             _mockMapper.Map<Grade>(dto).Returns(entity);
             _mockRepository.CreateAsync(entity).Returns(created);
@@ -265,7 +262,6 @@ namespace Apha.FPS.Application.UnitTests.Services.GradeServiceTest
             // Arrange
             var dto = BuildDto("A");
 
-            // TRANSFORMENGINE: existence guard — original code not in DB → KeyNotFoundException
             _mockRepository.GetByIdAsync("NOTEXIST").Returns((Grade?)null);
 
             // Act & Assert
@@ -280,7 +276,6 @@ namespace Apha.FPS.Application.UnitTests.Services.GradeServiceTest
             var conflictEntity = BuildEntity("B");
             var dto            = BuildDto("B"); // renaming A → B, but B already exists
 
-            // TRANSFORMENGINE: rename conflict guard — new code already exists → InvalidOperationException
             _mockRepository.GetByIdAsync("A").Returns(originalEntity);
             _mockRepository.GetByIdAsync("B").Returns(conflictEntity);
 
@@ -354,7 +349,6 @@ namespace Apha.FPS.Application.UnitTests.Services.GradeServiceTest
         public async Task DeleteAsync_ThrowsKeyNotFoundException_WhenGradeNotFound()
         {
             // Arrange
-            // TRANSFORMENGINE: existence guard — GetByIdAsync returns null → KeyNotFoundException
             _mockRepository.GetByIdAsync("NOTEXIST").Returns((Grade?)null);
 
             // Act & Assert

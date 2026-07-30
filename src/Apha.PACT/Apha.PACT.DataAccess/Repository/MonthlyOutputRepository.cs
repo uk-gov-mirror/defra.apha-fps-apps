@@ -54,5 +54,12 @@ namespace Apha.PACT.DataAccess.Repository
 
             return await ApplyPaging(baseQuery, query.Page, query.PageSize);
         }
+
+        public async Task<bool> ExistsByTestCodeAndWorkGroupAsync(string testCode, string workGroup)
+        {
+            return await _context.MonthlyOutputs
+                .AsNoTracking()
+                .AnyAsync(m => m.TestCode == testCode && m.WorkGroup == workGroup);
+        }
     }
 }

@@ -167,6 +167,19 @@ namespace Apha.FPS.DataAccess.Repositories
             return query;
         }
 
+        public async Task<List<WorkgroupGrade>> GetWorkgroupGradesByWorkGroupAsync(
+            string workGroup)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(workGroup);
+
+            return await _dbContext.WorkgroupGrades
+                .AsNoTracking()
+                .Where(wg => wg.Workgroup == workGroup)
+                .Distinct()
+                .OrderBy(wg => wg.WgGrade)
+                .ToListAsync();
+        }
+
         // Existing methods for backward compatibility
         public async Task<PagedData<WorkGroupGradeView>> GetWorkGroupGradesAsync(
             PaginationParameters<string> query,

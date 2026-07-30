@@ -32,7 +32,8 @@ namespace Apha.FPSApps.Web.Models.Components.DataGrid
                     ColumnType = columnAttr?.Type ?? GridColumnType.Text,
                     IsFilterable = isFilterable,
                     FilterType = columnAttr?.Type,
-                    FilterOptions = filterOptions
+                    FilterOptions = filterOptions,
+                    CssClass = columnAttr?.CssClass ?? string.Empty
                 });
             }
             return columns;

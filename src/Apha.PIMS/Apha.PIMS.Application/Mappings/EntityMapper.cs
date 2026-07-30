@@ -1,4 +1,4 @@
-﻿using Apha.PIMS.Application.Dtos;
+using Apha.PIMS.Application.Dtos;
 using Apha.PIMS.Application.Pagination;
 using Apha.PIMS.Core.Entities;
 using Apha.PIMS.Core.Pagination;
@@ -13,7 +13,6 @@ namespace Apha.PIMS.Application.Mappings
             CreateMap(typeof(PaginationParameters<>), typeof(QueryParameters<>)).ReverseMap();
             CreateMap(typeof(PagedData<>), typeof(PaginatedResult<>)).ReverseMap();
             CreateMap<PaginationData, PaginationDto>().ReverseMap();
-
             CreateMap<ProjectListView, ProjectListViewDto>().ReverseMap();
             CreateMap<ProjectListMilestone, ProjectListMilestoneDto>().ReverseMap();
             CreateMap<ProjectDetailsMilestone, ProjectDetailsMilestoneDto>().ReverseMap();
@@ -35,21 +34,19 @@ namespace Apha.PIMS.Application.Mappings
             CreateMap<PactPayCalc, PactPayDto>().ReverseMap();
             CreateMap<ProjectMonthFinal, MonthlyPactDto>().ReverseMap();
             CreateMap<FpsYearTotal, FpsYearTotalsDto>().ReverseMap();
-
             CreateMap<Milestone, MilestoneDto>()
                .ForMember(dest => dest.IsLate, opt => opt.Ignore());
             CreateMap<MilestoneDto, Milestone>();
-
-
-
             CreateMap<MilestoneType, MilestoneTypeDto>().ReverseMap();
-
             CreateMap<MilestoneFormDates, MilestoneFormDatesDto>().ReverseMap();
-
             CreateMap<LogMilestone, LogMilestoneDto>().ReverseMap();
             CreateMap<RadTrackInvoice, RadTrackInvoiceDto>().ReverseMap();
             CreateMap<RadTrackInvoiceTotals, RadTrackInvoiceTotalsDto>().ReverseMap();
             CreateMap<StagingMilestone, StagingMilestoneDto>().ReverseMap();
+            CreateMap<YearlyFinancialData, YearlyFinancialDataDto>().ReverseMap();
+            CreateMap<PactProjectYearCosts, PactProjectYearCostsDto>().ReverseMap();
+
+            CreateMap<ProjectYearManager, ProjectYearManagerDto>().ReverseMap();
         }
     }
 }

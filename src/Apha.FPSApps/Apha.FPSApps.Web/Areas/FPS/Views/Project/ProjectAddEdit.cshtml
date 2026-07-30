@@ -165,38 +165,14 @@
 
                                 <div class="govuk-form-group sup_margin_0">
                                     <label class="govuk-label required" asp-for="Manager">Manager:</label>
-                                    <div style="position: relative;">
-                                        <input type="text" id="ManagerDisplay" placeholder="Select Manager" autocomplete="off"
-                                               class="govuk-input govuk-!-font-size-16 down-arrow-img" style="width:100%; cursor:pointer;" readonly />
-                                        <div id="ManagerDropdownPanel" style="display:none; position:absolute; top:100%; left:0; width:100%;
-                                                max-height:260px; overflow-y:auto; background:#fff; border:1px solid #b1b4b6;
-                                                box-shadow:0 4px 8px rgba(0,0,0,.2); z-index:2000;">
-                                            <input type="text" id="ManagerSearchBox" placeholder="Type to search manager"
-                                                   style="width:100%; padding:6px 8px; border:0; border-bottom:1px solid #b1b4b6; outline:none; box-sizing:border-box;" />
-                                            <table style="width:100%; border-collapse:collapse; font-size:14px;">
-                                                <thead style="background:#f3f2f1; position:sticky; top:0; z-index:10;">
-                                                    <tr>
-                                                        <th style="padding:6px 8px; text-align:left;">Name</th>
-                                                        <th style="padding:6px 8px; text-align:left;">Work Group</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody id="ManagerDropdownBody">
-                                                    @foreach (var item in Model.ManagerList.Where(i => !string.IsNullOrEmpty(i.Value)))
-                                                    {
-                                                        var parts = item.Text.Split('|');
-                                                        var mgrName  = parts[0].Trim();
-                                                        var mgrGroup = parts.Length > 1 ? parts[1].Trim() : string.Empty;
-                                                        <tr data-value="@item.Value" data-display="@mgrName" style="cursor:pointer;">
-                                                            <td style="padding:6px 8px; border-bottom:1px solid #f3f2f1;">@mgrName</td>
-                                                            <td style="padding:6px 8px; border-bottom:1px solid #f3f2f1;">@mgrGroup</td>
-                                                        </tr>
-                                                    }
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                    <select asp-for="Manager" asp-items="@Model.ManagerList" class="govuk-select sup_select_option_width_100" required style="display:none;"></select>
-                                    <span asp-validation-for="Manager" class="govuk-error-message" style="display:none;"></span>
+                                    @await Html.PartialAsync("_ManagerPicker", new Apha.FPSApps.Web.Areas.FPS.Models.ManagerPickerViewModel
+                                    {
+                                        ManagerList = Model.ManagerList,
+                                        FieldName = "Manager",
+                                        ShowGrade = false,
+                                        Required = true,
+                                        SelectCssClass = "govuk-select sup_select_option_width_100"
+                                    })
                                 </div>
 
                                 <div class="govuk-form-group sup_margin_0">
@@ -387,7 +363,7 @@
         // ── Currency helpers (top-level so they are always available) ──────────
 
         function formatCurrency(value) {
-            return '\u00A3' + parseFloat(value || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            return parseFloat(value || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
         }
 
         function parseCurrencyValue(val) {
@@ -395,6 +371,21 @@
         }
 
         var currencyFieldNames = ['CustIncome', 'TransferIncome', 'Profit', 'BudgetCvl', 'PvsIncome', 'PlanCaseWorkDebit', 'CarryOver', 'CarryOverSeed'];
+
+        function scrollToFirstError() {
+            // Wait one tick for the DOM to render error messages
+            setTimeout(function () {
+                var firstError = document.querySelector('.govuk-error-message:not([style*="display: none"]):not([style*="display:none"])');
+                if (!firstError) return;
+                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Try to focus the associated input
+                var formGroup = firstError.closest('.govuk-form-group');
+                if (formGroup) {
+                    var input = formGroup.querySelector('input:not([type="hidden"]):not([readonly]), select, textarea');
+                    if (input) input.focus({ preventScroll: true });
+                }
+            }, 50);
+        }
 
         function stripCurrencyFormatting() {
             currencyFieldNames.forEach(function (name) {
@@ -424,6 +415,7 @@
                             $field.val(formatCurrency(raw));
                         }
                     });
+                    scrollToFirstError();
                     return;
                 }
                 submitForm(formId, isEdit, parentProject);
@@ -558,6 +550,7 @@
                     }
                 } else {
                     displayServerValidationErrors(result.errors, result.message, '#main-content');
+                    scrollToFirstError();
                 }
             })
             .catch(function (err) {
@@ -657,47 +650,7 @@
                 });
             }
 
-            // Manager multi-column dropdown
-            var managerDisplay = document.getElementById('ManagerDisplay');
-            var managerSelect  = document.getElementById('Manager');
-            var managerPanel   = document.getElementById('ManagerDropdownPanel');
-            var managerSearch  = document.getElementById('ManagerSearchBox');
-            var managerBody    = document.getElementById('ManagerDropdownBody');
-
-            if (managerDisplay && managerSelect && managerPanel && managerSearch && managerBody) {
-                if (managerSelect.value) {
-                    var matchManagerRow = managerBody.querySelector('tr[data-value="' + managerSelect.value + '"]');
-                    managerDisplay.value = matchManagerRow ? matchManagerRow.getAttribute('data-display') : managerSelect.value;
-                }
-                managerDisplay.addEventListener('click', function (e) {
-                    e.stopPropagation();
-                    managerPanel.style.display = managerPanel.style.display === 'none' ? 'block' : 'none';
-                    if (managerPanel.style.display === 'block') { managerSearch.value = ''; filterManagerRows(); managerSearch.focus(); }
-                });
-                managerSearch.addEventListener('input', filterManagerRows);
-                function filterManagerRows() {
-                    var q = managerSearch.value.toLowerCase();
-                    managerBody.querySelectorAll('tr').forEach(function (row) {
-                        row.style.display = row.textContent.toLowerCase().indexOf(q) !== -1 ? '' : 'none';
-                    });
-                }
-                managerBody.querySelectorAll('tr').forEach(function (row) {
-                    row.addEventListener('click', function () {
-                        managerDisplay.value = this.getAttribute('data-display');
-                        var val = this.getAttribute('data-value');
-                        Array.from(managerSelect.options).forEach(function (o) { o.selected = o.value === val; });
-                        managerSelect.dispatchEvent(new Event('change'));
-                        managerPanel.style.display = 'none';
-                    });
-                    row.addEventListener('mouseenter', function () { this.style.backgroundColor = '#f3f2f1'; });
-                    row.addEventListener('mouseleave', function () { this.style.backgroundColor = ''; });
-                });
-                document.addEventListener('click', function (e) {
-                    if (!managerDisplay.contains(e.target) && !managerPanel.contains(e.target)) {
-                        managerPanel.style.display = 'none';
-                    }
-                });
-            }
+            // Manager multi-column dropdown is initialised by the shared _ManagerPicker partial.
 
             // Cost Centre multi-column dropdown
             var costCentreDisplay = document.getElementById('CostCentreDisplay');

@@ -42,7 +42,7 @@
                        type="text"
                        value="@Model!.MNumber"
                        maxlength="50"
-                       disabled
+                       readonly
                        aria-describedby="modal-capsstaff-mnumber-error" />
             }
             else
@@ -75,6 +75,7 @@
                    value="@Model?.Name"
                    maxlength="50"
                    required aria-required="true"
+                   data-val-required="Name is required"
                    aria-describedby="modal-capsstaff-name-error" />
             <p id="modal-capsstaff-name-error" class="govuk-error-message" hidden>
                 <span class="govuk-visually-hidden">Error:</span> Enter a name

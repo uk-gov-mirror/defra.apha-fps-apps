@@ -3,6 +3,7 @@ using Apha.Common.Contracts.PACT;
 using Apha.PACT.Application.Dtos;
 using Apha.PACT.Application.Interfaces;
 using Apha.PACT.Application.Pagination;
+using Apha.PACT.Core.Interfaces;
 using Asp.Versioning;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
@@ -21,11 +22,16 @@ namespace Apha.PACT.Api.Controllers
     {
         private readonly IProjectSubContractService _service;
         private readonly IMapper _mapper;
+        private readonly ICurrentUserContext _currentUserContext;
 
-        public ProjectSubContractController(IProjectSubContractService service, IMapper mapper)
+        public ProjectSubContractController(
+            IProjectSubContractService service,
+            IMapper mapper,
+            ICurrentUserContext currentUserContext)
         {
             _service = service;
             _mapper = mapper;
+            _currentUserContext = currentUserContext;
         }
 
         /// <summary>Retrieves a paginated list of Project Sub-Contract records.</summary>
@@ -102,6 +108,58 @@ namespace Apha.PACT.Api.Controllers
         {
             MonthlySubContractsPivotDto result = await _service.GetMonthlySubContractsSummaryAsync(query);
             return Ok(_mapper.Map<MonthlySubContractsPivotRes>(result));
+        }
+
+        [HttpGet("rms/failed")]
+        public async Task<IActionResult> GetFailedSubContractRms([FromQuery] QueryParameters<string> query)
+        {
+            var importedBy = _currentUserContext.UserId;
+            var result = await _service.GetFailedSubContractRmsAsync(query, importedBy);
+            return Ok(_mapper.Map<PaginationRes<SubContractRmsImportRowRes>>(result));
+        }
+
+        [HttpGet("rms/failed/{id}")]
+        public async Task<IActionResult> GetFailedSubContractRmsById(int id)
+        {
+            var importedBy = _currentUserContext.UserId;
+            var result = await _service.GetFailedSubContractRmsByIdAsync(id, importedBy);
+            if (result == null)
+                throw new KeyNotFoundException($"Failed Sub-Contract with ID {id} not found.");
+            return Ok(_mapper.Map<SubContractRmsImportRowRes>(result));
+        }
+
+        [HttpPut("rms/failed/{id}")]
+        public async Task<IActionResult> SaveFailedSubContractRms(int id, [FromBody] SubContractRmsImportRowReq request)
+        {
+            var importedBy = _currentUserContext.UserId;
+            var dto = _mapper.Map<SubContractRmsImportRowDto>(request);
+            var movedToSubContract = await _service.SaveFailedSubContractRmsAsync(id, dto, importedBy);
+            return Ok(movedToSubContract);
+        }
+
+        [HttpDelete("rms/failed/{id}")]
+        public async Task<IActionResult> DeleteFailedSubContractRmsById(int id)
+        {
+            var importedBy = _currentUserContext.UserId;
+            var deleted = await _service.DeleteFailedSubContractRmsByIdAsync(id, importedBy);
+            return Ok(deleted);
+        }
+
+        [HttpDelete("rms/failed/user")]
+        public async Task<IActionResult> DeleteFailedSubContractRmsByUser()
+        {
+            var importedBy = _currentUserContext.UserId;
+            var deletedCount = await _service.DeleteFailedSubContractRmsByUserAsync(importedBy);
+            return Ok(deletedCount > 0);
+        }
+
+        [HttpPost("rms/import")]
+        public async Task<IActionResult> ImportSubContractRms([FromBody] SubContractRmsImportReq request)
+        {
+            var importedBy = _currentUserContext.UserId;
+            var dto = _mapper.Map<SubContractRmsImportDto>(request);
+            var result = await _service.ImportSubContractRmsAsync(dto, importedBy);
+            return Ok(_mapper.Map<SubContractRmsImportRes>(result));
         }
     }
 }

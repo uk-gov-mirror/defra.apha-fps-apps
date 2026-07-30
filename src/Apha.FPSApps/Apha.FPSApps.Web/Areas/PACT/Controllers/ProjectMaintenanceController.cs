@@ -367,7 +367,7 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
         {
             var workGroups = await _jobCodeService.GetAllWorkGroupsAsync();
             var types = await _jobCodeService.GetTypesAsync();
-            ViewBag.WorkGroups = workGroups.Data?.Select(w => new SelectListItem(w.WorkGroupName, w.WorkGroupName)).ToList() ?? [];
+            ViewBag.WorkGroupsData = workGroups.Data?.Select(w => new SelectListItem(w.WorkGroupName ??  w.WorkGroupName, w.ProfitCentre)).ToList() ?? [];
             ViewBag.Types = types.Data?.Select(t => new SelectListItem(t, t)).ToList() ?? [];
             return PartialView("_AddEditJobCode", new JobCodeViewModel { ParentProject = parentProject });
         }
@@ -415,7 +415,7 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
 
             var workGroups = await _jobCodeService.GetAllWorkGroupsAsync();
             var types = await _jobCodeService.GetTypesAsync();
-            ViewBag.WorkGroups = workGroups.Data?.Select(w => new SelectListItem(w.WorkGroupName, w.WorkGroupName)).ToList() ?? [];
+            ViewBag.WorkGroupsData = workGroups.Data?.Select(w => new { Value = w.WorkGroupName, Text = (string.IsNullOrEmpty(w.ProfitCentre) ? "" : w.ProfitCentre) }).ToList() ?? [];
             ViewBag.Types = types.Data?.Select(t => new SelectListItem(t, t)).ToList() ?? [];
             return PartialView("_AddEditJobCode", _mapper.Map<JobCodeViewModel>(result.Data));
         }

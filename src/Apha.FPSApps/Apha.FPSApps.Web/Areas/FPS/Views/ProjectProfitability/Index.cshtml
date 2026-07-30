@@ -241,8 +241,7 @@
 
                 // ── Programme dropdown — no page refresh ──────────────────────────────────
                 $('#programNo').on('change', function () {
-                    var val = $(this).val();
-                    if (!val) return;
+                    var val = $(this).val() || '';
                     currentProgramNo = val;
                     $.ajax({
                         url: '@Url.Action("SaveProgrammeSession", "ProgrammeSelect", new { area = "FPS" })',
@@ -255,8 +254,7 @@
 
                 // ── Project group dropdown — no page refresh ──────────────────────────────
                 $('#projectGroup').on('change', function () {
-                    var val = $(this).val();
-                    if (!val) return;
+                    var val = $(this).val() || '';
                     currentProjectGroup = val;
                     $.ajax({
                         url: '@Url.Action("SaveProjectGroupSession", "ProgramProject", new { area = "FPS" })',

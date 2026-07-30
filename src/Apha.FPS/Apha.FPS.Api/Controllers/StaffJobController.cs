@@ -82,6 +82,20 @@ namespace Apha.FPS.Api.Controllers
         }
 
         /// <summary>
+        /// Returns a paged, sorted and filtered list of staff job allocation rows for a job code and workgroup grade.
+        /// </summary>
+        [HttpGet("staffjobsallocation/paged")]
+        public async Task<IActionResult> GetStaffJobsAllocationByJobCodeWgGradePagedAsync(
+            [FromQuery] PaginationReq<string> query,
+            [FromQuery] string jobcode,
+            [FromQuery] string wgGrade)
+        {
+            var filter = _mapper.Map<QueryParameters<string>>(query);
+            var result = await _staffJobService.GetStaffJobsAllocationByJobCodeWgGradePagedAsync(filter, jobcode, wgGrade);
+            return Ok(_mapper.Map<PaginationRes<StaffJobViewRes>>(result));
+        }
+
+        /// <summary>
         /// Returns a paged, sorted and filtered list of ZT-type staff job rows for a specific staff member.
         /// </summary>
         [HttpGet("ztstaffjobs/paged")]
@@ -190,6 +204,21 @@ namespace Apha.FPS.Api.Controllers
             if (!isDeleted)
                 throw new KeyNotFoundException("Data not found.");
             return Ok(isDeleted);
+        }
+
+        /// <summary>
+        /// Returns a paged, sorted and filtered resource utilisation summary for a given workgroup.
+        /// </summary>
+        /// <param name="query">Pagination and filter parameters.</param>
+        /// <param name="workgroup">The workgroup identifier to filter by.</param>
+        /// <returns>Paginated list of staff resource utilisation rows.</returns>
+        [HttpGet("resourceutilisation")]
+        public async Task<IActionResult> GetStaffResourceUtilisationAsync(
+            [FromQuery] PaginationReq<string> query, [FromQuery] string workgroup)
+        {
+            var filter = _mapper.Map<QueryParameters<string>>(query);
+            var result = await _staffJobService.GetStaffResourceUtilisationAsync(filter, workgroup);
+            return Ok(_mapper.Map<PaginationRes<StaffResourceUtilisationRes>>(result));
         }
     }
 }

@@ -4,6 +4,7 @@ using Apha.PACT.Api.Controllers;
 using Apha.PACT.Application.Dtos;
 using Apha.PACT.Application.Interfaces;
 using Apha.PACT.Application.Pagination;
+using Apha.PACT.Core.Interfaces;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using NSubstitute;
@@ -15,13 +16,15 @@ namespace Apha.PACT.Api.UnitTests.Controller.ProjectSubContractControllerTest
     {
         private readonly IProjectSubContractService _serviceMock;
         private readonly IMapper _mapperMock;
+        private readonly ICurrentUserContext _currentUserContextMock;
         private readonly ProjectSubContractController _controller;
 
         public ProjectSubContractControllerTests()
         {
             _serviceMock = Substitute.For<IProjectSubContractService>();
             _mapperMock = Substitute.For<IMapper>();
-            _controller = new ProjectSubContractController(_serviceMock, _mapperMock);
+            _currentUserContextMock = Substitute.For<ICurrentUserContext>();
+            _controller = new ProjectSubContractController(_serviceMock, _mapperMock, _currentUserContextMock);
         }
 
         #region GetPaged
@@ -371,6 +374,169 @@ namespace Apha.PACT.Api.UnitTests.Controller.ProjectSubContractControllerTest
                 .ThrowsAsync(new Exception("Service error"));
 
             await Assert.ThrowsAsync<Exception>(() => _controller.GetMonthlySubContractsSummary(query));
+        }
+
+        #endregion
+
+        #region FailedSubContractRms
+
+        [Fact]
+        public async Task GetFailedSubContractRms_ValidQuery_ReturnsOk()
+        {
+            // Arrange
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            _currentUserContextMock.UserId.Returns("user1");
+
+            var dtos = new List<SubContractRmsImportRowDto>
+            {
+                new() { Id = 1, Project = "PRJ1" }
+            };
+            var pagination = new PaginationDto { PageNumber = 1, PageSize = 10, TotalRecords = 1, TotalPages = 1 };
+            var serviceResult = new PaginatedResult<SubContractRmsImportRowDto>(dtos, pagination);
+            var mapped = new PaginationRes<SubContractRmsImportRowRes>
+            {
+                Data = [new SubContractRmsImportRowRes { Id = 1, Project = "PRJ1" }],
+                PaginationData = new Pagination { PageNumber = 1, PageSize = 10, TotalRecords = 1, TotalPages = 1 }
+            };
+
+            _serviceMock.GetFailedSubContractRmsAsync(query, "user1").Returns(serviceResult);
+            _mapperMock.Map<PaginationRes<SubContractRmsImportRowRes>>(serviceResult).Returns(mapped);
+
+            // Act
+            var result = await _controller.GetFailedSubContractRms(query);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(mapped, okResult.Value);
+        }
+
+        [Fact]
+        public async Task GetFailedSubContractRmsById_RecordExists_ReturnsOk()
+        {
+            // Arrange
+            const int id = 5;
+            _currentUserContextMock.UserId.Returns("user2");
+            var dto = new SubContractRmsImportRowDto { Id = id, Project = "PRJ5" };
+            var res = new SubContractRmsImportRowRes { Id = id, Project = "PRJ5" };
+
+            _serviceMock.GetFailedSubContractRmsByIdAsync(id, "user2").Returns(dto);
+            _mapperMock.Map<SubContractRmsImportRowRes>(dto).Returns(res);
+
+            // Act
+            var result = await _controller.GetFailedSubContractRmsById(id);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(res, okResult.Value);
+        }
+
+        [Fact]
+        public async Task GetFailedSubContractRmsById_RecordNotFound_ThrowsKeyNotFoundException()
+        {
+            // Arrange
+            _currentUserContextMock.UserId.Returns("user3");
+            _serviceMock.GetFailedSubContractRmsByIdAsync(99, "user3").Returns((SubContractRmsImportRowDto?)null);
+
+            // Act / Assert
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _controller.GetFailedSubContractRmsById(99));
+        }
+
+        [Fact]
+        public async Task SaveFailedSubContractRms_ValidRequest_ReturnsOk()
+        {
+            // Arrange
+            const int id = 3;
+            _currentUserContextMock.UserId.Returns("user4");
+            var request = new SubContractRmsImportRowReq { Project = "PRJ3" };
+            var dto = new SubContractRmsImportRowDto { Project = "PRJ3" };
+
+            _mapperMock.Map<SubContractRmsImportRowDto>(request).Returns(dto);
+            _serviceMock.SaveFailedSubContractRmsAsync(id, dto, "user4").Returns(true);
+
+            // Act
+            var result = await _controller.SaveFailedSubContractRms(id, request);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.True((bool)okResult.Value!);
+        }
+
+        [Fact]
+        public async Task DeleteFailedSubContractRmsById_ServiceReturnsFalse_ReturnsOkWithFalse()
+        {
+            // Arrange
+            const int id = 11;
+            _currentUserContextMock.UserId.Returns("user5");
+            _serviceMock.DeleteFailedSubContractRmsByIdAsync(id, "user5").Returns(false);
+
+            // Act
+            var result = await _controller.DeleteFailedSubContractRmsById(id);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.False((bool)okResult.Value!);
+        }
+
+        [Fact]
+        public async Task DeleteFailedSubContractRmsByUser_DeletedCountGreaterThanZero_ReturnsOkWithTrue()
+        {
+            // Arrange
+            _currentUserContextMock.UserId.Returns("user6");
+            _serviceMock.DeleteFailedSubContractRmsByUserAsync("user6").Returns(2);
+
+            // Act
+            var result = await _controller.DeleteFailedSubContractRmsByUser();
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.True((bool)okResult.Value!);
+        }
+
+        [Fact]
+        public async Task DeleteFailedSubContractRmsByUser_DeletedCountIsZero_ReturnsOkWithFalse()
+        {
+            // Arrange
+            _currentUserContextMock.UserId.Returns("user7");
+            _serviceMock.DeleteFailedSubContractRmsByUserAsync("user7").Returns(0);
+
+            // Act
+            var result = await _controller.DeleteFailedSubContractRmsByUser();
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.False((bool)okResult.Value!);
+        }
+
+        [Fact]
+        public async Task ImportSubContractRms_ValidRequest_ReturnsOk()
+        {
+            // Arrange
+            _currentUserContextMock.UserId.Returns("user8");
+            var request = new SubContractRmsImportReq
+            {
+                FileName = "rms.xlsx",
+                Rows = [new SubContractRmsImportRowReq { Project = "PRJ9" }]
+            };
+
+            var dto = new SubContractRmsImportDto
+            {
+                FileName = "rms.xlsx",
+                Rows = [new SubContractRmsImportRowDto { Project = "PRJ9" }]
+            };
+
+            var resultDto = new SubContractRmsImportResultDto { PassedCount = 1, FailedCount = 0, Message = "Imported" };
+            var mappedResponse = new SubContractRmsImportRes { PassedCount = 1, FailedCount = 0, Message = "Imported" };
+
+            _mapperMock.Map<SubContractRmsImportDto>(request).Returns(dto);
+            _serviceMock.ImportSubContractRmsAsync(dto, "user8").Returns(resultDto);
+            _mapperMock.Map<SubContractRmsImportRes>(resultDto).Returns(mappedResponse);
+
+            // Act
+            var result = await _controller.ImportSubContractRms(request);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(mappedResponse, okResult.Value);
         }
 
         #endregion

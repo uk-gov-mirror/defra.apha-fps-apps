@@ -152,6 +152,102 @@ namespace Apha.FPSApps.Application.UnitTests.Services.FPS.WorkGroupEmployeeServi
 
         #endregion
 
+        #region GetAllActiveWorkGroupEmployeesAsync Tests
+
+        [Fact]
+        public async Task GetAllActiveWorkGroupEmployeesAsync_WithSuccessResponse_ReturnsActiveEmployeeList()
+        {
+            // Arrange
+            var employees = new List<WorkGroupEmployeeStaffDto>
+            {
+                new() { PactId = DefaultPactId, SpNumber = "SP001", WorkGroupGrade = DefaultWgGrade, HrsPaid = 40.0, HrsAvail = 35.0 },
+                new() { PactId = "PACT002",     SpNumber = "SP002", WorkGroupGrade = DefaultWgGrade, HrsPaid = 37.5, HrsAvail = 32.0 }
+            };
+            var expectedResponse = ApiResponseDto<List<WorkGroupEmployeeStaffDto>>.SuccessResponse(employees);
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+
+            _fpsWgEmployeeApiClient.GetAllActiveWorkGroupEmployeesAsync(query, DefaultWgGrade)
+                .Returns(expectedResponse);
+
+            // Act
+            var result = await _sut.GetAllActiveWorkGroupEmployeesAsync(query, DefaultWgGrade);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Equal(2, result.Data!.Count);
+            Assert.All(result.Data, e => Assert.Equal(DefaultWgGrade, e.WorkGroupGrade));
+            await _fpsWgEmployeeApiClient.Received(1).GetAllActiveWorkGroupEmployeesAsync(query, DefaultWgGrade);
+        }
+
+        [Fact]
+        public async Task GetAllActiveWorkGroupEmployeesAsync_WithEmptyResult_ReturnsSuccessWithEmptyList()
+        {
+            // Arrange
+            var expectedResponse = ApiResponseDto<List<WorkGroupEmployeeStaffDto>>.SuccessResponse(new List<WorkGroupEmployeeStaffDto>());
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+
+            _fpsWgEmployeeApiClient.GetAllActiveWorkGroupEmployeesAsync(query, DefaultWgGrade)
+                .Returns(expectedResponse);
+
+            // Act
+            var result = await _sut.GetAllActiveWorkGroupEmployeesAsync(query, DefaultWgGrade);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Empty(result.Data!);
+            await _fpsWgEmployeeApiClient.Received(1).GetAllActiveWorkGroupEmployeesAsync(query, DefaultWgGrade);
+        }
+
+        [Fact]
+        public async Task GetAllActiveWorkGroupEmployeesAsync_WhenApiFails_ReturnsFailureResponse()
+        {
+            // Arrange
+            var errors = new List<ApiErrorDto> { new() { Message = "API Error", Code = "API_ERROR" } };
+            var expectedResponse = ApiResponseDto<List<WorkGroupEmployeeStaffDto>>.FailureResponse(errors, new ApiMetaDto());
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+
+            _fpsWgEmployeeApiClient.GetAllActiveWorkGroupEmployeesAsync(query, DefaultWgGrade)
+                .Returns(expectedResponse);
+
+            // Act
+            var result = await _sut.GetAllActiveWorkGroupEmployeesAsync(query, DefaultWgGrade);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.Single(result.Errors!);
+            Assert.Equal("API_ERROR", result.Errors!.First().Code);
+            await _fpsWgEmployeeApiClient.Received(1).GetAllActiveWorkGroupEmployeesAsync(query, DefaultWgGrade);
+        }
+
+        [Fact]
+        public async Task GetAllActiveWorkGroupEmployeesAsync_DelegatesToApiClient_WithExactQueryAndGrade()
+        {
+            // Arrange — verify the service passes query params and wgGrade through unchanged
+            var query = new QueryParameters<string> { Page = 2, PageSize = 50, SortBy = "Name", Descending = true };
+            var expectedResponse = ApiResponseDto<List<WorkGroupEmployeeStaffDto>>.SuccessResponse(new List<WorkGroupEmployeeStaffDto>());
+
+            _fpsWgEmployeeApiClient.GetAllActiveWorkGroupEmployeesAsync(query, DefaultWgGrade)
+                .Returns(expectedResponse);
+
+            // Act
+            var result = await _sut.GetAllActiveWorkGroupEmployeesAsync(query, DefaultWgGrade);
+
+            // Assert
+            Assert.True(result.Success);
+            await _fpsWgEmployeeApiClient.Received(1).GetAllActiveWorkGroupEmployeesAsync(
+                Arg.Is<QueryParameters<string>>(q =>
+                    q.Page == 2 &&
+                    q.PageSize == 50 &&
+                    q.SortBy == "Name" &&
+                    q.Descending == true),
+                DefaultWgGrade);
+        }
+
+        #endregion
+
         #region Shared Methods
 
         [Fact]

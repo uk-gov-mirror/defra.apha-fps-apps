@@ -153,7 +153,8 @@
             if (!$field.val() || $field.val().trim() === '') {
                 var name  = $field.attr('name') || '';
                 var label = $('label[for="' + name + '"]', $c).clone().children().remove().end().text().trim().replace(/:\s*$/, '') || name;
-                errors.push({ field: name, message: label + ' is required' });
+                var requiredMessage = $field.attr('data-val-required') || $field.attr('data-msg-required');
+                errors.push({ field: name, message: requiredMessage || (label + ' is required') });
             }
         });
 

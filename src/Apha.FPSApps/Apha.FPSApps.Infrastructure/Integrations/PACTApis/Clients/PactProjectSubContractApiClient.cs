@@ -166,5 +166,81 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PACTApis.Clients
             var failresponseDto = _mapper.Map<ApiResponseDto<MonthlySubContractsPivotDto>>(response);
             return ApiResponseDto<MonthlySubContractsPivotDto>.FailureResponse(failresponseDto.Errors, failresponseDto.Meta);
         }
+
+        public async Task<ApiResponseDto<List<SubContractRmsImportRowDto>>> GetFailedSubContractRmsAsync(QueryParameters<string> query)
+        {
+            string url = QueryStringHelper.AddQueryString(PactApiEndpoints.GetFailedProjectSubContractRms, query);
+            var response = await _http.GetAsync<List<SubContractRmsImportRowRes>>(url);
+            if (response.Success)
+                return _mapper.Map<ApiResponseDto<List<SubContractRmsImportRowDto>>>(response);
+
+            var dto = _mapper.Map<ApiResponseDto<List<SubContractRmsImportRowDto>>>(response);
+            return ApiResponseDto<List<SubContractRmsImportRowDto>>.FailureResponse(dto.Errors, dto.Meta ?? new ApiMetaDto());
+        }
+
+        public async Task<ApiResponseDto<SubContractRmsImportResultDto>> ImportSubContractRmsAsync(SubContractRmsImportReqDto request)
+        {
+            var req = _mapper.Map<SubContractRmsImportReq>(request);
+            var response = await _http.PostAsync<SubContractRmsImportReq, SubContractRmsImportRes>(PactApiEndpoints.ImportProjectSubContractRms, req);
+
+            if (response.Success)
+            {
+                var dto = _mapper.Map<SubContractRmsImportResultDto>(response.Data);
+                return ApiResponseDto<SubContractRmsImportResultDto>.SuccessResponse(dto);
+            }
+
+            var failDto = _mapper.Map<ApiResponseDto<SubContractRmsImportResultDto>>(response);
+            return ApiResponseDto<SubContractRmsImportResultDto>.FailureResponse(failDto.Errors, failDto.Meta ?? new ApiMetaDto());
+        }
+
+        public async Task<ApiResponseDto<SubContractRmsImportRowDto>> GetFailedSubContractRmsByIdAsync(int id)
+        {
+            string url = PactApiEndpoints.GetFailedProjectSubContractRmsById.Replace("{id}", id.ToString());
+            var response = await _http.GetAsync<SubContractRmsImportRowRes>(url);
+
+            if (response.Success)
+            {
+                var dto = _mapper.Map<SubContractRmsImportRowDto>(response.Data);
+                return ApiResponseDto<SubContractRmsImportRowDto>.SuccessResponse(dto);
+            }
+
+            var failDto = _mapper.Map<ApiResponseDto<SubContractRmsImportRowDto>>(response);
+            return ApiResponseDto<SubContractRmsImportRowDto>.FailureResponse(failDto.Errors, failDto.Meta ?? new ApiMetaDto());
+        }
+
+        public async Task<ApiResponseDto<bool>> SaveFailedSubContractRmsAsync(int id, SubContractRmsImportRowDto dto)
+        {
+            string url = PactApiEndpoints.SaveFailedProjectSubContractRms.Replace("{id}", id.ToString());
+            var req = _mapper.Map<SubContractRmsImportRowReq>(dto);
+            var response = await _http.PutAsync<SubContractRmsImportRowReq, bool?>(url, req);
+
+            if (response.Success)
+                return _mapper.Map<ApiResponseDto<bool>>(response);
+
+            var failDto = _mapper.Map<ApiResponseDto<bool>>(response);
+            return ApiResponseDto<bool>.FailureResponse(failDto.Errors, failDto.Meta ?? new ApiMetaDto());
+        }
+
+        public async Task<ApiResponseDto<bool>> DeleteFailedSubContractRmsByIdAsync(int id)
+        {
+            string url = PactApiEndpoints.DeleteFailedProjectSubContractRmsById.Replace("{id}", id.ToString());
+            var response = await _http.DeleteAsync<bool?>(url);
+
+            if (response.Success)
+                return _mapper.Map<ApiResponseDto<bool>>(response);
+
+            var dto = _mapper.Map<ApiResponseDto<bool>>(response);
+            return ApiResponseDto<bool>.FailureResponse(dto.Errors, dto.Meta ?? new ApiMetaDto());
+        }
+
+        public async Task<ApiResponseDto<bool>> DeleteFailedSubContractRmsByUserAsync()
+        {
+            var response = await _http.DeleteAsync<bool?>(PactApiEndpoints.DeleteFailedProjectSubContractRmsByUser);
+            if (response.Success)
+                return _mapper.Map<ApiResponseDto<bool>>(response);
+
+            var dto = _mapper.Map<ApiResponseDto<bool>>(response);
+            return ApiResponseDto<bool>.FailureResponse(dto.Errors, dto.Meta ?? new ApiMetaDto());
+        }
     }
 }

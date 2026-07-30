@@ -1,5 +1,4 @@
-using Apha.Common.BulkRates.Validation;
-using Apha.Common.Utilities.StateManagement;
+﻿using Apha.Common.Utilities.StateManagement;
 using Apha.Common.Utilities.ExcelExport;
 using Apha.FPS.Application.Interfaces;
 using Apha.FPS.Application.Services;
@@ -48,6 +47,7 @@ namespace Apha.FPS.Api.Extensions
             services.AddScoped<IWorkGroupEmployeeService, WorkGroupEmployeeService>();
             services.AddScoped<IDivisionGradeService, DivisionGradeService>();
             services.AddScoped<IProjectStaffPlanService, ProjectStaffPlanService>();
+            services.AddScoped<IProjectStaffPlanDetailsService, ProjectStaffPlanDetailsService>();
             services.AddScoped<IGradeService, GradeService>();
             services.AddScoped<IProjectGroupStaffPlanService, ProjectGroupStaffPlanService>();
             services.AddScoped<IBudgetBidsService, BudgetBidsService>();
@@ -56,14 +56,11 @@ namespace Apha.FPS.Api.Extensions
             services.AddScoped<IProjectAuditTrailService, ProjectAuditTrailService>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<ITotalBusinessOverheadsService, TotalBusinessOverheadsService>();
-
-            // Bulk Rates
-            services.AddScoped<IBulkRatesRequestService, BulkRatesRequestService>();
-            services.AddScoped<BulkRatesExcelParser>();
-            services.AddScoped<IBulkRatesValidationService, BulkRatesValidationService>();
-            services.AddScoped<BulkRatesValidator>();
-            services.AddScoped<IEventBridgePublisher, NullEventBridgePublisher>();
-            services.AddScoped<IBulkRatesNotificationService, LogOnlyBulkRatesNotificationService>();
+            services.AddScoped<ICostCentreService, CostCentreService>();
+            services.AddScoped<ITestRCCostService, TestRCCostService>();
+            services.AddScoped<ITestRequirementRCCostService, TestRequirementRCCostService>();
+            services.AddScoped<ITotalBusinessOverheadsService, TotalBusinessOverheadsService>();
+            services.AddScoped<IResourceAllocationService, ResourceAllocationService>();
             return services;
         }
         public static IServiceCollection AddRepositories(this IServiceCollection services)
@@ -97,6 +94,7 @@ namespace Apha.FPS.Api.Extensions
             services.AddScoped<IWorkGroupEmployeeRepository, WorkGroupEmployeeRepository>();
             services.AddScoped<IDivisionGradeRepository, DivisionGradeRepository>();
             services.AddScoped<IProjectStaffPlanRepository, ProjectStaffPlanRepository>();
+            services.AddScoped<IProjectStaffPlanDetailsRepository, ProjectStaffPlanDetailsRepository>();
             services.AddScoped<IGradeRepository, GradeRepository>();
             services.AddScoped<IProjectGroupStaffPlanRepository, ProjectGroupStaffPlanRepository>();
             services.AddScoped<IBudgetBidsRepository, BudgetBidsRepository>();
@@ -105,9 +103,11 @@ namespace Apha.FPS.Api.Extensions
             services.AddScoped<IProjectAuditTrailRepository, ProjectAuditTrailRepository>();
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<ITotalBusinessOverheadsRepository, TotalBusinessOverheadsRepository>();
-
-            // Bulk Rates
-            services.AddScoped<IBulkRatesRepository, BulkRatesRepository>();
+            services.AddScoped<ICostCentreRepository, CostCentreRepository>();
+            services.AddScoped<ITestRCCostRepository, TestRCCostRepository>();
+            services.AddScoped<ITestRequirementRCCostRepository, TestRequirementRCCostRepository>();
+            services.AddScoped<ITotalBusinessOverheadsRepository, TotalBusinessOverheadsRepository>();
+            services.AddScoped<IResourceAllocationRepository, ResourceAllocationRepository>();
             return services;
 
         }

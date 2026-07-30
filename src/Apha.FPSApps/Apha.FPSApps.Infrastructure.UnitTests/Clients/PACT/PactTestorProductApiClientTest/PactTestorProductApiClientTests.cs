@@ -161,6 +161,18 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactTestListApiClie
                     return ApiResponseDto<bool>.SuccessResponse(response.Data);
                 });
 
+            // Map ApiResponse<bool?> to ApiResponseDto<bool>
+            _mapper.Map<ApiResponseDto<bool>>(Arg.Any<ApiResponse<bool?>>())
+                .Returns(callInfo =>
+                {
+                    var response = callInfo.ArgAt<ApiResponse<bool?>>(0);
+                    if (response == null || !response.Success)
+                        return ApiResponseDto<bool>.FailureResponse(
+                            response?.Errors?.Select(e => new ApiErrorDto { Message = e.Message, Code = e.Code }).ToList() ?? [],
+                            new ApiMetaDto());
+                    return ApiResponseDto<bool>.SuccessResponse(response.Data ?? false);
+                });
+
             // Map ApiResponse<List<string>> to ApiResponseDto<List<string>>
             _mapper.Map<ApiResponseDto<List<string>>>(Arg.Any<ApiResponse<List<string>>>())
                 .Returns(callInfo =>
@@ -424,12 +436,12 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactTestListApiClie
         {
             // Arrange
             var itemCode = "T001";
-            var httpResponse = new ApiResponse<bool>
+            var httpResponse = new ApiResponse<bool?>
             {
                 Success = true,
                 Data = true
             };
-            _httpExecutor.DeleteAsync<bool>(Arg.Any<string>())
+            _httpExecutor.DeleteAsync<bool?>(Arg.Any<string>())
                 .Returns(Task.FromResult(httpResponse));
 
             // Act
@@ -446,12 +458,12 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactTestListApiClie
         {
             // Arrange
             var itemCode = "NOTFOUND";
-            var httpResponse = new ApiResponse<bool>
+            var httpResponse = new ApiResponse<bool?>
             {
                 Success = true,
                 Data = false
             };
-            _httpExecutor.DeleteAsync<bool>(Arg.Any<string>())
+            _httpExecutor.DeleteAsync<bool?>(Arg.Any<string>())
                 .Returns(Task.FromResult(httpResponse));
 
             // Act
@@ -468,12 +480,12 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactTestListApiClie
         {
             // Arrange
             var itemCode = "T001";
-            var httpResponse = new ApiResponse<bool>
+            var httpResponse = new ApiResponse<bool?>
             {
                 Success = false,
                 Errors = new List<ApiError> { new() { Message = "Delete failed", Code = "DELETE_ERROR" } }
             };
-            _httpExecutor.DeleteAsync<bool>(Arg.Any<string>())
+            _httpExecutor.DeleteAsync<bool?>(Arg.Any<string>())
                 .Returns(Task.FromResult(httpResponse));
 
             // Act

@@ -27,11 +27,12 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             _planStaffZTCodeService = planStaffZTCodeService;
         }
 
-        public async Task<IActionResult> Index(string staffId)
+        public async Task<IActionResult> Index(string staffId, string? source = null)
         {
             var model = new PlanStaffZTCodePageViewModel
             {
-                StaffId = staffId ?? string.Empty
+                StaffId      = staffId ?? string.Empty,
+                ReturnToSsr  = string.Equals(source, "ssr", StringComparison.OrdinalIgnoreCase)
             };
 
             if (!string.IsNullOrWhiteSpace(staffId))

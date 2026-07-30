@@ -29,6 +29,9 @@ namespace Apha.FPS.Core.Interfaces
         /// <summary>Returns true if any WorkgroupGrade row references the given GradeCode.</summary>
         Task<bool> ExistsForGradeCodeAsync(string gradeCode);
 
+        /// <summary>Returns distinct WorkgroupGrade records for a given workgroup, ordered by WGGrade.</summary>
+        Task<List<WorkgroupGrade>> GetWorkgroupGradesByWorkGroupAsync(string workGroup);
+
         // Existing methods for backward compatibility
         Task<PagedData<WorkGroupGradeView>> GetWorkGroupGradesAsync(PaginationParameters<string> query, string profitCentreGrade);
         Task<bool> DeleteWorkGroupGradeAsync(string wgGrade);

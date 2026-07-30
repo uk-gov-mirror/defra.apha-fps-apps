@@ -109,6 +109,7 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
 
         public async Task<IActionResult> ListTestCapability(string? workGroup)
         {
+            TempData["NavigationSource"] = "BosworthInterface";
             var defaultRequest = new PaginationFilter<string> { Filter = "{}" };
             var capabilitiesGrid = await BuildCapabilitiesGridAsync(defaultRequest, workGroup);
 

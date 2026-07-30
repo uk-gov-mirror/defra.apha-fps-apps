@@ -27,6 +27,21 @@ namespace Apha.PACT.DataAccess.UnitTests.Repository.MonthlyOutputRepositoryTest
             return new MonthlyOutputRepository(mockContext.Object);
         }
 
+        private static MonthlyOutputRepository CreateRepositoryWithOutputs(
+            IEnumerable<MonthlyOutput> monthlyOutputs)
+        {
+            var fpsRequestContext = Substitute.For<IFpsRequestContext>();
+            fpsRequestContext.FpsYear.Returns(DefaultFpsYear);
+
+            var mockContext = RepositoryTestHelper.CreateMockDbContext<FpsDbContext>(fpsRequestContext);
+            var mockSet = RepositoryTestHelper.CreateMockDbSet(monthlyOutputs);
+            RepositoryTestHelper.SetupDbSetOperations(mockSet);
+
+            mockContext.Setup(x => x.MonthlyOutputs).Returns(mockSet.Object);
+
+            return new MonthlyOutputRepository(mockContext.Object);
+        }
+
         private static PaginationParameters<string> DefaultQuery(int page = 1, int pageSize = 10)
             => new(page: page, pageSize: pageSize);
 
@@ -37,6 +52,13 @@ namespace Apha.PACT.DataAccess.UnitTests.Repository.MonthlyOutputRepositoryTest
             new() { SequenceNo = 3, WorkGroup = "WG2", TestCode = "TC1", Buyer = "BUYER_A",  Month = 3,  DateTime = new DateTime(2024, 3, 20), UserId = "SP001", InsertDelete = "U", FpsYear = DefaultFpsYear },
             new() { SequenceNo = 4, WorkGroup = "WG2", TestCode = "TC3", Buyer = "BUYER_C",  Month = 4,  DateTime = new DateTime(2024, 4, 5),  UserId = "SP003", InsertDelete = "I", FpsYear = DefaultFpsYear },
             new() { SequenceNo = 5, WorkGroup = "WG3", TestCode = "TC4", Buyer = "BUYER_D",  Month = 5,  DateTime = new DateTime(2024, 5, 1),  UserId = null,    InsertDelete = null, FpsYear = DefaultFpsYear },
+        ];
+
+        private static List<MonthlyOutput> MonthlyOutputSeedData() =>
+        [
+            new() { TestCode = "TC1", WorkGroup = "WG1", Buyer = "BUYER_A", Month = 1, FpsYear = DefaultFpsYear },
+            new() { TestCode = "TC1", WorkGroup = "WG2", Buyer = "BUYER_B", Month = 2, FpsYear = DefaultFpsYear },
+            new() { TestCode = "TC2", WorkGroup = "WG1", Buyer = "BUYER_C", Month = 3, FpsYear = DefaultFpsYear },
         ];
 
         #region GetMonthlyOutputLogAsync — no filters
@@ -490,6 +512,50 @@ namespace Apha.PACT.DataAccess.UnitTests.Repository.MonthlyOutputRepositoryTest
             Assert.Equal(3, result.PaginationData.PageSize);
             Assert.Equal(5, result.PaginationData.TotalRecords);
             Assert.Equal(2, result.PaginationData.TotalPages);
+        }
+
+        #endregion
+
+        #region ExistsByTestCodeAndWorkGroupAsync
+
+        [Fact]
+        public async Task ExistsByTestCodeAndWorkGroupAsync_MatchingTestCodeAndWorkGroup_ReturnsTrue()
+        {
+            var repo = CreateRepositoryWithOutputs(MonthlyOutputSeedData());
+
+            var result = await repo.ExistsByTestCodeAndWorkGroupAsync("TC1", "WG1");
+
+            Assert.True(result);
+        }
+
+        [Fact]
+        public async Task ExistsByTestCodeAndWorkGroupAsync_NonMatchingTestCode_ReturnsFalse()
+        {
+            var repo = CreateRepositoryWithOutputs(MonthlyOutputSeedData());
+
+            var result = await repo.ExistsByTestCodeAndWorkGroupAsync("UNKNOWN", "WG1");
+
+            Assert.False(result);
+        }
+
+        [Fact]
+        public async Task ExistsByTestCodeAndWorkGroupAsync_NonMatchingWorkGroup_ReturnsFalse()
+        {
+            var repo = CreateRepositoryWithOutputs(MonthlyOutputSeedData());
+
+            var result = await repo.ExistsByTestCodeAndWorkGroupAsync("TC1", "UNKNOWN");
+
+            Assert.False(result);
+        }
+
+        [Fact]
+        public async Task ExistsByTestCodeAndWorkGroupAsync_EmptyRepository_ReturnsFalse()
+        {
+            var repo = CreateRepositoryWithOutputs([]);
+
+            var result = await repo.ExistsByTestCodeAndWorkGroupAsync("TC1", "WG1");
+
+            Assert.False(result);
         }
 
         #endregion

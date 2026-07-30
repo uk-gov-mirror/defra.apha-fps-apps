@@ -129,5 +129,40 @@ namespace Apha.FPS.Api.UnitTests.Controller.WorkGroupGradeControllerTest
         }
 
         #endregion
+
+        #region GetWorkgroupGradesByWorkGroupAsync Tests
+
+        [Fact]
+        public async Task GetWorkgroupGradesByWorkGroupAsync_WithValidRequest_ReturnsOk()
+        {
+            // Arrange
+            var serviceResult = new List<WorkgroupGradeDto> { new() { WgGrade = DefaultWgGrade } };
+            var expectedRes   = new List<WorkgroupGradeRes> { new() { WgGrade = DefaultWgGrade } };
+
+            _serviceMock.GetWorkgroupGradesByWorkGroupAsync("TeamA").Returns(serviceResult);
+            _mapperMock.Map<List<WorkgroupGradeRes>>(serviceResult).Returns(expectedRes);
+
+            // Act
+            var result = await _controller.GetWorkgroupGradesByWorkGroupAsync("TeamA");
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            okResult.Value.Should().Be(expectedRes);
+            await _serviceMock.Received(1).GetWorkgroupGradesByWorkGroupAsync("TeamA");
+        }
+
+        [Fact]
+        public async Task GetWorkgroupGradesByWorkGroupAsync_WhenServiceThrows_PropagatesException()
+        {
+            // Arrange
+            _serviceMock.GetWorkgroupGradesByWorkGroupAsync("TeamA")
+                .ThrowsAsync(new ArgumentException("Invalid workgroup"));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                _controller.GetWorkgroupGradesByWorkGroupAsync("TeamA"));
+        }
+
+        #endregion
     }
 }

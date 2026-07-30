@@ -81,6 +81,20 @@ namespace Apha.FPSApps.Application.Services.FPS
         public async Task<ApiResponseDto<List<ProjectDto>>> GetProjectsByProgramAsync(QueryParameters<string> query, string programNo)
             => await _fpsClient.FpsProject.GetProjectsByProgramAsync(query, programNo);
 
+        public async Task<ApiResponseDto<List<ProjectDto>>> GetProjectLookupAsync()
+        {
+            var response = await _fpsClient.FpsProject.GetAllProjectsAsync();
+            if (!response.Success || response.Data == null)
+                return response;
+
+            var lookup = response.Data
+                .OrderBy(p => p.ParentProject)
+                .Select(p => new ProjectDto { ParentProject = p.ParentProject, Program = p.Program, ProjectGroup = p.ProjectGroup })
+                .ToList();
+
+            return ApiResponseDto<List<ProjectDto>>.SuccessResponse(lookup);
+        }
+
         public async Task<ApiResponseDto<List<ProjectDto>>> GetProjectsByProjectGroupAsync(QueryParameters<string> query, string projectGroup)
             => await _fpsClient.FpsProjectGroup.GetProjectsByProjectGroupAsync(query, projectGroup);
 
@@ -132,7 +146,6 @@ namespace Apha.FPSApps.Application.Services.FPS
             QueryParameters<string> query, string projectGroup, string workTypeFilter)
             => _fpsClient.FpsProject.GetProjectGroupProfitabilityAsync(query, projectGroup, workTypeFilter);
 
-        // TRANSFORMENGINE: new method — Phase 8 addition; thin delegate forwarding to
         // _fpsClient.FpsProject.GetProjectProfitabilityVlaAsync() — NO business logic.
         // All five params passed through unchanged; four filter params default to null when
         // not supplied by the MVC controller (optional filters on the VLA DataGrid page).
@@ -143,5 +156,9 @@ namespace Apha.FPSApps.Application.Services.FPS
             string? manager = null,
             string? customer = null)
             => _fpsClient.FpsProject.GetProjectProfitabilityVlaAsync(query, projectStatus, programNo, manager, customer);
+
+        public Task<ApiResponseDto<List<ProjectStaffReplanDto>>> GetProjectGroupStaffReplanAsync(QueryParameters<string> query, string workgroup)
+            => _fpsClient.FpsProject.GetProjectGroupStaffReplanAsync(query, workgroup);
+
     }
 }

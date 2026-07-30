@@ -17,7 +17,7 @@ namespace Apha.FPSApps.Web.Areas.PACT.Models
         [GridColumn(Order = 3, Width = 200, Type = GridColumnType.Text, IsFilterable = true)]
         public string? Name { get; set; }
 
-        [Display(Name = "Work Group Grade")]
+        [Display(Name = "WorkGroup Grade")]
         [GridColumn(Order = 4, Width = 150, Type = GridColumnType.Text, IsFilterable = true)]
         public string? WorkGroupGrade { get; set; }
 

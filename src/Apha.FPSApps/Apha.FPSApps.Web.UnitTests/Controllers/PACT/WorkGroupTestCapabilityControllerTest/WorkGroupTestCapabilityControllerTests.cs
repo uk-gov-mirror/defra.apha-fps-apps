@@ -6,7 +6,9 @@ using Apha.FPSApps.Web.Areas.PACT.Controllers;
 using Apha.FPSApps.Web.Areas.PACT.Models;
 using Apha.FPSApps.Web.Models.Components.DataGrid;
 using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using NSubstitute;
 
 namespace Apha.FPSApps.Web.UnitTests.Controllers.PACT.WorkGroupTestCapabilityControllerTest
@@ -27,6 +29,11 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PACT.WorkGroupTestCapabilityCon
                 _mapper,
                 _workGroupService,
                 _testCapabilityService);
+
+            var httpContext = new DefaultHttpContext();
+            var tempData = new TempDataDictionary(httpContext, Substitute.For<ITempDataProvider>());
+            _controller.TempData = tempData;
+            _controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
         }
 
         private void SetupWorkGroupsResponse(List<WorkGroupDto> workGroups)

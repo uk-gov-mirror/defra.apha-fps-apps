@@ -776,6 +776,11 @@ a {
     min-width: 3.75em !important;
 }
 
+.sup_width_55px {
+    width: 55px !important;
+    min-width: 55px !important;
+}
+
 
 .govuk-checkboxes__input {
     width: 34px;
@@ -1153,7 +1158,7 @@ a {
         background-color: #f3f2f1;
         border-bottom: 2px solid var(--govuk-border-colour);
         font-weight: bold;
-        text-align: left;
+        text-align: left !important;
     }
 
 .tbl-dropdown-panel table {
@@ -1517,7 +1522,7 @@ table#tblMonthPeriod > tbody > tr > td {
         background-color: #f3f2f1;
         border-bottom: 2px solid var(--govuk-border-colour);
         font-weight: bold;
-        text-align: left;
+        text-align: left !important;
     }
 
 .tbl-dropdown-panel table {
@@ -1566,6 +1571,7 @@ table#tblMonthPeriod > tbody > tr > td {
 
 .sup_color_red {
     color: #ca3535;
+    
 }
 
 .sup_position_relative {
@@ -1707,4 +1713,27 @@ table#tblMonthPeriod > tbody > tr > td {
 
 .sup_font_weight_700 {
     font-weight: 700 !important;
+}
+.sup-margin-left-3-percent {
+     margin-left: 3% !important;
+}
+.sup_text_right_align{
+    box-sizing: border-box !important;
+    text-align: right !important;
+}
+.sup_font_italic {
+    font-style: italic;
+}
+
+.sup_flex_align_end {
+    display: flex;
+    align-items: end;
+}
+
+.sup_max_width_3 {
+    max-width: none !important;
+    min-width: 3.3em !important;
+}
+.sup_whitespace_nowrap {
+    white-space: nowrap !important;
 }

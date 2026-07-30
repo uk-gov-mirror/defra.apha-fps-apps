@@ -1,0 +1,151 @@
+@model Apha.FPSApps.Web.Areas.FPS.Models.SetUpStaffResourcesViewModel
+@{
+    ViewData["Title"] = "2025-2026 : Set Up Staff Resources";
+}
+
+<main class="govuk-main-wrapper govuk-!-padding-top-0" id="main-content" role="main">
+    <div class="container-fluid">
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <div class="ssr-heading-row">
+                    <h1 class="govuk-heading-s sup_border-bottom ssr-main-title">
+                        Set Up Staff Resources
+                    </h1>
+                    <div class="ssr-heading-controls">
+                        <label for="resourceCentreSelect" class="govuk-label govuk-!-font-weight-bold">Select a Resource Center: </label>
+                        <select class="govuk-select ssr-resource-select"
+                                id="resourceCentreSelect"
+                                aria-label="Select a Resource Center"
+                                asp-for="SelectedResourceCentre"
+                                asp-items="Model.ResourceCentres"
+                                onchange="LoadGroupsByResourceCentre()">
+                            <option value="">-- Select a Resource Center --</option>
+                        </select>
+                    </div>
+                    <div class="govuk-form-group ssr-wg-input-group">
+                        <label for="ssrSelectedWorkgroup" class="govuk-label govuk-!-font-weight-bold">Select WorkGroup: </label>
+                        <select class="govuk-select ssr-resource-select"
+                                id="workGroupSelect"
+                                aria-label="Select a Work Group"
+                                onchange="LoadGradeByGroup()">
+                            <option value="">-- Select a Work Group --</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="govuk-grid-row">
+            <div class="cc-container-fluid">
+                <div class="cc-layout-row">
+
+                    @await Html.PartialAsync("_SetUpStaffResourcesSideNav")
+
+                    <div class="cc-content-column">
+                        <div class="govuk-grid-row">
+                            <div class="govuk-grid-column-full">
+
+                                <div class="govuk-grid-row sup_margin_left_right_10 sup_margin_bottom_10">
+                                    <div class="govuk-grid-column-full sup_p_0">
+
+                                        <section class="ssr-workgroup-section sup_border" aria-labelledby="ssr-workgroup-title">
+                                            <h2 class="govuk-heading-s ssr-section-title" id="ssr-workgroup-title">
+                                                WorkGroup Selection Screen for <span id="ssrSelectedCentreName">@Model.SelectedResourceCentre</span>
+                                            </h2>
+
+                                            <div class="ssr-top-layout">
+
+                                                <div class="ssr-grade-panel">
+                                                    <div class="ssr-grade-header">
+                                                        <span class="govuk-label govuk-!-font-weight-bold govuk-!-margin-bottom-0">Grade</span>
+                                                    </div>
+                                                    <ul class="ssr-grade-list" id="ssrGradeList" role="listbox" aria-label="Select workgroup grade">
+                                                        @foreach (var grade in Model.GradeList)
+                                                        {
+                                                            var gradeCode = Model.GradeCodeMap.TryGetValue(grade, out var gc) ? gc : string.Empty;
+                                                            <li class="ssr-grade-item @(grade == Model.SelectedGrade ? "ssr-grade-item--active" : "")"
+                                                                role="option"
+                                                                data-grade-code="@gradeCode"
+                                                                aria-selected="@(grade == Model.SelectedGrade ? "true" : "false")"
+                                                                onclick="ssrSelectWorkGroup('@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(grade))')">
+                                                                @grade
+                                                            </li>
+                                                        }
+                                                    </ul>
+                                                </div>
+
+                                                <div class="ssr-right-panel">
+                                                    <div id="gridContainer_ssrStaffGrid">
+                                                        @await Html.PartialAsync("_DataGrid", Model.StaffGrid)
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                        </section>
+                                        <div class="ssr-bottom-row">
+                                            <div class="ssr-summary-box">
+                                                <div class="ssr-summary-field">
+                                                    <span class="govuk-label govuk-!-font-weight-bold ssr-summary-label">Summary for<br>Grade:</span>
+                                                    <input type="text"
+                                                           id="ssrSummaryGrade"
+                                                           class="govuk-input ssr-summary-input text-AlignRight"
+                                                           value="@Model.SummaryGrade"
+                                                           readonly
+                                                           aria-label="Summary grade" />
+                                                </div>
+                                                <div class="ssr-summary-field">
+                                                    <span class="govuk-label govuk-!-font-weight-bold ssr-summary-label">WorkHrs at Staff<br>Level:</span>
+                                                    <input type="text"
+                                                           id="ssrWorkHrs"
+                                                           class="govuk-input ssr-summary-input text-AlignRight"
+                                                           value="@Model.SummaryWorkHrs"
+                                                           readonly
+                                                           aria-label="Work hours at staff level" />
+                                                </div>
+                                            </div>
+
+                                            <div class="ssr-person-box">
+                                                <h3 class="govuk-heading-s govuk-!-margin-bottom-2">Person Selected</h3>
+                                                <input type="text"
+                                                       id="ssrPersonSelected"
+                                                       class="govuk-input ssr-person-input govuk-!-font-weight-bold govuk-!-margin-bottom-2"
+                                                       value="@Model.SelectedPersonName"
+                                                       readonly
+                                                       aria-label="Selected person" />
+                                                <input type="hidden" id="ssrSelectedPersonId" value="" />
+                                                <hr class="ssr-person-divider" />
+                                                <button type="submit"
+                                                        id="planPersontoZTCodes"
+                                                        class="govuk-button govuk-button--secondary"
+                                                        data-module="govuk-button"
+                                                        onclick="ssrPlanPersonOntoZT()">
+                                                    Plan Person onto ZT Codes
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+@section Scripts {
+    <script>
+        // Initialise the SetUpStaffResources module with server-side values.
+        window.ssrConfig = {
+            currentCentre: '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(Model.SelectedResourceCentre))',
+            currentGrade:  '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(Model.SelectedGrade))',
+            ztCodeUrl:     '@Url.Action("Index", "PlanStaffZTCode", new { area = "FPS" })'
+        };
+    </script>
+    <script src="~/js/fps_js/SetUpStaffResources.js"></script>
+}

@@ -231,7 +231,6 @@ namespace Apha.Costbook.Application.UnitTests.Services.MaintenanceSettingsServic
                 ProfitTests = 14m
             };
             Dictionary<string, string>? capturedDict = null;
-            // TRANSFORMENGINE (Phase 14 security fix): removed erroneous 'await' on NSubstitute setup call —
             // Arg.Do().Returns() is synchronous mock configuration, not an awaitable expression
             _settingsRepository.UpdateMultipleAsync(Arg.Do<Dictionary<string, string>>(d => capturedDict = d))
                 .Returns(true);

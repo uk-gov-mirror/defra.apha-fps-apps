@@ -8,6 +8,10 @@ namespace Apha.FPS.Application.Dtos
 
         public string Description { get; set; } = null!;
 
+        public string? OriginalDescription { get; set; }
+
+        public string? OriginalAccount { get; set; }
+
         public decimal ItemCost { get; set; }
 
         public string? Freq { get; set; }

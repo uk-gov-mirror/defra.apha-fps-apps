@@ -10,7 +10,6 @@ namespace Apha.FPSApps.Web.Areas.FPS.Models
     /// </summary>
     public class GradeMaintenanceViewModel
     {
-        // TRANSFORMENGINE: DataGridConfig built explicitly in GradeMaintenanceController.Index()
         // Leaving as new() would render an empty grid with default Add button regardless of profile
         public DataGridConfig<GradeItem> GradeGrid { get; set; } = new DataGridConfig<GradeItem>();
     }
@@ -22,7 +21,6 @@ namespace Apha.FPSApps.Web.Areas.FPS.Models
     /// </summary>
     public class GradeItem
     {
-        // TRANSFORMENGINE: PK — maps to JS column { field:'gradeCode', header:'GradeCode', width:140 }
         // Visible in grid (JS column present); used as KeyProperty in DataGridConfig.
         // ReadOnly type in grid display; editable in Add modal, read-only on Edit modal (Phase 12).
         // [Required] matches JS modal validation: requiredFields = [gradeValidationFields[0]] (GradeCode only).
@@ -31,21 +29,18 @@ namespace Apha.FPSApps.Web.Areas.FPS.Models
         [GridColumn(Width = 140, Type = GridColumnType.ReadOnly, IsFilterable = true)]
         public string GradeCode { get; set; } = null!;
 
-        // TRANSFORMENGINE: maps to JS column { field:'description', header:'Description', width:280 }
         // Not required — JS modal validation does NOT include description in requiredFields array.
         // Maps to Grade.DescLong via backend EntityMapper (DescLong → Description rename).
         [Display(Name = "Description")]
         [GridColumn(Width = 280, Type = GridColumnType.Text, IsFilterable = true)]
         public string? Description { get; set; }
 
-        // TRANSFORMENGINE: maps to JS column { field:'avSalary', header:'AvSalary', width:170 }
         // Currency field — HTML prototype shows £ prefix; GbpValue type renders currency format.
         // Not required — JS modal validation only checks numeric format if a value is provided.
         [Display(Name = "AvSalary")]
         [GridColumn(Width = 170, Type = GridColumnType.GbpValue, IsFilterable = false)]
         public decimal? AvSalary { get; set; }
 
-        // TRANSFORMENGINE: FpsYear — composite PK component; NOT a visible JS column.
         // Hidden field; FPS financial year partition managed server-side via HasQueryFilter on FpsDbContext.
         // Included to support full AutoMapper round-trip with GradeDto.FpsYear.
         [GridColumn(Type = GridColumnType.ReadOnly, IsVisible = false)]

@@ -102,7 +102,7 @@ namespace Apha.FPSApps.Web.Areas.CostBook.Controllers
             viewModel.CapsStaffGrid = new DataGridConfig<CapsStaffItem>
             {
                 GridId             = "capsStaffGrid",
-                Title              = string.Empty,
+                Title              = "CAPS Staff Members",
                 ShowCheckboxColumn = false,
                 ShowPagination     = true,
                 KeyProperty        = "MNumber",
@@ -326,7 +326,6 @@ namespace Apha.FPSApps.Web.Areas.CostBook.Controllers
             };
         }
 
-        // TRANSFORMENGINE: Tab 3 — Create CSG7 Group GET
         [HttpGet]
         public IActionResult CreateCsg7Group()
         {
@@ -351,9 +350,11 @@ namespace Apha.FPSApps.Web.Areas.CostBook.Controllers
             }
 
             var result = await _accountGroupService.AddAccountGroupAsync(dto);
-            return result.Success
-                ? Json(new { success = true, message = "CSG7 group saved successfully." })
-                : Json(new { success = false, errors = result.Errors });
+            if (result.Success)
+                return Json(new { success = true, message = "CSG7 group saved successfully." });
+
+            var errorMessage = result.Errors?.FirstOrDefault()?.Message ?? "Save failed.";
+            return Json(new { success = false, message = errorMessage, errors = result.Errors });
         }
 
        
@@ -455,7 +456,7 @@ namespace Apha.FPSApps.Web.Areas.CostBook.Controllers
             return new DataGridConfig<CapsStaffItem>
             {
                 GridId             = "capsStaffGrid",
-                Title              = string.Empty,
+                Title              = "CAPS Staff Members",
                 ShowCheckboxColumn = false,
                 ShowPagination     = true,
                 KeyProperty        = "MNumber",
@@ -498,9 +499,11 @@ namespace Apha.FPSApps.Web.Areas.CostBook.Controllers
             }
 
             var result = await _capsStaffService.AddCapsStaffAsync(dto);
-            return result.Success
-                ? Json(new { success = true, message = "Staff member saved successfully." })
-                : Json(new { success = false, errors = result.Errors });
+            if (result.Success)
+                return Json(new { success = true, message = "Staff member saved successfully." });
+
+            var errorMessage = result.Errors?.FirstOrDefault()?.Message ?? "Save failed.";
+            return Json(new { success = false, message = errorMessage, errors = result.Errors });
         }
 
         
@@ -542,7 +545,6 @@ namespace Apha.FPSApps.Web.Areas.CostBook.Controllers
                 : Json(new { success = false, errors = result.Errors });
         }
 
-        // TRANSFORMENGINE: Tab 5 — Delete CapsStaff → DELETE /api/v1/capsstaff/{mNumber}
         [HttpDelete]
         public async Task<IActionResult> DeleteCapsStaff(string mNumber)
         {

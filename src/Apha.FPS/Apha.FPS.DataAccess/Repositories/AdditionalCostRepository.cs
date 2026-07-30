@@ -50,9 +50,15 @@ namespace Apha.FPS.DataAccess.Repositories
 
         public async Task<AdditionalCost?> GetByIdAsync(string jobCode, string account, string description)
         {
+            var jobCodeValue = (jobCode ?? string.Empty).Trim();
+            var accountValue = (account ?? string.Empty).Trim();
+            var descriptionValue = (description ?? string.Empty).Trim();
+
             return await _context.AdditionalCosts
                 .AsNoTracking()
-                .FirstOrDefaultAsync(a => a.JobCode == jobCode && a.Account == account && a.Description == description);
+                .FirstOrDefaultAsync(a => a.JobCode.Trim() == jobCodeValue
+                                       && a.Account.Trim() == accountValue
+                                       && a.Description.Trim() == descriptionValue);
         }
 
         public async Task<AdditionalCost> AddAsync(AdditionalCost additionalCost)
@@ -83,7 +89,7 @@ namespace Apha.FPS.DataAccess.Repositories
             });
         }
 
-        public async Task<AdditionalCost> UpdateAsync(AdditionalCost additionalCost)
+        public async Task<AdditionalCost> UpdateAsync(AdditionalCost additionalCost, string originalAccount, string originalDescription)
         {
             ArgumentNullException.ThrowIfNull(additionalCost);
 
@@ -93,27 +99,69 @@ namespace Apha.FPS.DataAccess.Repositories
                 await using var transaction = await _context.Database.BeginTransactionAsync();
                 try
                 {
+                    var jobCodeValue = (additionalCost.JobCode ?? string.Empty).Trim();
+                    var originalAccountValue = (originalAccount ?? string.Empty).Trim();
+                    var originalDescriptionValue = (originalDescription ?? string.Empty).Trim();
+
                     var existing = await _context.AdditionalCosts
-                        .FirstOrDefaultAsync(a => a.JobCode == additionalCost.JobCode
-                                               && a.Account == additionalCost.Account
-                                               && a.Description == additionalCost.Description);
+                        .FirstOrDefaultAsync(a => a.JobCode.Trim() == jobCodeValue
+                                               && a.Account.Trim() == originalAccountValue
+                                               && a.Description.Trim() == originalDescriptionValue);
 
                     if (existing == null)
                         throw new InvalidOperationException(
-                            $"Additional cost with JobCode {additionalCost.JobCode}, Account {additionalCost.Account}, Description {additionalCost.Description} not found");
+                            $"Additional cost with JobCode {additionalCost.JobCode}, Account {originalAccount}, Description {originalDescription} not found");
 
-                    existing.ItemCost = additionalCost.ItemCost;
-                    existing.Freq = additionalCost.Freq;
-                    existing.Supplier = additionalCost.Supplier;
-                    existing.FpsYear = _requestContext.FpsYear;
+                    var descriptionChanged = !string.Equals(
+                        existing.Description, additionalCost.Description, StringComparison.OrdinalIgnoreCase);
 
-                    var logEntry = CreateAdditionalCostLogEntry(existing, "U");
+                    var accountChanged = !string.Equals(
+                        existing.Account, additionalCost.Account, StringComparison.OrdinalIgnoreCase);
 
-                    _context.AdditionalCostLogs.Add(logEntry);
+                    AdditionalCost result;
+
+                    if (descriptionChanged || accountChanged)
+                    {
+                        // Account and Description are part of the primary key, so the row
+                        // must be recreated rather than updated in place.
+                        var replacement = new AdditionalCost
+                        {
+                            JobCode = additionalCost.JobCode,
+                            Account = additionalCost.Account,
+                            Description = additionalCost.Description,
+                            ItemCost = additionalCost.ItemCost,
+                            Freq = additionalCost.Freq,
+                            Supplier = additionalCost.Supplier,
+                            FpsYear = _requestContext.FpsYear
+                        };
+
+                        var deleteLog = CreateAdditionalCostLogEntry(existing, "D");
+                        var insertLog = CreateAdditionalCostLogEntry(replacement, "I");
+
+                        _context.AdditionalCosts.Remove(existing);
+                        _context.AdditionalCosts.Add(replacement);
+                        _context.AdditionalCostLogs.Add(deleteLog);
+                        _context.AdditionalCostLogs.Add(insertLog);
+
+                        result = replacement;
+                    }
+                    else
+                    {
+                        existing.ItemCost = additionalCost.ItemCost;
+                        existing.Freq = additionalCost.Freq;
+                        existing.Supplier = additionalCost.Supplier;
+                        existing.FpsYear = _requestContext.FpsYear;
+
+                        var logEntry = CreateAdditionalCostLogEntry(existing, "U");
+                        _context.AdditionalCostLogs.Add(logEntry);
+
+                        result = existing;
+                    }
+
                     await _context.SaveChangesAsync();
                     await transaction.CommitAsync();
 
-                    return existing;
+                    return result;
                 }
                 catch
                 {

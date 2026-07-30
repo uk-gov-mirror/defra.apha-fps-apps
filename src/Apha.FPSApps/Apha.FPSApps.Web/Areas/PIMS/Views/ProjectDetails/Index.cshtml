@@ -8,7 +8,7 @@
 
 <div class="govuk-grid-row sup_border-bottom" style="padding: 0">
     <h5 class="govuk-heading-s sup_margin_0"
-        style="padding: 10px 0 5px 24px; border-bottom: 2px solid #1d70b8">
+        style="padding: 10px 0 5px 24px;">
         Project Details
     </h5>
 </div>
@@ -160,6 +160,7 @@
                                                             <label class="govuk-label govuk-!-font-size-16"
                                                                    for="project-transfer">Project</label>
                                                             <input class="govuk-input govuk-!-font-size-16"
+                                                                   id="project-transfer"
                                                                    type="text"
                                                                    readonly="readonly"
                                                                    maxlength="20"
@@ -181,11 +182,13 @@
                                                 </div>
                                                 <div class="govuk-form-group mb-2">
                                                     <label class="govuk-label govuk-!-font-size-16"
-                                                           asp-for="ProposedProjectDetails.Projecttitle">
+                                                        aria-label="title-transfer"
+                                                        asp-for="ProposedProjectDetails.Projecttitle">
                                                         Title
                                                     </label>
                                                     <textarea class="govuk-textarea govuk-!-font-size-16"
                                                               id="title-transfer"
+                                                              aria-label="title-transfer"
                                                               asp-for="ProposedProjectDetails.Projecttitle"
                                                               rows="2"
                                                               style="margin-bottom: auto;">ProposedProjectDetails.Projecttitle</textarea>
@@ -212,6 +215,7 @@
                                                             </label>
                                                             <input class="govuk-input govuk-!-font-size-16"
                                                                    id="disease-transfer"
+                                                                   aria-label="disease-transfer"
                                                                    asp-for="ProposedProjectDetails.Disease"
                                                                    type="text" />
                                                         </div>
@@ -226,6 +230,7 @@
                                                             </label>
                                                             <input class="govuk-input govuk-!-font-size-16"
                                                                    id="program-transfer"
+                                                                   aria-label="program-transfer"
                                                                    asp-for="ProposedProjectDetails.Program"
                                                                    type="text" />
                                                         </div>
@@ -238,6 +243,7 @@
                                                             </label>
                                                             <input class="govuk-input govuk-!-font-size-16"
                                                                    id="customer-transfer"
+                                                                   aria-label="customer-transfer"
                                                                    asp-for="ProposedProjectDetails.Customer"
                                                                    type="text" />
                                                         </div>
@@ -250,6 +256,8 @@
                                                     </label>
                                                     <input class="govuk-input govuk-!-font-size-16"
                                                            id="manager-transfer"
+                                                           aria-label="manager-transfer"
+                                                           asp-for="ProposedProjectDetails.Manager"
                                                            asp-for="ProposedProjectDetails.Manager"
                                                            type="text" />
                                                 </div>
@@ -381,6 +389,7 @@
                                                 <input type="date"
                                                        id="StartDatePicker"
                                                        value="@(Model.ProjectDetails?.StartDate?.ToString("yyyy-MM-dd") ?? string.Empty)"
+                                                       aria-label="Start Date picker"
                                                        style="position:absolute; top:0; left:0; opacity:0; width:1px; height:1px; pointer-events:auto;"
                                                        onchange="onStartDateChanged('StartDatePicker', 'StartDateDisplay', 'StartDateBinding', 'StartDateError')">
                                             </div>
@@ -413,6 +422,7 @@
                                                 <input type="date"
                                                        id="EndDatePicker"
                                                        value="@(Model.ProjectDetails?.EndDate?.ToString("yyyy-MM-dd") ?? string.Empty)"
+                                                       aria-label="End Date picker"
                                                        style="position:absolute; top:0; left:0; opacity:0; width:1px; height:1px; pointer-events:auto;"
                                                        onchange="onEndDateChanged('EndDatePicker', 'EndDateDisplay', 'EndDateBinding', 'EndDateError')">
                                             </div>
@@ -482,6 +492,7 @@
                                                 <input type="date"
                                                        id="RevisedEndDatePicker"
                                                        value="@(Model.ProjectDetails?.RevisedEndDate?.ToString("yyyy-MM-dd") ?? string.Empty)"
+                                                       aria-label="Revised End Date picker"
                                                        style="position:absolute; top:0; left:0; opacity:0; width:1px; height:1px; pointer-events:auto;"
                                                        onchange="onRevisedEndDateChanged('RevisedEndDatePicker', 'RevisedEndDateDisplay', 'RevisedEndDateBinding', 'RevisedEndDateError')">
                                             </div>
@@ -513,6 +524,7 @@
                                                 <input type="date"
                                                        id="ClosedDatePicker"
                                                        value="@(Model.ProjectDetails?.ClosedDate?.ToString("yyyy-MM-dd") ?? string.Empty)"
+                                                       aria-label="Closed Date picker"
                                                        style="position:absolute; top:0; left:0; opacity:0; width:1px; height:1px; pointer-events:auto;"
                                                        onchange="syncDateToText('ClosedDatePicker', 'ClosedDateDisplay', 'ClosedDateBinding', 'ClosedDateError')">
                                             </div>
@@ -558,7 +570,7 @@
                                         onclick="openAddCommentModal()">
                                     <i class="fa-solid fa-comment govuk-!-font-size-16"
                                        style="color: #ffffff"></i>
-                                    &nbsp; Add comment
+                                    &nbsp; Add Comments
                                 </button>
                             </div>
                         </div>

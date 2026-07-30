@@ -67,7 +67,7 @@
                 <div class="row">
                     <div class="col-lg-12">
                         <label class="govuk-label--s" for="txtSelectedProject" style="color:#3e3e3e">Test Purchase Plan for</label>
-                        <input type="text" id="txtSelectedProject" value="" class="projectplan-code govuk-input">
+                        <input type="text" id="txtSelectedProject" value="" readonly class="projectplan-code govuk-input">
                         <input type="hidden" id="hdnJobCode" value="" />
                     </div>
                 </div>
@@ -138,6 +138,22 @@
                     calculateTestCostTotal();
                 }).observe(testGridContainer, { childList: true });
             }
+
+            document.addEventListener('gridReloaded', function (e) {
+                if (e.detail.gridId === '@Model.ProjectsGrid.GridId') {
+                    var firstRow = $('#tbl_@Model.ProjectsGrid.GridId tbody tr.selectable-row:first');
+                    if (firstRow.length) {
+                        firstRow.trigger('click');
+                    }
+                }
+            });
+
+            $(document).on('click', '#gridContainer_@Model.TestPlanGrid.GridId .sortable-header, #gridContainer_@Model.TestPlanGrid.GridId .pagination a', function (e) {
+                if (!currentJobCode) {
+                    e.stopImmediatePropagation();
+                    return false;
+                }
+            });
         });
 
         $('#programmeSelect').on('change', function () {

@@ -9,7 +9,6 @@ namespace Apha.FPS.Application.Interfaces
     /// </summary>
     public interface IGradeService
     {
-        // TRANSFORMENGINE: GetAllPagedAsync — paged list with optional search/sort; delegates to IGradeRepository.GetAllPagedAsync
         /// <summary>
         /// Returns a paginated, optionally filtered and sorted list of grades for the active FPS year.
         /// </summary>
@@ -17,7 +16,6 @@ namespace Apha.FPS.Application.Interfaces
         /// <returns>Paginated result of GradeDtos.</returns>
         Task<PaginatedResult<GradeDto>> GetAllPagedAsync(QueryParameters<string> query);
 
-        // TRANSFORMENGINE: GetByIdAsync — look up single grade by GradeCode; FpsYear resolved via DbContext HasQueryFilter
         /// <summary>
         /// Returns a single grade by its GradeCode, or null if not found in the active FPS year.
         /// </summary>
@@ -25,7 +23,6 @@ namespace Apha.FPS.Application.Interfaces
         /// <returns>GradeDto if found; null otherwise.</returns>
         Task<GradeDto?> GetByIdAsync(string gradeCode);
 
-        // TRANSFORMENGINE: CreateAsync — validates then delegates to IGradeRepository.CreateAsync
         /// <summary>
         /// Creates a new grade record after validation.
         /// Throws <see cref="ArgumentException"/> if GradeCode is null/empty.
@@ -35,7 +32,6 @@ namespace Apha.FPS.Application.Interfaces
         /// <returns>Created GradeDto.</returns>
         Task<GradeDto> CreateAsync(GradeDto gradeDto);
 
-        // TRANSFORMENGINE: UpdateAsync — validates then delegates to IGradeRepository.UpdateAsync with originalCode for rename support
         /// <summary>
         /// Updates an existing grade identified by <paramref name="originalCode"/>.
         /// Throws <see cref="ArgumentException"/> if originalCode or GradeCode is null/empty.
@@ -47,7 +43,6 @@ namespace Apha.FPS.Application.Interfaces
         /// <returns>Updated GradeDto.</returns>
         Task<GradeDto> UpdateAsync(string originalCode, GradeDto gradeDto);
 
-        // TRANSFORMENGINE: DeleteAsync — validates then delegates to IGradeRepository.DeleteAsync
         /// <summary>
         /// Deletes the grade with the given GradeCode.
         /// Throws <see cref="ArgumentException"/> if gradeCode is null/empty.

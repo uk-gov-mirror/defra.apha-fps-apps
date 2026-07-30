@@ -8,7 +8,7 @@
     #gridContainer_staffBookedGrid .grid-scroll-container {
         height: 255px;
         max-height: 255px;
-    }   
+    }
 </style>
 
 <div class="container-fluid">
@@ -17,7 +17,6 @@
             <div style="padding: 5px 5px; border-bottom: 1px solid #b4b4b4" class="row">
                 <div style="display: flex; font-size: 14px; align-items: center; justify-content: space-between;">
                     <div class="col-md-6">
-                        
                     </div>
                     <div style="display: flex; justify-content: flex-end;" class="col-md-6">
                         <label class="fw-bold mt-2" for="programmeSelect">Programme:</label>
@@ -42,7 +41,7 @@
             <div class="" style=" border-radius: 5px;justify-content: flex-start; margin-bottom:10px;background-color: #edf4ff;border: 1px solid #1d70b8;padding: 4px;">
                 <div class="row">
                     <div class="col-lg-7">
-                        <label class="govuk-label--s" for="managerName"  style="color:#3e3e3e">Programme Manager </label>
+                        <label class="govuk-label--s" for="managerName" style="color:#3e3e3e">Programme Manager </label>
                         <input type="text" value="@Model.Manager" id="managerName" class="projectplan-code govuk-input" readonly>
 			
                     </div>
@@ -68,7 +67,7 @@
                 <div class="row">
                     <div class="col-lg-12">
                         <label class="govuk-label--s" for="txtSelectedProject" style="color:#3e3e3e">Staff Resource Plan for </label>
-                        <input type="text" id="txtSelectedProject" value="" class="projectplan-code govuk-input">
+                        <input type="text" id="txtSelectedProject" value="" readonly class="projectplan-code govuk-input">
                         <input type="hidden" id="hdnJobCode" value="" />
                     </div>
                 </div>
@@ -80,7 +79,7 @@
                     </div>
                 </div>
                 <div class="govuk-grid-column-full mt-2">
-                    <div class="financial-summary mt-2"> 
+                    <div class="financial-summary mt-2">
                         <div class="summary-row">
                             <div class="summary-item">
                                 <label class="govuk-label--s" for="for_project">For Project:</label>
@@ -107,12 +106,12 @@
                                     <input type="text" value="0" aria-label="Total_Costs" id="Total_Costs" readonly class="govuk-input text-AlignRight">
                                 </div>
                             </div>
-                        </div>	
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-</div>
+    </div>
 </div>
 
 
@@ -139,6 +138,25 @@
                 new MutationObserver(function () {
                     calculateExternalIncome();
                 }).observe(staffGridContainer, { childList: true });
+            }
+
+            document.addEventListener('gridReloaded', function (e) {
+                if (e.detail.gridId === '@Model.ProjectsGrid.GridId') {
+                    var firstRow = $('#tbl_@Model.ProjectsGrid.GridId tbody tr.selectable-row:first');
+                    if (firstRow.length) {
+                        firstRow.trigger('click');
+                    }
+                }
+            });
+
+            var staffGridEl = document.getElementById('gridContainer_@Model.StaffCostGrid.GridId');
+            if (staffGridEl) {
+                staffGridEl.addEventListener('click', function (e) {
+                    if (!currentJobCode && (e.target.closest('.sortable-header') || e.target.closest('.pagination a'))) {
+                        e.stopImmediatePropagation();
+                        e.preventDefault();
+                    }
+                }, true);
             }
         });
 

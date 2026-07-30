@@ -67,5 +67,10 @@ namespace Apha.FPSApps.Application.Services.FPS
         {
             return await _fpsClient.FpsStaffJob.DeleteStaffJobAsync(staffId, jobCode);
         }
+
+        public async Task<ApiResponseDto<List<StaffJobViewDto>>> GetStaffJobsAllocationByJobCodeWgGradePagedAsync(QueryParameters<string> query, string jobcode, string wgGrade)
+        {
+            return await _fpsClient.FpsStaffJob.GetStaffJobsAllocationByJobCodeWgGradePagedAsync(query, jobcode, wgGrade);
+        }
     }
 }

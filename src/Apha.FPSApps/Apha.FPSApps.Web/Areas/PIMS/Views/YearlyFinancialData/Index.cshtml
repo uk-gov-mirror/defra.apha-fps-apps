@@ -1,0 +1,1001 @@
+@using Apha.FPSApps.Web.Models.Components.DataGrid
+@model Apha.FPSApps.Web.Areas.PIMS.Models.YearlyFinancialDataViewModel
+
+@{
+    ViewData["Title"] = "PIMS : Yearly Financial Details";
+}
+
+<div class="govuk-grid-row sup_border-bottom" style="padding: 0">
+    <h5 class="govuk-heading-s sup_margin_0"
+        style="padding: 10px 0 5px 24px;">
+        Yearly Financial Details
+    </h5>
+</div>
+
+<div class="sup_flex govuk-!-padding-top-2">
+
+    @await Html.PartialAsync("_SideNav", new Apha.FPSApps.Web.Areas.PIMS.Models.ProjectDetailsViewModel
+    {
+        Parentproject = Model.Parentproject
+    })
+
+    <main class="main-content" id="main-content" style="padding-top: 0">
+        <div class="govuk-width-container">
+        <!-- ── Toolbar: Project selector + date display ──────────────────── -->
+        
+        <div class="yfd-toolbar govuk-!-margin-right-5 govuk-!-margin-left-2 govuk-!-padding-2">
+            <div class="yfd-toolbar__left" style="display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap;">
+
+                
+                <div class="yfd-toolbar__item">
+                    <label class="govuk-label tab-font-size govuk-!-font-weight-bold" for="yfdProject">Project</label>
+                    <select id="yfdProject"
+                            asp-for="SelectedProject"
+                            class="govuk-select tab-font-size sup_select_option_width_100"
+                            asp-items="Model.ProjectList"
+                            onchange="onProjectChanged()"
+                            aria-label="Select project">
+                        <option value=""></option>
+                    </select>
+                </div>
+
+                <div class="yfd-toolbar__item">
+                        <label class="govuk-label tab-font-size govuk-!-font-weight-bold" for="yfdStartDate">Start Date</label>
+                    <input class="govuk-input govuk-input--width-10 tab-font-size"
+                           id="yfdStartDate"
+                           name="yfdStartDate"
+                           type="text"
+                           value="@Model.StartDate"
+                           readonly
+                           aria-readonly="true" />
+                </div>
+
+                <div class="yfd-toolbar__item">
+                        <label class="govuk-label tab-font-size govuk-!-font-weight-bold" for="yfdEndDate">(Revised) End Date</label>
+                    <input class="govuk-input govuk-input--width-10 tab-font-size"
+                           id="yfdEndDate"
+                           name="yfdEndDate"
+                           type="text"
+                           value="@Model.EndDate"
+                           readonly
+                           aria-readonly="true" />
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ── DataGrid ───────────────────────────────────────────────────── -->
+        
+        <div class="govuk-grid-row govuk-!-margin-right-5 govuk-!-margin-left-2 govuk-!-margin-right-1 sup_margin_bottom_10">
+            <div class="govuk-grid-column-full">
+                <div id="gridContainer_costCenterListGrid">
+                    @await Html.PartialAsync("_DataGrid", Model.CostCenterListGrid)
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Totals row ─────────────────────────────────────────────────── -->
+       
+        <div class="govuk-grid-row govuk-!-margin-right-5 govuk-!-margin-left-2 sup_margin_bottom_10">
+            <div class="govuk-grid-column-full sup_p_0">
+                <div id="yfdTotalsScrollWrapper" class="yfd-scroll-wrapper">
+                    <table id="tblYFDTotals"
+                           class="govuk-table custom-table yfd-totals-table yfd-grid-table"
+                           aria-label="Totals row">
+                        <colgroup>
+                            <col class="yfd-col-year" />
+                            <col class="yfd-col-ppacc" />
+                            <col class="yfd-col-income" />
+                            <col class="yfd-col-budget" />
+                            <col class="yfd-col-actexp" />
+                            <col class="yfd-col-seedcorn" />
+                            <col class="yfd-col-manhours" />
+                            <col class="yfd-col-pay" />
+                            <col class="yfd-col-nonpay" />
+                            <col class="yfd-col-test" />
+                            <col class="yfd-col-projspec" />
+                            <col class="yfd-col-animal" />
+                            <col class="yfd-col-excadj" />
+                            <col class="yfd-col-adjcomment" />
+                            <col class="yfd-col-actions" />
+                        </colgroup>
+                        <tbody class="govuk-table__body">
+                            <tr class="govuk-table__row">
+                                <td class="govuk-table__cell yfd-total-label"  colspan="2">Totals</td>
+                                <td class="govuk-table__cell sup_text_right_align" id="totalCustomerIncome"></td>
+                                <td class="govuk-table__cell yfd-total-hidden"></td>
+                                <td class="govuk-table__cell sup_text_right_align" id="totalActualExp"></td>
+                                <td class="govuk-table__cell yfd-total-hidden"></td>
+                                <td class="govuk-table__cell yfd-total-hidden"></td>
+                                <td class="govuk-table__cell sup_text_right_align" id="totalPayCosts"></td>
+                                <td class="govuk-table__cell sup_text_right_align" id="totalNonPay"></td>
+                                <td class="govuk-table__cell sup_text_right_align" id="totalTestCosts"></td>
+                                <td class="govuk-table__cell sup_text_right_align" id="totalProjectSpecific"></td>
+                                <td class="govuk-table__cell sup_text_right_align" id="totalAnimal"></td>
+                                <td class="govuk-table__cell sup_text_right_align" id="totalAdjustment"></td>
+                                <td class="govuk-table__cell yfd-total-hidden"></td>
+                                <td class="govuk-table__cell yfd-total-hidden"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+            </div>
+        </main>
+    </div>
+
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        // ── Sidebar ──────────────────────────────────────────────────────
+        function toggleSidebar() {
+            document.querySelector('.sidenav').classList.toggle('collapsed');
+        }
+
+        // ── Grid extra filter — supplies current project to LoadYearlyFinancialDataGrid ──
+        
+        function getYearlyFinancialDataExtraFilters() {
+            return {
+                project: document.getElementById('yfdProject')?.value || ''
+            };
+        }
+
+        // ── Grid reload ──────────────────────────────────────────────────────────────────
+       
+        function reloadYearlyFinancialDataGrid() {
+            var gm = window['gridManager_costCenterListGrid'];
+            if (gm) { gm.reloadGrid({ page: 1 }); }
+        }
+
+        // ── Project change handler ───────────────────────────────────────────────────────
+        function onProjectChanged() {
+            var project = document.getElementById('yfdProject')?.value || '';
+            if (!project) {
+                document.getElementById('yfdStartDate').value = '';
+                document.getElementById('yfdEndDate').value = '';
+                reloadYearlyFinancialDataGrid();
+                return;
+            }
+            // Reload grid with new project
+            reloadYearlyFinancialDataGrid();
+            // Fetch project dates directly from the dedicated JSON endpoint
+            $.get('/PIMS/YearlyFinancialData/GetProjectDates', { project: project }, function (data) {
+                document.getElementById('yfdStartDate').value = (data && data.startDate) ? data.startDate : '';
+                document.getElementById('yfdEndDate').value = (data && data.endDate) ? data.endDate : '';
+            }).fail(function () {
+                document.getElementById('yfdStartDate').value = '';
+                document.getElementById('yfdEndDate').value = '';
+            });
+        }
+
+        function openYFDModalContent(html, innerModalSelector) {
+            yfdPactCosts = null;
+            yfdPactBase = null;
+            $('#modaPopupBody').html(html);
+            $('#modalPopup').addClass('show');
+
+            var modal = document.querySelector(innerModalSelector);
+            if (modal) {
+                modal.classList.add('open');
+            }
+
+            wireYfdManTimeSync();
+            wireYfdReportedValueSync();
+            wireYfdYearAutoLoad();
+            recalcYFDTotalCosts();
+            
+            initYfdPactBase();
+            
+            initYfdLockState();
+         
+            var _autoYear    = getCurrentYfdYear();
+            var _autoProject = getCurrentYfdProject();
+            if (_autoYear && _autoProject) {
+                loadYfdPactCosts(_autoProject, _autoYear, false).catch(function () {
+                    
+                });
+            }
+        }
+
+       
+        function initYfdPactBase() {
+            var storedActualExp  = parseDecimalOrNull($('#hdnYfdActualExpenditure').val());
+            var storedAdjustment = parseDecimalOrNull($('#yfdModalAdjustment').val()) ?? 0;
+            yfdPactBase = (storedActualExp !== null) ? (storedActualExp - storedAdjustment) : null;
+        }
+
+        
+        function initYfdLockState() {
+            var isLocked = $('#yfdModalFixed').is(':checked');
+            lockYfdCostFields(isLocked);
+        }
+
+      
+        function lockYfdCostFields(locked) {
+            var lockableIds = [
+                'yfdModalPPAcc', 'yfdModalCustomerIncome', 'yfdModalVLABudget', 'yfdModalSeedcorn',
+                'yfdModalManHours', 'yfdModalManDays', 'yfdModalManYears',
+                'yfdModalPayCosts', 'yfdModalNonPay', 'yfdModalTestCosts',
+                'yfdModalAnimalCosts', 'yfdModalProjectSpecific',
+                'yfdModalAdjustment'
+            ];
+            lockableIds.forEach(function (id) {
+                var el = document.getElementById(id);
+                if (el) {
+                    el.disabled = locked;
+                    if (locked) {
+                        el.setAttribute('aria-disabled', 'true');
+                    } else {
+                        el.removeAttribute('aria-disabled');
+                    }
+                }
+            });
+            // Access SetLocked behavior: when fixed, disable Fix Costing + Update Costing buttons.
+            var btnFix = document.getElementById('btnYfdFixCosting');
+            if (btnFix) {
+                btnFix.disabled = locked;
+                if (locked) { btnFix.setAttribute('aria-disabled', 'true'); }
+                else { btnFix.removeAttribute('aria-disabled'); }
+            }
+
+            var btnUpdateCosting = document.getElementById('btnYfdUpdateCosting');
+            if (btnUpdateCosting) {
+                btnUpdateCosting.disabled = locked;
+                if (locked) { btnUpdateCosting.setAttribute('aria-disabled', 'true'); }
+                else { btnUpdateCosting.removeAttribute('aria-disabled'); }
+            }
+        }
+
+        // ── Add ──────────────────────────────────────────────────────────────────────────
+        
+        function addYearlyFinancialData() {
+            var project = document.getElementById('yfdProject')?.value || '';
+            if (!project) {
+                showAlertMessage('Please select a project first.', AlertType.ERROR);
+                return;
+            }
+
+            $.get('/PIMS/YearlyFinancialData/Create', { project: project }, function (html) {
+                openYFDModalContent(html, '#editYFDModal');
+            }).fail(function () {
+                showAlertMessage('Unable to open add form.', AlertType.ERROR);
+            });
+        }
+
+        // ── Edit ─────────────────────────────────────────────────────────────────────────
+       
+        function editYearlyFinancialData(btn) {
+            var year = $(btn).data('id');
+            var project = document.getElementById('yfdProject')?.value || '';
+            $.get('/PIMS/YearlyFinancialData/Edit', { year: year, project: project }, function (html) {
+                openYFDModalContent(html, '#editYFDModal');
+            }).fail(function () {
+                showAlertMessage('Unable to open edit form.', AlertType.ERROR);
+            });
+        }
+
+        // ── Delete ───────────────────────────────────────────────────────────────────────
+        
+        function deleteYearlyFinancialData(btn) {
+            var year = $(btn).data('id');
+            var project = document.getElementById('yfdProject')?.value || '';
+
+            showGovukConfirm('Are you sure you want to delete this yearly financial record? This action cannot be undone.').then(function (result) {
+                if (!result) return;
+
+                var token = $('input[name="__RequestVerificationToken"]').val();
+                $.ajax({
+                    url: '/PIMS/YearlyFinancialData/Delete',
+                    type: 'DELETE',
+                    headers: { 'RequestVerificationToken': token },
+                    data: { year: year, project: project },
+                    success: function (response) {
+                        if (response.success) {
+                            showAlertMessage(response.message || 'Yearly financial record deleted successfully.', AlertType.SUCCESS).then(function () {
+                                reloadYearlyFinancialDataGrid();
+                            });
+                        } else {
+                            showAlertMessage(response.errors?.map(function (e) { return e.message; }).join(', ') || 'Delete failed. Please try again.', AlertType.ERROR);
+                        }
+                    },
+                    error: function () {
+                        showAlertMessage('An error occurred while deleting the yearly financial record.', AlertType.ERROR);
+                    }
+                });
+            });
+        }
+
+        const YFD_HOURS_IN_DAY = @Model.HoursInDay.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        const YFD_DAYS_IN_YEAR = @Model.DaysInYear.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        const YFD_HOURS_IN_YEAR = YFD_HOURS_IN_DAY * YFD_DAYS_IN_YEAR;
+        let yfdPactCosts = null;
+       
+        let yfdPactBase = null;
+        let yfdManTimeSyncing = false;
+
+        function getCurrentYfdYear() {
+            var isEdit = $('#hdnYfdIsEdit').val() === 'true';
+            var hiddenYear = parseInt($('#hdnYfdYear').val(), 10);
+            var modalYear = parseInt($('#yfdModalYear').val(), 10);
+            return isEdit ? (hiddenYear || modalYear) : modalYear;
+        }
+
+        function getCurrentYfdProject() {
+            return (($('#hdnYfdProject').val() || document.getElementById('yfdProject')?.value || '') + '').trim();
+        }
+
+        function getYearFromDisplayDate(value) {
+            var txt = (value || '').toString().trim();
+            if (!txt) return null;
+            var parts = txt.split('/');
+            if (parts.length !== 3) return null;
+            var year = parseInt(parts[2], 10);
+            return Number.isFinite(year) ? year : null;
+        }
+
+        function getAllowedYearRange() {
+            var startYear = getYearFromDisplayDate(document.getElementById('yfdStartDate')?.value);
+            var endYear = getYearFromDisplayDate(document.getElementById('yfdEndDate')?.value);
+            if (!startYear || !endYear) return null;
+            return {
+                minYear: Math.min(startYear, endYear),
+                maxYear: Math.max(startYear, endYear)
+            };
+        }
+
+        function validateYfdYearWithinProjectRange(year, showMessage) {
+            var range = getAllowedYearRange();
+            if (!range) {
+                return true;
+            }
+
+            var isValid = year >= range.minYear && year <= range.maxYear;
+            if (!isValid && showMessage) {
+                showAlertMessage('Please enter year between ' + range.minYear + ' and ' + range.maxYear + ' for this project.', AlertType.ERROR);
+            }
+            return isValid;
+        }
+
+        function getPactProjectSpecific(pact) {
+            if (!pact) {
+                return null;
+            }
+
+            var subContracts = toNormalizedNumber(pact.subContracts);
+            var animals = toNormalizedNumber(pact.animals);
+            if (isNaN(subContracts) && isNaN(animals)) {
+                return null;
+            }
+
+            return (isNaN(subContracts) ? 0 : subContracts) - (isNaN(animals) ? 0 : animals);
+        }
+
+        function enableYfdCostingPanel() {
+            var panel = document.getElementById('yfdCostingPanel');
+            if (panel) {
+                panel.classList.remove('yfd-costing-panel--disabled');
+                panel.removeAttribute('aria-disabled');
+            }
+        }
+
+        function updateYfdReportedValues(actualExpenditure, actualManYears) {
+            $('#hdnYfdActualExpenditure').val(formatEditableMoney(actualExpenditure));
+            $('#hdnYfdActualManYears').val(formatEditableNumber(actualManYears, 3));
+            $('#yfdActualExpReported').text(formatGbp(actualExpenditure));
+            $('#yfdActualManYearsReported').text(actualManYears == null ? '—' : formatEditableNumber(actualManYears, 3));
+        }
+
+        function recalcYfdReportedValuesFromPact() {
+            var adjustment = parseDecimalOrNull($('#yfdModalAdjustment').val());
+
+            if (yfdPactCosts) {
+                var pactTotalCosts = toNormalizedNumber(yfdPactCosts.totalCosts);
+                var pactHours = toNormalizedNumber(yfdPactCosts.hours);
+                var actualExpenditure = adjustment === null
+                    ? null
+                    : (isNaN(pactTotalCosts) ? 0 : pactTotalCosts) + adjustment;
+                var actualManYears = isNaN(pactHours) ? null : pactHours / YFD_HOURS_IN_YEAR;
+                updateYfdReportedValues(actualExpenditure, actualManYears);
+            } else if (yfdPactBase !== null) {
+                var storedManYears = parseFloatOrNull($('#hdnYfdActualManYears').val());
+                var actualExpenditure = adjustment === null
+                    ? null
+                    : yfdPactBase + adjustment;
+                updateYfdReportedValues(actualExpenditure, storedManYears);
+            }
+        }
+
+        function wireYfdReportedValueSync() {
+            $('#yfdModalAdjustment').off('.yfdReported').on('input.yfdReported change.yfdReported', function () {
+                recalcYfdReportedValuesFromPact();
+            });
+
+           
+            $('#yfdModalFixed').off('.yfdReported').on('change.yfdReported', function () {
+                var locked = $(this).is(':checked');
+                lockYfdCostFields(locked);
+                recalcYfdReportedValuesFromPact();
+            });
+        }
+
+       
+        function applyPactCostsToModal(pact, copyToEditableFields, updateReported) {
+            if (!pact) {
+                return;
+            }
+
+            var projectSpecific = getPactProjectSpecific(pact);
+
+            setVal('pactCustomerIncome', formatGbp(pact.custIncome));
+            setVal('pactVLABudget', formatGbp(pact.budgetCvl));
+            setVal('pactPay', formatGbp(pact.pay));
+            setVal('pactNonPayOH', formatGbp(pact.nonPayOH));
+            setVal('pactTotalTimeCosts', formatGbp(pact.timeCost));
+            setVal('pactTest', formatGbp(pact.tests));
+            setVal('pactAnimal', formatGbp(pact.animals));
+            setVal('pactProjectSpecific', formatGbp(projectSpecific));
+            setVal('pactTotalCosts', formatGbp(pact.totalCosts));
+            setVal('pactManHours', pact.hours == null ? '—' : formatEditableNumber(pact.hours, 0));
+            setVal('pactManDays', pact.hours == null ? '—' : formatEditableNumber(pact.hours / YFD_HOURS_IN_DAY, 1));
+            setVal('pactManYears', pact.hours == null ? '—' : formatEditableNumber(pact.hours / YFD_HOURS_IN_YEAR, 3));
+
+            if (copyToEditableFields) {
+               
+                setVal('yfdModalCustomerIncome', formatEditableMoney(pact.custIncome));
+                setVal('yfdModalVLABudget', formatEditableMoney(pact.budgetCvl));
+                setVal('yfdModalPayCosts', formatEditableMoney(pact.pay));
+                setVal('yfdModalNonPay', formatEditableMoney(pact.nonPayOH));
+                setVal('yfdModalTestCosts', formatEditableMoney(pact.tests));
+                setVal('yfdModalAnimalCosts', formatEditableMoney(pact.animals));
+                setVal('yfdModalProjectSpecific', formatEditableMoney(projectSpecific));
+                recalcYFDTotalCosts();
+            }
+
+            if (updateReported) {
+                recalcYfdReportedValuesFromPact();
+            }
+            enableYfdCostingPanel();
+        }
+
+        function hasAnyPactValues(pact) {
+            if (!pact) {
+                return false;
+            }
+
+            var values = [
+                pact.custIncome, pact.budgetCvl, pact.pay, pact.nonPayOH,
+                pact.tests, pact.animals, pact.subContracts,
+                pact.timeCost, pact.totalCosts, pact.hours
+            ];
+
+            return values.some(function (value) {
+                return value !== null && value !== undefined;
+            });
+        }
+
+        function createNoPactCostsError() {
+            var err = new Error('No PACT costs found for the selected project/year.');
+            err.code = 'NO_PACT_COSTS';
+            return err;
+        }
+
+        function loadYfdPactCosts(project, year, copyToEditableFields) {
+            return $.get('/PIMS/YearlyFinancialData/GetPactCosts', { project: project, year: year })
+                .then(function (response) {
+                    if (!response.success || !response.data) {
+                        throw new Error(response.message || 'Failed to load PACT costs.');
+                    }
+
+                    var pact = response.data;
+                    pact.project = pact.project || project;
+                    pact.year = pact.year || year;
+
+                   
+                    if (!hasAnyPactValues(pact)) {
+                        yfdPactCosts = null;
+                        throw createNoPactCostsError();
+                    }
+
+                    yfdPactCosts = pact;
+                    applyPactCostsToModal(yfdPactCosts, copyToEditableFields, false);
+                    return yfdPactCosts;
+                });
+        }
+
+        async function ensureYfdPactCosts(project, year, copyToEditableFields) {
+            var cached = yfdPactCosts && yfdPactCosts.project === project && Number(yfdPactCosts.year) === Number(year);
+            if (cached) {
+                applyPactCostsToModal(yfdPactCosts, copyToEditableFields, false);
+                return yfdPactCosts;
+            }
+
+            return await loadYfdPactCosts(project, year, copyToEditableFields);
+        }
+
+        function clearYfdPactDetailsPanel() {
+            setVal('pactCustomerIncome', '—');
+            setVal('pactVLABudget', '—');
+            setVal('pactPay', '—');
+            setVal('pactNonPayOH', '—');
+            setVal('pactTotalTimeCosts', '—');
+            setVal('pactTest', '—');
+            setVal('pactAnimal', '—');
+            setVal('pactProjectSpecific', '—');
+            setVal('pactTotalCosts', '—');
+            setVal('pactManHours', '—');
+            setVal('pactManDays', '—');
+            setVal('pactManYears', '—');
+        }
+
+        
+        function wireYfdYearAutoLoad() {
+            $('#yfdModalYear').off('.yfdPactYear').on('input.yfdPactYear change.yfdPactYear blur.yfdPactYear', function () {
+                var project = getCurrentYfdProject();
+                var yearText = ($('#yfdModalYear').val() || '').trim();
+
+                if (!project || !/^\d{4}$/.test(yearText)) {
+                    yfdPactCosts = null;
+                    clearYfdPactDetailsPanel();
+                    return;
+                }
+
+                var year = parseInt(yearText, 10);
+                if (!year || !validateYfdYearWithinProjectRange(year, false)) {
+                    yfdPactCosts = null;
+                    clearYfdPactDetailsPanel();
+                    return;
+                }
+
+                loadYfdPactCosts(project, year, false).catch(function () {
+                    
+                    yfdPactCosts = null;
+                    clearYfdPactDetailsPanel();
+                });
+            });
+        }
+
+        function wireYfdManTimeSync() {
+            $('#yfdModalManHours').off('.yfdMantime').on('change.yfdMantime', function () {
+                syncYfdManTime('hours');
+            });
+            $('#yfdModalManDays').off('.yfdMantime').on('change.yfdMantime', function () {
+                syncYfdManTime('days');
+            });
+            $('#yfdModalManYears').off('.yfdMantime').on('change.yfdMantime', function () {
+                syncYfdManTime('years');
+            });
+        }
+
+        function syncYfdManTime(source) {
+            if (yfdManTimeSyncing) {
+                return;
+            }
+
+            yfdManTimeSyncing = true;
+            try {
+                var hours = parseFloatOrNull($('#yfdModalManHours').val());
+                var days = parseFloatOrNull($('#yfdModalManDays').val());
+                var years = parseFloatOrNull($('#yfdModalManYears').val());
+
+                if (source === 'hours' && hours != null) {
+                    $('#yfdModalManDays').val(formatEditableNumber(hours / YFD_HOURS_IN_DAY, 1));
+                    $('#yfdModalManYears').val(formatEditableNumber(hours / YFD_HOURS_IN_YEAR, 3));
+                }
+
+                if (source === 'days' && days != null) {
+                    $('#yfdModalManHours').val(formatEditableNumber(days * YFD_HOURS_IN_DAY, 0));
+                    $('#yfdModalManYears').val(formatEditableNumber(days / YFD_DAYS_IN_YEAR, 3));
+                }
+
+                if (source === 'years' && years != null) {
+                    $('#yfdModalManHours').val(formatEditableNumber(years * YFD_HOURS_IN_YEAR, 0));
+                    $('#yfdModalManDays').val(formatEditableNumber(years * YFD_DAYS_IN_YEAR, 1));
+                }
+            } finally {
+                yfdManTimeSyncing = false;
+            }
+        }
+
+        // ── Save (from _AddEditYearlyFinancialData.cshtml) ───────────────────────────────
+        
+        async function saveYFD() {
+            var isEdit = $('#hdnYfdIsEdit').val() === 'true';
+            var year = getCurrentYfdYear();
+            var project = getCurrentYfdProject();
+
+            if (!year || !project) {
+                showAlertMessage('Please enter a valid year and select a project.', AlertType.ERROR);
+                return;
+            }
+
+            if (!isEdit && !validateYfdYearWithinProjectRange(year, true)) {
+                return;
+            }
+
+            var adjustment = parseDecimalOrNull($('#yfdModalAdjustment').val());
+            var adjustmentComment = ($('#yfdModalAdjComment').val() || '').trim();
+            if ((adjustment ?? 0) !== 0 && adjustmentComment.length === 0) {
+                showAlertMessage('Please enter reason for adjustment figure, (or remove the adjustment figure).', AlertType.ERROR);
+                return;
+            }
+
+            var pact = null;
+            try {
+                pact = await ensureYfdPactCosts(project, year, false);
+            } catch {
+                pact = null;
+            }
+
+            var dto = {
+                year: year,
+                project: project,
+                bfBudget: parseDecimalOrNull($('#yfdModalPPAcc').val()),
+                pyBudget: parseDecimalOrNull($('#yfdModalCustomerIncome').val()),
+                vlaBudget: parseDecimalOrNull($('#yfdModalVLABudget').val()),
+                seedcorn: parseDecimalOrNull($('#yfdModalSeedcorn').val()),
+                payCosts: parseDecimalOrNull($('#yfdModalPayCosts').val()),
+                nonPayOhCosts: parseDecimalOrNull($('#yfdModalNonPay').val()),
+                testCosts: parseDecimalOrNull($('#yfdModalTestCosts').val()),
+                animalCosts: parseDecimalOrNull($('#yfdModalAnimalCosts').val()),
+                nonAnimalCosts: parseDecimalOrNull($('#yfdModalProjectSpecific').val()),
+                manHours: parseFloatOrNull($('#yfdModalManHours').val()),
+                manDays: parseFloatOrNull($('#yfdModalManDays').val()),
+                manYears: parseFloatOrNull($('#yfdModalManYears').val()),
+                adjustment: adjustment,
+                adjustmentComment: adjustmentComment || null,
+                locked: $('#yfdModalFixed').is(':checked') ? 1 : 0,
+                dateCosted: parseIsoDateOrNull($('#hdnYfdDateCosted').val()),
+                costedBy: ($('#yfdModalFixedBy').val() || '').trim() || null,
+                actualExpenditure: parseDecimalOrNull($('#hdnYfdActualExpenditure').val()),
+                actualManYears: parseFloatOrNull($('#hdnYfdActualManYears').val()),
+                manHoursChanged: getChangedFlag(parseFloatOrNull($('#yfdModalManHours').val()), pact ? pact.hours : null),
+                payCostsChanged: getChangedFlag(parseDecimalOrNull($('#yfdModalPayCosts').val()), pact ? pact.pay : null),
+                nonPayOhCostsChanged: getChangedFlag(parseDecimalOrNull($('#yfdModalNonPay').val()), pact ? pact.nonPayOH : null),
+                testCostsChanged: getChangedFlag(parseDecimalOrNull($('#yfdModalTestCosts').val()), pact ? pact.tests : null),
+                animalCostsChanged: getChangedFlag(parseDecimalOrNull($('#yfdModalAnimalCosts').val()), pact ? pact.animals : null),
+                nonAnimalCostsChanged: getChangedFlag(parseDecimalOrNull($('#yfdModalProjectSpecific').val()), pact ? getPactProjectSpecific(pact) : null)
+            };
+
+            var url = isEdit
+                ? '/PIMS/YearlyFinancialData/Edit?year=' + encodeURIComponent(year) +
+                  '&project=' + encodeURIComponent(project)
+                : '/PIMS/YearlyFinancialData/Create';
+
+            var antiForgeryToken = $('input[name="__RequestVerificationToken"]').val();
+
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: JSON.stringify(dto),
+                contentType: 'application/json; charset=utf-8',
+                headers: { 'RequestVerificationToken': antiForgeryToken },
+                success: function (data) {
+                    if (data.success) {
+                        closeYFDModal();
+                        showAlertMessage(data.message || 'Record saved successfully.', AlertType.SUCCESS).then(function () {
+                            reloadYearlyFinancialDataGrid();
+                        });
+                    } else {
+                        var msg = formatApiErrors(data.errors) || data.message || 'Save failed.';
+                        showAlertMessage('Save failed: ' + msg, AlertType.ERROR);
+                    }
+                },
+                error: function () { showAlertMessage('An error occurred while saving.', AlertType.ERROR); }
+            });
+        }
+
+        // ── Update Costing (from _AddEditYearlyFinancialData.cshtml) ────────────────────
+        
+        async function updateCosting() {
+            if ($('#yfdModalFixed').is(':checked')) {
+                return;
+            }
+
+            var year = getCurrentYfdYear();
+            var project = getCurrentYfdProject();
+            if (!year || !project) {
+                showAlertMessage('Please select a project and year first.', AlertType.ERROR);
+                return;
+            }
+
+            try {
+                await ensureYfdPactCosts(project, year, true);
+            } catch (error) {
+                if (error && error.code === 'NO_PACT_COSTS') {
+                    return;
+                }
+
+                showAlertMessage(error && error.message ? error.message : 'Failed to load PACT costs.', AlertType.ERROR);
+            }
+        }
+
+        // ── Fix Costing (from _AddEditYearlyFinancialData.cshtml) ───────────────────────
+       
+        async function fixCosting() {
+            var year = getCurrentYfdYear();
+            var project = getCurrentYfdProject();
+            var adjustment = parseDecimalOrNull($('#yfdModalAdjustment').val()) ?? 0;
+            var adjustmentComment = ($('#yfdModalAdjComment').val() || '').trim();
+
+            if ((adjustment !== 0) && adjustmentComment.length === 0) {
+                showAlertMessage('Please enter reason for adjustment figure, (or remove the adjustment figure).', AlertType.ERROR);
+                return;
+            }
+
+            if (!year || !project) {
+                showAlertMessage('Please select a project and year first.', AlertType.ERROR);
+                return;
+            }
+
+            try {
+                                          
+                if (yfdPactCosts && yfdPactCosts.project === project && Number(yfdPactCosts.year) === Number(year)) {
+                    applyPactCostsToModal(yfdPactCosts, false, true);
+                } else {
+                    await loadYfdPactCosts(project, year, false);
+                    applyPactCostsToModal(yfdPactCosts, false, true);
+                }
+
+                var today = new Date();
+                var dd = String(today.getDate()).padStart(2, '0');
+                var mm = String(today.getMonth() + 1).padStart(2, '0');
+                var yyyy = today.getFullYear();
+
+                $('#yfdModalDateFixed').val(dd + '/' + mm + '/' + yyyy);
+                $('#hdnYfdDateCosted').val(yyyy + '-' + mm + '-' + dd);
+                $('#yfdModalFixed').prop('checked', true);
+                $('#yfdModalFixedBy').val($('#hdnYfdCurrentUser').val() || '');
+
+                lockYfdCostFields(true);
+                enableYfdCostingPanel();
+            } catch (error) {
+                
+                showAlertMessage((error && error.message ? error.message : 'Warning: Unable to load PACT costs.') + ' You can continue with manual entry.', AlertType.ERROR);
+
+               
+                var today = new Date();
+                var dd = String(today.getDate()).padStart(2, '0');
+                var mm = String(today.getMonth() + 1).padStart(2, '0');
+                var yyyy = today.getFullYear();
+
+                $('#yfdModalDateFixed').val(dd + '/' + mm + '/' + yyyy);
+                $('#hdnYfdDateCosted').val(yyyy + '-' + mm + '-' + dd);
+                $('#yfdModalFixed').prop('checked', true);
+                $('#yfdModalFixedBy').val($('#hdnYfdCurrentUser').val() || '');
+
+                
+                lockYfdCostFields(true);
+                enableYfdCostingPanel();
+            }
+        }
+
+        // ── Modal close helpers ──────────────────────────────────────────────────────────
+        function closeYFDModal() {
+            $('#modaPopupBody .govuk-edit-modal').removeClass('open');
+            $('#modaPopupBody').html('');
+            $('#modalPopup').removeClass('show');
+        }
+        function closeYFDDetailsModal() {
+            closeYFDModal();
+        }
+
+        // ── Totals row recalculation ─────────────────────────────────────────────────────
+        
+        function recalcTotals() {
+            var sums = {
+                totalCustomerIncome: 0, totalActualExp: 0,
+                totalSeedcorn: 0,      totalManHours: 0,   totalPayCosts: 0,
+                totalNonPay: 0,        totalTestCosts: 0,  totalProjectSpecific: 0,
+                totalAnimal: 0,        totalAdjustment: 0
+            };
+            // Sum data rows from the DataGrid table
+            $('#gridContainer_costCenterListGrid table tbody tr[data-row-index]').each(function () {
+                var cells = $(this).find('td');
+                // Column order (no checkbox): 0=Year, 1=BfBudget(PP/Acc), 2=PyBudget(CustomerIncome),
+                //   3=VlaBudget, 4=ActualExp, 5=Seedcorn, 6=ManHours, 7=PayCosts,
+                //   8=NonPayOhCosts, 9=TestCosts, 10=NonAnimalCosts, 11=AnimalCosts,
+                //   12=Adjustment, 13=AdjComment, 14=actions
+                sums.totalCustomerIncome += parseGbpCell(cells.eq(2));
+                sums.totalActualExp      += parseGbpCell(cells.eq(4));
+                sums.totalSeedcorn       += parseGbpCell(cells.eq(5));
+                sums.totalManHours        += parseNumCell(cells.eq(6));
+                sums.totalPayCosts        += parseGbpCell(cells.eq(7));
+                sums.totalNonPay          += parseGbpCell(cells.eq(8));
+                sums.totalTestCosts       += parseGbpCell(cells.eq(9));
+                sums.totalProjectSpecific += parseGbpCell(cells.eq(10));
+                sums.totalAnimal          += parseGbpCell(cells.eq(11));
+                sums.totalAdjustment      += parseGbpCell(cells.eq(12));
+            });
+            for (var id in sums) {
+                var el = document.getElementById(id);
+                if (el) {
+                    if (id === 'totalManHours') {
+                        el.textContent = sums[id].toFixed(2);
+                    } else {
+                    el.textContent = '£' + sums[id].toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                }
+            }
+        }
+        }
+
+        // ── Utility helpers ──────────────────────────────────────────────────────────────
+        function toNormalizedNumber(val) {
+            if (val == null) return NaN;
+            var txt = String(val).trim();
+            if (txt === '') return NaN;
+            txt = txt.replace(/[^0-9+\-.,]/g, '').replace(/,/g, '');
+            return parseFloat(txt);
+        }
+        function parseDecimalOrNull(val) {
+            var n = toNormalizedNumber(val);
+            return isNaN(n) ? null : n;
+        }
+        function parseFloatOrNull(val) {
+            var n = toNormalizedNumber(val);
+            return isNaN(n) ? null : n;
+        }
+        function parseIsoDateOrNull(val) {
+            if (!val || String(val).trim() === '') return null;
+            return val;
+        }
+        function formatApiErrors(errors) {
+            if (!errors) return '';
+            if (Array.isArray(errors)) {
+                return errors.map(function (e) {
+                    if (typeof e === 'string') return e;
+                    if (e && e.message) return e.message;
+                    return '';
+                }).filter(Boolean).join('\n');
+            }
+            if (typeof errors === 'string') return errors;
+            return '';
+        }
+        function formatGbp(val) {
+            var n = toNormalizedNumber(val);
+            if (isNaN(n)) return '—';
+            return '£' + n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+        function formatEditableMoney(val) {
+            var n = toNormalizedNumber(val);
+            return isNaN(n) ? '' : n.toFixed(2);
+        }
+        function formatEditableNumber(val, decimals) {
+            var n = toNormalizedNumber(val);
+            return isNaN(n) ? '' : n.toFixed(decimals);
+        }
+        function getChangedFlag(currentValue, pactValue) {
+            var current = toNormalizedNumber(currentValue);
+            var pact = toNormalizedNumber(pactValue);
+            if (isNaN(current) && isNaN(pact)) {
+                return 0;
+            }
+            if (isNaN(current) !== isNaN(pact)) {
+                return 1;
+            }
+            return Math.abs(current - pact) < 0.000001 ? 0 : 1;
+        }
+        function setVal(id, val) {
+            var el = document.getElementById(id);
+            if (el) el.value = val;
+        }
+        function parseGbpCell(cell) {
+            return toNormalizedNumber(cell.text()) || 0;
+        }
+        function parseNumCell(cell) {
+            return toNormalizedNumber(cell.text()) || 0;
+        }
+
+        // ── On page load: trigger totals and update on each grid reload ───────────────────
+        document.addEventListener('DOMContentLoaded', function () {
+            // initial pass
+            setTimeout(recalcTotals, 0);
+
+            // DataGrid dispatches 'gridReloaded' after ajax replacement
+            document.addEventListener('gridReloaded', function (e) {
+                if (e && e.detail && e.detail.gridId === 'costCenterListGrid') {
+                    recalcTotals();
+                }
+            });
+        });
+
+        // ── Sync totals row column widths with the DataGrid columns ──────────────────────
+        // Keeps every #tblYFDTotals column (including the "Totals" label columns Year/PP-Acc,
+        // plus Customer Income, Actual Expenditure, Pay Costs, Non-Pay & OH Costs, Test Costs,
+        // Project Specific, Animal, Exceptional Adjustment) pixel-aligned with the
+        // corresponding costCenterListGrid columns, including after manual column resizing.
+        function syncTotalsRowWithGridColumns() {
+            var gridTable = document.querySelector('#gridContainer_costCenterListGrid table');
+            var totalsTable = document.getElementById('tblYFDTotals');
+            if (!gridTable || !totalsTable) return;
+
+            var gridHeaderCells = gridTable.querySelectorAll('thead tr.govuk-table__row > th');
+            var totalsCols = totalsTable.querySelectorAll('colgroup > col');
+            if (!gridHeaderCells.length || !totalsCols.length) return;
+
+            var count = Math.min(gridHeaderCells.length, totalsCols.length);
+            for (var i = 0; i < count; i++) {
+                // Use offsetWidth (integer, snapped to the browser's actual rendered
+                // column width) instead of getBoundingClientRect (fractional) to avoid
+                // cumulative sub-pixel drift across many columns.
+                var width = gridHeaderCells[i].offsetWidth;
+                if (width > 0) {
+                    totalsCols[i].style.width = width + 'px';
+                }
+            }
+
+            // Match the totals table's overall rendered width to the grid table's
+            // rendered width exactly, so both tables' columns line up pixel-for-pixel.
+            var gridTableWidth = gridTable.offsetWidth;
+            if (gridTableWidth > 0) {
+                totalsTable.style.width = gridTableWidth + 'px';
+                totalsTable.style.minWidth = gridTableWidth + 'px';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            setTimeout(syncTotalsRowWithGridColumns, 0);
+
+            document.addEventListener('gridReloaded', function (e) {
+                if (e && e.detail && e.detail.gridId === 'costCenterListGrid') {
+                    setTimeout(syncTotalsRowWithGridColumns, 0);
+                }
+            });
+
+            // Re-sync after manual column resize (mouseup ends the drag in _DataGrid.cshtml)
+            window.addEventListener('mouseup', function () {
+                setTimeout(syncTotalsRowWithGridColumns, 0);
+            });
+
+            window.addEventListener('resize', syncTotalsRowWithGridColumns);
+        });
+
+        // ── Sync horizontal scroll of totals row with the DataGrid ────────────────────────
+        // Keeps #yfdTotalsScrollWrapper's horizontal scroll position in lockstep with the
+        // data grid's own scroll container, and keeps totals cell text right-aligned.
+        function syncTotalsRowScrollWithGrid() {
+            var gridScrollContainer = document.querySelector('#gridContainer_costCenterListGrid .grid-scroll-container');
+            var totalsScrollWrapper = document.getElementById('yfdTotalsScrollWrapper');
+            if (!gridScrollContainer || !totalsScrollWrapper) return;
+
+            var syncingFromGrid = false;
+            var syncingFromTotals = false;
+
+            gridScrollContainer.addEventListener('scroll', function () {
+                if (syncingFromTotals) return;
+                syncingFromGrid = true;
+                totalsScrollWrapper.scrollLeft = gridScrollContainer.scrollLeft;
+                syncingFromGrid = false;
+            });
+
+            totalsScrollWrapper.addEventListener('scroll', function () {
+                if (syncingFromGrid) return;
+                syncingFromTotals = true;
+                gridScrollContainer.scrollLeft = totalsScrollWrapper.scrollLeft;
+                syncingFromTotals = false;
+            });
+
+            // Keep totals values left-aligned and the "Totals" label right-aligned,
+            // regardless of column width changes
+            totalsScrollWrapper.querySelectorAll('.govuk-table__cell:not(.yfd-total-label)').forEach(function (cell) {
+                cell.style.textAlign = 'left';
+            });
+            totalsScrollWrapper.querySelectorAll('.govuk-table__cell.yfd-total-label').forEach(function (cell) {
+                cell.style.textAlign = 'right';
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            setTimeout(syncTotalsRowScrollWithGrid, 0);
+
+            document.addEventListener('gridReloaded', function (e) {
+                if (e && e.detail && e.detail.gridId === 'costCenterListGrid') {
+                    setTimeout(syncTotalsRowScrollWithGrid, 0);
+                }
+            });
+        });
+    </script>
+}

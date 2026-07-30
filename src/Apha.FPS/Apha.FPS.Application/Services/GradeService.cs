@@ -33,7 +33,6 @@ namespace Apha.FPS.Application.Services
             _mapper                      = mapper                      ?? throw new ArgumentNullException(nameof(mapper));
         }
 
-        // TRANSFORMENGINE: GetAllPagedAsync — maps QueryParameters to Core PaginationParameters, delegates to repository, maps result back to DTO
         /// <inheritdoc />
         public async Task<PaginatedResult<GradeDto>> GetAllPagedAsync(QueryParameters<string> query)
         {
@@ -44,7 +43,6 @@ namespace Apha.FPS.Application.Services
             return _mapper.Map<PaginatedResult<GradeDto>>(pagedGrades);
         }
 
-        // TRANSFORMENGINE: GetByIdAsync — look up single grade; FpsYear resolved via DbContext HasQueryFilter
         /// <inheritdoc />
         public async Task<GradeDto?> GetByIdAsync(string gradeCode)
         {
@@ -57,7 +55,6 @@ namespace Apha.FPS.Application.Services
             return grade == null ? null : _mapper.Map<GradeDto>(grade);
         }
 
-        // TRANSFORMENGINE: CreateAsync — duplicate GradeCode guard before insert; mirrors frmMaintGrade Add logic
         /// <inheritdoc />
         public async Task<GradeDto> CreateAsync(GradeDto gradeDto)
         {
@@ -80,7 +77,6 @@ namespace Apha.FPS.Application.Services
             return _mapper.Map<GradeDto>(createdGrade);
         }
 
-        // TRANSFORMENGINE: UpdateAsync — existence guard + rename conflict guard; mirrors frmMaintGrade Edit logic
         /// <inheritdoc />
         public async Task<GradeDto> UpdateAsync(string originalCode, GradeDto gradeDto)
         {
@@ -118,7 +114,6 @@ namespace Apha.FPS.Application.Services
             return _mapper.Map<GradeDto>(updatedGrade);
         }
 
-        // TRANSFORMENGINE: DeleteAsync — existence guard before delete; mirrors frmMaintGrade Delete logic
         /// <inheritdoc />
         public async Task<bool> DeleteAsync(string gradeCode)
         {

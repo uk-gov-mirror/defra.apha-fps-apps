@@ -97,8 +97,9 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
         {
             var isProjectGroupMode = !string.IsNullOrWhiteSpace(projectGroup);
 
+            // When no programme/project group is selected, return an empty grid so the page shows no data.
             if (!isProjectGroupMode && string.IsNullOrWhiteSpace(programNo))
-                return BadRequest("programNo is required.");
+                return PartialView("_DataGrid", BuildEmptyProfitabilityGridConfig(request, isProjectGroupMode));
 
             var filterDict = !string.IsNullOrEmpty(request.Filter)
                 ? JsonConvert.DeserializeObject<Dictionary<string, string>>(request.Filter)
@@ -187,8 +188,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
         }
 
         private DataGridConfig<ProjectProfitabilityItem> GetProfitabilityGridConfig(bool isProjectGroupMode = false)
-        {
-            return new DataGridConfig<ProjectProfitabilityItem>
+        {            return new DataGridConfig<ProjectProfitabilityItem>
             {
                 GridId = "isProjectProfitGrid",
                 Title = isProjectGroupMode ? "Project Group Profitability" : "Project Profitability",
@@ -205,6 +205,40 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
                 Data = new List<ProjectProfitabilityItem>(),
                 Columns = GridDataProvider.GetColumnsDefination<ProjectProfitabilityItem>(),
                 Pagination = new PaginationModel()
+            };
+        }
+
+        private DataGridConfig<ProjectProfitabilityItem> BuildEmptyProfitabilityGridConfig(
+            PaginationFilter<string> request, bool isProjectGroupMode)
+        {
+            var paginationModel = new PaginationModel
+            {
+                SortColumn = request.SortBy,
+                SortDirection = request.Descending
+            };
+
+            var filterDict = !string.IsNullOrEmpty(request.Filter)
+                ? JsonConvert.DeserializeObject<Dictionary<string, string>>(request.Filter)
+                : null;
+
+            return new DataGridConfig<ProjectProfitabilityItem>
+            {
+                GridId = "isProjectProfitGrid",
+                Title = isProjectGroupMode ? "Project Group Profitability" : "Project Profitability",
+                KeyProperty = "JobCode",
+                ShowCheckboxColumn = false,
+                ShowPagination = true,
+                AllowAdd = false,
+                AllowEdit = false,
+                AllowDelete = false,
+                AllowRowSelection = true,
+                RowSelectFunction = "selectJobcodeTotal",
+                ExtraFilterMethod = "getProjectProfitabilityExtraFilters",
+                BindGridUrl = "/FPS/ProjectProfitability/LoadProjectProfitabilityGrid",
+                Data = new List<ProjectProfitabilityItem>(),
+                Columns = GridDataProvider.GetColumnsDefination<ProjectProfitabilityItem>(),
+                Pagination = paginationModel,
+                CurrentFilters = filterDict
             };
         }
 

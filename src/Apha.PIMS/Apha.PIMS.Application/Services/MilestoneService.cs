@@ -32,7 +32,7 @@ namespace Apha.PIMS.Application.Services
                 Data = dtos,
                 PaginationData = _mapper.Map<PaginationDto>(pagedData.PaginationData)
             };
-        }
+        }       
 
         public async Task<MilestoneDto?> GetMilestoneAsync(string project, string number)
         {
@@ -190,11 +190,11 @@ namespace Apha.PIMS.Application.Services
             };
         }
         // ── Staging / Import ─────────────────────────────────────────────────
-        public async Task<PaginatedResult<StagingMilestoneDto>> GetAllStagingRowsAsync(QueryParameters<string> parameters)
+        public async Task<PaginatedResult<StagingMilestoneDto>> GetAllStagingRowsAsync(QueryParameters<string> parameters, string? createdBy = null)
         {
 
             PaginationParameters<string> paginationParams = _mapper.Map<PaginationParameters<string>>(parameters);
-            PagedData<StagingMilestone> pagedData = await _repository.GetAllStagingRowsAsync(paginationParams);
+            PagedData<StagingMilestone> pagedData = await _repository.GetAllStagingRowsAsync(paginationParams, createdBy);
             return new PaginatedResult<StagingMilestoneDto>
             {
                 Data = _mapper.Map<List<StagingMilestoneDto>>(pagedData.Data),
@@ -203,15 +203,22 @@ namespace Apha.PIMS.Application.Services
 
         }
 
-        public async Task<List<StagingMilestoneDto>> GetStagingRowsAsync(string? project)
+        public async Task<List<StagingMilestoneDto>> GetStagingRowsAsync(int id)
         {
-            List<StagingMilestone> entities = await _repository.GetStagingRowsAsync(project);
+            List<StagingMilestone> entities = await _repository.GetStagingRowsAsync(id);
             return _mapper.Map<List<StagingMilestoneDto>>(entities);
         }
 
-        public async Task<StagingMilestoneDto> AddStagingRowAsync(StagingMilestoneDto dto, int year)
+        public async Task<StagingMilestoneDto> AddStagingRowAsync(StagingMilestoneDto dto, int year, string? createdBy = null)
         {
-            if (string.IsNullOrWhiteSpace(dto.Number) && dto.Project is not null)
+            string? program = null;
+            if (!string.IsNullOrWhiteSpace(dto.Project))
+            {
+                program = await _repository.GetProgramByProjectAsync(dto.Project);
+            }
+
+            bool isSurvProgram = program?.EndsWith("surv", StringComparison.OrdinalIgnoreCase) == true;
+            if (string.IsNullOrWhiteSpace(dto.Number) && !string.IsNullOrWhiteSpace(dto.Project) && isSurvProgram)
                 dto.Number = await _repository.GetNextMilestoneNumberAsync(dto.Project, year);
 
 
@@ -227,12 +234,23 @@ namespace Apha.PIMS.Application.Services
 
             StagingMilestone entity = _mapper.Map<StagingMilestone>(dto);
             entity.DateDue = DateTime.SpecifyKind(entity.DateDue, DateTimeKind.Unspecified);
-            StagingMilestone created = await _repository.AddStagingRowAsync(entity);
+            StagingMilestone created = await _repository.AddStagingRowAsync(entity, createdBy);
             return _mapper.Map<StagingMilestoneDto>(created);
         }
 
-        public async Task<StagingMilestoneDto> UpdateStagingRowAsync(StagingMilestoneDto dto)
+        public async Task<StagingMilestoneDto> UpdateStagingRowAsync(StagingMilestoneDto dto, string? createdBy = null)
         {
+            string? program = null;
+            if (!string.IsNullOrWhiteSpace(dto.Project))
+                program = await _repository.GetProgramByProjectAsync(dto.Project);
+
+            bool isSurvProgram = program?.EndsWith("surv", StringComparison.OrdinalIgnoreCase) == true;
+            if (string.IsNullOrWhiteSpace(dto.Number) && !string.IsNullOrWhiteSpace(dto.Project) && isSurvProgram)
+            {
+                int year = dto.DateDue == default ? DateTime.Today.Year : dto.DateDue.Year;
+                dto.Number = await _repository.GetNextMilestoneNumberAsync(dto.Project, year);
+            }
+
             var errors = new List<BusinessValidationError>();
             if (dto.Id == 0)
                 errors.Add(new BusinessValidationError("Id is required.", "ID_REQUIRED"));
@@ -248,26 +266,46 @@ namespace Apha.PIMS.Application.Services
             StagingMilestone entity = _mapper.Map<StagingMilestone>(dto);
             entity.DateDue = DateTime.SpecifyKind(entity.DateDue, DateTimeKind.Unspecified);
             entity.Note = null;
-            StagingMilestone updated = await _repository.UpdateStagingRowAsync(entity);
+            StagingMilestone updated = await _repository.UpdateStagingRowAsync(entity, createdBy);
             return _mapper.Map<StagingMilestoneDto>(updated);
         }
 
-        public async Task<bool> DeleteStagingRowAsync(int id)
-            => await _repository.DeleteStagingRowAsync(id);
+        public async Task<bool> DeleteStagingRowAsync(int id, string? createdBy = null)
+            => await _repository.DeleteStagingRowAsync(id, createdBy);
 
-        public async Task<int> ClearStagingAsync(string project)
-            => await _repository.ClearStagingAsync(project);
+        public async Task<int> ClearStagingAsync(string project, string? createdBy = null)
+            => await _repository.ClearStagingAsync(project, createdBy);
 
-        public async Task ValidateStagingAsync(string project, string? typeId, bool isDeliverableMode)
-            => await _repository.ValidateStagingAsync(project, typeId, isDeliverableMode);
+        public async Task ValidateStagingAsync(string project, string? typeId, bool isDeliverableMode, string? createdBy = null)
+            => await _repository.ValidateStagingAsync(project, typeId, isDeliverableMode, createdBy);
 
-        public async Task<int> ImportStagingAsync(string project, string? changedBy = null)
-            => await _repository.ImportStagingAsync(project, changedBy);
+        public async Task<int> ImportStagingAsync(string project, string? changedBy = null, string? createdBy = null)
+            => await _repository.ImportStagingAsync(project, changedBy, createdBy);
 
-        public async Task<int> ImportWithOverwriteAsync(string project, string? changedBy = null)
-            => await _repository.ImportWithOverwriteAsync(project, changedBy);
+        public async Task<int> ImportWithOverwriteAsync(string project, string? changedBy = null, string? createdBy = null)
+            => await _repository.ImportWithOverwriteAsync(project, changedBy, createdBy);
 
         public async Task<string> GetNextMilestoneNumberAsync(string project, int year)
             => await _repository.GetNextMilestoneNumberAsync(project, year);
+
+        public async Task<List<ProjectYearManagerDto>> GetProjectYearManagersAsync(int year)
+        {
+            List<ProjectYearManager> entities = await _repository.GetProjectYearManagersAsync(year);
+            return _mapper.Map<List<ProjectYearManagerDto>>(entities);
+        }
+        public async Task<PaginatedResult<MilestoneDto>> GetPMDMilestonesAsync(QueryParameters<string> parameters, string project)
+        {
+            PaginationParameters<string> paginationParams = _mapper.Map<PaginationParameters<string>>(parameters);
+            PagedData<Milestone> pagedData = await _repository.GetPMDMilestonesAsync(paginationParams, project);
+            List<MilestoneDto> dtos = _mapper.Map<List<MilestoneDto>>(pagedData.Data);
+            foreach (MilestoneDto dto in dtos)
+                dto.IsLate = dto.DateDue != default && dto.DateCompleted is null && dto.DateDue.Date < DateTime.Today;
+
+            return new PaginatedResult<MilestoneDto>
+            {
+                Data = dtos,
+                PaginationData = _mapper.Map<PaginationDto>(pagedData.PaginationData)
+            };
+        }
     }
 }

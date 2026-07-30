@@ -38,6 +38,7 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
         /// </summary>
         public async Task<IActionResult> Index(string workGroup = "")
         {
+            TempData["NavigationSource"] = "WorkGroupTestCapability";
             var workGroupsResponse = await _workGroupService.GetAllWorkGroupsAsync();
 
             var viewModel = new WorkGroupTestCapabilityViewModel
@@ -225,6 +226,7 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
                 AllowExport = false,
                 AllowEdit = false,
                 AllowDelete = false,
+                AllowAdd=false,
 
                 // JavaScript callback functions
                 RowSelectFunction = "onTestCapabilityRowSelect",

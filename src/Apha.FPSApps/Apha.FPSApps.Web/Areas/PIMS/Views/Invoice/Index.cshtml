@@ -23,8 +23,8 @@
                
                 <div class="inv-toolbar">
                     <div class="inv-toolbar__row">
-                        <div class="inv-toolbar__item">
-                            <span class="govuk-label govuk-!-font-size-16 govuk-!-font-weight-bold">Filter</span>
+                        <div class="inv-toolbar__item govuk-!-margin-left-1 govuk-!-margin-right-2 ">
+                            <span class="govuk-label govuk-!-font-size-19 govuk-!-font-weight-bold">Filter</span>
                         </div>
 
                         @* Filter 1: Project *@
@@ -129,19 +129,49 @@
                             @await Html.PartialAsync("_DataGrid", Model.InvoicesGrid)
                         </div>
 
-                        <!-- Totals footer — values populated via AJAX on load and on filter change -->
+                    </div>
+
+                </div>
+                <!-- ── Totals row — separate row below the grid (outside grid container),
+                             values populated via AJAX on load and on filter change,
+                             columns kept pixel-aligned with the invoices grid via JS ──── -->
+                <div class="govuk-grid-row sup_margin_left_right_0 sup_margin_bottom_10" style="margin-top: 8px;">
+                    <div class="govuk-grid-column-full sup_p_0">
                         <div id="invTotalsContainer">
-                            <div class="sup_total_footer" aria-label="Invoice totals">
-                                <span class="sup_total_footer__label">Totals:</span>
-                                <span class="sup_total_footer__value" id="invTotalPlanned">£0.00</span>
-                                <span class="sup_total_footer__value" id="invTotalAmountDue">£0.00</span>
-                                <span class="sup_total_footer__value" id="invTotalAmountInvoiced">£0.00</span>
+                            <div id="invTotalsScrollWrapper" class="yfd-scroll-wrapper">
+                                <table id="tblInvTotals" class="govuk-table custom-table yfd-totals-table" aria-label="Invoice totals">
+                                    <colgroup>
+                                        <col />
+                                        <col />
+                                        <col />
+                                        <col />
+                                        <col />
+                                        <col />
+                                        <col />
+                                        <col />
+                                        <col />
+                                        <col />
+                                        <col />
+                                    </colgroup>
+                                    <tbody class="govuk-table__body">
+                                        <tr class="govuk-table__row">
+                                            <td class="govuk-table__cell yfd-total-label" colspan="2">Totals</td>
+                                            <td class="govuk-table__cell sup_text_right_align" id="invTotalPlanned"></td>
+                                            <td class="govuk-table__cell sup_text_right_align" id="invTotalAmountDue"></td>
+                                            <td class="govuk-table__cell yfd-total-hidden"></td>
+                                            <td class="govuk-table__cell sup_text_right_align" id="invTotalAmountInvoiced"></td>
+                                            <td class="govuk-table__cell yfd-total-hidden"></td>
+                                            <td class="govuk-table__cell yfd-total-hidden"></td>
+                                            <td class="govuk-table__cell yfd-total-hidden"></td>
+                                            <td class="govuk-table__cell yfd-total-hidden"></td>
+                                            <td class="govuk-table__cell yfd-total-hidden"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
-
                     </div>
                 </div>
-
             </div>
         </div>
     </main>
@@ -208,6 +238,73 @@
                     $invTotals.find('#invTotalAmountDue').text(data.totalDue         ?? '');
                     $invTotals.find('#invTotalAmountInvoiced').text(data.totalInvoiced ?? '');
                 });
+        }
+
+        // ── Sync totals row column widths with the DataGrid columns ──────────────
+        // Keeps every #tblInvTotals column (including the "Totals" label columns)
+        // pixel-aligned with the corresponding invoicesGrid columns, including
+        // after manual column resizing.
+        function syncInvTotalsRowWithGridColumns() {
+            var gridTable = document.querySelector('#gridContainer_invoicesGrid table');
+            var totalsTable = document.getElementById('tblInvTotals');
+            if (!gridTable || !totalsTable) return;
+
+            var gridHeaderCells = gridTable.querySelectorAll('thead tr.govuk-table__row > th');
+            var totalsCols = totalsTable.querySelectorAll('colgroup > col');
+            if (!gridHeaderCells.length || !totalsCols.length) return;
+
+            // Use offsetWidth (integer, snapped to the browser's actual rendered
+            // column width) instead of getBoundingClientRect (fractional) to avoid
+            // cumulative sub-pixel drift across many columns.
+            var count = Math.min(gridHeaderCells.length, totalsCols.length);
+            for (var i = 0; i < count; i++) {
+                var width = gridHeaderCells[i].offsetWidth;
+                if (width > 0) {
+                    totalsCols[i].style.width = width + 'px';
+                }
+            }
+
+            // Match the totals table's overall rendered width to the grid table's
+            // rendered width exactly, so both tables' columns line up pixel-for-pixel.
+            var gridTableWidth = gridTable.offsetWidth;
+            if (gridTableWidth > 0) {
+                totalsTable.style.width = gridTableWidth + 'px';
+                totalsTable.style.minWidth = gridTableWidth + 'px';
+            }
+        }
+
+        // ── Sync horizontal scroll of totals row with the DataGrid ────────────────
+        // Keeps #invTotalsScrollWrapper's horizontal scroll position in lockstep
+        // with the data grid's own scroll container, and keeps totals cell text
+        // left-aligned with the label right-aligned.
+        function syncInvTotalsRowScrollWithGrid() {
+            var gridScrollContainer = document.querySelector('#gridContainer_invoicesGrid .grid-scroll-container');
+            var totalsScrollWrapper = document.getElementById('invTotalsScrollWrapper');
+            if (!gridScrollContainer || !totalsScrollWrapper) return;
+
+            var syncingFromGrid = false;
+            var syncingFromTotals = false;
+
+            gridScrollContainer.addEventListener('scroll', function () {
+                if (syncingFromTotals) return;
+                syncingFromGrid = true;
+                totalsScrollWrapper.scrollLeft = gridScrollContainer.scrollLeft;
+                syncingFromGrid = false;
+            });
+
+            totalsScrollWrapper.addEventListener('scroll', function () {
+                if (syncingFromGrid) return;
+                syncingFromTotals = true;
+                gridScrollContainer.scrollLeft = totalsScrollWrapper.scrollLeft;
+                syncingFromTotals = false;
+            });
+
+            totalsScrollWrapper.querySelectorAll('.govuk-table__cell:not(.yfd-total-label)').forEach(function (cell) {
+                cell.style.textAlign = 'left';
+            });
+            totalsScrollWrapper.querySelectorAll('.govuk-table__cell.yfd-total-label').forEach(function (cell) {
+                cell.style.textAlign = 'right';
+            });
         }
 
         // ── Add Invoice ──────────────────────────────────────────────────────────
@@ -310,38 +407,32 @@
             if (modal) { modal.classList.remove('open'); }
         }
 
-        // ── Totals positioning helper ─────────────────────────────────────────────.
-        function positionInvoiceTotals() {
-            if (!$invTotals || !$invTotals.length) return;
-            var pag = document.querySelector('#gridContainer_invoicesGrid .sup_pagination_footer');
-            if (pag && pag.parentNode) {
-                pag.parentNode.insertBefore($invTotals[0], pag);
-            }
-        }
-
         // ── Initialise totals on page load ────────────────────────────────────────
+        // #invTotalsContainer lives as its own row below the grid (outside
+        // #gridContainer_invoicesGrid), so it is unaffected when the grid's inner
+        // HTML is replaced on reload — no DOM re-parenting needed.
         document.addEventListener('DOMContentLoaded', function () {
             $invTotals = $('#invTotalsContainer');
-
-            var gm = window['gridManager_invoicesGrid'];
-            if (gm) {
-                var _orig = gm.reloadGrid.bind(gm);
-                gm.reloadGrid = function (params) {
-                    if ($invTotals) { $invTotals.detach(); }
-                    _orig(params);
-                };
-            }
 
             // Persistent listener — fires after every grid reload (sort, page, filter).
             document.addEventListener('gridReloaded', function (e) {
                 if (e.detail && e.detail.gridId === 'invoicesGrid') {
-                    positionInvoiceTotals();  // re-insert before new pagination
-                    refreshInvoiceTotals();   // fetch real values now element is in DOM
+                    refreshInvoiceTotals();   // fetch real values
+                    setTimeout(syncInvTotalsRowWithGridColumns, 0);
                 }
             });
 
-            positionInvoiceTotals();
             setTimeout(applyInvoiceFilters, 300);
+
+            setTimeout(syncInvTotalsRowWithGridColumns, 0);
+            setTimeout(syncInvTotalsRowScrollWithGrid, 0);
+
+            // Re-sync after manual column resize (mouseup ends the drag in _DataGrid.cshtml)
+            window.addEventListener('mouseup', function () {
+                setTimeout(syncInvTotalsRowWithGridColumns, 0);
+            });
+
+            window.addEventListener('resize', syncInvTotalsRowWithGridColumns);
         });
     </script>
 }

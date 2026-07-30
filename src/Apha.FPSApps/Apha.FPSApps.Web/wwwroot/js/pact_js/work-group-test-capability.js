@@ -107,7 +107,16 @@
             success: function (html) {
                 $('#gridContainer_testCapabilitiesWGGrid').html(html);
                 // Auto-select the first row after grid loads
-                selectFirstTestCapabilityRow();
+                var $dataRows = $('#tbl_' + testCapabilityGridId + ' tbody tr').filter(function () {
+                    return $(this).find('[data-property]').length > 0;
+                });
+
+                if ($dataRows.length > 0) {
+                    selectFirstTestCapabilityRow();
+                }
+                else {
+                    onTestCapabilityRowSelect('');
+                }
             },
             error: function () {
                 console.error('Failed to load Test Capability grid.');
@@ -168,6 +177,7 @@
             $('#btnShowProjectAdministration').prop('disabled', false);
         } else {
             // Disable the button if no portfolio selected
+            $('#selectedPortfolio').val('');
             $('#btnShowProjectAdministration').prop('disabled', true);
         }
     }

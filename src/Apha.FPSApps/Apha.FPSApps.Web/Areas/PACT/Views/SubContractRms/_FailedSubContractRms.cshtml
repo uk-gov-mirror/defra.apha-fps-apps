@@ -1,0 +1,17 @@
+@model Apha.FPSApps.Web.Models.Components.DataGrid.DataGridConfig<Apha.FPSApps.Web.Areas.PACT.Models.SubContractRmsFailedItem>
+
+<div class="modal-header flex-space-center" style="justify-content: flex-end;">
+    @* <h3 class="modal-title m-0">Failed records</h3> *@
+    <button type="button" class="btn-close btn-red" onclick="$('#modalPopup').removeClass('show')">X</button>
+</div>
+
+<div class="modal-body" style="padding: 8px 16px 0 0px;">
+    <div id="gridContainer_@Model.GridId">
+        @await Html.PartialAsync("_DataGrid", Model)
+    </div>
+</div>
+
+@* <div class="modal-footer" style="display: flex; justify-content: flex-end; align-items: center; flex-direction: row;">
+    <button class="govuk-button govuk-button--secondary sup_margin_0" aria-label="Close"
+            onclick="$('#modalPopup').removeClass('show')">Close</button>
+</div> *@

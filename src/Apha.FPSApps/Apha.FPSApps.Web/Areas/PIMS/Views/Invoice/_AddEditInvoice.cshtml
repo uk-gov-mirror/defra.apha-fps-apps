@@ -78,7 +78,8 @@
                         <div class="govuk-input__prefix" aria-hidden="true">£</div>
                         <input class="govuk-input currency-input govuk-!-font-size-16"
                                asp-for="PlannedAmount"
-                               type="text" />
+                               type="text"
+                               aria-label="Planned amount" />
                     </div>
                     <span asp-validation-for="PlannedAmount" class="govuk-error-message" style="display:none;"></span>
                 </div>
@@ -93,7 +94,8 @@
                         <div class="govuk-input__prefix" aria-hidden="true">£</div>
                         <input class="govuk-input currency-input govuk-!-font-size-16"
                                asp-for="DueAmount"
-                               type="text" />
+                               type="text"
+                               aria-label="Amount due" />
                     </div>
                     <span asp-validation-for="DueAmount" class="govuk-error-message" style="display:none;"></span>
                 </div>
@@ -112,6 +114,7 @@
                                placeholder="dd/mm/yyyy"
                                maxlength="10"
                                autocomplete="off"
+                               aria-label="Date due, format dd/mm/yyyy"
                                oninput="formatDateInput(this)"
                                onblur="validateAndSyncDate('DueDateDisplay', 'DueDateBinding', 'DueDateError')"
                                style="flex:1;">
@@ -122,11 +125,13 @@
                         <input type="hidden"
                                name="DueDate"
                                id="DueDateBinding"
+                               aria-label="Date due hidden value"
                                value="@(Model.DueDate.HasValue ? Model.DueDate.Value.ToString("yyyy-MM-dd") : string.Empty)">
                         <input type="date"
                                id="DueDatePicker"
                                value="@(Model.DueDate.HasValue ? Model.DueDate.Value.ToString("yyyy-MM-dd") : string.Empty)"
                                style="position:absolute; top:0; left:0; opacity:0; width:1px; height:1px; pointer-events:auto;"
+                               aria-label="Date due date picker"
                                onchange="syncDateToText('DueDatePicker', 'DueDateDisplay', 'DueDateBinding', 'DueDateError')">
                     </div>
                     <span id="DueDateError" class="govuk-error-message" style="display:none;"></span>
@@ -163,6 +168,7 @@
                                maxlength="10"
                                autocomplete="off"
                                oninput="formatDateInput(this)"
+                               aria-label="Date Jobsheet Raised Display"
                                onblur="validateAndSyncDate('DateJobsheetRaisedDisplay', 'DateJobsheetRaisedBinding', 'DateJobsheetRaisedError')"
                                style="flex:1;">
                         <button type="button"
@@ -172,9 +178,11 @@
                         <input type="hidden"
                                name="DateJobsheetRaised"
                                id="DateJobsheetRaisedBinding"
+                               aria-label="Date Jobsheet Raised Picker"
                                value="@(Model.DateJobsheetRaised.HasValue ? Model.DateJobsheetRaised.Value.ToString("yyyy-MM-dd") : string.Empty)">
                         <input type="date"
                                id="DateJobsheetRaisedPicker"
+                               aria-label="Date Jobsheet Raised Picker"
                                value="@(Model.DateJobsheetRaised.HasValue ? Model.DateJobsheetRaised.Value.ToString("yyyy-MM-dd") : string.Empty)"
                                style="position:absolute; top:0; left:0; opacity:0; width:1px; height:1px; pointer-events:auto;"
                                onchange="syncDateToText('DateJobsheetRaisedPicker', 'DateJobsheetRaisedDisplay', 'DateJobsheetRaisedBinding', 'DateJobsheetRaisedError')">
@@ -226,6 +234,7 @@
                                class="govuk-input govuk-!-font-size-16"
                                value="@Model.DateInvoiced?.ToString("dd/MM/yyyy")"
                                placeholder="dd/mm/yyyy"
+                               aria-label="Date Invoiced Display"
                                maxlength="10"
                                autocomplete="off"
                                oninput="formatDateInput(this)"
@@ -241,6 +250,7 @@
                                value="@(Model.DateInvoiced.HasValue ? Model.DateInvoiced.Value.ToString("yyyy-MM-dd") : string.Empty)">
                         <input type="date"
                                id="DateInvoicedPicker"
+                               aria-label="Date Invoiced Picker"
                                value="@(Model.DateInvoiced.HasValue ? Model.DateInvoiced.Value.ToString("yyyy-MM-dd") : string.Empty)"
                                style="position:absolute; top:0; left:0; opacity:0; width:1px; height:1px; pointer-events:auto;"
                                onchange="syncDateToText('DateInvoicedPicker', 'DateInvoicedDisplay', 'DateInvoicedBinding', 'DateInvoicedError')">

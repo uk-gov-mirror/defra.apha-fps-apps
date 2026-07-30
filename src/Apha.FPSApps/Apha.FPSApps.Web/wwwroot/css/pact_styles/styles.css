@@ -1339,7 +1339,15 @@ table#tblMonthPeriod > tbody > tr:hover { background-color: var(--govuk-surface-
 
 .clear-search-btn span { line-height: 10px !important; }
 
-.heading_with_txtbox { padding: 0px 10px 0px 10px; display: flex; justify-content: space-between; margin-left: -15px; align-items: center; margin-right: -15px; flex-direction: row; }
+.heading_with_txtbox {
+    padding: 0px 10px 0px 10px;
+    display: flex;
+    justify-content: space-between;
+    margin-left: -15px;
+    align-items: center;
+    margin-right: -15px;
+    flex-direction: row;
+}
 
 .isTestPurchaseReqBtn{
   img{
@@ -1503,4 +1511,12 @@ table#tblMonthPeriod > tbody > tr:hover { background-color: var(--govuk-surface-
     margin-bottom: 14px;
     font-size: 1.6rem;
     line-height: 1.2;
+}
+
+.wgm-left-split {
+    width: 41.666%;
+}
+
+.wgm-right-split {
+    width: 58.333%;
 }

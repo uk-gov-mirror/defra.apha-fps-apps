@@ -103,7 +103,7 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
             return new DataGridConfig<WorkGroupPeopleItem>
             {
                 GridId = "peopleGrid",
-                Title = "Work Group People",
+                Title = "WorkGroup People",
                 ShowCheckboxColumn = false,
                 AllowAdd = false,
                 AllowEdit = false,

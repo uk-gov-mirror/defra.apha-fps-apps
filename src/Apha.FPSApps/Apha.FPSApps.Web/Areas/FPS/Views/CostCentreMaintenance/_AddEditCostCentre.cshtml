@@ -1,0 +1,125 @@
+@model Apha.FPSApps.Web.Areas.FPS.Models.CostCentreItem
+
+@{
+    var isEditMode = Model?.CostCentreNo != 0;
+    var title = isEditMode ? "Edit Cost Centre" : "Add Cost Centre";
+    var formId = isEditMode ? "editCostCentreForm" : "addCostCentreForm";
+    var saveLabel = isEditMode ? "Update" : "Save";
+    var saveAction = isEditMode ? "updateCostCentre()" : "saveCostCentre()";
+
+    var profitCentreItems = ViewBag.ProfitCentreList as List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>
+                            ?? new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+}
+
+<div class="modal-header flex-space-center">
+    <h3 class="modal-title govuk-heading-s" style="margin: 0;" id="tblCostCentreModalLabel">@title</h3>
+    <button type="button" class="btn-close btn-red" onclick="closeModal()" aria-label="Close">X</button>
+</div>
+
+<div class="modal-body cc-modal-body">
+
+    <div id="ccValidationSummary" class="govuk-error-summary" role="alert"
+         aria-labelledby="ccValidationSummaryTitle" tabindex="-1" style="display:none;">
+        <h2 class="govuk-error-summary__title govuk-!-font-size-16" id="ccValidationSummaryTitle">
+            There is a problem
+        </h2>
+        <div class="govuk-error-summary__body" id="ccValidationSummaryBody">
+            <ul class="govuk-list govuk-error-summary__list" id="ccValidationSummaryList"></ul>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <form id="@formId">
+            @Html.AntiForgeryToken()
+
+            <input type="hidden" id="hdnOriginalCostCentreNo" value="@(Model?.CostCentreNo.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "0")" />
+            <input type="hidden" id="hdnIsEdit" value="@isEditMode.ToString().ToLower()" />
+
+            <div class="cc-modal-form-grid">
+                <div class="govuk-grid-row sup_padding_right_left_10">
+
+                    @* ── CostCentreNo field (modal-cc-number) ── *@
+                    <div class="govuk-grid-column-one-half">
+                        <div class="govuk-form-group sup_margin_bottom_10" id="fg-modal-cc-number">
+                            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16"
+                                   for="modal-cc-number">
+                                CostCentre:<span class="app-required sup_color_red" aria-hidden="true">*</span>
+                            </label>
+                            @if (!isEditMode)
+                            {
+                                <input class="govuk-input govuk-!-font-size-16"
+                                       id="modal-cc-number"
+                                       name="CostCentreNo"
+                                       type="number"
+                                       step="any"
+                                       required
+                                       aria-required="true"
+                                       aria-label="Enter cost centre number"
+                                       aria-describedby="err-modal-cc-number" />
+                            }
+                            else
+                            {
+                                <input class="govuk-input govuk-!-font-size-16"
+                                       id="modal-cc-number"
+                                       name="CostCentreNo"
+                                       type="number"
+                                       step="any"
+                                       required
+                                       aria-required="true"
+                                       aria-label="Enter cost centre number"
+                                       aria-describedby="err-modal-cc-number"
+                                       value="@(Model!.CostCentreNo.ToString(System.Globalization.CultureInfo.InvariantCulture))" />
+                            }
+                            <span id="err-modal-cc-number"
+                                  data-valmsg-for="CostCentreNo"
+                                  class="govuk-error-message field-validation-valid"
+                                  style="display:none;"></span>
+                        </div>
+                    </div>
+
+                    @* ── ProfitCentre field (modal-cc-profit) ── *@
+                    <div class="govuk-grid-column-one-half">
+                        <div class="govuk-form-group sup_margin_bottom_10" id="fg-modal-cc-profit">
+                            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16"
+                                   for="modal-cc-profit">
+                                ProfitCentre:<span class="app-required sup_color_red" aria-hidden="true">*</span>
+                            </label>
+                            <select class="govuk-select govuk-!-font-size-16 sup_select_option_width_100"
+                                    id="modal-cc-profit"
+                                    name="ProfitCentre"
+                                    asp-for="ProfitCentre"
+                                    asp-items="@(new Microsoft.AspNetCore.Mvc.Rendering.SelectList(profitCentreItems, "Value", "Text", Model?.ProfitCentre))"
+                                    required
+                                    aria-required="true"
+                                    aria-label="Select profit centre"
+                                    aria-describedby="err-modal-cc-profit">
+                                <option value="">-- Select --</option>
+                            </select>
+                            <span id="err-modal-cc-profit"
+                                  data-valmsg-for="ProfitCentre"
+                                  class="govuk-error-message field-validation-valid"
+                                  style="display:none;"></span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<div class="modal-footer cc-modal-footer sup_flex_space_center">
+    <button type="button"
+            class="govuk-button govuk-button--secondary sup_margin_0"
+            data-module="govuk-button"
+            onclick="closeModal()">
+        Cancel
+    </button>
+    <button type="button"
+            class="govuk-button sup_margin_0"
+            data-module="govuk-button"
+            onclick="@saveAction">
+        @saveLabel
+    </button>
+</div>

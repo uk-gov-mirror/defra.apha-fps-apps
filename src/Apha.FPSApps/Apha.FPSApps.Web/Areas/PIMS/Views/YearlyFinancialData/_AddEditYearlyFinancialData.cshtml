@@ -1,0 +1,684 @@
+@model Apha.FPSApps.Web.Areas.PIMS.Models.YearlyFinancialDataItem
+
+@{
+    
+    bool isEditMode = Model.Year != 0;
+    string modalTitle = isEditMode ? "Edit Yearly Record" : "Add New Yearly Record";
+    string saveLabel  = isEditMode ? "Update" : "Save";
+}
+
+<div id="editYFDModal" class="govuk-edit-modal" role="dialog" aria-modal="true" aria-labelledby="yfdModalTitle">
+    <div class="govuk-edit-modal-dialog yfd-modal-min-width-height">
+
+        <div class="govuk-edit-modal__header">
+            <h3 class="govuk-edit-modal__title" id="yfdModalTitle">@modalTitle</h3>
+            <button type="button" onclick="closeYFDModal()"
+                    aria-label="Close" class="govuk-edit-modal__close-btn">
+                ✕
+            </button>
+        </div>
+
+        <div class="govuk-edit-modal__body">
+
+            <form id="formYFD" novalidate>
+                @Html.AntiForgeryToken()
+
+                @* ── Hidden state fields ───────────────────────────────────────────── *@
+                
+                <input type="hidden" id="hdnYfdYear"             value="@Model.Year" />
+                <input type="hidden" id="hdnYfdProject"          value="@Model.Project" />
+                <input type="hidden" id="hdnYfdIsEdit"           value="@isEditMode.ToString().ToLower()" />
+                
+                <input type="hidden" id="hdnYfdDateCosted"
+                       value="@(Model.DateCosted.HasValue ? Model.DateCosted.Value.ToString("yyyy-MM-dd") : string.Empty)" />
+                <input type="hidden" id="hdnYfdCurrentUser"       value="@ViewBag.CurrentCostingUser" />
+                
+                <input type="hidden" id="hdnYfdActualExpenditure" value="@Model.ActualExpenditure" />
+                <input type="hidden" id="hdnYfdActualManYears"    value="@Model.ActualManYears" />
+
+                @* ── Error summary ────────────────────────────────────────────────── *@
+                <div id="yfdFormError"
+                     class="govuk-error-summary govuk-!-display-none yfd-form-error-summary"
+                     role="alert"
+                     aria-labelledby="yfdFormError-title"
+                     tabindex="-1">
+                    <h2 class="govuk-error-summary__title" id="yfdFormError-title">There is a problem</h2>
+                    <div class="govuk-error-summary__body">
+                        <p id="yfdFormErrorMsg" class="govuk-body govuk-!-margin-bottom-0"></p>
+                    </div>
+                </div>
+
+                <div class="yfd-modal-columns">
+
+                    @* ── LEFT column: primary cost fields ─────────────────────────── *@
+                    <div class="yfd-modal-col-left">
+
+                        @* Project (read-only — bound to current page selection) *@
+                        <div class="govuk-form-group sup_margin_bottom_10">
+                            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16"
+                                   for="yfdModalProject">
+                                Project:
+                            </label>
+                            <input class="govuk-input govuk-!-font-size-16"
+                                   id="yfdModalProject"
+                                   name="yfdModalProject"
+                                   type="text"
+                                   value="@Model.Project"
+                                   disabled
+                                   aria-readonly="true" />
+                        </div>
+
+                        @* PP/Acc — BfBudget *@
+                        <div class="govuk-form-group sup_margin_bottom_10">
+                            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16"
+                                   for="yfdModalPPAcc">
+                                PP/Acc:
+                            </label>
+                            <input class="govuk-input govuk-!-font-size-16"
+                                   id="yfdModalPPAcc"
+                                   name="yfdModalPPAcc"
+                                   type="number"
+                                   step="any"
+                                   inputmode="decimal"
+                                   value="@Model.BfBudget"
+                                   aria-describedby="yfdModalPPAcc-error" />
+                            <p class="govuk-error-message govuk-!-display-none" id="yfdModalPPAcc-error">
+                                <span class="govuk-visually-hidden">Error:</span>
+                                <span id="yfdModalPPAcc-error-msg"></span>
+                            </p>
+                        </div>
+
+                        @* Customer Income — PyBudget *@
+                        <div class="govuk-form-group sup_margin_bottom_10">
+                            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16"
+                                   for="yfdModalCustomerIncome">
+                                Customer Income:
+                            </label>
+                            <div class="govuk-input__wrapper">
+                                <div class="govuk-input__prefix" aria-hidden="true">£</div>
+                                <input class="govuk-input govuk-!-font-size-16 validate-number"
+                                       id="yfdModalCustomerIncome"
+                                       name="yfdModalCustomerIncome"
+                                       type="text"
+                                       inputmode="decimal"
+                                       value="@Model.PyBudget"
+                                       aria-describedby="yfdModalCustomerIncome-error" />
+                            </div>
+                            <p class="govuk-error-message govuk-!-display-none" id="yfdModalCustomerIncome-error">
+                                <span class="govuk-visually-hidden">Error:</span>
+                                <span id="yfdModalCustomerIncome-error-msg"></span>
+                            </p>
+                        </div>
+
+                        @* VLA Budget — VlaBudget *@
+                        <div class="govuk-form-group sup_margin_bottom_10">
+                            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16"
+                                   for="yfdModalVLABudget">
+                                VLA Budget:
+                            </label>
+                            <div class="govuk-input__wrapper">
+                                <div class="govuk-input__prefix" aria-hidden="true">£</div>
+                                <input class="govuk-input govuk-!-font-size-16 validate-number"
+                                       id="yfdModalVLABudget"
+                                       name="yfdModalVLABudget"
+                                       type="text"
+                                       inputmode="decimal"
+                                       value="@Model.VlaBudget"
+                                       aria-describedby="yfdModalVLABudget-error" />
+                            </div>
+                            <p class="govuk-error-message govuk-!-display-none" id="yfdModalVLABudget-error">
+                                <span class="govuk-visually-hidden">Error:</span>
+                                <span id="yfdModalVLABudget-error-msg"></span>
+                            </p>
+                        </div>
+
+                        @* Seedcorn — Seedcorn *@
+                        <div class="govuk-form-group sup_margin_bottom_10">
+                            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16"
+                                   for="yfdModalSeedcorn">
+                                Seedcorn:
+                            </label>
+                            <div class="govuk-input__wrapper">
+                                <div class="govuk-input__prefix" aria-hidden="true">£</div>
+                                <input class="govuk-input govuk-!-font-size-16 validate-number"
+                                       id="yfdModalSeedcorn"
+                                       name="yfdModalSeedcorn"
+                                       type="text"
+                                       inputmode="decimal"
+                                       value="@Model.Seedcorn"
+                                       oninput="recalcYFDTotalCosts()"
+                                       aria-describedby="yfdModalSeedcorn-error" />
+                            </div>
+                            <p class="govuk-error-message govuk-!-display-none" id="yfdModalSeedcorn-error">
+                                <span class="govuk-visually-hidden">Error:</span>
+                                <span id="yfdModalSeedcorn-error-msg"></span>
+                            </p>
+                        </div>
+
+                        @* Pay Costs — PayCosts *@
+                        <div class="govuk-form-group sup_margin_bottom_10">
+                            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16"
+                                   for="yfdModalPayCosts">
+                                Pay Costs:
+                            </label>
+                            <div class="govuk-input__wrapper">
+                                <div class="govuk-input__prefix" aria-hidden="true">£</div>
+                                <input class="govuk-input govuk-!-font-size-16 validate-number"
+                                       id="yfdModalPayCosts"
+                                       name="yfdModalPayCosts"
+                                       type="text"
+                                       inputmode="decimal"
+                                       value="@Model.PayCosts"
+                                       oninput="recalcYFDTotalCosts()"
+                                       aria-describedby="yfdModalPayCosts-error" />
+                            </div>
+                            <p class="govuk-error-message govuk-!-display-none" id="yfdModalPayCosts-error">
+                                <span class="govuk-visually-hidden">Error:</span>
+                                <span id="yfdModalPayCosts-error-msg"></span>
+                            </p>
+                        </div>
+
+                        @* Non-Pay & OH Costs — NonPayOhCosts *@
+                        <div class="govuk-form-group sup_margin_bottom_10">
+                            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16"
+                                   for="yfdModalNonPay">
+                                Non-Pay &amp; OH Costs:
+                            </label>
+                            <div class="govuk-input__wrapper">
+                                <div class="govuk-input__prefix" aria-hidden="true">£</div>
+                                <input class="govuk-input govuk-!-font-size-16 validate-number"
+                                       id="yfdModalNonPay"
+                                       name="yfdModalNonPay"
+                                       type="text"
+                                       inputmode="decimal"
+                                       value="@Model.NonPayOhCosts"
+                                       oninput="recalcYFDTotalCosts()"
+                                       aria-describedby="yfdModalNonPay-error" />
+                            </div>
+                            <p class="govuk-error-message govuk-!-display-none" id="yfdModalNonPay-error">
+                                <span class="govuk-visually-hidden">Error:</span>
+                                <span id="yfdModalNonPay-error-msg"></span>
+                            </p>
+                        </div>
+
+                        @* Test Costs — TestCosts *@
+                        <div class="govuk-form-group sup_margin_bottom_10">
+                            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16"
+                                   for="yfdModalTestCosts">
+                                Test Costs:
+                            </label>
+                            <div class="govuk-input__wrapper">
+                                <div class="govuk-input__prefix" aria-hidden="true">£</div>
+                                <input class="govuk-input govuk-!-font-size-16 validate-number"
+                                       id="yfdModalTestCosts"
+                                       name="yfdModalTestCosts"
+                                       type="text"
+                                       inputmode="decimal"
+                                       value="@Model.TestCosts"
+                                       oninput="recalcYFDTotalCosts()"
+                                       aria-describedby="yfdModalTestCosts-error" />
+                            </div>
+                            <p class="govuk-error-message govuk-!-display-none" id="yfdModalTestCosts-error">
+                                <span class="govuk-visually-hidden">Error:</span>
+                                <span id="yfdModalTestCosts-error-msg"></span>
+                            </p>
+                        </div>
+
+                        @* Animal Costs — AnimalCosts *@
+                        <div class="govuk-form-group sup_margin_bottom_10">
+                            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16"
+                                   for="yfdModalAnimalCosts">
+                                Animal Costs:
+                            </label>
+                            <div class="govuk-input__wrapper">
+                                <div class="govuk-input__prefix" aria-hidden="true">£</div>
+                                <input class="govuk-input govuk-!-font-size-16 validate-number"
+                                       id="yfdModalAnimalCosts"
+                                       name="yfdModalAnimalCosts"
+                                       type="text"
+                                       inputmode="decimal"
+                                       value="@Model.AnimalCosts"
+                                       oninput="recalcYFDTotalCosts()"
+                                       aria-describedby="yfdModalAnimalCosts-error" />
+                            </div>
+                            <p class="govuk-error-message govuk-!-display-none" id="yfdModalAnimalCosts-error">
+                                <span class="govuk-visually-hidden">Error:</span>
+                                <span id="yfdModalAnimalCosts-error-msg"></span>
+                            </p>
+                        </div>
+
+                        @* Project-Specific Costs — NonAnimalCosts *@
+                        <div class="govuk-form-group sup_margin_bottom_10">
+                            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16"
+                                   for="yfdModalProjectSpecific">
+                                Project-Specific Costs:
+                            </label>
+                            <div class="govuk-input__wrapper">
+                                <div class="govuk-input__prefix" aria-hidden="true">£</div>
+                                <input class="govuk-input govuk-!-font-size-16 validate-number"
+                                       id="yfdModalProjectSpecific"
+                                       name="yfdModalProjectSpecific"
+                                       type="text"
+                                       inputmode="decimal"
+                                       value="@Model.NonAnimalCosts"
+                                       oninput="recalcYFDTotalCosts()"
+                                       aria-describedby="yfdModalProjectSpecific-error" />
+                            </div>
+                            <p class="govuk-error-message govuk-!-display-none" id="yfdModalProjectSpecific-error">
+                                <span class="govuk-visually-hidden">Error:</span>
+                                <span id="yfdModalProjectSpecific-error-msg"></span>
+                            </p>
+                        </div>
+
+                        @* Total Costs — computed read-only display *@
+                        <div class="govuk-form-group sup_margin_bottom_10 govuk-!-margin-top-2">
+                            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16"
+                                   for="yfdModalTotalCosts">
+                                Total Costs:
+                            </label>
+                            <div class="govuk-input__wrapper">
+                                <div class="govuk-input__prefix" aria-hidden="true">£</div>
+                               
+                                <input class="govuk-input govuk-!-font-size-16"
+                                       id="yfdModalTotalCosts"
+                                       name="yfdModalTotalCosts"
+                                       type="text"
+                                       value="@(Model.TotalCosts.HasValue ? Model.TotalCosts.Value.ToString("F2") : "0.00")"
+                                       disabled
+                                       aria-readonly="true" />
+                            </div>
+                        </div>
+
+                    </div>
+                    @* end left column *@
+
+                    @* ── CENTRE column: Year + Actual Pact Details + Adjustment ────── *@
+                    <div class="yfd-modal-col-centre">
+
+                        @* Year (required; editable in add mode, read-only in edit mode) *@
+                        <div class="govuk-form-group sup_margin_bottom_10">
+                            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16"
+                                   for="yfdModalYear">
+                                Year
+                            </label>
+                            @if (isEditMode)
+                            {
+
+                                <input class="govuk-input govuk-!-font-size-16"
+                                       id="yfdModalYear"
+                                       name="yfdModalYear"
+                                       type="text"
+                                       value="@(Model.Year != 0 ? Model.Year.ToString() : string.Empty)"
+                                       disabled
+                                       aria-readonly="true" />
+                            }
+                            else
+                            {
+                                <input class="govuk-input govuk-!-font-size-16 validate-required"
+                                       id="yfdModalYear"
+                                       name="yfdModalYear"
+                                       type="text"
+                                       value="@(Model.Year != 0 ? Model.Year.ToString() : string.Empty)"
+                                       required
+                                       aria-required="true"
+                                       placeholder="e.g. 2026"
+                                       maxlength="4"
+                                       aria-describedby="yfdModalYear-error" />
+                            }
+                            <p class="govuk-error-message govuk-!-display-none" id="yfdModalYear-error">
+                                <span class="govuk-visually-hidden">Error:</span>
+                                <span id="yfdModalYear-error-msg"></span>
+                            </p>
+                        </div>
+
+                        @* Actual (Pact) Details — read-only PACT costing fields used by Update Costing *@
+                        <div class="govuk-form-group sup_margin_bottom_10 sup_border govuk-!-padding-2" id="yfdActualPactGroup">
+                            <fieldset class="govuk-fieldset">
+                                <legend class="govuk-fieldset__legend govuk-!-font-weight-bold govuk-!-font-size-16">
+                                    Actual (Pact) Details:
+                                </legend>
+
+                                <div class="govuk-form-group sup_margin_bottom_10">
+                                    <label class="govuk-label govuk-!-font-size-16" for="pactCustomerIncome">Customer Income</label>
+                                    <input class="govuk-input govuk-!-font-size-16" id="pactCustomerIncome" type="text" value="—" readonly aria-readonly="true" />
+                                </div>
+
+                                <div class="govuk-form-group sup_margin_bottom_10">
+                                    <label class="govuk-label govuk-!-font-size-16" for="pactVLABudget">VLA Budget</label>
+                                    <input class="govuk-input govuk-!-font-size-16" id="pactVLABudget" type="text" value="—" readonly aria-readonly="true" />
+                                </div>
+
+                                <div class="govuk-form-group sup_margin_bottom_10">
+                                    <label class="govuk-label govuk-!-font-size-16" for="pactPay">Pay</label>
+                                    <input class="govuk-input govuk-!-font-size-16" id="pactPay" type="text" value="—" readonly aria-readonly="true" />
+                                </div>
+
+                                <div class="govuk-form-group sup_margin_bottom_10">
+                                    <label class="govuk-label govuk-!-font-size-16" for="pactNonPayOH">NonPayOH</label>
+                                    <input class="govuk-input govuk-!-font-size-16" id="pactNonPayOH" type="text" value="—" readonly aria-readonly="true" />
+                                </div>
+
+                                <div class="govuk-form-group sup_margin_bottom_10">
+                                    <label class="govuk-label govuk-!-font-size-16" for="pactTotalTimeCosts">Total Time Costs</label>
+                                    <input class="govuk-input govuk-!-font-size-16" id="pactTotalTimeCosts" type="text" value="—" readonly aria-readonly="true" />
+                                </div>
+
+                                <div class="govuk-form-group sup_margin_bottom_10">
+                                    <label class="govuk-label govuk-!-font-size-16" for="pactTest">Test</label>
+                                    <input class="govuk-input govuk-!-font-size-16" id="pactTest" type="text" value="—" readonly aria-readonly="true" />
+                                </div>
+
+                                <div class="govuk-form-group sup_margin_bottom_10">
+                                    <label class="govuk-label govuk-!-font-size-16" for="pactAnimal">Animal</label>
+                                    <input class="govuk-input govuk-!-font-size-16" id="pactAnimal" type="text" value="—" readonly aria-readonly="true" />
+                                </div>
+
+                                <div class="govuk-form-group sup_margin_bottom_10">
+                                    <label class="govuk-label govuk-!-font-size-16" for="pactProjectSpecific">Project Specific</label>
+                                    <input class="govuk-input govuk-!-font-size-16" id="pactProjectSpecific" type="text" value="—" readonly aria-readonly="true" />
+                                </div>
+
+                                <div class="govuk-form-group sup_margin_bottom_10">
+                                    <label class="govuk-label govuk-!-font-size-16" for="pactTotalCosts">Total Costs</label>
+                                    <input class="govuk-input govuk-!-font-size-16" id="pactTotalCosts" type="text" value="—" readonly aria-readonly="true" />
+                                </div>
+
+                                <div class="govuk-form-group sup_margin_bottom_10">
+                                    <label class="govuk-label govuk-!-font-size-16" for="pactManHours">Man Hours</label>
+                                    <input class="govuk-input govuk-!-font-size-16" id="pactManHours" type="text" value="—" readonly aria-readonly="true" />
+                                </div>
+
+                                <div class="govuk-form-group sup_margin_bottom_10">
+                                    <label class="govuk-label govuk-!-font-size-16" for="pactManDays">Man Days</label>
+                                    <input class="govuk-input govuk-!-font-size-16" id="pactManDays" type="text" value="—" readonly aria-readonly="true" />
+                                </div>
+
+                                <div class="govuk-form-group sup_margin_bottom_10">
+                                    <label class="govuk-label govuk-!-font-size-16" for="pactManYears">Man Years</label>
+                                    <input class="govuk-input govuk-!-font-size-16" id="pactManYears" type="text" value="—" readonly aria-readonly="true" />
+                                </div>
+                            </fieldset>
+                        </div>
+
+                    </div>
+                    @* end centre column *@
+
+                    @* ── RIGHT column: Costing panel ──────────────────────────────── *@
+                    <div class="yfd-modal-col-right">
+
+                        @* Approximate Man-Time fieldset *@
+                        <fieldset class="govuk-fieldset yfd-fieldset-mantime">
+                            <legend class="govuk-fieldset__legend govuk-!-font-size-14 govuk-!-font-weight-bold">
+                                Approximate Man-Time (fill in one)
+                            </legend>
+
+                            @* Appr. Man Hours — ManHours *@
+                            <div class="govuk-form-group sup_margin_bottom_10">
+                                <label class="govuk-label govuk-!-font-size-16" for="yfdModalManHours">
+                                    Appr. Man Hours:
+                                </label>
+                                <input class="govuk-input govuk-!-font-size-16 govuk-input--width-10 validate-number"
+                                       id="yfdModalManHours"
+                                       name="yfdModalManHours"
+                                       type="number"
+                                       step="any"
+                                       inputmode="decimal"
+                                       min="0"
+                                       value="@Model.ManHours"
+                                       aria-describedby="yfdModalManHours-error" />
+                                <p class="govuk-error-message govuk-!-display-none" id="yfdModalManHours-error">
+                                    <span class="govuk-visually-hidden">Error:</span>
+                                    <span id="yfdModalManHours-error-msg"></span>
+                                </p>
+                            </div>
+
+                            @* Appr. Man Days — ManDays *@
+                            <div class="govuk-form-group sup_margin_bottom_10">
+                                <label class="govuk-label govuk-!-font-size-16" for="yfdModalManDays">
+                                    Appr. Man Days:
+                                </label>
+                                <input class="govuk-input govuk-!-font-size-16 govuk-input--width-10 validate-number"
+                                       id="yfdModalManDays"
+                                       name="yfdModalManDays"
+                                       type="number"
+                                       step="any"
+                                       inputmode="decimal"
+                                       min="0"
+                                       value="@Model.ManDays"
+                                       aria-describedby="yfdModalManDays-error" />
+                                <p class="govuk-error-message govuk-!-display-none" id="yfdModalManDays-error">
+                                    <span class="govuk-visually-hidden">Error:</span>
+                                    <span id="yfdModalManDays-error-msg"></span>
+                                </p>
+                            </div>
+
+                            @* Appr. Man Years — ManYears *@
+                            <div class="govuk-form-group sup_margin_bottom_10">
+                                <label class="govuk-label govuk-!-font-size-16" for="yfdModalManYears">
+                                    Appr. Man Years:
+                                </label>
+                                <input class="govuk-input govuk-!-font-size-16 govuk-input--width-10 validate-number"
+                                       id="yfdModalManYears"
+                                       name="yfdModalManYears"
+                                       type="number"
+                                       step="any"
+                                       inputmode="decimal"
+                                       min="0"
+                                       value="@Model.ManYears"
+                                       aria-describedby="yfdModalManYears-error" />
+                                <p class="govuk-error-message govuk-!-display-none" id="yfdModalManYears-error">
+                                    <span class="govuk-visually-hidden">Error:</span>
+                                    <span id="yfdModalManYears-error-msg"></span>
+                                </p>
+                            </div>
+                        </fieldset>
+
+                        @* Adjustment (+/-) — Adjustment *@
+                        <div class="govuk-form-group sup_margin_bottom_10">
+                            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16"
+                                   for="yfdModalAdjustment">
+                                Adjustment (+/-):
+                            </label>
+                            <div class="govuk-input__wrapper">
+                                <div class="govuk-input__prefix" aria-hidden="true">£</div>
+                                <input class="govuk-input govuk-!-font-size-16 validate-number"
+                                       id="yfdModalAdjustment"
+                                       name="yfdModalAdjustment"
+                                       type="text"
+                                       inputmode="decimal"
+                                       value="@Model.Adjustment"
+                                       aria-describedby="yfdModalAdjustment-error" />
+                            </div>
+                            <p class="govuk-error-message govuk-!-display-none" id="yfdModalAdjustment-error">
+                                <span class="govuk-visually-hidden">Error:</span>
+                                <span id="yfdModalAdjustment-error-msg"></span>
+                            </p>
+                        </div>
+
+                        @* Adjustment Comment — AdjustmentComment *@
+                        <div class="govuk-form-group sup_margin_bottom_10">
+                            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16"
+                                   for="yfdModalAdjComment">
+                                Adjustment Comment:
+                            </label>
+                            <textarea class="govuk-textarea govuk-!-font-size-16 sup_margin_0"
+                                      id="yfdModalAdjComment"
+                                      name="yfdModalAdjComment"
+                                      rows="6">@Model.AdjustmentComment</textarea>
+                        </div>
+
+                        <div class="yfd-update-costing-wrapper">
+
+                            <button type="button"
+                                    id="btnYfdUpdateCosting"
+                                    class="govuk-button govuk-button--secondary govuk-!-font-size-16 sup_margin_0"
+                                    onclick="updateCosting()"
+                                    aria-label="Update costing values">
+                                Update Costing
+                            </button>
+                        </div>
+
+
+                        <div id="yfdCostingPanel"
+                             class="yfd-costing-panel yfd-costing-panel--disabled"
+                             aria-disabled="true">
+
+                            <div class="yfd-costing-panel__header">
+                               
+                                <button type="button"
+                                        id="btnYfdFixCosting"
+                                        class="govuk-button govuk-!-font-size-16 sup_margin_0"
+                                        onclick="fixCosting()"
+                                        aria-label="Fix costing">
+                                    Fix Costing
+                                </button>
+
+                                @* Fixed checkbox — maps to Model.Locked (short 0/1) *@
+                                
+                                <div class="govuk-checkboxes govuk-checkboxes--small yfd-costing-panel__checkbox"
+                                     data-module="govuk-checkboxes">
+                                    <div class="govuk-checkboxes__item">
+                                        @if (Model.Locked != 0)
+                                        {
+                                            <input class="govuk-checkboxes__input"
+                                                   id="yfdModalFixed"
+                                                   name="yfdModalFixed"
+                                                   type="checkbox"
+                                                   value="fixed"
+                                                   checked />
+                                        }
+                                        else
+                                        {
+                                            <input class="govuk-checkboxes__input"
+                                                   id="yfdModalFixed"
+                                                   name="yfdModalFixed"
+                                                   type="checkbox"
+                                                   value="fixed" />
+                                        }
+                                        <label class="govuk-label govuk-checkboxes__label sup_label_auto_width govuk-!-font-size-16"
+                                               for="yfdModalFixed">Fixed</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            @* Date Fixed — DateCosted *@
+                            <div class="govuk-form-group sup_margin_bottom_10">
+                                <label class="govuk-label govuk-!-font-size-16" for="yfdModalDateFixed">
+                                    Date Fixed:
+                                </label>
+                                <input class="govuk-input govuk-!-font-size-16"
+                                       id="yfdModalDateFixed"
+                                       name="yfdModalDateFixed"
+                                       type="text"
+                                       value="@(Model.DateCosted.HasValue ? Model.DateCosted.Value.ToString("dd/MM/yyyy") : string.Empty)"
+                                       aria-describedby="yfdModalDateFixed-error" />
+                                <p class="govuk-error-message govuk-!-display-none" id="yfdModalDateFixed-error">
+                                    <span class="govuk-visually-hidden">Error:</span>
+                                    <span id="yfdModalDateFixed-error-msg"></span>
+                                </p>
+                            </div>
+
+                            @* Fixed By — CostedBy *@
+                            <div class="govuk-form-group sup_margin_bottom_10">
+                                <label class="govuk-label govuk-!-font-size-16" for="yfdModalFixedBy">
+                                    Fixed By:
+                                </label>
+                                <input class="govuk-input govuk-!-font-size-16"
+                                       id="yfdModalFixedBy"
+                                       name="yfdModalFixedBy"
+                                       type="text"
+                                       value="@Model.CostedBy" />
+                            </div>
+
+                            <hr class="yfd-costing-panel__divider" />
+
+                            @* Actual Expenditure / Actual ManYears reported display (read-only) *@
+                            <div class="yfd-costing-reported">
+                                <p class="govuk-!-font-weight-bold yfd-costing-reported__label">
+                                    Actual Expenditure Reported as:
+                                </p>
+                                <p class="govuk-body govuk-!-font-size-16 yfd-costing-reported__value--spaced"
+                                   id="yfdActualExpReported">
+                                    @(Model.ActualExpenditure.HasValue
+                                        ? "£" + Model.ActualExpenditure.Value.ToString("N2")
+                                        : "—")
+                                </p>
+                                <p class="govuk-!-font-weight-bold yfd-costing-reported__label">
+                                    Actual ManYears Reported as:
+                                </p>
+                                <p class="govuk-body govuk-!-font-size-16"
+                                   id="yfdActualManYearsReported">
+                                    @(Model.ActualManYears.HasValue
+                                        ? Model.ActualManYears.Value.ToString("F3")
+                                        : "—")
+                                </p>
+                            </div>
+
+                        </div>
+                        @* end costing panel *@
+
+                    </div>
+                    @* end right column *@
+
+                </div>
+                @* end yfd-modal-columns *@
+
+            </form>
+        </div>
+        @* end modal body *@
+
+        <div class="govuk-edit-modal__footer yfd-modal-footer">
+            <button type="button"
+                    class="govuk-button govuk-button--secondary sup_margin_0 govuk-!-font-size-16"
+                    data-module="govuk-button"
+                    onclick="closeYFDModal()">Cancel</button>
+            <div>
+                @if (isEditMode)
+                {
+                   
+                    <button type="button"
+                            class="govuk-button sup_margin_0 govuk-!-font-size-16"
+                            data-module="govuk-button"
+                            id="yfdUpdateBtn"
+                            onclick="saveYFD()">Update</button>
+                }
+                else
+                {
+                    
+                    <button type="button"
+                            class="govuk-button sup_margin_0 govuk-!-font-size-16"
+                            data-module="govuk-button"
+                            id="yfdSaveBtn"
+                            onclick="saveYFD()">Save</button>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    
+    // Sums Seedcorn + PayCosts + NonPayOhCosts + TestCosts + AnimalCosts + NonAnimalCosts
+    function recalcYFDTotalCosts() {
+        var parseMoney = function (id) {
+            var value = document.getElementById(id)?.value || '';
+            var normalized = String(value).replace(/[^0-9+\-.,]/g, '').replace(/,/g, '');
+            var parsed = parseFloat(normalized);
+            return isNaN(parsed) ? 0 : parsed;
+        };
+
+        var seedcorn = parseMoney('yfdModalSeedcorn');
+        var pay = parseMoney('yfdModalPayCosts');
+        var nonPay = parseMoney('yfdModalNonPay');
+        var test = parseMoney('yfdModalTestCosts');
+        var animal = parseMoney('yfdModalAnimalCosts');
+        var projSpc = parseMoney('yfdModalProjectSpecific');
+
+        var total = seedcorn + pay + nonPay + test + animal + projSpc;
+        var el = document.getElementById('yfdModalTotalCosts');
+        if (el) el.value = total.toFixed(2);
+    }
+
+    recalcYFDTotalCosts();
+</script>

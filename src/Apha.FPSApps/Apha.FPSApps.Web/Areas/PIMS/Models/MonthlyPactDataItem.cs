@@ -29,7 +29,7 @@ namespace Apha.FPSApps.Web.Areas.PIMS.Models
         [GridColumn(Width = 100, Type = GridColumnType.GbpValue)]
         public decimal? TransferCosts { get; set; }
 
-        [Display(Name = "Total Costs")]
+        [Display(Name = "Total Cost")]
         [GridColumn(Width = 110, Type = GridColumnType.GbpValue)]
         public decimal? TotalCost { get; set; }
 

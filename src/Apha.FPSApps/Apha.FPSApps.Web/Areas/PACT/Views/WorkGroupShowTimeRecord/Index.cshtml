@@ -5,7 +5,7 @@
 }
 <div class="govuk-grid-column-full sup_border-bottom">
     <h1 class="sup_margin_top_10 sup_padding_bottom_10">
-        Verify Time Record by... 
+        View Time Recorded by... 
         <a asp-area="PACT"
         asp-controller="WorkGroupPeople"
         asp-action="Index"
@@ -16,7 +16,7 @@
 <div class="govuk-grid-row sup_margin_left_right_0 sup_flex_left_center sup_padding_bottom_10 sup_border-bottom" style="margin-top:10px;">
 
     @* Work Group dropdown *@
-    <div class="govuk-grid-column-one-third">
+    <div class="govuk-grid-column-one-third govuk-!-padding-top-2">
         <label for="workGroupSelect" class="govuk-label govuk-!-font-weight-bold">Select a Work Group</label>
         <div style="position: relative; z-index: 50;">
             <input type="text" id="workGroupSelect" placeholder="Select Work Group" autocomplete="off"
@@ -48,7 +48,7 @@
     </div>
 
     @* Calendar Month dropdown *@
-    <div class="govuk-grid-column-one-third">
+    <div class="govuk-grid-column-one-third govuk-!-padding-top-2">
         <label for="calenderMonthSelect" class="govuk-label govuk-!-font-weight-bold">Select a Month</label>
         <div style="position: relative; z-index: 50;">
             <input type="text" id="calenderMonthSelect" placeholder="Select Month" autocomplete="off"

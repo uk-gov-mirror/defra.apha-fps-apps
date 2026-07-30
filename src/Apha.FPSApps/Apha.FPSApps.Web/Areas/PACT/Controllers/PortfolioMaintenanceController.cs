@@ -79,7 +79,7 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
                     .Select(w => new SelectListItem(w.WorkGroupName, w.WorkGroupName))
                     .ToList() ?? [],
                 TestorProducts = testorProducts.Data?
-                    .Select(t => new SelectListItem(t.ItemCode, t.ItemCode))
+                    .Select(t => new SelectListItem(t.ItemDescription, t.ItemCode))
                     .ToList() ?? [],
                 ConstituentTestGrid = await BuildConstituentTestGridAsync(defaultRequest, null),
                 TimeCodeGrid = await BuildPortfolioTimeCodeGridAsync(defaultRequest, null)

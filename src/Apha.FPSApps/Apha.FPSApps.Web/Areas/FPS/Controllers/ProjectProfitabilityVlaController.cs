@@ -17,17 +17,14 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
     [AuthorizeForScopes(ScopeKeySection = "FPSApiSettings:Scope")]
     public class ProjectProfitabilityVlaController : Controller
     {
-        // TRANSFORMENGINE [Phase 14 security fix]: upper bound on page size used when fetching
         //   all rows for summary aggregation. Replaces int.MaxValue to prevent unbounded
         //   memory allocation and excessive DB load. Increase if VLA dataset exceeds this limit.
         private const int SummaryMaxPageSize = 5000;
 
         private readonly IMapper _mapper;
 
-        // TRANSFORMENGINE: main CRUD service — delegates to GET /api/v1/project/profitability-vla
         private readonly IProjectService _projectService;
 
-        // TRANSFORMENGINE: lookup service — used only for Program dropdown (separate from CRUD flow)
         private readonly IProgramService _programService;
 
         public ProjectProfitabilityVlaController(
@@ -49,7 +46,6 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             var viewModel = new ProjectProfitabilityVlaViewModel();
             await PopulateDropdownsAsync(viewModel);
 
-            // TRANSFORMENGINE: DataGridConfig built explicitly — never left as new().
             //   AllowAdd/Edit/Delete = false (JS showAddButton:false; no edit/delete buttons).
             //   KeyProperty = "Id" — hidden row discriminator; Id is not a visible grid column.
             viewModel.ProfitabilityVlaGrid = new DataGridConfig<ProjectProfitabilityVlaItem>
@@ -62,7 +58,6 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
                 AllowAdd           = false,
                 AllowEdit          = false,
                 AllowDelete        = false,
-                // TRANSFORMENGINE: ExtraFilterMethod wires the 4 filter dropdowns into the
                 //   DataGrid AJAX reload; implemented in the Razor view (Phase 12).
                 ExtraFilterMethod  = "getProjectProfitabilityVlaExtraFilters",
                 BindGridUrl        = "/FPS/ProjectProfitabilityVla/LoadProjectProfitabilityVlaGrid",
@@ -116,9 +111,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             [FromQuery] string? manager = null,
             [FromQuery] string? customer = null)
         {
-            // TRANSFORMENGINE: fetch all rows (no pagination) for aggregate calculation;
             //   mirrors projectprofitability_vla.js updateSummary behaviour.
-            // TRANSFORMENGINE [Phase 14 security fix]: SummaryMaxPageSize (5000) replaces
             //   int.MaxValue to bound memory allocation; see class-level constant declaration.
             var query = new QueryParameters<string> { Page = 1, PageSize = SummaryMaxPageSize };
 
@@ -134,7 +127,6 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
 
             var items = response.Data ?? new List<ProjectProfitabilityVlaDto>();
 
-            // TRANSFORMENGINE: aggregate 9 financial fields — matches JS updateSummary totals object
             return Ok(new
             {
                 totalStaffCosts      = items.Sum(i => i.StaffCosts),
@@ -163,7 +155,6 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
 
             var queryParameters = _mapper.Map<QueryParameters<string>>(request);
 
-            // TRANSFORMENGINE: delegates to backend GET /api/v1/project/profitability-vla
             //   via IProjectService; all 4 filter params optional — no placeholder defaults.
             var response = await _projectService.GetProjectProfitabilityVlaAsync(
                 queryParameters,
@@ -203,7 +194,6 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
 
         private async Task PopulateDropdownsAsync(ProjectProfitabilityVlaViewModel model)
         {
-            // TRANSFORMENGINE: static status options — matches HTML prototype filterProjectStatus
             //   options: Approved, Completed, Not Approved.
             model.StatusList = new List<SelectListItem>
             {
@@ -213,7 +203,6 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
                 new SelectListItem { Value = "Not Approved", Text = "Not Approved" }
             };
 
-            // TRANSFORMENGINE: dynamic program dropdown — lookup flow via IProgramService;
             //   separate from CRUD resource per layer boundary rule.
             var programResult = await _programService.GetAllProgramsAsync();
             if (programResult.Success && programResult.Data != null)
@@ -232,9 +221,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
                     .ToList();
             }
 
-            // TRANSFORMENGINE: dynamic manager dropdown — reuses IProjectService.GetManagersAsync()
             //   (existing /api/v1/employee lookup); ManagerDto.Name used as both Value and Text.
-            //   TRANSFORMENGINE TODO: verify Name matches backend 'manager' filter semantics.
             var managerResult = await _projectService.GetManagersAsync();
             if (managerResult.Success && managerResult.Data != null)
             {
@@ -251,9 +238,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
                     .ToList();
             }
 
-            // TRANSFORMENGINE: dynamic customer dropdown — reuses IProjectService.GetAllCustomersAsync()
             //   (existing /api/v1/customer lookup); CustomerDto.Customer used as both Value and Text.
-            //   TRANSFORMENGINE TODO: verify Customer field matches backend 'customer' filter semantics.
             var customerResult = await _projectService.GetAllCustomersAsync();
             if (customerResult.Success && customerResult.Data != null)
             {

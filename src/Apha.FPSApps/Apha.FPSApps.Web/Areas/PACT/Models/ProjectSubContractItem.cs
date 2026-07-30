@@ -7,12 +7,12 @@ namespace Apha.FPSApps.Web.Areas.PACT.Models
     {
         [Required(ErrorMessage = "Project is required")]
         [Display(Name = "Project")]
-        [GridColumn(Order = 1, Width = 381, Type = GridColumnType.Text, IsFilterable = true)]
+        [GridColumn(Order = 1, Width = 381, Type = GridColumnType.Text)]
         public string? Project { get; set; }
 
         [Required(ErrorMessage = "Month is required")]
         [Display(Name = "Month")]
-        [GridColumn(Order = 2, Width = 99, Type = GridColumnType.Number)]
+        [GridColumn(Order = 2, Width = 99, Type = GridColumnType.Number, IsFilterable = true)]
         public double? Month { get; set; }
 
         [Required(ErrorMessage = "Amount is required")]

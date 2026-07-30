@@ -9,5 +9,7 @@
         IPimsProjectYearCostsApiClient PimsProjectYearCosts { get; }
         IPimsMilestoneApiClient PimsMilestone { get; }
         IPimsRadTrackInvoiceApiClient PimsRadTrackInvoice { get; }
+        
+        IPimsYearlyFinancialDataApiClient PimsYearlyFinancialData { get; }
     }
 }

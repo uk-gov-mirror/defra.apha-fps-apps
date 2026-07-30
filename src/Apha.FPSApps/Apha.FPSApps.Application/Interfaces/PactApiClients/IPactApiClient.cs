@@ -18,8 +18,10 @@
         IPactSummarisedWgTimeApiClient PactSummarisedWgTime { get; }            
         IPactWorkGroupReportEmailApiClient PactWorkGroupReportEmail { get; }
         IPactMonthlyTimeApiClient PactMonthlyTime { get; }
-        IPactRecreateAndReleaseSummaryLogApiClient PactRecreateSummaryLog { get; }
+        IPactRecreateSummaryApiClient PactRecreateSummary { get; }
         IPactReleaseSummaryApiClient PactReleaseSummary { get; }
         IPactBosworthInterfaceApiClient PactBosworthInterface { get; }
+        IPactTestActualBreakdownApiClient PactTestActualBreakdown { get; }
+        IPactTestPlanCrossTabApiClient PactTestPlanCrossTab { get; }
     }
 }

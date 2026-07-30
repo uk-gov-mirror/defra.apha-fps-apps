@@ -67,5 +67,10 @@ namespace Apha.FPSApps.Application.Services.FPS
             var result = await _fpsClient.FpsStaffJob.DeleteStaffJobAsync(staffId, jobCode);
             return result;
         }
+
+        public async Task<ApiResponseDto<List<StaffResourceUtilisationDto>>> GetStaffResourceUtilisationAsync(QueryParameters<string> query, string workgroup)
+        {
+            return await _fpsClient.FpsStaffJob.GetStaffResourceUtilisationAsync(query, workgroup);
+        }
     }
 }

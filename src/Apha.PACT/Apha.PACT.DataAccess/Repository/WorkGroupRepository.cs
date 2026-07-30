@@ -42,6 +42,172 @@ namespace Apha.PACT.DataAccess.Repository
                 .ToListAsync();
         }
 
+        // ─── WorkGroup Maintenance CRUD + lookups (migrated from FPS) ───────────────
+
+        public async Task<PagedData<WorkGroup>> GetPagedAsync(PaginationParameters<string> query)
+        {
+            ArgumentNullException.ThrowIfNull(query);
+
+            var baseQuery = _context.WorkGroups
+                .AsNoTracking()
+                .AsQueryable();
+
+            baseQuery = ApplyWorkGroupMaintenanceFilter(baseQuery, query.Filter);
+            baseQuery = ApplyFpsWorkGroupSorting(baseQuery, query.SortBy, query.Descending);
+
+            return await ApplyPaging(baseQuery, query.Page, query.PageSize);
+        }
+
+        public async Task<WorkGroup?> GetByKeyAsync(string workGroupName)
+        {
+            if (string.IsNullOrWhiteSpace(workGroupName))
+                return null;
+
+            return await _context.WorkGroups
+                .AsNoTracking()
+                .FirstOrDefaultAsync(w => w.WorkGroupName == workGroupName);
+        }
+
+        public async Task<WorkGroup> CreateAsync(WorkGroup workGroup)
+        {
+            ArgumentNullException.ThrowIfNull(workGroup);
+
+            workGroup.FpsYear = _requestContext.FpsYear;
+
+            _context.WorkGroups.Add(workGroup);
+            await _context.SaveChangesAsync();
+            return workGroup;
+        }
+
+        public async Task<WorkGroup> UpdateAsync(string originalWorkGroupName, WorkGroup workGroup)
+        {
+            ArgumentNullException.ThrowIfNull(workGroup);
+            if (string.IsNullOrWhiteSpace(originalWorkGroupName))
+                throw new ArgumentException("Original WorkGroupName must be supplied.", nameof(originalWorkGroupName));
+
+            var existing = await _context.WorkGroups
+                .FirstOrDefaultAsync(w => w.WorkGroupName == originalWorkGroupName);
+
+            if (existing is null)
+                throw new KeyNotFoundException($"Workgroup '{originalWorkGroupName}' not found for the active FPS year.");
+
+            existing.WorkGroupName   = workGroup.WorkGroupName;
+            existing.ProfitCentre    = workGroup.ProfitCentre;
+            existing.CostCentre      = workGroup.CostCentre;
+            existing.CostCentreOld   = workGroup.CostCentreOld;
+            existing.Owner           = workGroup.Owner;
+            existing.Description     = workGroup.Description;
+            existing.CentralOverhead = workGroup.CentralOverhead;
+            existing.SendEmail       = workGroup.SendEmail;
+            existing.Cos90           = workGroup.Cos90;
+            existing.EmailRecipient  = workGroup.EmailRecipient;
+            existing.FpsYear         = _requestContext.FpsYear;
+
+            await _context.SaveChangesAsync();
+            return existing;
+        }
+
+        public async Task<bool> DeleteAsync(string workGroupName)
+        {
+            if (string.IsNullOrWhiteSpace(workGroupName))
+                return false;
+
+            var deleted = await _context.WorkGroups
+                .Where(w => w.WorkGroupName == workGroupName)
+                .ExecuteDeleteAsync();
+
+            return deleted > 0;
+        }
+
+        public async Task<bool> ExistsAsync(string workGroupName)
+        {
+            if (string.IsNullOrWhiteSpace(workGroupName))
+                return false;
+
+            return await _context.WorkGroups
+                .AsNoTracking()
+                .AnyAsync(w => w.WorkGroupName == workGroupName);
+        }
+
+        public async Task<IEnumerable<string>> GetAllProfitCentresAsync()
+        {
+            return await _context.ProfitCentres
+                .AsNoTracking()
+                .Select(pc => pc.ProfitCentreId)
+                .Distinct()
+                .OrderBy(pc => pc)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Owner>> GetOwnersAsync()
+        {
+            var result = await _context.WorkGroupStaffViews
+                .AsNoTracking()
+                .Join(
+                    _context.PactWorkGroupGradeViews.AsNoTracking(),
+                    staff => staff.WorkGroupGrade,
+                    wggg  => wggg.WgGrade,
+                    (staff, wggg) => new
+                    {
+                        staff.Name,
+                        wggg.WorkGroup,
+                        wggg.GradeCode
+                    })
+                .Where(x => x.Name != null
+                         && !x.Name.ToLower().Contains("general")
+                         && !x.Name.ToLower().Contains("vacancy"))
+                .Where(x => x.GradeCode != null && !x.GradeCode.StartsWith("G"))
+                .Distinct()
+                .OrderBy(x => x.Name)
+                .Select(x => new Owner
+                {
+                    Name      = x.Name!,
+                    WorkGroup = x.WorkGroup,
+                    GradeCode = x.GradeCode,
+                    Expr1     = x.GradeCode != null
+                                    ? x.GradeCode.Substring(0, 1)
+                                    : null
+                })
+                .ToListAsync();
+
+            return result;
+        }
+
+        public async Task<IEnumerable<double?>> GetCostCentresByProfitCentreAsync(string profitCentre)
+        {
+            if (string.IsNullOrWhiteSpace(profitCentre))
+                return Enumerable.Empty<double?>();
+
+            return await _context.WorkGroups
+                .AsNoTracking()
+                .Where(w => w.ProfitCentre == profitCentre && w.CostCentre != null)
+                .Select(w => w.CostCentre)
+                .Distinct()
+                .OrderBy(cc => cc)
+                .ToListAsync();
+        }
+
+        private static IQueryable<WorkGroup> ApplyWorkGroupMaintenanceFilter(IQueryable<WorkGroup> query, string? filterJson)
+        {
+            if (string.IsNullOrWhiteSpace(filterJson) || filterJson.Trim() == "{}")
+                return query;
+
+            var filters = JsonConvert.DeserializeObject<Dictionary<string, string>>(filterJson);
+            if (filters is null)
+                return query;
+
+            if (filters.TryGetValue("WorkGroupName", out var wgName) && !string.IsNullOrWhiteSpace(wgName))
+                query = query.Where(w => EF.Functions.ILike(w.WorkGroupName, $"%{wgName}%"));
+
+            if (filters.TryGetValue("ProfitCentre", out var pc) && !string.IsNullOrWhiteSpace(pc))
+                query = query.Where(w => EF.Functions.ILike(w.ProfitCentre, $"%{pc}%"));
+
+            if (filters.TryGetValue("Description", out var desc) && !string.IsNullOrWhiteSpace(desc))
+                query = query.Where(w => w.Description != null && EF.Functions.ILike(w.Description, $"%{desc}%"));
+
+            return query;
+        }
+
         public async Task<IEnumerable<SummarisedWgTimeView>> GetSummarisedWorkgroupTimeAsync(
             string workGroup)
         {
@@ -450,6 +616,23 @@ namespace Apha.PACT.DataAccess.Repository
                 "owner"         => descending ? query.OrderByDescending(w => w.Owner)         : query.OrderBy(w => w.Owner),
                 "description"   => descending ? query.OrderByDescending(w => w.Description)   : query.OrderBy(w => w.Description),
                 _               => query.OrderBy(w => w.WorkGroupName)
+            };
+        }
+
+        // FPS-specific WorkGroup Maintenance sorting (frmMaintWorkGroup2 grid).
+        // Kept separate from ApplyWorkGroupSorting so PACT sorting behaviour is unaffected.
+        // Adds the CostCentre column, which the FPS maintenance grid exposes as sortable.
+        private static IQueryable<WorkGroup> ApplyFpsWorkGroupSorting(IQueryable<WorkGroup> query, string? sortBy, bool descending)
+        {
+            return sortBy?.ToLower() switch
+            {
+                "workgroupname"   => descending ? query.OrderByDescending(w => w.WorkGroupName)   : query.OrderBy(w => w.WorkGroupName),
+                "profitcentre"    => descending ? query.OrderByDescending(w => w.ProfitCentre)    : query.OrderBy(w => w.ProfitCentre),
+                "costcentre"      => descending ? query.OrderByDescending(w => w.CostCentre)      : query.OrderBy(w => w.CostCentre),
+                "description"     => descending ? query.OrderByDescending(w => w.Description)     : query.OrderBy(w => w.Description),
+                "owner"           => descending ? query.OrderByDescending(w => w.Owner)           : query.OrderBy(w => w.Owner),
+                "centraloverhead" => descending ? query.OrderByDescending(w => w.CentralOverhead) : query.OrderBy(w => w.CentralOverhead),
+                _                 => query.OrderBy(w => w.WorkGroupName)
             };
         }
     }

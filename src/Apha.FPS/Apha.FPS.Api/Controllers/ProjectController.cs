@@ -302,6 +302,13 @@ namespace Apha.FPS.Api.Controllers
             var result = await _projectService.GetProjectProfitabilityVlaAsync(query, projectStatus, programNo, manager, customer);
             return Ok(_mapper.Map<PaginationRes<ProjectProfitabilityVlaRes>>(result));
         }
+
+        [HttpGet("{workgroup}/staff-replan")]
+        public async Task<IActionResult> GetProjectStaffReplanAsync(string workgroup, [FromQuery] QueryParameters<string> query)
+        {
+            var result = await _projectService.GetProjectStaffReplanAsync(query, workgroup);
+            return Ok(_mapper.Map<PaginationRes<ProjectStaffReplanRes>>(result));
+        }
     }
 
     public record ChangeProjectCodeReq(string OldCode, string NewCode);

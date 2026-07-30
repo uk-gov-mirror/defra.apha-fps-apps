@@ -34,7 +34,6 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.FPS.FpsProjectApiClientT
         {
             // Arrange
             var query = new QueryParameters<string> { Page = 1, PageSize = 15 };
-            // TRANSFORMENGINE: ProjectProfitabilityVlaRes uses 'Project' (not 'JobCode') as the display name field;
             // the frontend DTO uses 'JobCode' as the natural key — Phase 15 build fix.
             var responseItems = new List<ProjectProfitabilityVlaRes>
             {

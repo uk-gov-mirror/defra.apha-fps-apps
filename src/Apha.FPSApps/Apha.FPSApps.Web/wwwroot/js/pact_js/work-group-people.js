@@ -381,12 +381,12 @@ function initializeMultiColumnDropdown() {
     workGroupSelectDropdown = new MultiColumnDropdownComponent({
         dropdownId: 'workGroupSelectDropdown',
         containerSelector: '#workGroupSelectMultiDropdown',//name as per cshtml div id
-        placeholder: 'Select Workgroup',
+        placeholder: 'Select WorkGroup',
         showSerialNumber: false,
-        searchPlaceholder: 'Type to search work group',
+        searchPlaceholder: 'Type to search WorkGroup',
         labelText: '',//this label will come at the top of dropdown, can be set as per requirement
         columns: [
-            { field: 'WorkGroupName', header: 'Work Group', width: '80px' },
+            { field: 'WorkGroupName', header: 'WorkGroup', width: '80px' },
             { field: 'ProfitCentre', header: 'Profit Centre', width: '150px' },
         ],
         data: workgroupOptionsListData,
@@ -425,8 +425,8 @@ function initializeMultiColumnDropdown() {
         labelText: '',//this label will come at the top of dropdown, can be set as per requirement
         columns: [
             { field: 'Name', header: 'Name', width: '80px' },
-            { field: 'WorkGroupGrade', header: 'Work Group Grade', width: '80px' },
-            { field: 'WorkGroup', header: 'Work Group', width: '150px' },
+            { field: 'WorkGroupGrade', header: 'WorkGroup Grade', width: '80px' },
+            { field: 'WorkGroup', header: 'WorkGroup', width: '150px' },
         ],
         data: personOptionsListData,
         displayField: 'Name',

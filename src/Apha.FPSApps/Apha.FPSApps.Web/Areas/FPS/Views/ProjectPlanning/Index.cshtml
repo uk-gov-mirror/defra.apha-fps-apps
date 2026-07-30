@@ -18,7 +18,6 @@
 
     <div class="project-code-section govuk-!-margin-bottom-2 govuk-!-padding-left-0">
         <textarea class="govuk-textarea pp-project-description" id="projectDescription" aria-label="Project description" rows="2" asp-for="ProjectDescription">@Model.ProjectDescription</textarea>
-        <button type="button" class="govuk-button sup_margin_0" aria-label="Preview Report">Preview Report</button>
         <a href="@Url.Action("ExportToExcel", "ProjectPlanning", new { area = "FPS", projectCode = Model.ProjectCode })"
            class="govuk-button sup_margin_0" aria-label="Export to Excel">Export to Excel</a>
     </div>
@@ -98,7 +97,7 @@
             </div>
             <div class="summary-item">
                 <label class="govuk-label--s govuk-!-font-size-16" for="OffTarget">Off - Target:</label>
-                <input type="text" value="@(Model.OffTarget < 0 ? $"(£{Math.Abs(Model.OffTarget):N0})" : Model.OffTarget.ToString("C0"))" aria-label="Off - Target" id="OffTarget" class="govuk-input govuk-!-font-size-16 govuk-input--width-10 text-AlignRight @(Model.OffTarget < 0 ? "text-danger" : "text-primary")" name="OffTarget" asp-for="OffTarget">
+                <input type="text" value="@(Model.OffTarget < 0 ? $"(£{Math.Abs(Model.OffTarget):N0})" : Model.OffTarget.ToString("C0"))" aria-label="Off - Target" id="OffTarget" class="govuk-input govuk-!-font-size-16 govuk-input--width-10 text-AlignRight" name="OffTarget" asp-for="OffTarget" style="color:#1d70b8;font-weight:400;">
             </div>
         </div>
     </footer>
@@ -110,7 +109,7 @@
     <script src="~/js/fps_js/StaffJob.js"></script>
     <script src="~/js/fps_js/AnimalJob.js"></script>
     <script src="~/js/fps_js/TestPlanJob.js"></script>
-    <script src="~/js/fps_js/AdditionalCost.js"></script>
+    <script src="~/js/fps_js/AdditionalCost.js" asp-append-version="true"></script>
     <script>
         // ---- Currency helpers ----
 
@@ -151,7 +150,7 @@
 
             var offTarget = profitLoss - parseCurrency($('#TargetProfit').val());
             $('#OffTarget').val(formatGBP(offTarget));
-            applyValueColour('#OffTarget', offTarget);
+            $('#OffTarget').css({ 'color': '#1d70b8', 'font-weight': '400' });
         }
 
         // ---- Total cost refreshers ----

@@ -1,6 +1,6 @@
 @using Microsoft.AspNetCore.Mvc.Rendering
 @using Apha.FPSApps.Application.Dtos.CostBook
-@model Apha.FPSApps.Web.Areas.CostBook.Models.StaffRequirementItem
+@model Apha.FPSApps.Web.Areas.CostBook.Models.StaffRequirementFormItem
 
 @{
     var payRates = ViewBag.WgGradeOptions as List<PayRateDto> ?? new List<PayRateDto>();
@@ -14,10 +14,10 @@
     <form id="staffRequirementForm">
         @Html.AntiForgeryToken()
         <input asp-for="SrIdentity" type="hidden" />
-        <input asp-for="Payrate" type="hidden" />
+       @*  <input asp-for="Payrate" type="hidden" />
         <input asp-for="Npr" type="hidden" />
-        <input asp-for="Ohr" type="hidden" />
-        <input type="hidden" id="WgGrade" name="WgGrade" value="@Model.WgGrade" />
+        <input asp-for="Ohr" type="hidden" /> *@
+        <input type="hidden" id="WgGrade" value="@Model.WgGrade" />
         <div class="govuk-error-summary" role="alert"
              aria-labelledby="staffFormErrorTitle" tabindex="-1" style="display: none;">
             <h2 class="govuk-error-summary__title" id="staffFormErrorTitle">There is a problem</h2>
@@ -30,9 +30,9 @@
                 WG Grade <span class="sup_color_red">*</span>
             </label>
             <div style="position: relative; z-index: 50;">
-                <input type="text" id="wgGradeSelect" placeholder="-- Select Grade --" autocomplete="off"
+                <input asp-for="WgGrade" type="text" id="wgGradeSelect" placeholder="-- Select Grade --" autocomplete="off"
                        class="govuk-input govuk-!-font-size-16 down-arrow-img" style="width: 100%; cursor: pointer;"
-                       value="@Model.WgGrade" 
+                       required
                        tabindex="0" 
                        role="combobox" 
                        aria-haspopup="listbox" 
@@ -58,11 +58,11 @@
                             @foreach (var p in payRates)
                             {
                                 <tr data-value="@p.WgGrade"
-                                    data-chargerate="@(p.ChargeRate?.ToString("F2") ?? "")"
-                                    data-chargeratewithinflamation="@(p.ChargeRateWithInflamation?.ToString("F2") ?? "")"
-                                    data-payrate="@(p.PayRate?.ToString("F2") ?? "")"
+                                    data-chargerate="@(p.ChargeRate?.ToString() ?? "")"
+                                    data-chargeratewithinflamation="@(p.ChargeRateWithInflamation?.ToString() ?? "")"
+                                   @*  data-payrate="@(p.PayRate?.ToString("F2") ?? "")"
                                     data-npr="@(p.Npr?.ToString("F2") ?? "")"
-                                    data-ohr="@(p.Ohr?.ToString("F2") ?? "")"
+                                    data-ohr="@(p.Ohr?.ToString("F2") ?? "")" *@
                                     tabindex="0"
                                     role="option"
                                     style="cursor:pointer;">
@@ -117,7 +117,7 @@
             </label>
             <div class="govuk-input__wrapper">
                 <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                <input asp-for="StaffCost" type="text" readonly class="govuk-input" />
+                <input asp-for="StaffCost" type="text" readonly class="govuk-input" value="@(Model.StaffCost ?? 0)">
             </div>          
             <span asp-validation-for="StaffCost" class="govuk-error-message" style="display:none;"></span>
         </div>

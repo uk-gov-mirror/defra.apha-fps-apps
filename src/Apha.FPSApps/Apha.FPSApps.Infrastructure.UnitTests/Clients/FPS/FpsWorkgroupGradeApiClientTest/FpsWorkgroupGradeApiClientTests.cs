@@ -162,5 +162,83 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.FPS.FpsWorkGroupGradeApi
         }
 
         #endregion
+
+        #region GetWorkgroupGradesByWorkGroupAsync Tests
+
+        [Fact]
+        public async Task GetWorkgroupGradesByWorkGroupAsync_WithSuccessResponse_ReturnsMappedGradeList()
+        {
+            // Arrange
+            const string workGroup = "TeamA";
+            var resList = new List<WorkgroupGradeRes>
+            {
+                new() { WgGrade = DefaultWgGrade, ProfitCentreGrade = DefaultPcGrade }
+            };
+            var apiResponse = new ApiResponse<List<WorkgroupGradeRes>> { Success = true, Data = resList };
+            var dtoList     = new List<WorkgroupGradeDto>
+            {
+                new() { WgGrade = DefaultWgGrade, ProfitCentreGrade = DefaultPcGrade }
+            };
+            var expectedDto = ApiResponseDto<List<WorkgroupGradeDto>>.SuccessResponse(dtoList);
+
+            _http.GetAsync<List<WorkgroupGradeRes>>(
+                    Arg.Is<string>(url => url.Contains("byworkgroup") && url.Contains(workGroup)))
+                .Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<WorkgroupGradeDto>>>(apiResponse).Returns(expectedDto);
+
+            // Act
+            var result = await _client.GetWorkgroupGradesByWorkGroupAsync(workGroup);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Single(result.Data!);
+            await _http.Received(1).GetAsync<List<WorkgroupGradeRes>>(
+                Arg.Is<string>(url => url.Contains("byworkgroup") && url.Contains(workGroup)));
+        }
+
+        [Fact]
+        public async Task GetWorkgroupGradesByWorkGroupAsync_WithFailureResponse_ReturnsFailureDto()
+        {
+            // Arrange
+            var apiResponse = new ApiResponse<List<WorkgroupGradeRes>> { Success = false };
+            var mappedResponse = new ApiResponseDto<List<WorkgroupGradeDto>>
+            {
+                Success = false,
+                Errors  = new List<ApiErrorDto> { new() { Message = "Error", Code = "ERR" } },
+                Meta    = new ApiMetaDto()
+            };
+
+            _http.GetAsync<List<WorkgroupGradeRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<WorkgroupGradeDto>>>(apiResponse).Returns(mappedResponse);
+
+            // Act
+            var result = await _client.GetWorkgroupGradesByWorkGroupAsync("TeamA");
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+        }
+
+        [Fact]
+        public async Task GetWorkgroupGradesByWorkGroupAsync_BuildsUrlWithWorkGroupEncoded()
+        {
+            // Arrange
+            const string workGroup = "Team A";
+            var apiResponse = new ApiResponse<List<WorkgroupGradeRes>> { Success = true, Data = new List<WorkgroupGradeRes>() };
+            var expectedDto = ApiResponseDto<List<WorkgroupGradeDto>>.SuccessResponse(new List<WorkgroupGradeDto>());
+
+            _http.GetAsync<List<WorkgroupGradeRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<WorkgroupGradeDto>>>(apiResponse).Returns(expectedDto);
+
+            // Act
+            await _client.GetWorkgroupGradesByWorkGroupAsync(workGroup);
+
+            // Assert
+            await _http.Received(1).GetAsync<List<WorkgroupGradeRes>>(
+                Arg.Is<string>(url => url.Contains("Team%20A") || url.Contains("Team+A")));
+        }
+
+        #endregion
     }
 }

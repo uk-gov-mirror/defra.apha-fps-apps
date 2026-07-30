@@ -111,15 +111,26 @@ function loadProfileData(parentProject) {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { position: 'top' } },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: "Black"
+                            }
+                        }
+                    },
                     scales: {
                         x: {
-                            ticks: { maxTicksLimit: 12 }
+                            ticks: {
+                                maxTicksLimit: 12,
+                                color: '#0b0c0c'
+                            }
                         },
                         y: {
                             beginAtZero: true,
                             ticks: {
                                 maxTicksLimit: 7,
+                                color: '#0b0c0c',
                                 callback: value => value.toLocaleString()
                             }
                         }
@@ -182,15 +193,26 @@ function loadCumulativeData(parentProject) {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { position: 'top' } },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: '#000000'
+                            }
+                        }
+                    },
                     scales: {
                         x: {
-                            ticks: { maxTicksLimit: 12 }
+                            ticks: {
+                                maxTicksLimit: 12,
+                                color: '#000000'
+                            }
                         },
                         y: {
                             beginAtZero: true,
                             ticks: {
                                 maxTicksLimit: 6,
+                                color: '#000000',
                                 callback: value => value.toLocaleString()
                             }
                         }

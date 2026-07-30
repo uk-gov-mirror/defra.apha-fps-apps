@@ -26,6 +26,9 @@ namespace Apha.FPS.Application.Interfaces
         /// <summary>Returns all Grade codes for dropdown population.</summary>
         Task<List<string>> GetAllGradeCodesAsync();
 
+        /// <summary>Returns distinct WorkgroupGrade records for a given workgroup, ordered by WGGrade.</summary>
+        Task<List<WorkgroupGradeDto>> GetWorkgroupGradesByWorkGroupAsync(string workGroup);
+
         // Existing methods for backward compatibility
         Task<PaginatedResult<WorkgroupGradeDto>> GetWorkGroupGradeAsync(QueryParameters<string> query, string profitCentreGrade);
         Task<bool> DeleteWorkGroupGradeAsync(string wgGrade);

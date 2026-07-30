@@ -16,6 +16,12 @@ namespace Apha.FPSApps.Infrastructure.Mappings
             CreateMap<TimeCodeValidDto, TimeCodeValidRes>().ReverseMap();
             CreateMap<WorkGroupDto, WorkGroupRes>().ReverseMap();
             CreateMap<WorkGroupViewDto, WorkGroupViewRes>().ReverseMap();
+
+            // WorkGroup Maintenance (CRUD + lookups)
+            CreateMap<WorkGroupDto, WorkGroupMaintenanceRes>().ReverseMap();
+            CreateMap<WorkGroupDto, WorkGroupMaintenanceReq>().ReverseMap();
+            CreateMap<OwnerDto, OwnerRes>().ReverseMap();
+
             CreateMap<MonthDto, MonthRes>().ReverseMap();
             CreateMap<CalenderMonthDto, CalenderMonthRes>().ReverseMap();
             CreateMap<ProjectInvoiceDto, ProjectInvoiceReq>().ReverseMap();
@@ -25,6 +31,10 @@ namespace Apha.FPSApps.Infrastructure.Mappings
             CreateMap<MonthlyInvoicesPivotDto, MonthlyInvoicesPivotRes>().ReverseMap();
             CreateMap<ProjectSubContractDto, ProjectSubContractReq>().ReverseMap();
             CreateMap<ProjectSubContractDto, ProjectSubContractRes>().ReverseMap();
+            CreateMap<SubContractRmsImportRowDto, SubContractRmsImportRowReq>().ReverseMap();
+            CreateMap<SubContractRmsImportRowDto, SubContractRmsImportRowRes>().ReverseMap();
+            CreateMap<SubContractRmsImportReqDto, SubContractRmsImportReq>().ReverseMap();
+            CreateMap<SubContractRmsImportResultDto, SubContractRmsImportRes>().ReverseMap();
             CreateMap<TestCapabilityDto, TestCapabilityReq>().ReverseMap();
             CreateMap<TestCapabilityDto, TestCapabilityRes>().ReverseMap();
             CreateMap<TestRequirementDto, TestRequirementReq>().ReverseMap();
@@ -65,6 +75,12 @@ namespace Apha.FPSApps.Infrastructure.Mappings
             CreateMap<TestSaleSellingWorkgroupDto, TestSaleSellingWorkgroupRes>().ReverseMap();
             CreateMap<TestSaleBuyingProjectDto, TestSaleBuyingProjectRes>().ReverseMap();
             CreateMap<WgTestCapabilitiesWithDescriptionDto, WgTestCapabilitiesWithDescriptionRes>().ReverseMap();
+            CreateMap<TestReqBreakdownRes, TestReqBreakdownDto>().ReverseMap();
+            CreateMap<BatchJobQueueDto, BatchJobQueueRes>().ReverseMap();
+            CreateMap<BatchJobHistoryDto, BatchJobHistoryRes>().ReverseMap();
+            CreateMap<BatchJobEventTriggerDto, BatchJobEventTriggerRes>().ReverseMap();
+            CreateMap<TestActualBreakdownRes, TestActualBreakdownDto>().ReverseMap();
+            CreateMap<TestPlanCostBreakdownRes, TestPlanCostBreakdownDto>().ReverseMap();
         }
     }
 }

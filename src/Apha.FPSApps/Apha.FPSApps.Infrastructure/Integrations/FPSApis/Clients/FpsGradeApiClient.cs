@@ -14,10 +14,8 @@ namespace Apha.FPSApps.Infrastructure.Integrations.FPSApis.Clients
         private readonly IFpsHttpExecutor _http;
         private readonly IMapper _mapper;
 
-        // TRANSFORMENGINE: InternalCodeError as private const — Sonar S1192 compliance
         private const string InternalCodeError = "INTERNAL_ERROR";
 
-        // TRANSFORMENGINE: BaseUrl matches backend GradeController [Route("api/v{version:apiVersion}/Grade")]
         private const string BaseUrl = "api/v1/Grade";
 
         public FpsGradeApiClient(IFpsHttpExecutor http, IMapper mapper)
@@ -26,7 +24,6 @@ namespace Apha.FPSApps.Infrastructure.Integrations.FPSApis.Clients
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
-        // TRANSFORMENGINE: GET api/v1/Grade/paged → GradeController.GetAllPagedAsync
         //   QueryParameters<string> appended as query string via QueryStringHelper.AddQueryString
         public async Task<ApiResponseDto<List<GradeDto>>> GetAllPagedAsync(QueryParameters<string> query)
         {
@@ -48,7 +45,6 @@ namespace Apha.FPSApps.Infrastructure.Integrations.FPSApis.Clients
             }
         }
 
-        // TRANSFORMENGINE: GET api/v1/Grade/{gradeCode} → GradeController.GetByIdAsync
         public async Task<ApiResponseDto<GradeDto>> GetByIdAsync(string gradeCode)
         {
             try
@@ -69,7 +65,6 @@ namespace Apha.FPSApps.Infrastructure.Integrations.FPSApis.Clients
             }
         }
 
-        // TRANSFORMENGINE: POST api/v1/Grade → GradeController.CreateAsync
         //   GradeDto mapped to GradeReq for the request body
         public async Task<ApiResponseDto<GradeDto>> CreateAsync(GradeDto dto)
         {
@@ -91,7 +86,6 @@ namespace Apha.FPSApps.Infrastructure.Integrations.FPSApis.Clients
             }
         }
 
-        // TRANSFORMENGINE: PUT api/v1/Grade/{originalCode} → GradeController.UpdateAsync
         //   originalCode placed in path to support GradeCode rename (dto.GradeCode may differ from originalCode)
         public async Task<ApiResponseDto<GradeDto>> UpdateAsync(string originalCode, GradeDto dto)
         {
@@ -114,7 +108,6 @@ namespace Apha.FPSApps.Infrastructure.Integrations.FPSApis.Clients
             }
         }
 
-        // TRANSFORMENGINE: DELETE api/v1/Grade/{gradeCode} → GradeController.DeleteAsync
         //   bool? used as generic arg (nullable response body); return type is ApiResponseDto<bool>
         public async Task<ApiResponseDto<bool>> DeleteAsync(string gradeCode)
         {

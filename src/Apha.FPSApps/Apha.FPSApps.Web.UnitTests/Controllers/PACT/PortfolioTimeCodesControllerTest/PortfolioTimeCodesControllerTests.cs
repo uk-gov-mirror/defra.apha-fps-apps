@@ -374,7 +374,7 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PACT.PortfolioTimeCodesControll
             await _controller.CreateJobCode(parentProject);
 
             // Assert
-            Assert.NotNull(_controller.ViewBag.WorkGroups);
+            Assert.NotNull(_controller.ViewBag.WorkGroupsData);
             Assert.NotNull(_controller.ViewBag.Types);
             Assert.NotNull(_controller.ViewBag.Projects);
         }

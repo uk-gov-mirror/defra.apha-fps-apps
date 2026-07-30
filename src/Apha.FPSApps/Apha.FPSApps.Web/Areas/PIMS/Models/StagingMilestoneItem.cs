@@ -14,7 +14,7 @@ namespace Apha.FPSApps.Web.Areas.PIMS.Models
         [GridColumn(Type = GridColumnType.ReadOnly, IsVisible = false)]
         public bool IsAddingNew { get; set; }
 
-       
+        [RegularExpression(@"^\d{1,2}/\d{1,2}$", ErrorMessage = "Number must be in format 00/00 (digits only, e.g. 01/01)")]        
         [Display(Name = "Number")]
         [GridColumn(Order = 1, Width = 30, Type = GridColumnType.Text, IsFilterable = true)]
         public string? Number { get; set; }

@@ -9,6 +9,7 @@ using Apha.FPSApps.Web.Areas.PACT.Controllers;
 using Apha.FPSApps.Web.Areas.PACT.Models;
 using Apha.FPSApps.Web.Models.Components.DataGrid;
 using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using NSubstitute;
 using System.Text.Json;
@@ -40,6 +41,11 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PACT.TestCapabilityControllerTe
                 _projectService,
                 _excelExportService,
                 _testorProductService);
+
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            };
         }
 
         private static JsonElement GetJsonResultElement(JsonResult jsonResult)

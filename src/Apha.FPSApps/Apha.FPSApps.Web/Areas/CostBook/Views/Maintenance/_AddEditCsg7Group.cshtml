@@ -26,7 +26,7 @@
              aria-labelledby="formTblCsg7-db-error-title" hidden>
             <h2 class="govuk-error-summary__title" id="formTblCsg7-db-error-title">There is a problem</h2>
             <div class="govuk-error-summary__body">
-                <p id="formTblCsg7-db-error-msg" class="govuk-body"></p>
+                <ul class="govuk-list govuk-error-summary__list"></ul>
             </div>
         </div>
 
@@ -39,22 +39,18 @@
             </label>
             @if (isEditMode)
             {
-                <input class="govuk-input govuk-!-font-size-16"
+                <input asp-for="Csg7Group"
+                       class="govuk-input govuk-!-font-size-16"
                        id="modal-csg7-group"
-                       name="csg7Group"
-                       type="text"
-                       value="@Model!.Csg7Group"
                        maxlength="15"
                        readonly
                        aria-describedby="modal-csg7-group-error" />
             }
             else
             {
-                <input class="govuk-input govuk-!-font-size-16"
+                <input asp-for="Csg7Group"
+                       class="govuk-input govuk-!-font-size-16"
                        id="modal-csg7-group"
-                       name="csg7Group"
-                       type="text"
-                       value=""
                        maxlength="15"
                        required aria-required="true"
                        aria-describedby="modal-csg7-group-error" />
@@ -62,7 +58,7 @@
             <p id="modal-csg7-group-error" class="govuk-error-message" hidden>
                 <span class="govuk-visually-hidden">Error:</span> Enter a CSG7 group name
             </p>
-            <span data-valmsg-for="csg7Group" class="govuk-error-message field-validation-valid" style="display:none;"></span>
+            <span asp-validation-for="Csg7Group" class="govuk-error-message field-validation-valid" style="display:none;"></span>
         </div>
 
        

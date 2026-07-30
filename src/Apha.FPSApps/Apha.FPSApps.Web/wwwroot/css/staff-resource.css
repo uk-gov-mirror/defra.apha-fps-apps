@@ -1,0 +1,97 @@
+/* ===== Staff Resource Utilisation page (StaffResource/Index.cshtml) ===== */
+
+/* Breadcrumb / title row */
+.fps-sr-breadcrumb-row {
+  padding: 5px;
+  border-bottom: 1px solid #b4b4b4;
+}
+
+.fps-sr-breadcrumb-flex {
+  display: flex;
+  font-size: 14px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Main two-panel layout wrapper */
+.ruv-filter-panel {
+  background-color: var(--govuk-surface-background-colour, #f4f8fb);
+}
+
+.ruv-main-layout {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+/* Left panel: workgroup selector */
+.ruv-left-panel {
+  width: 220px;
+  flex: 0 0 220px;
+}
+
+/* Right panel: staff utilisation grid */
+.ruv-right-panel {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Staff totals summary strip below the grid */
+.ruv-staff-totals {
+  padding: 0;
+  font-size: 14px;
+  background-color: #f4f8fb;
+  border: 1px solid #dee2e6;
+  border-top: 0;
+  overflow: hidden;
+}
+
+/* Preview Report / action row */
+.ruv-filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+/* Table row selected by JS click */
+.selected-row td {
+  background-color: #d2e2f1 !important;
+}
+
+/* Totals row injected as <tfoot> after staff grid renders */
+.ruv-totals-row td {
+  background-color: #f4f8fb !important;
+  font-weight: 700;
+  border-top: 2px solid #1d70b8;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ruv-totals-row td:first-child {
+  text-align: left;
+  color: #1d70b8;
+}
+.ruv-group-header-row th {
+  background-color: #1d70b8 !important;
+  color: #fff;
+  text-align: center;
+  font-weight: 700;
+  border: 1px solid #dee2e6;
+  padding: 4px 10px;
+}
+
+@media (max-width: 992px) {
+  .ruv-main-layout {
+    flex-direction: column;
+  }
+
+  .ruv-left-panel {
+    width: 100%;
+    flex: 1 1 auto;
+  }
+
+  .ruv-filter-actions {
+    justify-content: flex-start;
+    margin-top: 8px;
+  }
+}

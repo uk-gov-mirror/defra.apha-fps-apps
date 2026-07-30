@@ -18,7 +18,7 @@ namespace Apha.FPSApps.Application.Services.PIMS
         }
 
         public async Task<ApiResponseDto<List<MilestoneDto>>> GetAllMilestonesAsync(QueryParameters<string> parameters, string project)
-            => await _client.PimsMilestone.GetAllMilestonesAsync(parameters, project);
+            => await _client.PimsMilestone.GetAllMilestonesAsync(parameters, project);      
 
         public async Task<ApiResponseDto<MilestoneDto>> GetMilestoneAsync(string project, string number)
             => await _client.PimsMilestone.GetMilestoneAsync(project, number);
@@ -57,8 +57,9 @@ namespace Apha.FPSApps.Application.Services.PIMS
         // Staging / Import
         public async Task<ApiResponseDto<List<StagingMilestoneDto>>> GetAllStagingRowsAsync(QueryParameters<string> parameters)
              => await _client.PimsMilestone.GetAllStagingRowsAsync(parameters);
-        public async Task<ApiResponseDto<List<StagingMilestoneDto>>> GetStagingRowsAsync(string? project)
-            => await _client.PimsMilestone.GetStagingRowsAsync(project);
+
+        public async Task<ApiResponseDto<List<StagingMilestoneDto>>> GetStagingRowsAsync(int id)
+            => await _client.PimsMilestone.GetStagingRowsAsync(id);
 
         public async Task<ApiResponseDto<StagingMilestoneDto>> AddStagingRowAsync(StagingMilestoneDto dto, int year)
             => await _client.PimsMilestone.AddStagingRowAsync(dto, year);
@@ -72,7 +73,7 @@ namespace Apha.FPSApps.Application.Services.PIMS
         public async Task<ApiResponseDto<object>> ClearStagingAsync(string project)
             => await _client.PimsMilestone.ClearStagingAsync(project);
 
-        public async Task<ApiResponseDto<List<StagingMilestoneDto>>> ValidateStagingAsync(string project, string? typeId, bool isDeliverableMode)
+        public async Task<ApiResponseDto<object>> ValidateStagingAsync(string project, string? typeId, bool isDeliverableMode)
             => await _client.PimsMilestone.ValidateStagingAsync(project, typeId, isDeliverableMode);
 
         public async Task<ApiResponseDto<object>> ImportStagingAsync(string project)
@@ -80,6 +81,10 @@ namespace Apha.FPSApps.Application.Services.PIMS
 
         public async Task<ApiResponseDto<object>> ImportWithOverwriteAsync(string project)
             => await _client.PimsMilestone.ImportWithOverwriteAsync(project);
-        
+
+        public async Task<ApiResponseDto<List<ProjectYearManagerDto>>> GetProjectYearManagersAsync(int year)
+            => await _client.PimsMilestone.GetProjectYearManagersAsync(year);
+        public async Task<ApiResponseDto<List<MilestoneDto>>> GetPMDMilestonesAsync(QueryParameters<string> parameters, string project)
+           => await _client.PimsMilestone.GetPMDMilestonesAsync(parameters, project);
     }
 }

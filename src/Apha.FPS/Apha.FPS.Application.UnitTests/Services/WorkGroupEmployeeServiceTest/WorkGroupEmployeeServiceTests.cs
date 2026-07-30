@@ -95,6 +95,52 @@ namespace Apha.FPS.Application.UnitTests.Services.WorkGroupEmployeeServiceTest
 
         #endregion
 
+        #region GetAllActiveWorkGroupEmployeesAsync Tests
+
+        [Fact]
+        public async Task GetAllActiveWorkGroupEmployeesAsync_WithValidQuery_ReturnsMappedPaginatedResult()
+        {
+            var query        = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var mappedParams = new PaginationParameters<string> { Page = 1, PageSize = 10 };
+            var pagedData    = new PagedData<WorkGroupEmployeeView>();
+            var expected     = new PaginatedResult<WorkGroupEmployeeDto>();
+
+            _mockMapper.Map<PaginationParameters<string>>(query).Returns(mappedParams);
+            _mockRepository.GetAllActiveWorkGroupEmployeesAsync(mappedParams, DefaultWgGrade).Returns(pagedData);
+            _mockMapper.Map<PaginatedResult<WorkGroupEmployeeDto>>(pagedData).Returns(expected);
+
+            var result = await _sut.GetAllActiveWorkGroupEmployeesAsync(query, DefaultWgGrade);
+
+            result.Should().Be(expected);
+            _mockMapper.Received(1).Map<PaginationParameters<string>>(query);
+            await _mockRepository.Received(1).GetAllActiveWorkGroupEmployeesAsync(mappedParams, DefaultWgGrade);
+            _mockMapper.Received(1).Map<PaginatedResult<WorkGroupEmployeeDto>>(pagedData);
+        }
+
+        [Fact]
+        public async Task GetAllActiveWorkGroupEmployeesAsync_WithNullQuery_ThrowsArgumentNullException()
+        {
+            await Assert.ThrowsAsync<ArgumentNullException>(() =>
+                _sut.GetAllActiveWorkGroupEmployeesAsync(null!, DefaultWgGrade));
+
+            await _mockRepository.DidNotReceive().GetAllActiveWorkGroupEmployeesAsync(Arg.Any<PaginationParameters<string>>(), Arg.Any<string>());
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task GetAllActiveWorkGroupEmployeesAsync_WithNullOrWhitespaceWgGrade_ThrowsArgumentException(string wgGrade)
+        {
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                _sut.GetAllActiveWorkGroupEmployeesAsync(query, wgGrade));
+
+            await _mockRepository.DidNotReceive().GetAllActiveWorkGroupEmployeesAsync(Arg.Any<PaginationParameters<string>>(), Arg.Any<string>());
+        }
+
+        #endregion
+
         #region GetWorkGroupEmployeeByIdAsync Tests
 
         [Fact]

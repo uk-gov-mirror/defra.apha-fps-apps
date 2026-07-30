@@ -103,8 +103,7 @@ namespace Apha.PACT.DataAccess.Repository
         public async Task<IEnumerable<JobCodeZtLookup>> GetZtJobCodesAsync()
         {
             var baseQuery = (from jc in _context.ProjectViews
-                             where jc.Program != null && jc.Program.Equals("zt_prog"
-, StringComparison.CurrentCultureIgnoreCase)
+                             where jc.Program != null && EF.Functions.ILike(jc.Program.ToLower(), "zt_prog")
                              && jc.UserEmail != null && EF.Functions.ILike(jc.UserEmail, _fpsRequestContext.UserEmailId)
                              select new JobCodeZtLookup
                              {

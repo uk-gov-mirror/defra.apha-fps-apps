@@ -33,15 +33,15 @@
                          style="margin: 8px; display: flex; align-items: flex-end;">
 
                         <div style="margin: 0 7px; flex: 1;">
-                            <label for="dpprojectSelect" class="govuk-label tab-font-size">
+                            <label for="dpprojectSelect " class="govuk-label tab-font-size govuk-!-font-weight-bold">
                                 Select a Project
                             </label>
                             <select id="dpprojectSelect"
                                     class="govuk-select project-dropdown tab-font-size"
                                     style="width: 100%;">
                                 <option value="">Select a Project</option>
-                                @foreach (var item in Model.ProjectOptions)
-                                {
+                                    @foreach (var item in Model.ProjectOptions)
+                                    {
                                     if (item.Value == Model.Parentproject)
                                     {
                                         <option value="@item.Value" selected="selected">@item.Text</option>
@@ -52,10 +52,10 @@
                                     }
                                 }
                             </select>
-                        </div>
+                                </div>
 
                         <div style="margin: 0 5px; flex: 1;">
-                            <label for="dpyear" class="govuk-label tab-font-size">Year</label>
+                            <label for="dpyear" class="govuk-label govuk-!-font-weight-bold tab-font-size">Year</label>
                             <select id="dpyear"
                                     class="govuk-select project-dropdown tab-font-size"
                                     style="width: 100%;">
@@ -91,49 +91,49 @@
         <div class="govuk-template__body js-enabled govuk-frontend-supported">
             <div class="govuk-tabs" data-module="govuk-tabs">
                 <ul class="govuk-tabs__list">
-                    <li class="govuk-tabs__list-item govuk-tabs__list-item--selected tab-3-side-border" id="tab_nav-monthlyPact">
+                    <li class="govuk-tabs__list-item govuk-tabs__list-item--selected " id="tab_nav-monthlyPact">
                         <a class="govuk-tabs__tab" href="#nav-monthlyPact" role="tab"
                            aria-controls="nav-monthlyPact" style="font-size: 14px; text-decoration: none">
                             Monthly Pact Data
                         </a>
                     </li>
-                    <li class="govuk-tabs__list-item tab-3-side-border" id="tab_nav-pact-pay">
+                    <li class="govuk-tabs__list-item " id="tab_nav-pact-pay">
                         <a class="govuk-tabs__tab" href="#nav-pact-pay" role="tab"
                            aria-controls="nav-pact-pay" style="font-size: 14px; text-decoration: none">
                             Pact Pay
                         </a>
                     </li>
-                    <li class="govuk-tabs__list-item tab-3-side-border" id="tab_nav-project-details">
+                    <li class="govuk-tabs__list-item " id="tab_nav-project-details">
                         <a class="govuk-tabs__tab" href="#nav-project-details" role="tab"
                            aria-controls="nav-project-details" style="font-size: 14px; text-decoration: none">
                             Project Details
                         </a>
                     </li>
-                    <li class="govuk-tabs__list-item tab-3-side-border" id="tab_nav-plan">
+                    <li class="govuk-tabs__list-item " id="tab_nav-plan">
                         <a class="govuk-tabs__tab" href="#nav-plan" role="tab"
                            aria-controls="nav-plan" style="font-size: 14px; text-decoration: none">
                             Plan
                         </a>
                     </li>
-                    <li class="govuk-tabs__list-item tab-3-side-border" id="tab_nav-staff-plan">
+                    <li class="govuk-tabs__list-item " id="tab_nav-staff-plan">
                         <a class="govuk-tabs__tab" href="#nav-staff-plan" role="tab"
                            aria-controls="nav-staff-plan" style="font-size: 14px; text-decoration: none">
                             Staff Plan vs Actuals
                         </a>
                     </li>
-                    <li class="govuk-tabs__list-item tab-3-side-border" id="tab_nav-test-plan">
+                    <li class="govuk-tabs__list-item " id="tab_nav-test-plan">
                         <a class="govuk-tabs__tab" href="#nav-test-plan" role="tab"
                            aria-controls="nav-test-plan" style="font-size: 14px; text-decoration: none">
                             Test Plan vs Actuals
                         </a>
                     </li>
-                    <li class="govuk-tabs__list-item tab-3-side-border" id="tab_nav-animal-plan">
+                    <li class="govuk-tabs__list-item " id="tab_nav-animal-plan">
                         <a class="govuk-tabs__tab" href="#nav-animal-plan" role="tab"
                            aria-controls="nav-animal-plan" style="font-size: 14px; text-decoration: none">
                             Animal Plan vs Actuals
                         </a>
                     </li>
-                    <li class="govuk-tabs__list-item tab-3-side-border"
+                    <li class="govuk-tabs__list-item "
                         id="tab_nav-additional-cost">
                         <a class="govuk-tabs__tab" href="#nav-additional-cost" role="tab"
                            aria-controls="nav-additional-cost" style="font-size: 14px; text-decoration: none">
@@ -147,7 +147,7 @@
                      id="nav-monthlyPact" role="tabpanel" aria-labelledby="tab_nav-monthlyPact">
                     <div class="govuk-grid-row">
                         <div class="govuk-grid-column-full">
-                            <div class="sup_border govuk-!-padding-3">
+                            <div class="govuk-!-padding-3">
                                 <div id="@($"gridContainer_{Model.MonthlyPactGrid.GridId}")">
                                     @await Html.PartialAsync("_DataGrid", Model.MonthlyPactGrid)
                                 </div>
@@ -157,16 +157,16 @@
                                         id="monthly-data-totals" style="width: 100%;">
                                         <thead style="visibility: collapse;">
                                             <tr>
-                                                <th style="width: 80px;"></th>
-                                                <th style="width: 100px;"></th>
-                                                <th style="width: 110px;"></th>
-                                                <th style="width: 90px;"></th>
-                                                <th style="width: 110px;"></th>
-                                                <th style="width: 90px;"></th>
-                                                <th style="width: 110px;"></th>
-                                                <th style="width: 90px;"></th>
-                                                <th style="width: 90px;"></th>
-                                                <th style="width: 80px;"></th>
+                                                <th style="width: 80px;" aria-label="Column 1"></th>
+                                                <th style="width: 100px;" aria-label="Column 2"></th>
+                                                <th style="width: 110px;" aria-label="Column 3"></th>
+                                                <th style="width: 90px;" aria-label="Column 4"></th>
+                                                <th style="width: 110px;" aria-label="Column 5"></th>
+                                                <th style="width: 90px;" aria-label="Column 6"></th>
+                                                <th style="width: 110px;" aria-label="Column 7"></th>
+                                                <th style="width: 90px;" aria-label="Column 8"></th>
+                                                <th style="width: 90px;" aria-label="Column 9"></th>
+                                                <th style="width: 80px;" aria-label="Column 10"></th>
                                             </tr>
                                         </thead>
                                         <tbody class="govuk-table__body tab-font-size">
@@ -207,7 +207,7 @@
                                             <th class="govuk-table__header govuk-!-text-align-right">Test Costs</th>
                                             <th class="govuk-table__header govuk-!-text-align-right">Exceptional Costs</th>
                                             <th class="govuk-table__header govuk-!-text-align-right">Animal Costs</th>
-                                            <th class="govuk-table__header govuk-!-text-align-right">Total Costs</th>
+                                            <th class="govuk-table__header govuk-!-text-align-right">Total Cost</th>
                                             <th class="govuk-table__header govuk-!-text-align-right">Cust Income</th>
                                             <th class="govuk-table__header govuk-!-text-align-right">Total Income</th>
                                             <th class="govuk-table__header govuk-!-text-align-right">Budget VLA</th>
@@ -245,7 +245,7 @@
                      id="nav-pact-pay" role="tabpanel" aria-labelledby="tab_nav-pact-pay">
                     <div class="govuk-grid-row">
                         <div class="govuk-grid-column-full">
-                            <div class="sup_border govuk-!-padding-3">
+                            <div class="govuk-!-padding-3">
                                 <div id="@($"gridContainer_{Model.PactPayGrid.GridId}")">
                                     @await Html.PartialAsync("_DataGrid", Model.PactPayGrid)
                                 </div>
@@ -259,10 +259,10 @@
                                         <col style="width: 17.4%;" />
                                         <col style="width: 20.3%;" />
                                     </colgroup>
-                                    <thead class="govuk-visually-hidden">
-                                        <tr>
-                                            <th scope="col" class="govuk-table__header"></th>
-                                            <th scope="col" class="govuk-table__header"></th>
+                                    <thead class="govuk-visually-hidden" aria-label="Project year costs table headers">
++                                        <tr>
+                                            <th scope="col" class="govuk-table__header" aria-label="payPact-Col1"></th>
+                                            <th scope="col" class="govuk-table__header" aria-label="payPact-Col1"></th>
                                             <th scope="col" class="govuk-table__header">Pay</th>
                                             <th scope="col" class="govuk-table__header">Non-Pay</th>
                                             <th scope="col" class="govuk-table__header">Overhead</th>
@@ -642,6 +642,55 @@
     function getPactPayGridManager()        { return window['gridManager_' + pactPayGridId]; }
     function getMonthlyPactGridManager()   { return window['gridManager_' + monthlyPactGridId]; }
 
+    function positionProjectPickerPanel() {
+        var panel = document.getElementById('dpprojectSelectPanel');
+        var display = document.getElementById('dpprojectSelectDisplay');
+        if (!panel || !display) return;
+
+        panel.style.top = 'calc(100% + 2px)';
+        panel.style.bottom = 'auto';
+
+        var rect = display.getBoundingClientRect();
+        var viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+        var spaceBelow = viewportHeight - rect.bottom - 12;
+        var spaceAbove = rect.top - 12;
+        var preferredHeight = 240;
+
+        if (spaceBelow < preferredHeight && spaceAbove > spaceBelow) {
+            panel.style.top = 'auto';
+            panel.style.bottom = 'calc(100% + 2px)';
+            panel.style.maxHeight = Math.max(120, Math.min(preferredHeight, spaceAbove)) + 'px';
+        } else {
+            panel.style.maxHeight = Math.max(120, Math.min(preferredHeight, spaceBelow)) + 'px';
+        }
+    }
+
+    function toggleProjectPicker(forceOpen) {
+        var panel = document.getElementById('dpprojectSelectPanel');
+        var display = document.getElementById('dpprojectSelectDisplay');
+        if (!panel || !display) return;
+
+        var shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : panel.hidden;
+        panel.hidden = !shouldOpen;
+        display.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+
+        if (shouldOpen) {
+            positionProjectPickerPanel();
+        }
+    }
+
+    function selectProjectPickerOption(value, text) {
+        var hidden = document.getElementById('dpprojectSelect');
+        var display = document.getElementById('dpprojectSelectDisplay');
+        if (!hidden || !display) return;
+
+        hidden.value = value || '';
+        display.textContent = text || 'Select a Project';
+        toggleProjectPicker(false);
+        hidden.dispatchEvent(new Event('change'));
+    }
+
+
     function syncPactPayFooterColumns() {
         // Read the actual rendered widths from the grid header <th> elements
         // and apply them to the footer table colgroup so totals align exactly.
@@ -869,6 +918,39 @@
     }
 
     document.addEventListener('DOMContentLoaded', function () {
+        var projectPickerDisplay = document.getElementById('dpprojectSelectDisplay');
+        var projectPickerPanel = document.getElementById('dpprojectSelectPanel');
+
+        if (projectPickerDisplay && projectPickerPanel) {
+            projectPickerDisplay.addEventListener('click', function (e) {
+                e.stopPropagation();
+                toggleProjectPicker();
+            });
+
+            window.addEventListener('resize', function () {
+                if (!projectPickerPanel.hidden) {
+                    positionProjectPickerPanel();
+                }
+            });
+
+            window.addEventListener('scroll', function () {
+                if (!projectPickerPanel.hidden) {
+                    positionProjectPickerPanel();
+                }
+            }, true);
+
+            projectPickerPanel.addEventListener('click', function (e) {
+                var option = e.target.closest('.pims-project-picker__option');
+                if (!option) return;
+                selectProjectPickerOption(option.getAttribute('data-value'), option.getAttribute('data-text'));
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!e.target.closest('.pims-project-picker')) {
+                    toggleProjectPicker(false);
+                }
+            });
+        }
 
         localStorage.removeItem('monthlyPactGrid_colWidths');
 

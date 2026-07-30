@@ -8,7 +8,7 @@
 <div class="content-wrapper">
     <div class="govuk-grid-row sup_margin_left_right_0">
         <div class="govuk-grid-column-full">
-            <h1 class="heading_with_txtbox govuk-heading-s sup_border-bottom sup_margin_bottom_10 p-tb-10 p-l-10">
+            <h1 class="heading_with_txtbox govuk-heading-s sup_border-bottom sup_margin_bottom_10 sup_padding_top_10 govuk-!-padding-bottom-2">
                 <div class="sup_flex_left_center">
                     Simple Test List
                 </div>
@@ -21,12 +21,11 @@
             <div id="gridContainer_testGrid">
                 @await Html.PartialAsync("_DataGrid", Model.TestGrid)
             </div>
-            <div class="sup_margin_top_bottom_5_10">
-                <p class="govuk-body">
-                    HINT - Using this form you can enter new tests at the bottom of the list, or amend descriptions
-                    prices and manager for any existing test<br /><br />
-
-                    if adding a new test, remember to set up the Test Capabilities. You also need to set up buyers
+            <div class="govuk-!-padding-top-3">
+                <p class="govuk-!-font-size-16 govuk-!-font-weight-bold ">
+                    HINT - Using this form you can enter new tests at the bottom of the list, or amend descriptions,
+                    prices and manager for any existing test<br /> <br />
+                    If adding a new test, remember to set up the Test Capabilities. You also need to set up buyers
                     (contracts wanting to buy this test) - otherwise PACT won't accept outputs
                 </p>
             </div>
@@ -40,8 +39,8 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="testModalLabel">Add/Edit Test or Product</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
+                <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close" onclick="closeTestModal()">
+                    <span aria-hidden="true">X</span>
                 </button>
             </div>
             <div class="modal-body">

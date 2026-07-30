@@ -16,6 +16,11 @@ namespace Apha.FPSApps.Web.Areas.FPS.Models
         public string SelectedProjectGroup { get; set; } = string.Empty;
 
         /// <summary>
+        /// Currently selected / searched project name
+        /// </summary>
+        public string ProjectSearch { get; set; } = string.Empty;
+
+        /// <summary>
         /// List of all project groups for the dropdown
         /// </summary>
         public List<SelectListItem> ProjectGroupList { get; set; } = new List<SelectListItem>();

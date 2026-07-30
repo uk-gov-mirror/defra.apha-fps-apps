@@ -211,6 +211,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             var costCentres = (await costCentreTask).Data ?? new();
             model.CostCentreList = costCentres
                 .Where(cc => cc.CostCentre.HasValue)
+                .OrderBy(cc => cc.ProfitCentre)
                 .Select(cc => new SelectListItem(
                     $"{cc.CostCentre} | {cc.ProfitCentre ?? string.Empty} | {cc.WGs ?? string.Empty}",
                     cc.CostCentre?.ToString() ?? "",
@@ -221,6 +222,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             var projectGroups = (await projectGroupTask).Data ?? new();
             model.ProjectGroupList = projectGroups
                 .Where(pg => !string.IsNullOrEmpty(pg.ProjectGroupName))
+                .OrderBy(pg => pg.ProjectGroupName)
                 .Select(pg => new SelectListItem(pg.ProjectGroupName, pg.ProjectGroupName, pg.ProjectGroupName == model.ProjectGroup))
                 .Prepend(new SelectListItem("", ""))
                 .ToList();
@@ -256,7 +258,8 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             var customers = (await customerTask).Data ?? new();
             model.CustomerList = customers
                 .Where(c => !string.IsNullOrEmpty(c.Customer))
-                .Select(c => new SelectListItem(c.Customer, c.Customer, c.Customer == model.Customer))
+                .OrderBy(c => c.Customer.Trim())
+                .Select(c => new SelectListItem(c.Customer.Trim(), c.Customer.Trim(), c.Customer.Trim() == model.Customer?.Trim()))
                 .Prepend(new SelectListItem("", ""))
                 .ToList();
 

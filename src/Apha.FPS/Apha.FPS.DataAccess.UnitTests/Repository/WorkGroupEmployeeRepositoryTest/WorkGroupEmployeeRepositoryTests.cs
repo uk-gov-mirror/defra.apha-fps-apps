@@ -700,5 +700,112 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.WorkGroupEmployeeRepositoryTe
         }
 
         #endregion
+
+        #region GetAllActiveWorkGroupEmployeesAsync Tests
+
+        [Fact]
+        public async Task GetAllActiveWorkGroupEmployeesAsync_ExcludesInactiveEmployees()
+        {
+            var employees = new List<WorkGroupEmployee>
+            {
+                new() { PactId = "P001", SpNumber = "SP001", WorkGroupGrade = DefaultWgGrade, PersonStatus = "A" },
+                new() { PactId = "P002", SpNumber = "SP002", WorkGroupGrade = DefaultWgGrade, PersonStatus = "I" },
+                new() { PactId = "P003", SpNumber = "SP003", WorkGroupGrade = "WG02",         PersonStatus = "A" }
+            };
+            var repo  = CreateRepository(employees);
+            var query = new PaginationParameters<string> { Page = 1, PageSize = 10 };
+
+            var result = await repo.GetAllActiveWorkGroupEmployeesAsync(query, DefaultWgGrade);
+
+            Assert.Single(result.Data);
+            Assert.All(result.Data, e => Assert.NotEqual("I", e.PersonStatus));
+        }
+
+        [Fact]
+        public async Task GetAllActiveWorkGroupEmployeesAsync_FiltersToSpecificWorkGroup()
+        {
+            var employees = new List<WorkGroupEmployee>
+            {
+                new() { PactId = "P001", SpNumber = "SP001", WorkGroupGrade = "WG01", PersonStatus = "A" },
+                new() { PactId = "P002", SpNumber = "SP002", WorkGroupGrade = "WG02", PersonStatus = "A" },
+                new() { PactId = "P003", SpNumber = "SP003", WorkGroupGrade = "WG03", PersonStatus = "A" }
+            };
+            var repo  = CreateRepository(employees);
+            var query = new PaginationParameters<string> { Page = 1, PageSize = 10 };
+
+            var result = await repo.GetAllActiveWorkGroupEmployeesAsync(query, "WG02");
+
+            Assert.Single(result.Data);
+            Assert.Equal("WG02", result.Data.First().WorkGroupGrade);
+        }
+
+        [Fact]
+        public async Task GetAllActiveWorkGroupEmployeesAsync_ProjectsEmployeeNameFromJoin()
+        {
+            var employees = new List<WorkGroupEmployee>
+            {
+                new() { PactId = "P001", SpNumber = "SP001", WorkGroupGrade = DefaultWgGrade, PersonStatus = "A" }
+            };
+            var staffMembers = new List<Employee>
+            {
+                new() { SPNumber = "SP001", FirstName = "Alice", LastName = "Smith" }
+            };
+            var repo  = CreateRepository(employees, staffMembers);
+            var query = new PaginationParameters<string> { Page = 1, PageSize = 10 };
+
+            var result = await repo.GetAllActiveWorkGroupEmployeesAsync(query, DefaultWgGrade);
+
+            Assert.Single(result.Data);
+            Assert.Equal("Smith Alice", result.Data.First().Name);
+        }
+
+        [Fact]
+        public async Task GetAllActiveWorkGroupEmployeesAsync_WithEmptyDataSet_ReturnsEmpty()
+        {
+            var repo  = CreateRepository(new List<WorkGroupEmployee>());
+            var query = new PaginationParameters<string> { Page = 1, PageSize = 10 };
+
+            var result = await repo.GetAllActiveWorkGroupEmployeesAsync(query, DefaultWgGrade);
+
+            Assert.Empty(result.Data);
+        }
+
+        [Fact]
+        public async Task GetAllActiveWorkGroupEmployeesAsync_WithPagination_ReturnsCorrectPage()
+        {
+            var employees = Enumerable.Range(1, 5).Select(i => new WorkGroupEmployee
+            {
+                PactId         = $"P00{i}",
+                SpNumber       = $"SP00{i}",
+                WorkGroupGrade = DefaultWgGrade,
+                PersonStatus   = "A"
+            }).ToList();
+            var repo  = CreateRepository(employees);
+            var query = new PaginationParameters<string> { Page = 2, PageSize = 2 };
+
+            var result = await repo.GetAllActiveWorkGroupEmployeesAsync(query, DefaultWgGrade);
+
+            Assert.Equal(2, result.Data.Count());
+            Assert.Equal(5, result.PaginationData.TotalRecords);
+        }
+
+        [Fact]
+        public async Task GetAllActiveWorkGroupEmployeesAsync_DoesNotFilterByUserEmail()
+        {
+            // All employees are active; the method must return them regardless of user scope
+            var employees = new List<WorkGroupEmployee>
+            {
+                new() { PactId = "P001", SpNumber = "SP001", WorkGroupGrade = DefaultWgGrade, PersonStatus = "A" },
+                new() { PactId = "P002", SpNumber = "SP002", WorkGroupGrade = DefaultWgGrade, PersonStatus = "A" }
+            };
+            var repo  = CreateRepository(employees);
+            var query = new PaginationParameters<string> { Page = 1, PageSize = 10 };
+
+            var result = await repo.GetAllActiveWorkGroupEmployeesAsync(query, DefaultWgGrade);
+
+            Assert.Equal(2, result.Data.Count());
+        }
+
+        #endregion
     }
 }

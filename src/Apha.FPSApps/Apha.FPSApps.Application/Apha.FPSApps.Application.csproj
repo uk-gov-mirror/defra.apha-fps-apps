@@ -6,12 +6,17 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>    
+  <ItemGroup>
+	<PackageReference Include="ClosedXML" Version="0.105.0" />
     <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="10.2.3" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Dtos\CostBook\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Apha.Common\Apha.Common.csproj" />
   </ItemGroup>
 
 </Project>

@@ -10,7 +10,7 @@
     <button type="button" class="btn-close" onclick="$('#modalPopup').removeClass('show')">×</button>
 </div>
 
-<div class="modal-body" style="overflow:hidden; padding:8px 16px 0 16px;">
+<div class="modal-body" style="padding:8px 16px 0 16px;">
     <form id="jobCodeForm" class="govuk-grid-column-full">
 
         <input type="hidden" name="isEdit" value="@isEdit.ToString().ToLower()" />
@@ -33,7 +33,7 @@
             @if (isEdit)
             {
                 <input type="hidden" asp-for="JobCodeId" />
-                <input class="govuk-input govuk-!-font-size-16" value="@Model.JobCodeId" readonly />
+                <input class="govuk-input govuk-!-font-size-16" value="@Model.JobCodeId" aria-label = "Job code" readonly />
             }
             else
             {
@@ -60,13 +60,10 @@
 
         <!-- Work Group -->
         <div class="govuk-form-group sup_margin_bottom_10">
-            <label class="govuk-label govuk-!-font-weight-bold" asp-for="JobCodeWorkGroup">Work Group:</label>
-            <select class="govuk-select govuk-!-font-size-16" asp-for="JobCodeWorkGroup"
-                    asp-items="@(ViewBag.WorkGroups as List<SelectListItem>)">
-                <option value="">--select--</option>
-            </select>
+            <div id="workGroupMultiDropdown"></div>
+            <input type="hidden" asp-for="JobCodeWorkGroup" id="JobCodeWorkGroup" />
+            <span asp-validation-for="JobCodeWorkGroup" class="govuk-error-message"></span>
         </div>
-
     </form>
 </div>
 
@@ -77,3 +74,11 @@
         @(isEdit ? "Update" : "Save")
     </button>
 </div>
+
+<script>
+    // Initialize WorkGroup dropdown for this Job Code modal
+    initializeJobCodeWorkGroupDropdown({
+        workGroupData: @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.WorkGroupsData ?? new object[] {})),
+        selectedWorkGroup: '@(Model.JobCodeWorkGroup ?? string.Empty)'
+    });
+</script>

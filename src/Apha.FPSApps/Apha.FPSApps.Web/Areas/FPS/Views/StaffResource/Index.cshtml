@@ -1,0 +1,258 @@
+@using Apha.FPSApps.Web.Models.Components.DataGrid
+@model Apha.FPSApps.Web.Areas.FPS.Models.StaffResourceViewModel
+
+@{
+    ViewData["Title"] = "Resource Utilization View";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/staff-resource.css" asp-append-version="true" />
+}
+
+<main id="main-content">
+    <div class="govuk-grid-row sup_margin_left_right_0 fps-sr-breadcrumb-row">
+        <div class="govuk-grid-column-full">
+            <h1 class="govuk-grid-row sup_border-bottom govuk-!-font-size-19 sup_pad_top_bottom_5_10">
+                <div class="sup_flex_between_center fps-sr-breadcrumb-flex">
+                    <div class="sup_flex_left_center">
+                        Resource Utilization View
+                        @if (!string.IsNullOrWhiteSpace(Model.SelectedProfitCentre))
+                        {
+                            <div class="display-flex sup_margin_left_5">
+                                <div class="m-0 p-0 sup_flex_row_center_center sup_margin_left_5">
+                                    <span class="govuk-!-font-size-19 govuk-!-font-weight-bold sup_gov_blue_color sup_blue_border_bottom_2">@Model.SelectedProfitCentre</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    <div>
+                        <form asp-action="Index" asp-controller="StaffResource" asp-area="FPS" method="get" class="sup_flex_align_center">
+                            <label class="govuk-label" for="ruvProfitCentreSelect">Resource Centre</label>
+                            <select id="ruvProfitCentreSelect"
+                                    name="profitCentre"
+                                    asp-items="Model.ProfitCentreList"
+                                    class="govuk-select govuk-!-font-size-16"
+                                    onchange="this.form.submit()">
+                                <option value="">-- Select Resource Centre --</option>
+                            </select>
+                        </form>
+                    </div>
+                </div>
+            </h1>
+        </div>
+    </div>
+
+    <!-- Two-panel layout: Workgroup selector | Staff Utilisation grid -->
+    <div class="sup_border govuk-!-margin-2 govuk-!-padding-2 ruv-filter-panel ruv-main-layout">
+
+        <!-- Left panel: Workgroup selector -->
+        <div class="ruv-left-panel">
+            <fieldset class="govuk-fieldset sup_margin_0">
+                <legend class="govuk-fieldset__legend govuk-visually-hidden">Select workgroup</legend>
+                <div id="gridContainer_@Model.WorkgroupGrid.GridId">
+                    @await Html.PartialAsync("_DataGrid", Model.WorkgroupGrid)
+                </div>
+            </fieldset>
+        </div>
+
+        <!-- Right panel: Staff Resource Utilisation grid -->
+        <div class="ruv-right-panel">
+            <div class="sup_border-bottom sup_p_5">
+                <div class="sup_flex_between_center">
+                    <div>
+                        <label for="ruvSelectedWorkgroup" class="govuk-!-font-size-16 sup_margin_0 govuk-!-font-weight-bold">
+                            Staff of Workgroup
+                        </label>
+                        <input id="ruvSelectedWorkgroup"
+                               type="text"
+                               class="govuk-input govuk-!-font-size-16 govuk-input--width-10"
+                               readonly
+                               value="@Model.SelectedWorkgroup" />
+                    </div>
+                </div>
+            </div>
+            <div id="gridContainer_@Model.StaffGrid.GridId">
+                @await Html.PartialAsync("_DataGrid", Model.StaffGrid)
+            </div>
+        </div>
+    </div>
+</main>
+
+@section Scripts {
+<script>
+    var currentProfitCentre = '@Html.Raw(Model.SelectedProfitCentre ?? "")';
+    var currentWorkgroup    = '@Html.Raw(Model.SelectedWorkgroup ?? "")';
+    var ruvWorkgroupFirstLoad = true; // auto-select first workgroup once per page load
+
+    // ─── Grid manager accessors ──────────────────────────────────────────────
+    function getRuvWorkgroupGridManager() { return window['gridManager_@Model.WorkgroupGrid.GridId']; }
+    function getRuvStaffGridManager()     { return window['gridManager_@Model.StaffGrid.GridId']; }
+
+    // ─── Extra filter callbacks used by _DataGrid ────────────────────────────
+    function getRuvWorkgroupExtraFilters() { return { profitCentre: currentProfitCentre }; }
+    function getRuvStaffExtraFilters()     { return { workgroup: currentWorkgroup }; }
+
+    // ─── Workgroup grid filter — Enter key triggers reload ───────────────────
+    $(document).on('keydown', '#gridContainer_@Model.WorkgroupGrid.GridId .grid-filter', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            var mgr = getRuvWorkgroupGridManager();
+            if (mgr) mgr.reloadGrid({ page: 1 });
+        }
+    });
+
+    // ─── Workgroup row click — cascade to staff grid ─────────────────────────
+    $(document).on('click', '#gridContainer_@Model.WorkgroupGrid.GridId table tbody tr', function () {
+        var workGroupName = $(this).data('id');
+        if (!workGroupName) return;
+
+        $('#gridContainer_@Model.WorkgroupGrid.GridId table tbody tr').removeClass('selected-row');
+        $(this).addClass('selected-row');
+
+        currentWorkgroup = workGroupName;
+        $('#ruvSelectedWorkgroup').val(workGroupName);
+
+        var staffMgr = getRuvStaffGridManager();
+        if (staffMgr) staffMgr.reloadGrid({ page: 1 });
+    });
+
+    // ─── Totals row — rendered as a <tfoot> inside the grid table ──────────
+    // Rendering the totals inside the actual table lets the browser's own
+    // table layout keep every total aligned under its column, so the cells
+    // can never overlap or drift out of sync with the grid columns.
+    function buildRuvTotalsRow() {
+        var table = document.getElementById('tbl_@Model.StaffGrid.GridId');
+        if (!table) return;
+
+        // Clear any previously rendered totals tfoot before rebuilding it.
+        var existingFoot = table.querySelector('tfoot');
+        if (existingFoot) existingFoot.remove();
+
+        var rows = table.querySelectorAll('tbody tr');
+        if (!rows.length) return;
+
+        // Column layout (0-based):
+        //  0:WgGrade(text) 1:Name(text)
+        //  2:TotalH  3:Ztw  4:Avail  5:Left
+        //  6:ApprovedPlan  7:ApprovedUtil(%)
+        //  8:NotApprovedPlan  9:NotApprovedUtil(%)
+        // 10:TotalPlan  11:TotalUtil(%)
+        var refCells  = rows[0].querySelectorAll('td');
+        var colCount  = refCells.length;
+        var sumCols   = [2, 3, 4, 5, 6, 8, 10];
+        var avgCols   = [7, 9, 11];
+        var sums = {}, avgTotals = {}, avgCounts = {};
+        sumCols.forEach(function (i) { sums[i] = 0; });
+        avgCols.forEach(function (i) { avgTotals[i] = 0; avgCounts[i] = 0; });
+
+        rows.forEach(function (row) {
+            var cells = row.querySelectorAll('td');
+            sumCols.forEach(function (i) {
+                if (!cells[i]) return;
+                var val = parseFloat(cells[i].textContent.trim().replace(/,/g, ''));
+                if (!isNaN(val)) sums[i] += val;
+            });
+            avgCols.forEach(function (i) {
+                if (!cells[i]) return;
+                var val = parseFloat(cells[i].textContent.trim().replace(/,/g, '').replace('%', ''));
+                if (!isNaN(val)) { avgTotals[i] += val; avgCounts[i]++; }
+            });
+        });
+
+        var tfoot = document.createElement('tfoot');
+        var tr    = document.createElement('tr');
+        tr.className = 'ruv-totals-row govuk-table__row';
+
+        for (var i = 0; i < colCount; i++) {
+            var td = document.createElement('td');
+            td.className = 'govuk-table__cell';
+            if (i === 0) {
+                td.textContent = 'Staff Totals:';
+            } else if (sums.hasOwnProperty(i)) {
+                td.textContent = (Math.round(sums[i] * 100) / 100).toFixed(2);
+            } else if (avgCols.indexOf(i) !== -1 && avgCounts[i] > 0) {
+                td.textContent = (Math.round((avgTotals[i] / avgCounts[i]) * 100) / 100).toFixed(2) + '%';
+                td.title = 'Average of ' + avgCounts[i] + ' values';
+            }
+            // Name col (1) stays blank
+            tr.appendChild(td);
+        }
+
+        // Render the totals inside the grid table as a <tfoot>. Living in the
+        // same table lets the browser align each total under its column, so the
+        // cells can never overlap or drift out of sync with the grid columns.
+        tfoot.appendChild(tr);
+        table.appendChild(tfoot);
+    }
+
+    // ─── Grouped header row for staff grid (Approved / Not Approved / Total) ─
+    function applyRuvGroupedHeaderRow() {
+        var table = document.getElementById('tbl_@Model.StaffGrid.GridId');
+        if (!table) return;
+        var thead = table.querySelector('thead');
+        if (!thead || thead.querySelector('.ruv-group-header-row')) return;
+
+        var groupedRow = document.createElement('tr');
+       // groupedRow.className = 'ruv-group-header-row govuk-table__row';
+        groupedRow.innerHTML =
+            '<th colspan="6"><span class="govuk-visually-hidden">Staff baseline columns</span></th>' +
+            '<th colspan="2">Approved</th>' +
+            '<th colspan="2">Not Approved</th>' +
+            '<th colspan="2">Total</th>';
+        thead.insertBefore(groupedRow, thead.firstChild);
+    }
+
+    // ─── gridReloaded — auto-select first workgroup row / re-apply grouped header
+    document.addEventListener('gridReloaded', function (e) {
+        // After workgroup grid loads for the first time: select first row → load staff grid
+        if (e.detail.gridId === '@Model.WorkgroupGrid.GridId' && ruvWorkgroupFirstLoad) {
+            ruvWorkgroupFirstLoad = false;
+            var firstRow = document.querySelector(
+                '#gridContainer_@Model.WorkgroupGrid.GridId table tbody tr[data-id]'
+            );
+            if (!firstRow) return;
+            var workGroupName = $(firstRow).data('id');
+            if (!workGroupName) return;
+
+            $('#gridContainer_@Model.WorkgroupGrid.GridId table tbody tr').removeClass('selected-row');
+            $(firstRow).addClass('selected-row');
+
+            currentWorkgroup = workGroupName;
+            $('#ruvSelectedWorkgroup').val(workGroupName);
+
+            var staffMgr = getRuvStaffGridManager();
+            if (staffMgr) staffMgr.reloadGrid({ page: 1 });
+        }
+
+        // After staff grid reloads (DOM replaced): re-apply grouped header and totals row
+        if (e.detail.gridId === '@Model.StaffGrid.GridId') {
+            applyRuvGroupedHeaderRow();
+            buildRuvTotalsRow();
+        }
+    });
+
+    // ─── Preview Report ──────────────────────────────────────────────────────
+    function previewReport() {
+        if (!currentWorkgroup) {
+            showGovukAlert('Please select a workgroup first.');
+            return;
+        }
+        showGovukAlert('Preview Report for workgroup: ' + currentWorkgroup);
+    }
+
+    // ─── Initial page load ───────────────────────────────────────────────────
+    $(document).ready(function () {
+        // Apply grouped header to the server-rendered (empty) staff grid immediately
+        applyRuvGroupedHeaderRow();
+@if (!string.IsNullOrWhiteSpace(Model.SelectedProfitCentre))
+{
+        <text>
+        // Profit centre already selected — load workgroup grid;
+        // gridReloaded handler will then auto-select the first row and load the staff grid
+        var mgr = getRuvWorkgroupGridManager();
+        if (mgr) mgr.reloadGrid({ page: 1 });
+        </text>
+}
+    });
+</script>
+}

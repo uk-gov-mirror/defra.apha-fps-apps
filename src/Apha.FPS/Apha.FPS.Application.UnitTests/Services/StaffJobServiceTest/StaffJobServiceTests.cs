@@ -1529,5 +1529,122 @@ namespace Apha.FPS.Application.UnitTests.Services.StaffJobServiceTest
 
         #endregion
 
+        #region GetStaffResourceUtilisationAsync
+
+        [Fact]
+        public async Task GetStaffResourceUtilisationAsync_WithValidWorkgroup_ReturnsMappedPaginatedResult()
+        {
+            // Arrange
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var mappedFilter = new PaginationParameters<string> { Page = 1, PageSize = 10 };
+            const string workgroup = "WG01";
+
+            var repoResult = new PagedData<StaffResourceUtilisationView>
+            {
+                Data = new List<StaffResourceUtilisationView>
+                {
+                    new() { WorkGroup = workgroup, StaffId = "S001", Name = "John Doe", WgGrade = "GR1", HrsAvail = 37.5, ApprovedSoct = 20.0, NotApprovedSoct = 5.0 },
+                    new() { WorkGroup = workgroup, StaffId = "S002", Name = "Jane Smith", WgGrade = "GR2", HrsAvail = 30.0, ApprovedSoct = 15.0, NotApprovedSoct = 3.0 }
+                },
+                PaginationData = new PaginationData { TotalPages = 1, PageNumber = 1, PageSize = 10, TotalRecords = 2 }
+            };
+
+            var expectedResult = new PaginatedResult<StaffResourceUtilisationDto>
+            {
+                Data = new List<StaffResourceUtilisationDto>
+                {
+                    new() { WorkGroup = workgroup, Name = "John Doe", WgGrade = "GR1", HrsAvail = 37.5 },
+                    new() { WorkGroup = workgroup, Name = "Jane Smith", WgGrade = "GR2", HrsAvail = 30.0 }
+                },
+                PaginationData = new PaginationDto { TotalPages = 1, PageNumber = 1, PageSize = 10, TotalRecords = 2 }
+            };
+
+            _mockMapper.Map<PaginationParameters<string>>(query).Returns(mappedFilter);
+            _mockRepository.GetStaffResourceUtilisationAsync(mappedFilter, workgroup).Returns(repoResult);
+            _mockMapper.Map<PaginatedResult<StaffResourceUtilisationDto>>(repoResult).Returns(expectedResult);
+
+            // Act
+            var result = await _sut.GetStaffResourceUtilisationAsync(query, workgroup);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Data.Should().HaveCount(2);
+            result.PaginationData.TotalRecords.Should().Be(2);
+            result.Data.First().WorkGroup.Should().Be(workgroup);
+            result.Data.First().Name.Should().Be("John Doe");
+
+            _mockMapper.Received(1).Map<PaginationParameters<string>>(query);
+            await _mockRepository.Received(1).GetStaffResourceUtilisationAsync(mappedFilter, workgroup);
+            _mockMapper.Received(1).Map<PaginatedResult<StaffResourceUtilisationDto>>(repoResult);
+        }
+
+        [Fact]
+        public async Task GetStaffResourceUtilisationAsync_WithNoData_ReturnsEmptyPaginatedResult()
+        {
+            // Arrange
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var mappedFilter = new PaginationParameters<string> { Page = 1, PageSize = 10 };
+            const string workgroup = "WG_EMPTY";
+
+            var emptyRepoResult = new PagedData<StaffResourceUtilisationView>
+            {
+                Data = new List<StaffResourceUtilisationView>(),
+                PaginationData = new PaginationData { TotalPages = 0, PageNumber = 1, PageSize = 10, TotalRecords = 0 }
+            };
+
+            var emptyExpected = new PaginatedResult<StaffResourceUtilisationDto>
+            {
+                Data = new List<StaffResourceUtilisationDto>(),
+                PaginationData = new PaginationDto { TotalPages = 0, PageNumber = 1, PageSize = 10, TotalRecords = 0 }
+            };
+
+            _mockMapper.Map<PaginationParameters<string>>(query).Returns(mappedFilter);
+            _mockRepository.GetStaffResourceUtilisationAsync(mappedFilter, workgroup).Returns(emptyRepoResult);
+            _mockMapper.Map<PaginatedResult<StaffResourceUtilisationDto>>(emptyRepoResult).Returns(emptyExpected);
+
+            // Act
+            var result = await _sut.GetStaffResourceUtilisationAsync(query, workgroup);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Data.Should().BeEmpty();
+            result.PaginationData.TotalRecords.Should().Be(0);
+
+            await _mockRepository.Received(1).GetStaffResourceUtilisationAsync(mappedFilter, workgroup);
+        }
+
+        [Fact]
+        public async Task GetStaffResourceUtilisationAsync_CallsMapperForFilterAndResult()
+        {
+            // Arrange
+            var query = new QueryParameters<string> { Page = 2, PageSize = 5 };
+            var mappedFilter = new PaginationParameters<string> { Page = 2, PageSize = 5 };
+            const string workgroup = "WG02";
+
+            var repoResult = new PagedData<StaffResourceUtilisationView>
+            {
+                Data = new List<StaffResourceUtilisationView>(),
+                PaginationData = new PaginationData()
+            };
+            var mappedResult = new PaginatedResult<StaffResourceUtilisationDto>
+            {
+                Data = new List<StaffResourceUtilisationDto>(),
+                PaginationData = new PaginationDto()
+            };
+
+            _mockMapper.Map<PaginationParameters<string>>(query).Returns(mappedFilter);
+            _mockRepository.GetStaffResourceUtilisationAsync(mappedFilter, workgroup).Returns(repoResult);
+            _mockMapper.Map<PaginatedResult<StaffResourceUtilisationDto>>(repoResult).Returns(mappedResult);
+
+            // Act
+            await _sut.GetStaffResourceUtilisationAsync(query, workgroup);
+
+            // Assert
+            _mockMapper.Received(1).Map<PaginationParameters<string>>(query);
+            _mockMapper.Received(1).Map<PaginatedResult<StaffResourceUtilisationDto>>(repoResult);
+        }
+
+        #endregion
+
     }
 }

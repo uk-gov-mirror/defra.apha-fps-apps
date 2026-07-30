@@ -92,7 +92,9 @@
                 </label>
                 <div id="portfolioSelectMultiDropdown" class="govuk-grid-column-two-thirds sup_p_0"></div>
             </div>
-                @if (!string.IsNullOrEmpty(ViewBag.SourceWorkGroup as string))
+        </div>
+        <h1>
+             @if (!string.IsNullOrEmpty(ViewBag.SourceWorkGroup as string))
                 {
                     <a href="@Url.Action("Index", "WorkGroupTestCapability", new { area = "PACT", workgroup = ViewBag.SourceWorkGroup })" 
                        id="backLink" 
@@ -101,8 +103,7 @@
                         Back
                     </a>
                 }
-            
-        </div>
+        </h1>
     </div>
 </div>
 
@@ -205,10 +206,8 @@
                                 <label class="govuk-label govuk-!-font-weight-bold" asp-for="CurrentPortfolio.Program">
                                     Programme <span class="sup_color_red">*</span>
                                 </label>
-                                <select class="govuk-select govuk-!-font-size-16" asp-for="CurrentPortfolio.Program"
-                                        id="dpProgramme" asp-items="Model.Programs" style="width:100%;">
-                                    <option value="">--select--</option>
-                                </select>
+                                <div id="programSelectMultiDropdown" class="govuk-grid-column-two-thirds sup_p_0" style="width:100%;"></div>
+                                <input type="hidden" asp-for="CurrentPortfolio.Program" class="govuk-select govuk-!-font-size-16" id="dpProgramme" />
                                 <span asp-validation-for="CurrentPortfolio.Program" class="govuk-error-message"></span>
                             </div>
                             <div class="govuk-form-group" style="flex:1; margin-bottom:0;">
@@ -226,7 +225,7 @@
                         <div style="display:flex; gap:16px; margin-bottom:10px;">
                             <div class="govuk-form-group" style="flex:1; margin-bottom:0;">
                                 <label class="govuk-label govuk-!-font-weight-bold" asp-for="CurrentPortfolio.BudgetCvl">
-                                    Budget-cvt
+                                    Budget-cvl
                                 </label>
                                 <div class="govuk-input__wrapper">
                                     <div class="govuk-input__prefix" aria-hidden="true">£</div>
@@ -319,6 +318,8 @@
      <script>
         const portfolioOptionsListData = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.PortfolioOptions));
         const preselectedPortfolio = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.SelectedPortfolio as string ?? string.Empty));
+        const programOptionsListData = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.Programs));
+        const testCodeOptionsListData = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.TestorProducts));
     </script>
     <script src="~/js/ajax-form-validation.js"></script>
     <script src="~/js/common/multicolumn-dropdown.component.js"></script>

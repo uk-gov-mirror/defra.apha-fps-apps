@@ -32,7 +32,7 @@ namespace Apha.FPS.DataAccess.Repositories
                     Directorate = p.Directorate,
                     Target = p.Target,
                     Manager = p.Manager
-                }).ToListAsync();
+                }).OrderBy(p => p.ProgramNo).ToListAsync();
         }
 
         public async Task<IEnumerable<Program>> GetAllProgramsForAllUsers()
@@ -45,7 +45,7 @@ namespace Apha.FPS.DataAccess.Repositories
                     Directorate = p.Directorate,
                     Target = p.Target,
                     Manager = p.Manager
-                }).ToListAsync();
+                }).OrderBy(p => p.ProgramNo).ToListAsync();
         }
 
         public async Task<PagedData<Program>> GetAllProgramsAsync(PaginationParameters<string> query)

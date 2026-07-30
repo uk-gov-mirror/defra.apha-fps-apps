@@ -1,0 +1,117 @@
+@using Apha.FPSApps.Web.Models.Components.DataGrid
+@model Apha.FPSApps.Web.Areas.FPS.Models.TestListVlaViewModel
+
+@{
+    ViewData["Title"] = "2025-2026 : Test List for VLA";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/common/_govuk_tabs.css" />
+}
+
+<main id="main-content">
+    <div class="govuk-!-margin-bottom-5">
+
+        @* ── Breadcrumb ─────────────────────────────────────────────────────── *@
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <div class="govuk-grid-row fps-sr-breadcrumb-row">
+                    <div class="fps-sr-breadcrumb-flex sup_context_row">
+                        <div class="govuk-grid-column-two-thirds sup_context_placeholder"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* ── Main Test List grid ─────────────────────────────────────────────── *@
+        <div class="govuk-grid-row sup_margin_left_right_10">
+            <div class="govuk-grid-column-full sup_p_0">
+                <div id="gridContainer_testListVlaGrid">
+                    @await Html.PartialAsync("_DataGrid", Model.TestListGrid)
+                </div>
+            </div>
+        </div>
+
+        @* ── Tab panel — Test Requirements / Component Charges / Suppliers ─── *@
+        <div class="govuk-grid-row sup_margin_left_right_10 govuk-!-margin-top-5">
+            <div class="govuk-grid-column-full sup_p_0">
+
+                <div class="govuk-tabs" id="stage2-tabs" data-module="govuk-tabs">
+                    <ul class="govuk-tabs__list">
+                        <li class="govuk-tabs__list-item govuk-tabs__list-item--selected">
+                            <a class="govuk-tabs__tab" href="#tab-test-requirements">Test Requirements</a>
+                        </li>
+                        <li class="govuk-tabs__list-item">
+                            <a class="govuk-tabs__tab" href="#tab-component-charges">Component Charges</a>
+                        </li>
+                        <li class="govuk-tabs__list-item">
+                            <a class="govuk-tabs__tab" href="#tab-suppliers">Suppliers</a>
+                        </li>
+                    </ul>
+
+                    @* ── Tab: Test Requirements ─────────────────────────────── *@
+                    <div class="govuk-tabs__panel active" id="tab-test-requirements">
+                        <div class="govuk-grid-row">
+                            <div class="govuk-grid-column-full">
+                                <div id="gridContainer_testRequirementsGrid">
+                                    @await Html.PartialAsync("_DataGrid", Model.TestRequirementsGrid)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @* ── Tab: Component Charges ─────────────────────────────── *@
+                    <div class="govuk-tabs__panel" id="tab-component-charges">
+                        <div class="govuk-grid-row">
+                            <div class="govuk-grid-column-one-half">
+                                <div id="gridContainer_componentChargesGeneralGrid">
+                                    @await Html.PartialAsync("_DataGrid", Model.ComponentChargesGeneralGrid)
+                                </div>
+                                <div class="govuk-grid-row govuk-!-margin-top-1">
+                                    <div class="govuk-grid-column-one-half">
+                                        <label class="govuk-label govuk-label--s govuk-!-margin-bottom-1"
+                                               for="stage2-component-total">Component Total Price</label>
+                                        <input class="govuk-input govuk-input--width-10"
+                                               id="stage2-component-total"
+                                               type="text" disabled
+                                               style="font-weight: bold; color: #000000;" />
+                                    </div>
+                                    <div class="govuk-grid-column-one-half">
+                                        <label class="govuk-label govuk-label--s govuk-!-margin-bottom-1"
+                                               for="stage2-vla-unit-price">VLA Unit Price</label>
+                                        <input class="govuk-input govuk-input--width-10"
+                                               id="stage2-vla-unit-price"
+                                               type="text" disabled
+                                               style="font-weight: bold; color: #000000;" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="govuk-grid-column-one-half">
+                                <div id="gridContainer_componentChargesProjectGrid">
+                                    @await Html.PartialAsync("_DataGrid", Model.ComponentChargesProjectGrid)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @* ── Tab: Suppliers ─────────────────────────────────────── *@
+                    <div class="govuk-tabs__panel" id="tab-suppliers">
+                        <div class="govuk-grid-row">
+                            <div class="govuk-grid-column-full">
+                                <div id="gridContainer_suppliersGrid">
+                                    @await Html.PartialAsync("_DataGrid", Model.SuppliersGrid)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+@section Scripts {
+    <script src="~/js/common/_govuk_tabs.js"></script>
+    <script src="~/js/fps_js/TestListVla.js"></script>
+}

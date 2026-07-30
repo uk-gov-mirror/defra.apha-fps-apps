@@ -6,7 +6,7 @@ namespace Apha.FPSApps.Web.Areas.PACT.Models
     public class WgTestCapabilitiesWithDescriptionItem
     {
         [Display(Name = "Work Group")]
-        [GridColumn(Order = 1, Width = 150, Type = GridColumnType.Text, IsFilterable = true)]
+        [GridColumn(Order = 1, Width = 150, Type = GridColumnType.Text, IsFilterable = false)]
         public string? WorkGroup { get; set; }
 
         [Display(Name = "Test Code")]

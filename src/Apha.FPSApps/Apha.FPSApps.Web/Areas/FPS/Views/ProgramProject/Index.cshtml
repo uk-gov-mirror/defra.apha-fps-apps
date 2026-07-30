@@ -164,6 +164,7 @@
         var currentProgramNo = '@Html.Raw(Model.SelectedProgramNo)';
         var currentProjectGroup = '@Html.Raw(Model.SelectedProjectGroup)';
         var currentProjectCode = '@Html.Raw(Model.SelectedProjectCode)';
+        var fpsYear = '@FyContext.Year';
 
         // Disable nav links until a project is selected
         document.querySelectorAll('a.nav-updatable').forEach(function (link) {
@@ -177,7 +178,10 @@
 
         function updateNavLinks(programNo) {
             document.querySelectorAll('a.nav-updatable').forEach(function (link) {
-                link.href = link.pathname + (programNo ? '?programNo=' + encodeURIComponent(programNo) : '');
+                var qs = programNo
+                    ? '?programNo=' + encodeURIComponent(programNo) + '&year=' + encodeURIComponent(fpsYear)
+                    : '?year=' + encodeURIComponent(fpsYear);
+                link.href = link.pathname + qs;
             });
         }
 
@@ -185,12 +189,14 @@
             const val = $(this).val();
             if (!val) return;
             currentProgramNo = val;
+            showLoader();
             // Persist selection to session for other pages
             $.ajax({
                 url: '@Url.Action("SaveProgrammeSession", "ProgrammeSelect", new { area = "FPS" })',
                 type: 'POST',
                 contentType: 'application/json',
-                data: JSON.stringify(val)
+                data: JSON.stringify(val),
+                complete: function () { hideLoader(); }
             });
             updateNavLinks(val);
             resetSelectedProject();

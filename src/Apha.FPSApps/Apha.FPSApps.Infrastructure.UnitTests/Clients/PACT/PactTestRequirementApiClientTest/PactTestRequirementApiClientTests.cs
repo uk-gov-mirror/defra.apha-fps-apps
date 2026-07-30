@@ -664,5 +664,109 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactTestRequirement
         }
 
         #endregion
+
+        // ── GetPlannedTestsByWorkgroupAsync ───────────────────────────────────
+
+        #region GetPlannedTestsByWorkgroupAsync Tests
+
+        [Fact]
+        public async Task GetPlannedTestsByWorkgroupAsync_WithSuccessResponse_ReturnsMappedList()
+        {
+            // Arrange
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var responseItems = new List<TestReqBreakdownRes>
+            {
+                new() { TestCode = "BLOOD", Project = "PRJ001", Pc = "PC01", WorkG = "WG01", WgPrice = 10m, TotalCost = 50m }
+            };
+            var apiResponse = new ApiResponse<List<TestReqBreakdownRes>> { Success = true, Data = responseItems };
+            var expectedDto = ApiResponseDto<List<TestReqBreakdownDto>>.SuccessResponse(
+                new List<TestReqBreakdownDto>
+                {
+                    new() { TestCode = "BLOOD", Project = "PRJ001", Pc = "PC01", WorkG = "WG01", WgPrice = 10m, TotalCost = 50m }
+                });
+
+            _http.GetAsync<List<TestReqBreakdownRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<TestReqBreakdownDto>>>(apiResponse).Returns(expectedDto);
+
+            // Act
+            var result = await _client.GetPlannedTestsByWorkgroupAsync(query);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Single(result.Data!);
+            Assert.Equal("BLOOD", result.Data![0].TestCode);
+        }
+
+        [Fact]
+        public async Task GetPlannedTestsByWorkgroupAsync_WithEmptyResult_ReturnsSuccessWithEmptyList()
+        {
+            // Arrange
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var apiResponse = new ApiResponse<List<TestReqBreakdownRes>> { Success = true, Data = [] };
+            var expectedDto = ApiResponseDto<List<TestReqBreakdownDto>>.SuccessResponse([]);
+
+            _http.GetAsync<List<TestReqBreakdownRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<TestReqBreakdownDto>>>(apiResponse).Returns(expectedDto);
+
+            // Act
+            var result = await _client.GetPlannedTestsByWorkgroupAsync(query);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Empty(result.Data!);
+        }
+
+        [Fact]
+        public async Task GetPlannedTestsByWorkgroupAsync_CallsCorrectEndpoint()
+        {
+            // Arrange
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var apiResponse = new ApiResponse<List<TestReqBreakdownRes>> { Success = true, Data = [] };
+            var expectedDto = ApiResponseDto<List<TestReqBreakdownDto>>.SuccessResponse([]);
+
+            _http.GetAsync<List<TestReqBreakdownRes>>(Arg.Is<string>(url =>
+                url.Contains("testrequirement/testreqbreakdown")))
+                .Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<TestReqBreakdownDto>>>(apiResponse).Returns(expectedDto);
+
+            // Act
+            var result = await _client.GetPlannedTestsByWorkgroupAsync(query);
+
+            // Assert
+            Assert.NotNull(result);
+            await _http.Received(1).GetAsync<List<TestReqBreakdownRes>>(
+                Arg.Is<string>(url => url.Contains("testrequirement/testreqbreakdown")));
+        }
+
+        [Fact]
+        public async Task GetPlannedTestsByWorkgroupAsync_WhenApiReturnsFailure_ReturnsFailureResponse()
+        {
+            // Arrange
+            var query = new QueryParameters<string>();
+            var errors = new List<ApiError> { new() { Message = "API Error", Code = "API_ERROR" } };
+            var apiResponse = new ApiResponse<List<TestReqBreakdownRes>> { Success = false, Errors = errors };
+            var mappedResponse = new ApiResponseDto<List<TestReqBreakdownDto>>
+            {
+                Success = false,
+                Errors = [new() { Message = "API Error", Code = "API_ERROR" }],
+                Meta = new ApiMetaDto()
+            };
+
+            _http.GetAsync<List<TestReqBreakdownRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<TestReqBreakdownDto>>>(apiResponse).Returns(mappedResponse);
+
+            // Act
+            var result = await _client.GetPlannedTestsByWorkgroupAsync(query);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.NotNull(result.Errors);
+            Assert.Single(result.Errors);
+        }
+
+        #endregion
     }
 }

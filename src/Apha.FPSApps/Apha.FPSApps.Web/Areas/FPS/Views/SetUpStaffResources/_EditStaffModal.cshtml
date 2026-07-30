@@ -1,0 +1,146 @@
+@model Apha.FPSApps.Web.Areas.FPS.Models.SetUpStaffResourcesItem
+
+<div class="modal-header flex-space-center">
+    <h3 class="modal-title govuk-heading-s govuk-!-margin-bottom-0" id="ssrEditModalTitle" style="margin: 0;">Edit Staff Record</h3>
+    <button type="button" class="btn-close btn-red" onclick="closeModal()" aria-label="Close">X</button>
+</div>
+
+<div class="modal-body" style="padding-top: 5px;">
+    <form class="row" id="ssrEditForm" onsubmit="return false;">
+        @Html.AntiForgeryToken()
+
+        <input type="hidden" id="hdnPactId" asp-for="PactId" />
+
+        <div class="govuk-grid-column-one-half">
+            <div class="govuk-form-group sup_margin_bottom_10">
+                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="WorkGroupGrade">Grade Code</label>
+                <input class="govuk-input govuk-!-font-size-16"
+                       asp-for="WorkGroupGrade"
+                       id="ssrEditGradeCode"
+                       type="text"
+                       disabled />
+            </div>
+        </div>
+        <div class="govuk-grid-column-one-half">
+            <div class="govuk-form-group sup_margin_bottom_10">
+                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="SpNumber">SP No</label>
+                <input class="govuk-input govuk-!-font-size-16"
+                       asp-for="SpNumber"
+                       id="ssrEditSpNo"
+                       type="text"
+                       disabled />
+            </div>
+        </div>
+
+        @* ── Row 2: Name (editable) + Hrs Paid (number) ──────────────────────── *@
+        <div class="govuk-grid-column-one-half">
+            <div class="govuk-form-group sup_margin_bottom_10">
+                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="Name">Name</label>
+                <input class="govuk-input govuk-!-font-size-16"
+                       asp-for="Name"
+                       id="ssrEditName"
+                       type="text" />
+                <span asp-validation-for="Name" class="govuk-error-message" style="display:none;"></span>
+            </div>
+        </div>
+        <div class="govuk-grid-column-one-half">
+            <div class="govuk-form-group sup_margin_bottom_10">
+                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="HrsPaid">Hrs Paid</label>
+                <input class="govuk-input govuk-!-font-size-16"
+                       asp-for="HrsPaid"
+                       id="ssrEditHrsPaid"
+                       type="number"
+                       min="0"
+                       step="0.01" />
+                <span asp-validation-for="HrsPaid" class="govuk-error-message" style="display:none;"></span>
+            </div>
+        </div>
+
+        @* ── Row 3: Leave (number) + Sick Sp (number) ────────────────────────── *@
+        <div class="govuk-grid-column-one-half">
+            <div class="govuk-form-group sup_margin_bottom_10">
+                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="Leave">Leave</label>
+                <input class="govuk-input govuk-!-font-size-16"
+                       asp-for="Leave"
+                       id="ssrEditLeave"
+                       type="number"
+                       min="0"
+                       step="0.01" />
+                <span asp-validation-for="Leave" class="govuk-error-message" style="display:none;"></span>
+            </div>
+        </div>
+        <div class="govuk-grid-column-one-half">
+            <div class="govuk-form-group sup_margin_bottom_10">
+                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="SickSpecial">Sick Sp</label>
+                <input class="govuk-input govuk-!-font-size-16"
+                       asp-for="SickSpecial"
+                       id="ssrEditSickSp"
+                       type="number"
+                       min="0"
+                       step="0.01" />
+                <span asp-validation-for="SickSpecial" class="govuk-error-message" style="display:none;"></span>
+            </div>
+        </div>
+
+        @* ── Row 4: At Work (disabled + JS recalc) + Planable (checkbox) ─────── *@
+        <div class="govuk-grid-column-one-half">
+            <div class="govuk-form-group sup_margin_bottom_10">
+                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="HrsAvail">At Work</label>
+                <input class="govuk-input govuk-!-font-size-16"
+                       asp-for="HrsAvail"
+                       id="ssrEditAtWork"
+                       type="number"
+                       min="0"
+                       step="0.01"
+                       disabled />
+            </div>
+        </div>
+        <div class="govuk-grid-column-one-half">
+            <div class="govuk-form-group sup_margin_bottom_10">
+                <div class="govuk-checkboxes govuk-checkboxes--small govuk-!-margin-top-5" data-module="govuk-checkboxes">
+                    <div class="govuk-checkboxes__item">
+                        <input class="govuk-checkboxes__input"
+                               id="ssrEditPlanable"
+                               type="checkbox"
+                               @(Model.MakeAvailable != 0 ? "checked" : "") />
+                        <label class="govuk-checkboxes__label govuk-!-font-weight-bold govuk-!-font-size-16" for="ssrEditPlanable">Planable</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* ── Modal footer buttons ─────────────────────────────────────────────── *@
+        <div class="govuk-grid-column-full" style="text-align: right; margin-top: 10px;">
+            <button type="button"
+                    class="govuk-button govuk-button--secondary sup_margin_0"
+                    onclick="closeModal()">
+                Cancel
+            </button>
+            <button type="button"
+                    class="govuk-button sup_margin_0"
+                    onclick="saveSetUpStaffResources()">
+                Save
+            </button>
+        </div>
+
+    </form>
+</div>
+
+<script>
+    function recalculateAtWork() {
+        var hrsPaid  = parseFloat(document.getElementById('ssrEditHrsPaid')?.value || '0') || 0;
+        var leave    = parseFloat(document.getElementById('ssrEditLeave')?.value   || '0') || 0;
+        var sickSp   = parseFloat(document.getElementById('ssrEditSickSp')?.value  || '0') || 0;
+        var atWork   = hrsPaid - leave - sickSp;
+        var el = document.getElementById('ssrEditAtWork');
+        if (el) el.value = atWork.toFixed(2);
+    }
+
+    // Wire input events for live recalc (mirrors JS prototype behaviour)
+    (function wireAtWorkRecalc() {
+        ['ssrEditHrsPaid', 'ssrEditLeave', 'ssrEditSickSp'].forEach(function (id) {
+            var input = document.getElementById(id);
+            if (input) { input.addEventListener('input', recalculateAtWork); }
+        });
+    })();
+</script>

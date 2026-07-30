@@ -37,11 +37,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Apha.Common\Apha.Common.csproj" />
     <ProjectReference Include="..\Apha.FPSApps.Application\Apha.FPSApps.Application.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Dtos\FPS\ResourceAllocationDtoTest\" />
   </ItemGroup>
 
 </Project>

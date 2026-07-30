@@ -2,6 +2,7 @@ using Apha.Common.Contracts;
 using Apha.Common.Contracts.PACT;
 using Apha.PACT.Application.Interfaces;
 using Apha.PACT.Application.Pagination;
+using Apha.PACT.Core.Interfaces;
 using Asp.Versioning;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
@@ -16,6 +17,8 @@ namespace Apha.PACT.Api.Controllers
     public class RecreateAndReleaseSummaryController : ControllerBase
     {
         private readonly IRecreateAndReleaseSummaryService _service;
+        private readonly IBatchJobService _batchJobService;
+        private readonly IFpsRequestContext _fpsRequestContext;
         private readonly IMapper _mapper;
 
         /// <summary>
@@ -23,10 +26,14 @@ namespace Apha.PACT.Api.Controllers
         /// service and AutoMapper dependencies.
         /// </summary>
         /// <param name="service">Application service used to retrieve recreate summaries log and release summary data.</param>
+        /// <param name="batchJobService">Application service used to retrieve batch job history and status.</param>
+        /// <param name="fpsRequestContext">Provides the identity of the currently authenticated user.</param>
         /// <param name="mapper">AutoMapper instance used to project application DTOs to API response contracts.</param>
-        public RecreateAndReleaseSummaryController(IRecreateAndReleaseSummaryService service, IMapper mapper)
+        public RecreateAndReleaseSummaryController(IRecreateAndReleaseSummaryService service, IBatchJobService batchJobService, IFpsRequestContext fpsRequestContext, IMapper mapper)
         {
             _service = service;
+            _batchJobService = batchJobService;
+            _fpsRequestContext = fpsRequestContext;
             _mapper = mapper;
         }
 
@@ -75,8 +82,48 @@ namespace Apha.PACT.Api.Controllers
         public async Task<IActionResult> SetFinalSummaryRun([FromBody] ReleasePeriodReq request)
         {
             var result = await _service.SetFinalSummaryRunAsync(request.PeriodName, request.FinalSummariesRun, request.SendEmail);
-           
+
             return Ok(_mapper.Map<ReleasePeriodRes>(result));
+        }
+
+        /// <summary>
+        /// Retrieves the execution history for a batch job by job name.
+        /// </summary>
+        /// <param name="jobName">The name of the batch job.</param>
+        /// <returns><c>200 OK</c> with a list of <see cref="BatchJobHistoryRes"/>.</returns>
+        [HttpGet("/api/v1/recreatesummary/batchjob/history")]
+        public async Task<IActionResult> GetBatchJobHistory([FromQuery] QueryParameters<string> query, [FromQuery] string jobName)
+        {
+            var result = await _batchJobService.GetBatchJobsHistoryAsync(query,jobName);
+            return Ok(_mapper.Map<PaginationRes<BatchJobHistoryRes>>(result));
+        }
+
+        /// <summary>
+        /// Checks whether a batch job can be run (i.e. it is not currently running).
+        /// </summary>
+        /// <param name="jobName">The name of the batch job.</param>
+        /// <returns><c>200 OK</c> with <c>true</c> if the job can run; <c>false</c> if it is already running.</returns>
+        [HttpGet("/api/v1/recreatesummary/batchjob/canrun")]
+        public async Task<IActionResult> CanRunBatchJob([FromQuery] string jobName)
+        {
+            var result = await _batchJobService.CanRunBatchJobAsync(jobName);
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Triggers the RecreateSummaries batch job for the specified month.
+        /// Validates that <paramref name="request"/>.<c>Month</c> is between 1 and 12,
+        /// confirms a matching release period exists, verifies no instance is already running,
+        /// then enqueues the job.
+        /// </summary>
+        /// <param name="request">Request body containing the target month (1–12).</param>
+        /// <returns><c>202 Accepted</c> with the enqueued <see cref="BatchJobEventTriggerRes"/>.</returns>
+        [HttpPost("/api/v1/recreatesummary/trigger")]
+        public async Task<IActionResult> TriggerRecreateSummariesJob([FromBody] RecreateSummariesReq request, [FromHeader(Name = "X-Correlation-ID")] string correlationId)
+        {
+            var result = await _batchJobService.TriggerRecreateSummariesJobAsync(request.Month, _fpsRequestContext.FpsYear, _fpsRequestContext.UserEmailId, correlationId);
+            
+            return Ok(_mapper.Map<BatchJobEventTriggerRes>(result));
         }
     }
 }

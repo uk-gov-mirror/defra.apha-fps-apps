@@ -34,13 +34,26 @@
                                         <option value="">-- Select Programme --</option>
                                     </select>
                                     <label class="govuk-label govuk-!-margin-bottom-0" for="projectNameInput" style="white-space:nowrap; font-weight:bold;">Project</label>
-                                    <input type="text" id="projectNameInput"
-                                           class="govuk-input"
-                                           style="width:220px;"
-                                           placeholder="Filter project..."
-                                           value="@Model.ProjectName"
-                                           aria-label="Filter project"
-                                           oninput="reloadProjectsGrid()" />
+                                    <div style="position:relative;">
+                                        <input type="text" id="projectNameInput" placeholder="Select Project" autocomplete="off"
+                                               class="govuk-input down-arrow-img" style="width:220px; cursor:pointer;"
+                                               value="@Model.ProjectName" aria-label="Filter project" readonly />
+                                        <div id="ProjectDropdownPanel" style="display:none; position:absolute; top:100%; left:0; width:420px;
+                                                max-height:260px; overflow-y:auto; background:#fff; border:1px solid #b1b4b6;
+                                                box-shadow:0 4px 8px rgba(0,0,0,.2); z-index:2000;">
+                                            <input type="text" id="ProjectSearchBox" placeholder="Type to search project"
+                                                   style="width:100%; padding:6px 8px; border:0; border-bottom:1px solid #b1b4b6; outline:none; box-sizing:border-box;" />
+                                            <table style="width:100%; border-collapse:collapse; font-size:14px;">
+                                                <thead style="background:#f3f2f1; position:sticky; top:0; z-index:10;">
+                                                    <tr>
+                                                        <th style="padding:6px 8px; text-align:left;">Project</th>
+                                                        <th style="padding:6px 8px; text-align:left;">Program</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="ProjectDropdownBody"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div id="@($"gridContainer_{Model.ProjectsGrid!.GridId}")">
@@ -57,11 +70,27 @@
 
 @section Scripts {
     <script>
+        var allProjectLookup = [];
+
         function filterProgramme() {
             var programNo = document.getElementById('programmeDropdown').value;
-            var projectName = document.getElementById('projectNameInput')?.value ?? '';
+            // Clear the project field when programme changes
+            var projectNameInput = document.getElementById('projectNameInput');
+            if (projectNameInput) projectNameInput.value = '';
             if (programNo) {
-                fpsNavigateTo('@Url.Action("Index", "ProgrammeSelect", new { area = "FPS" })?programNo=' + encodeURIComponent(programNo) + '&projectName=' + encodeURIComponent(projectName));
+                fpsNavigateTo('@Url.Action("Index", "ProgrammeSelect", new { area = "FPS" })?programNo=' + encodeURIComponent(programNo));
+            } else {
+                fetch('@Url.Action("SaveProgrammeSession", "ProgrammeSelect", new { area = "FPS" })', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '' },
+                    body: JSON.stringify('')
+                }).finally(function () {
+                        var projectName = document.getElementById('projectNameInput')?.value ?? '';
+                        // Navigate for both a selected programme and the empty "-- Select Programme --" option
+                        // so the grid is refreshed and cleared when the selection is reset.
+                        var url = '@Url.Action("Index", "ProgrammeSelect", new { area = "FPS" })?programNo=' + encodeURIComponent(programNo) + '&projectName=' + encodeURIComponent(projectName);
+                        fpsNavigateTo(url);
+                });
             }
         }
 
@@ -117,6 +146,101 @@
             }
 
             applyButtonTitles();
+
+            // ── Project multi-column dropdown ──────────────────────────────────
+            var projectDisplay = document.getElementById('projectNameInput');
+            var projectPanel   = document.getElementById('ProjectDropdownPanel');
+            var projectSearch  = document.getElementById('ProjectSearchBox');
+            var projectBody    = document.getElementById('ProjectDropdownBody');
+
+            function getFilteredProjectRows() {
+                var q = (projectSearch ? projectSearch.value : '').toLowerCase();
+
+                var filtered = allProjectLookup;
+
+                // Filter by search text only — all projects are searchable regardless of selected programme
+                if (q) {
+                    filtered = filtered.filter(function (p) {
+                        return p.parentProject.toLowerCase().indexOf(q) !== -1
+                            || (p.program || '').toLowerCase().indexOf(q) !== -1;
+                    });
+                }
+
+                return filtered;
+            }
+
+            function renderProjectRows(data) {
+                projectBody.innerHTML = '';
+                data.forEach(function (item) {
+                    var tr = document.createElement('tr');
+                    tr.style.cursor = 'pointer';
+                    tr.setAttribute('data-value', item.parentProject);
+                    tr.innerHTML = '<td style="padding:6px 8px; border-bottom:1px solid #f3f2f1;">' + item.parentProject + '</td>'
+                                 + '<td style="padding:6px 8px; border-bottom:1px solid #f3f2f1;">' + (item.program || '') + '</td>';
+                    tr.addEventListener('click', function () {
+                        projectDisplay.value = item.parentProject;
+                        projectPanel.style.display = 'none';
+
+                        var programmeDropdown = document.getElementById('programmeDropdown');
+                        var currentProgramNo = programmeDropdown ? programmeDropdown.value : '';
+
+                        if (item.program && item.program !== currentProgramNo) {
+                            // Project belongs to a different programme — switch programme and navigate
+                            if (programmeDropdown) {
+                                Array.from(programmeDropdown.options).forEach(function (o) {
+                                    o.selected = o.value === item.program;
+                                });
+                            }
+                            fpsNavigateTo('@Url.Action("Index", "ProgrammeSelect", new { area = "FPS" })?programNo='
+                                + encodeURIComponent(item.program)
+                                + '&projectName=' + encodeURIComponent(item.parentProject));
+                        } else {
+                            reloadProjectsGrid();
+                        }
+                    });
+                    tr.addEventListener('mouseenter', function () { this.style.backgroundColor = '#f3f2f1'; });
+                    tr.addEventListener('mouseleave', function () { this.style.backgroundColor = ''; });
+                    projectBody.appendChild(tr);
+                });
+            }
+
+            function refreshProjectDropdown() {
+                renderProjectRows(getFilteredProjectRows());
+            }
+
+            if (projectDisplay && projectPanel && projectSearch && projectBody) {
+                projectDisplay.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    if (projectPanel.style.display !== 'none') {
+                        projectPanel.style.display = 'none';
+                        return;
+                    }
+                    if (allProjectLookup.length === 0) {
+                        fetch('@Url.Action("GetProjectLookup", "ProgrammeSelect", new { area = "FPS" })')
+                            .then(function (r) { return r.json(); })
+                            .then(function (data) {
+                                allProjectLookup = data;
+                                projectSearch.value = '';
+                                refreshProjectDropdown();
+                                projectPanel.style.display = 'block';
+                                projectSearch.focus();
+                            });
+                    } else {
+                        projectSearch.value = '';
+                        refreshProjectDropdown();
+                        projectPanel.style.display = 'block';
+                        projectSearch.focus();
+                    }
+                });
+
+                projectSearch.addEventListener('input', refreshProjectDropdown);
+
+                document.addEventListener('click', function (e) {
+                    if (!projectDisplay.contains(e.target) && !projectPanel.contains(e.target)) {
+                        projectPanel.style.display = 'none';
+                    }
+                });
+            }
 
             var observer = new MutationObserver(function (mutations) {
                 var hasNewNodes = mutations.some(function (m) {

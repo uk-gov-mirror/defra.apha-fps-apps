@@ -1,10 +1,8 @@
-﻿using Apha.Common.Contracts;
+using Apha.Common.Contracts;
 using Apha.Common.Contracts.FPS;
-using Apha.Common.Contracts.PACT;
 using Apha.FPSApps.Application.Dtos;
 using Apha.FPSApps.Application.Dtos.FPS;
 using Apha.FPSApps.Application.Dtos.PACT;
-
 using Apha.FPSApps.Application.Pagination;
 using AutoMapper;
 namespace Apha.FPSApps.Infrastructure.Mappings
@@ -74,10 +72,8 @@ namespace Apha.FPSApps.Infrastructure.Mappings
             CreateMap<DivisionGradeDto, DivisionGradeReq>().ReverseMap();
 
             // Grade CRUD: maps frontend GradeDto to/from backend GradeReq (POST/PUT) and GradeRes (GET/POST/PUT responses)
-            // Grade Mappings
             CreateMap<GradeDto, GradeReq>().ReverseMap();
             CreateMap<GradeDto, GradeRes>().ReverseMap();
-
 
             // Agency
             CreateMap<AgencyDto, AgencyRes>().ReverseMap();
@@ -96,6 +92,12 @@ namespace Apha.FPSApps.Infrastructure.Mappings
             CreateMap<SubAccountDto, SubAccountRes>()
                 .ForMember(d => d.SubAccount, o => o.MapFrom(s => s.SubAccount)).ReverseMap();
             CreateMap<CostCentreWorkgroupDto, CostCentreWorkgroupRes>().ReverseMap();
+
+            // CostCentre CRUD: maps frontend CostCentreDto to/from backend CostCentreReq (POST/PUT)
+            //   and CostCentreRes (GET/GET-paged/POST/PUT responses)
+            CreateMap<CostCentreDto, CostCentreReq>().ReverseMap();
+            CreateMap<CostCentreDto, CostCentreRes>().ReverseMap();
+
             CreateMap<PactStaffDto, PactStaffRes>().ReverseMap();
             CreateMap<WorkGroupPersonDto, WorkGroupPersonRes>().ReverseMap();
 
@@ -124,21 +126,23 @@ namespace Apha.FPSApps.Infrastructure.Mappings
                 .ForMember(d => d.JobCode, o => o.MapFrom(s => s.Project))
                 .ForMember(d => d.Id, o => o.MapFrom(s => (int?)s.Id));
 
-
             // Staff Plan view
             CreateMap<ProjectStaffPlanViewDto, ProjectStaffPlanViewRes>().ReverseMap();
+
+            // Staff Plan Details view
+            CreateMap<ProjectStaffPlanDetailsViewDto, ProjectStaffPlanDetailsViewRes>().ReverseMap();
 
             // Project Group Staff Plan view
             CreateMap<ProjectGroupStaffPlanViewDto, ProjectGroupStaffPlanViewRes>().ReverseMap();
 
             CreateMap<PactStaffDto,PactStaffRes>().ReverseMap();
 
-            // WorkgroupGrade  
+            // WorkgroupGrade
             CreateMap<WorkgroupGradeDto, WorkgroupGradeReq>().ReverseMap();
 
             // Job Code (ZT lookup) - now served from PACT API
             CreateMap<FpsJobCodeZtDto, Apha.Common.Contracts.PACT.JobCodeZtRes>().ReverseMap();
-                      
+
 
             // Income/Contribution from Time Sales (frmTimeSellerPC)
             CreateMap<ContributionSummaryRowDto, ContributionSummaryRowRes>().ReverseMap();
@@ -176,11 +180,30 @@ namespace Apha.FPSApps.Infrastructure.Mappings
             CreateMap<UserPermissionDataDto, UserPermissionRes>().ReverseMap();
             CreateMap<UserPermissionDataDto, UserPermissionReq>().ReverseMap();
             CreateMap<PermissionOptionsDto, PermissionOptionsRes>().ReverseMap();
-
+            
             // Total Business Overheads
             CreateMap<TotalBusinessOverheadsDto, TotalBusinessOverheadsReq>().ReverseMap();
             CreateMap<TotalBusinessOverheadsDto, TotalBusinessOverheadsRes>().ReverseMap();
+            // StaffResourceUtilisation
+            CreateMap<StaffResourceUtilisationDto, StaffResourceUtilisationRes>().ReverseMap();
 
+            //  TestListVLA
+            CreateMap<TestRCCostDto, TestRCCostRes>().ReverseMap();
+            CreateMap<TestRCCostDto, TestRCCostReq>().ReverseMap();
+            CreateMap<TestRequirementRCCostDto, TestRequirementRCCostRes>().ReverseMap();
+            CreateMap<TestRequirementRCCostDto, TestRequirementRCCostReq>().ReverseMap();
+
+            // ResourceAllocation — Stage 2 Check Resource Allocation
+            CreateMap<ResourceStaffAllocationDto, ResourceStaffAllocationRes>().ReverseMap();
+            CreateMap<ResourceStaffJobDto, ResourceStaffJobRes>().ReverseMap();
+            CreateMap<ResourceStaffJobDetailDto, ResourceStaffJobDetailRes>().ReverseMap();
+
+            // ResourceMgmtReplan — Resource Re-allocation Screen (frmRM_RePlan)
+            CreateMap<ResourceMgmtReplanViewDto, ResourceMgmtReplanViewRes>().ReverseMap();
+            CreateMap<ResourceMgmtReplanStaffJobDto, ResourceMgmtReplanStaffJobRes>().ReverseMap();
+
+            // Resource Replan — project staff replan
+            CreateMap<ProjectStaffReplanDto, ProjectStaffReplanRes>().ReverseMap();
         }
     }
 }

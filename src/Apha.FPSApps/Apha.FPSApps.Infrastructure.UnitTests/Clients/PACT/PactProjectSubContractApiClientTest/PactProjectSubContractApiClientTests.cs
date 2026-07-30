@@ -573,6 +573,329 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactProjectSubContr
 
         #endregion
 
+        #region Failed SubContract RMS Tests
+
+        [Fact]
+        public async Task GetFailedSubContractRmsAsync_ApiReturnsSuccess_ReturnsMappedResponse()
+        {
+            // Arrange
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var apiResponse = new ApiResponse<List<SubContractRmsImportRowRes>>
+            {
+                Success = true,
+                Data = [new SubContractRmsImportRowRes { Id = 1, Project = "P1" }]
+            };
+            var expectedDto = ApiResponseDto<List<SubContractRmsImportRowDto>>.SuccessResponse(
+                [new SubContractRmsImportRowDto { Id = 1, Project = "P1" }]);
+
+            _http.GetAsync<List<SubContractRmsImportRowRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<SubContractRmsImportRowDto>>>(apiResponse).Returns(expectedDto);
+
+            // Act
+            var result = await _client.GetFailedSubContractRmsAsync(query);
+
+            // Assert
+            Assert.True(result.Success);
+            Assert.Single(result.Data!);
+            await _http.Received(1).GetAsync<List<SubContractRmsImportRowRes>>(Arg.Any<string>());
+            _mapper.Received(1).Map<ApiResponseDto<List<SubContractRmsImportRowDto>>>(apiResponse);
+        }
+
+        [Fact]
+        public async Task GetFailedSubContractRmsAsync_ApiReturnsFailure_ReturnsFailureResponse()
+        {
+            // Arrange
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var apiResponse = new ApiResponse<List<SubContractRmsImportRowRes>>
+            {
+                Success = false,
+                Errors = [new ApiError { Code = "API_ERROR", Message = "Failed" }]
+            };
+            var mappedFailure = new ApiResponseDto<List<SubContractRmsImportRowDto>>
+            {
+                Success = false,
+                Errors = [new ApiErrorDto { Code = "API_ERROR", Message = "Failed" }],
+                Meta = new ApiMetaDto()
+            };
+
+            _http.GetAsync<List<SubContractRmsImportRowRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<SubContractRmsImportRowDto>>>(apiResponse).Returns(mappedFailure);
+
+            // Act
+            var result = await _client.GetFailedSubContractRmsAsync(query);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.NotNull(result.Errors);
+            Assert.Single(result.Errors!);
+        }
+
+        [Fact]
+        public async Task GetFailedSubContractRmsByIdAsync_ApiReturnsSuccess_ReturnsMappedResponse()
+        {
+            // Arrange
+            var id = 42;
+            var apiRow = new SubContractRmsImportRowRes { Id = id, Project = "P42" };
+            var mappedRow = new SubContractRmsImportRowDto { Id = id, Project = "P42" };
+            var apiResponse = new ApiResponse<SubContractRmsImportRowRes> { Success = true, Data = apiRow };
+
+            _http.GetAsync<SubContractRmsImportRowRes>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<SubContractRmsImportRowDto>(apiRow).Returns(mappedRow);
+
+            // Act
+            var result = await _client.GetFailedSubContractRmsByIdAsync(id);
+
+            // Assert
+            Assert.True(result.Success);
+            Assert.Equal(id, result.Data!.Id);
+            _mapper.Received(1).Map<SubContractRmsImportRowDto>(apiRow);
+            await _http.Received(1).GetAsync<SubContractRmsImportRowRes>(Arg.Is<string>(u => u.Contains(id.ToString())));
+        }
+
+        [Fact]
+        public async Task GetFailedSubContractRmsByIdAsync_ApiReturnsFailure_ReturnsFailureResponse()
+        {
+            // Arrange
+            var apiResponse = new ApiResponse<SubContractRmsImportRowRes>
+            {
+                Success = false,
+                Errors = [new ApiError { Code = "NOT_FOUND", Message = "Not found" }]
+            };
+            var mappedFailure = new ApiResponseDto<SubContractRmsImportRowDto>
+            {
+                Success = false,
+                Errors = [new ApiErrorDto { Code = "NOT_FOUND", Message = "Not found" }],
+                Meta = new ApiMetaDto()
+            };
+
+            _http.GetAsync<SubContractRmsImportRowRes>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<SubContractRmsImportRowDto>>(apiResponse).Returns(mappedFailure);
+
+            // Act
+            var result = await _client.GetFailedSubContractRmsByIdAsync(999);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.NotNull(result.Errors);
+            Assert.Single(result.Errors!);
+        }
+
+        [Fact]
+        public async Task SaveFailedSubContractRmsAsync_ApiReturnsSuccess_ReturnsMappedResponse()
+        {
+            // Arrange
+            var id = 7;
+            var dto = new SubContractRmsImportRowDto { Id = id, Project = "P7", Month = "1" };
+            var req = new SubContractRmsImportRowReq { Project = "P7", Month = "1" };
+            var apiResponse = new ApiResponse<bool?> { Success = true, Data = true };
+            var mappedSuccess = ApiResponseDto<bool>.SuccessResponse(true);
+
+            _mapper.Map<SubContractRmsImportRowReq>(dto).Returns(req);
+            _http.PutAsync<SubContractRmsImportRowReq, bool?>(Arg.Any<string>(), req).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<bool>>(apiResponse).Returns(mappedSuccess);
+
+            // Act
+            var result = await _client.SaveFailedSubContractRmsAsync(id, dto);
+
+            // Assert
+            Assert.True(result.Success);
+            Assert.True(result.Data);
+            _mapper.Received(1).Map<SubContractRmsImportRowReq>(dto);
+            await _http.Received(1).PutAsync<SubContractRmsImportRowReq, bool?>(Arg.Is<string>(u => u.Contains(id.ToString())), req);
+        }
+
+        [Fact]
+        public async Task SaveFailedSubContractRmsAsync_ApiReturnsFailure_ReturnsFailureResponse()
+        {
+            // Arrange
+            var dto = new SubContractRmsImportRowDto { Id = 1, Project = "P1" };
+            var req = new SubContractRmsImportRowReq { Project = "P1" };
+            var apiResponse = new ApiResponse<bool?>
+            {
+                Success = false,
+                Errors = [new ApiError { Code = "VALIDATION", Message = "Invalid" }]
+            };
+            var mappedFailure = new ApiResponseDto<bool>
+            {
+                Success = false,
+                Errors = [new ApiErrorDto { Code = "VALIDATION", Message = "Invalid" }],
+                Meta = new ApiMetaDto()
+            };
+
+            _mapper.Map<SubContractRmsImportRowReq>(dto).Returns(req);
+            _http.PutAsync<SubContractRmsImportRowReq, bool?>(Arg.Any<string>(), req).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<bool>>(apiResponse).Returns(mappedFailure);
+
+            // Act
+            var result = await _client.SaveFailedSubContractRmsAsync(1, dto);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.NotNull(result.Errors);
+            Assert.Single(result.Errors!);
+        }
+
+        [Fact]
+        public async Task DeleteFailedSubContractRmsByIdAsync_ApiReturnsSuccess_ReturnsMappedResponse()
+        {
+            // Arrange
+            var id = 12;
+            var apiResponse = new ApiResponse<bool?> { Success = true, Data = true };
+            var mappedSuccess = ApiResponseDto<bool>.SuccessResponse(true);
+
+            _http.DeleteAsync<bool?>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<bool>>(apiResponse).Returns(mappedSuccess);
+
+            // Act
+            var result = await _client.DeleteFailedSubContractRmsByIdAsync(id);
+
+            // Assert
+            Assert.True(result.Success);
+            Assert.True(result.Data);
+            await _http.Received(1).DeleteAsync<bool?>(Arg.Is<string>(u => u.Contains(id.ToString())));
+        }
+
+        [Fact]
+        public async Task DeleteFailedSubContractRmsByIdAsync_ApiReturnsFailure_ReturnsFailureResponse()
+        {
+            // Arrange
+            var apiResponse = new ApiResponse<bool?>
+            {
+                Success = false,
+                Errors = [new ApiError { Code = "NOT_FOUND", Message = "Not found" }]
+            };
+            var mappedFailure = new ApiResponseDto<bool>
+            {
+                Success = false,
+                Errors = [new ApiErrorDto { Code = "NOT_FOUND", Message = "Not found" }],
+                Meta = new ApiMetaDto()
+            };
+
+            _http.DeleteAsync<bool?>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<bool>>(apiResponse).Returns(mappedFailure);
+
+            // Act
+            var result = await _client.DeleteFailedSubContractRmsByIdAsync(999);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.NotNull(result.Errors);
+            Assert.Single(result.Errors!);
+        }
+
+        [Fact]
+        public async Task ImportSubContractRmsAsync_ApiReturnsSuccess_ReturnsMappedResponse()
+        {
+            // Arrange
+            var requestDto = new SubContractRmsImportReqDto
+            {
+                FileName = "subcontract.xlsx",
+                Rows = [new SubContractRmsImportRowDto { Project = "P10" }]
+            };
+            var request = new SubContractRmsImportReq
+            {
+                FileName = "subcontract.xlsx",
+                Rows = [new SubContractRmsImportRowReq { Project = "P10" }]
+            };
+            var responseData = new SubContractRmsImportRes { PassedCount = 1, FailedCount = 0, Message = "Done" };
+            var apiResponse = new ApiResponse<SubContractRmsImportRes> { Success = true, Data = responseData };
+            var mappedData = new SubContractRmsImportResultDto { PassedCount = 1, FailedCount = 0, Message = "Done" };
+
+            _mapper.Map<SubContractRmsImportReq>(requestDto).Returns(request);
+            _http.PostAsync<SubContractRmsImportReq, SubContractRmsImportRes>(Arg.Any<string>(), request).Returns(apiResponse);
+            _mapper.Map<SubContractRmsImportResultDto>(responseData).Returns(mappedData);
+
+            // Act
+            var result = await _client.ImportSubContractRmsAsync(requestDto);
+
+            // Assert
+            Assert.True(result.Success);
+            Assert.Equal(1, result.Data!.PassedCount);
+            _mapper.Received(1).Map<SubContractRmsImportReq>(requestDto);
+            _mapper.Received(1).Map<SubContractRmsImportResultDto>(responseData);
+            await _http.Received(1).PostAsync<SubContractRmsImportReq, SubContractRmsImportRes>(Arg.Any<string>(), request);
+        }
+
+        [Fact]
+        public async Task ImportSubContractRmsAsync_ApiReturnsFailure_ReturnsFailureResponse()
+        {
+            // Arrange
+            var requestDto = new SubContractRmsImportReqDto { FileName = "subcontract.xlsx" };
+            var request = new SubContractRmsImportReq { FileName = "subcontract.xlsx" };
+            var apiResponse = new ApiResponse<SubContractRmsImportRes>
+            {
+                Success = false,
+                Errors = [new ApiError { Code = "IMPORT_FAILED", Message = "Failed" }]
+            };
+            var mappedFailure = new ApiResponseDto<SubContractRmsImportResultDto>
+            {
+                Success = false,
+                Errors = [new ApiErrorDto { Code = "IMPORT_FAILED", Message = "Failed" }],
+                Meta = new ApiMetaDto()
+            };
+
+            _mapper.Map<SubContractRmsImportReq>(requestDto).Returns(request);
+            _http.PostAsync<SubContractRmsImportReq, SubContractRmsImportRes>(Arg.Any<string>(), request).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<SubContractRmsImportResultDto>>(apiResponse).Returns(mappedFailure);
+
+            // Act
+            var result = await _client.ImportSubContractRmsAsync(requestDto);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.NotNull(result.Errors);
+            Assert.Single(result.Errors!);
+        }
+
+        [Fact]
+        public async Task DeleteFailedSubContractRmsByUserAsync_ApiReturnsSuccess_ReturnsMappedResponse()
+        {
+            // Arrange
+            var apiResponse = new ApiResponse<bool?> { Success = true, Data = true };
+            var mappedSuccess = ApiResponseDto<bool>.SuccessResponse(true);
+
+            _http.DeleteAsync<bool?>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<bool>>(apiResponse).Returns(mappedSuccess);
+
+            // Act
+            var result = await _client.DeleteFailedSubContractRmsByUserAsync();
+
+            // Assert
+            Assert.True(result.Success);
+            Assert.True(result.Data);
+            await _http.Received(1).DeleteAsync<bool?>(Arg.Any<string>());
+        }
+
+        [Fact]
+        public async Task DeleteFailedSubContractRmsByUserAsync_ApiReturnsFailure_ReturnsFailureResponse()
+        {
+            // Arrange
+            var apiResponse = new ApiResponse<bool?>
+            {
+                Success = false,
+                Errors = [new ApiError { Code = "API_ERROR", Message = "Failed" }]
+            };
+            var mappedFailure = new ApiResponseDto<bool>
+            {
+                Success = false,
+                Errors = [new ApiErrorDto { Code = "API_ERROR", Message = "Failed" }],
+                Meta = new ApiMetaDto()
+            };
+
+            _http.DeleteAsync<bool?>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<bool>>(apiResponse).Returns(mappedFailure);
+
+            // Act
+            var result = await _client.DeleteFailedSubContractRmsByUserAsync();
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.NotNull(result.Errors);
+            Assert.Single(result.Errors!);
+        }
+
+        #endregion
+
         #region DeleteAsync Tests
 
         [Fact]

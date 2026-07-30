@@ -14,7 +14,7 @@
     <form id="animalRequirementForm">
         @Html.AntiForgeryToken()
         <input asp-for="ArIdentity" type="hidden" />
-        <input type="hidden" id="AnimalType" name="AnimalType" value="@Model.AnimalType" />
+        <input type="hidden" id="AnimalType" value="@Model.AnimalType" />
         <div class="govuk-error-summary" role="alert"
              aria-labelledby="animalFormErrorTitle" tabindex="-1" style="display: none;">
             <h2 class="govuk-error-summary__title" id="animalFormErrorTitle">There is a problem</h2>
@@ -27,9 +27,9 @@
                 Animal Type <span class="sup_color_red">*</span>
             </label>
             <div style="position: relative; z-index: 50;">
-                <input type="text" id="animalTypeSelect" placeholder="-- Select Animal Type --" aria-label="Search Animal Type"  autocomplete="off"
+                <input asp-for="AnimalType" type="text" id="animalTypeSelect" placeholder="-- Select Animal Type --" aria-label="Search Animal Type" autocomplete="off"
                        class="govuk-input govuk-!-font-size-16 down-arrow-img" style="width: 100%; cursor: pointer;"
-                       value="@Model.AnimalType" readonly />
+                       required readonly />
                 <div id="animalTypeDropdownPanel" style="display:none; position:absolute; top:100%; left:0; width:100%;
                         max-height:220px; overflow-y:auto; background:#fff; border:1px solid #b1b4b6;
                         box-shadow:0 4px 8px rgba(0,0,0,.2); z-index:2000;">
@@ -93,7 +93,7 @@
             </label>
             <div class="govuk-input__wrapper">
                 <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                <input asp-for="AnimalCost" type="text" readonly class="govuk-input" />
+                <input asp-for="AnimalCost" type="text" readonly class="govuk-input" value="@(Model.AnimalCost ?? 0)" />
             </div>            
             <span asp-validation-for="AnimalCost" class="govuk-error-message" style="display:none;"></span>
         </div>

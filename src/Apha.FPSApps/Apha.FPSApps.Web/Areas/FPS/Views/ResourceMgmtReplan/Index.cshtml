@@ -1,0 +1,133 @@
+@model Apha.FPSApps.Web.Areas.FPS.Models.ResourceMgmtReplanViewModel
+@{
+    ViewData["Title"] = "Resource Management Re-plan";
+}
+
+<main class="govuk-main-wrapper govuk-!-padding-top-0" id="main-content" role="main">
+    <div class="container-fluid">
+
+        @*── Page heading + Resource Centre selector ─────────────────────*@
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <div class="ssr-heading-row sup_border-bottom govuk-!-margin-bottom-2">
+                    <h1 class="govuk-heading-s ssr-main-title">
+                        Resource Re-allocation Screen for <span id="ssrMainCentreName">@Model.SelectedResourceCentre</span>
+                    </h1>
+                    <div class="ssr-heading-controls">
+                        <label for="resourceCentreSelect" class="govuk-label govuk-!-margin-bottom-0">Select a Resource Center:</label>
+                        <select class="govuk-select ssr-resource-select"
+                                id="resourceCentreSelect"
+                                aria-label="Select a Resource Center"
+                                asp-for="SelectedResourceCentre"
+                                asp-items="Model.ResourceCentres"
+                                onchange="rraUpdateResourceCentre()">
+                            <option value="">-- Select a Resource Center --</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="govuk-grid-row">
+            <div class="cc-container-fluid">
+                <div class="cc-layout-row">
+                    <div class="cc-content-column">
+                        <div class="govuk-grid-row">
+                            <div class="govuk-grid-column-full">
+                                <div class="govuk-grid-row sup_margin_left_right_10 sup_margin_bottom_10">
+                                    <div class="govuk-grid-column-full sup_p_0">
+
+                                        @*── Section 1 + 2: WorkGroup list (left) + Re-plan grid (right) ──*@
+                                        <section class="ssr-workgroup-section sup_border govuk-!-margin-bottom-4"
+                                                 aria-label="WorkGroup selection and re-plan grid">
+                                            <div class="ssr-top-layout">
+
+                                                @*── Left: workgroup list ──*@
+                                                <div class="ssr-grade-panel">
+                                                    <div class="ssr-grade-header">
+                                                        <span class="govuk-label govuk-!-font-weight-bold govuk-!-margin-bottom-0">1. Choose WorkGroup</span>
+                                                    </div>
+                                                    <ul class="ssr-grade-list"
+                                                        id="ssrWorkGroupList"
+                                                        role="listbox"
+                                                        aria-label="Select workgroup grade">
+                                                        @*── Populated by JS ──*@
+                                                    </ul>
+                                                </div>
+
+                                                @*── Right: re-plan staff grid ──*@
+                                                <div class="ssr-right-panel">
+                                                    <h3 class="govuk-heading-s govuk-!-margin-bottom-2">
+                                                        2. All Jobs for Staff in Workgroup
+                                                    </h3>
+                                                    <div id="gridContainer_RePlanGrid" class="ssr-grid-container">
+                                                        @await Html.PartialAsync("_DataGrid", Model.RePlanGrid)
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                        </section>
+
+                                        @*── Section 3: All Time for Project ──────────────────────────────*@
+                                        <div class="ssr-mid-row">
+                                            <section class="ssr-alltime-box sup_border" aria-labelledby="ssr-alltime-title">
+                                                <h3 class="govuk-heading-s ssr-mid-title" id="ssr-alltime-title">3. All Time for Project</h3>
+
+                                                <div class="ssr-alltime-fields govuk-!-margin-bottom-2">
+                                                    <div class="ssr-alltime-field">
+                                                        <label for="ssrAllTimeProject" class="govuk-label govuk-!-font-weight-bold">Project</label>
+                                                        <input type="text" id="ssrAllTimeProject"
+                                                               class="govuk-input ssr-mid-input"
+                                                               readonly
+                                                               aria-label="All time project" />
+                                                    </div>
+                                                    <div class="ssr-alltime-field">
+                                                        <label for="ssrAllTimeWgGrade" class="govuk-label govuk-!-font-weight-bold">for WG-Grade</label>
+                                                        <input type="text" id="ssrAllTimeWgGrade"
+                                                               class="govuk-input ssr-mid-input"
+                                                               readonly
+                                                               aria-label="All time workgroup grade" />
+                                                    </div>
+                                                </div>
+
+                                                <div class="ssr-alltime-table-wrap" role="region" aria-label="All time rows">
+                                                    <div id="gridContainer_AllTimeGrid">
+                                                        @await Html.PartialAsync("_DataGrid", Model.AllTimeGrid)
+                                                    </div>
+                                                </div>
+
+                                                <div class="ssr-alltime-total-row govuk-!-margin-top-2">
+                                                    <span class="govuk-label govuk-!-font-weight-bold">Total:</span>
+                                                    <input type="text" id="ssrAllTimeTotal"
+                                                           class="govuk-input ssr-total-input text-AlignRight"
+                                                           readonly
+                                                           aria-label="All time total"
+                                                           value="0.00" />
+                                                </div>
+                                            </section>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+@section Scripts {
+    @*── Server-generated config consumed by ResourceMgmtReplan.js ──*@
+    <div id="rra-af-holder" style="display:none">@Html.AntiForgeryToken()</div>
+
+    <script>
+        var RRA_ANTIFORGERY_TOKEN  = document.getElementById('rra-af-holder').innerHTML;
+        var RRA_WORKGROUPS_URL     = '@Url.Action("GetWorkGroups",   "ResourceMgmtReplan", new { area = "FPS" })';
+        var RRA_LOAD_GRID_URL      = '@Url.Action("LoadRePlanGrid",  "ResourceMgmtReplan", new { area = "FPS" })';
+        var RRA_LOAD_ALLTIME_URL   = '@Url.Action("LoadAllTimeGrid", "ResourceMgmtReplan", new { area = "FPS" })';
+        var RRA_LOAD_STAGED_URL    = '@Url.Action("GetStagedRows",   "ResourceMgmtReplan", new { area = "FPS" })';
+        var RRA_COMMIT_URL         = '@Url.Action("CommitRePlan",    "ResourceMgmtReplan", new { area = "FPS" })';
+    </script>
+    <script src="~/js/fps_js/ResourceMgmtReplan.js"></script>
+}

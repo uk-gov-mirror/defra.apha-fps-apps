@@ -56,6 +56,13 @@ namespace Apha.FPS.Application.Services
             return _mapper.Map<PaginatedResult<StaffJobZtViewDto>>(rows);
         }
 
+        public async Task<PaginatedResult<StaffJobViewDto>> GetStaffJobsAllocationByJobCodeWgGradePagedAsync(QueryParameters<string> query, string jobcode, string wgGrade)
+        {
+            var filter = _mapper.Map<PaginationParameters<string>>(query);
+            var rows = await _staffJobRepository.GetStaffJobsAllocationByJobCodeWgGradePagedAsync(filter, jobcode, wgGrade);
+            return _mapper.Map<PaginatedResult<StaffJobViewDto>>(rows);
+        }
+
         public async Task<StaffJobZtViewDto?> GetZtStaffJobDetailsByIdAsync(string staffId, string jobCode)
         {
             var result = await _staffJobRepository.GetZtStaffJobDetailsByIdAsync(staffId, jobCode);
@@ -127,6 +134,13 @@ namespace Apha.FPS.Application.Services
             ArgumentException.ThrowIfNullOrWhiteSpace(jobCode);
             var isDeleted = await _staffJobRepository.DeleteAsync(staffId, jobCode);
             return isDeleted;
+        }
+
+        public async Task<PaginatedResult<StaffResourceUtilisationDto>> GetStaffResourceUtilisationAsync(QueryParameters<string> query, string workgroup)
+        {
+            var filter = _mapper.Map<PaginationParameters<string>>(query);
+            var result = await _staffJobRepository.GetStaffResourceUtilisationAsync(filter, workgroup);
+            return _mapper.Map<PaginatedResult<StaffResourceUtilisationDto>>(result);
         }
 
     }

@@ -84,11 +84,12 @@ function editAdditionalCost(btn) {
 
 function updateAdditionalCost() {
     var jobCode = AdditionalCostConfig.getJobCode();    
-    var originalAccount = $('#OriginalAccount').val();
     var data = {
         JobCode: jobCode,
         Description: $('#Description').val(),
-        Account: $('#Account').val() || $('#OriginalAccount').val(),
+        OriginalDescription: $('#OriginalDescription').val(),
+        Account: $('#Account').val(),
+        OriginalAccount: $('#OriginalAccount').val(),
         ItemCost: parseFloat($('#ItemCost').val()) || 0,
         Freq: $('#Freq').val(),
         Supplier: $('#Supplier').val()
@@ -156,3 +157,46 @@ function closeModal() {
     $('#modaPopupBody').html('');
     $('#modalPopup').removeClass('show');
 }
+
+// ---- Account multi-column dropdown ----
+
+function toggleAccountPanel() {
+    var panel = document.getElementById('AccountDropdownPanel');
+    if (!panel) return;
+    var isOpen = panel.style.display !== 'none';
+    panel.style.display = isOpen ? 'none' : 'block';
+    if (!isOpen) {
+        var searchBox = document.getElementById('AccountSearchBox');
+        if (searchBox) { searchBox.value = ''; filterAccountPanel(''); searchBox.focus(); }
+    }
+}
+
+function filterAccountPanel(query) {
+    var rows = document.querySelectorAll('#AccountDropdownBody tr');
+    var q = (query || '').toLowerCase();
+    rows.forEach(function (row) {
+        row.style.display = (!q || row.textContent.toLowerCase().indexOf(q) !== -1) ? '' : 'none';
+    });
+}
+
+function selectAccount(value, displayName, rowEl) {
+    var display = document.getElementById('AccountDisplay');
+    if (display) display.value = displayName;
+
+    var select = document.getElementById('Account');
+    if (select) {
+        select.value = value;
+        $(select).trigger('change');
+    }
+
+    var panel = document.getElementById('AccountDropdownPanel');
+    if (panel) panel.style.display = 'none';
+}
+
+// Close panel when clicking outside
+$(document).on('click', function (e) {
+    if (!$(e.target).closest('#AccountDropdownPanel, #AccountDisplay').length) {
+        var panel = document.getElementById('AccountDropdownPanel');
+        if (panel) panel.style.display = 'none';
+    }
+});

@@ -25,7 +25,6 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.FPS.FpsGradeApiClientTes
             _client = new FpsGradeApiClient(_http, _mapper);
         }
 
-        // TRANSFORMENGINE: static helpers — minimal valid response objects
         private static GradeRes BuildRes(string code = "A") =>
             new() { GradeCode = code, Description = "Grade A", AvSalary = 50000m, FpsYear = 2025 };
 
@@ -73,7 +72,6 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.FPS.FpsGradeApiClientTes
                 new List<GradeDto> { BuildDto() },
                 new PaginationDto { PageNumber = 1, PageSize = 10, TotalRecords = 1 });
 
-            // TRANSFORMENGINE: URL must contain "Grade/paged" (BaseUrl = "api/v1/Grade")
             _http.GetAsync<List<GradeRes>>(Arg.Is<string>(u => u.Contains("Grade/paged")))
                 .Returns(apiResponse);
             _mapper.Map<ApiResponseDto<List<GradeDto>>>(apiResponse).Returns(expected);
@@ -140,7 +138,6 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.FPS.FpsGradeApiClientTes
             var apiResponse = SuccessApiResponse(res);
             var expected    = ApiResponseDto<GradeDto>.SuccessResponse(BuildDto("A"));
 
-            // TRANSFORMENGINE: URL must contain "Grade/A" (GET by gradeCode)
             _http.GetAsync<GradeRes>(Arg.Is<string>(u => u.Contains("Grade/A"))).Returns(apiResponse);
             _mapper.Map<ApiResponseDto<GradeDto>>(apiResponse).Returns(expected);
 
@@ -206,7 +203,6 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.FPS.FpsGradeApiClientTes
             var expected    = ApiResponseDto<GradeDto>.SuccessResponse(dto);
 
             _mapper.Map<GradeReq>(dto).Returns(req);
-            // TRANSFORMENGINE: POST to BaseUrl ("api/v1/Grade")
             _http.PostAsync<GradeReq, GradeRes>(Arg.Is<string>(u => u.EndsWith("/Grade") || u == "api/v1/Grade"), req)
                 .Returns(apiResponse);
             _mapper.Map<ApiResponseDto<GradeDto>>(apiResponse).Returns(expected);
@@ -279,7 +275,6 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.FPS.FpsGradeApiClientTes
             var expected    = ApiResponseDto<GradeDto>.SuccessResponse(dto);
 
             _mapper.Map<GradeReq>(dto).Returns(req);
-            // TRANSFORMENGINE: PUT to "api/v1/Grade/{originalCode}" — URL must contain "Grade/A"
             _http.PutAsync<GradeReq, GradeRes>(Arg.Is<string>(u => u.Contains("Grade/A")), req)
                 .Returns(apiResponse);
             _mapper.Map<ApiResponseDto<GradeDto>>(apiResponse).Returns(expected);
@@ -348,7 +343,6 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.FPS.FpsGradeApiClientTes
             var expected    = ApiResponseDto<GradeDto>.SuccessResponse(dto);
 
             _mapper.Map<GradeReq>(dto).Returns(req);
-            // TRANSFORMENGINE: originalCode "A" must appear in PUT URL path (not the new code "B")
             _http.PutAsync<GradeReq, GradeRes>(Arg.Is<string>(u => u.Contains("Grade/A")), req)
                 .Returns(apiResponse);
             _mapper.Map<ApiResponseDto<GradeDto>>(apiResponse).Returns(expected);
@@ -373,7 +367,6 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.FPS.FpsGradeApiClientTes
             var apiResponse = SuccessApiResponse<bool?>(true);
             var expected    = ApiResponseDto<bool>.SuccessResponse(true);
 
-            // TRANSFORMENGINE: DELETE to "api/v1/Grade/{gradeCode}" — URL must contain "Grade/A"
             _http.DeleteAsync<bool?>(Arg.Is<string>(u => u.Contains("Grade/A"))).Returns(apiResponse);
             _mapper.Map<ApiResponseDto<bool>>(apiResponse).Returns(expected);
 

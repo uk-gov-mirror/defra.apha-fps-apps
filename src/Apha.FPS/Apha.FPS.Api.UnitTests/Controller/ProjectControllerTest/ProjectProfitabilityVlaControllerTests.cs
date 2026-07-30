@@ -41,7 +41,6 @@ namespace Apha.FPS.Api.UnitTests.Controller.ProjectControllerTest
             var serviceResult = new PaginatedResult<ProjectProfitabilityVlaDto>(dtos, paginationDto);
             var expectedRes = new PaginationRes<ProjectProfitabilityVlaRes>
             {
-                // TRANSFORMENGINE: ProjectProfitabilityVlaRes uses 'Project' (not 'JobCode') as the display name field;
                 // JobCode in the DTO maps to Project in the Res contract (Phase 15 build fix).
                 Data = dtos.Select(d => new ProjectProfitabilityVlaRes { Project = d.JobCode }).ToList(),
                 PaginationData = new Pagination { PageNumber = 1, PageSize = 15, TotalRecords = 2 }

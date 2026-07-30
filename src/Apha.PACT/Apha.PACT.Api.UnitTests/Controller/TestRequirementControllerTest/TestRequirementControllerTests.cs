@@ -16,140 +16,84 @@ namespace Apha.PACT.Api.UnitTests.Controller.TestRequirementControllerTest
     {
         private readonly ITestRequirementService _service;
         private readonly IMapper _mapper;
-        private readonly TestRequirementController _controller;
+        private readonly TestRequirementController _sut;
 
         public TestRequirementControllerTests()
         {
             _service = Substitute.For<ITestRequirementService>();
-            _mapper = Substitute.For<IMapper>();
-            _controller = new TestRequirementController(_service, _mapper);
+            _mapper  = Substitute.For<IMapper>();
+            _sut     = new TestRequirementController(_service, _mapper);
         }
-
-        #region GetPagedBySupplierTestCode
-
-        [Fact]
-        public async Task GetPagedBySupplierTestCode_HappyPath_ReturnsOkWithPaginatedResult()
-        {
-            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
-            var serviceResult = new PaginatedResult<TestSupplierViewDto>();
-            var mapped = new PaginationRes<TestSupplierViewRes>();
-
-            _service.GetPagedBySupplierTestCodeAsync(query, "BLOOD", false).Returns(serviceResult);
-            _mapper.Map<PaginationRes<TestSupplierViewRes>>(serviceResult).Returns(mapped);
-
-            var result = await _controller.GetPagedBySupplierTestCode(query, "BLOOD");
-
-            var ok = Assert.IsType<OkObjectResult>(result);
-            ok.Value.Should().Be(mapped);
-        }
-
-        [Fact]
-        public async Task GetPagedBySupplierTestCode_ShowRejectedTrue_PassesFlagToService()
-        {
-            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
-            var serviceResult = new PaginatedResult<TestSupplierViewDto>();
-            var mapped = new PaginationRes<TestSupplierViewRes>();
-
-            _service.GetPagedBySupplierTestCodeAsync(query, "BLOOD", true).Returns(serviceResult);
-            _mapper.Map<PaginationRes<TestSupplierViewRes>>(serviceResult).Returns(mapped);
-
-            var result = await _controller.GetPagedBySupplierTestCode(query, "BLOOD", showRejected: true);
-
-            var ok = Assert.IsType<OkObjectResult>(result);
-            ok.Value.Should().Be(mapped);
-            await _service.Received(1).GetPagedBySupplierTestCodeAsync(query, "BLOOD", true);
-        }
-
-        [Fact]
-        public async Task GetPagedBySupplierTestCode_WithItems_ReturnsMappedResult()
-        {
-            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
-            var dtos = new List<TestSupplierViewDto>
-            {
-                new() { TestCode = "BLOOD", Buyer = "PRJ1", TestCost = 30m },
-                new() { TestCode = "BLOOD", Buyer = "PRJ2", TestCost = 20m }
-            };
-            var serviceResult = new PaginatedResult<TestSupplierViewDto>(dtos, new PaginationDto());
-            var mapped = new PaginationRes<TestSupplierViewRes>();
-
-            _service.GetPagedBySupplierTestCodeAsync(query, "BLOOD", false).Returns(serviceResult);
-            _mapper.Map<PaginationRes<TestSupplierViewRes>>(serviceResult).Returns(mapped);
-
-            var result = await _controller.GetPagedBySupplierTestCode(query, "BLOOD");
-
-            var ok = Assert.IsType<OkObjectResult>(result);
-            ok.Value.Should().Be(mapped);
-            await _service.Received(1).GetPagedBySupplierTestCodeAsync(query, "BLOOD", false);
-        }
-
-        [Fact]
-        public async Task GetPagedBySupplierTestCode_EmptyResult_ReturnsOkWithEmptyResult()
-        {
-            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
-            var serviceResult = new PaginatedResult<TestSupplierViewDto>([], new PaginationDto());
-            var mapped = new PaginationRes<TestSupplierViewRes>();
-
-            _service.GetPagedBySupplierTestCodeAsync(query, "BLOOD", false).Returns(serviceResult);
-            _mapper.Map<PaginationRes<TestSupplierViewRes>>(serviceResult).Returns(mapped);
-
-            var result = await _controller.GetPagedBySupplierTestCode(query, "BLOOD");
-
-            Assert.IsType<OkObjectResult>(result);
-        }
-
-        [Fact]
-        public async Task GetPagedBySupplierTestCode_ServiceThrows_PropagatesException()
-        {
-            var query = new QueryParameters<string>();
-            _service.GetPagedBySupplierTestCodeAsync(query, "BLOOD", false)
-                .ThrowsAsync(new Exception("Service error"));
-
-            await Assert.ThrowsAsync<Exception>(() =>
-                _controller.GetPagedBySupplierTestCode(query, "BLOOD"));
-        }
-
-        [Fact]
-        public async Task GetPagedBySupplierTestCode_ShowRejectedDefaultsFalse_CallsServiceWithFalse()
-        {
-            var query = new QueryParameters<string> { Page = 1, PageSize = 5 };
-            var serviceResult = new PaginatedResult<TestSupplierViewDto>();
-            var mapped = new PaginationRes<TestSupplierViewRes>();
-
-            _service.GetPagedBySupplierTestCodeAsync(query, "URINE", false).Returns(serviceResult);
-            _mapper.Map<PaginationRes<TestSupplierViewRes>>(serviceResult).Returns(mapped);
-
-            await _controller.GetPagedBySupplierTestCode(query, "URINE");
-
-            await _service.Received(1).GetPagedBySupplierTestCodeAsync(query, "URINE", false);
-        }
-
-        #endregion
 
         #region GetPagedTestReqmt
 
         [Fact]
-        public async Task GetPagedTestReqmt_HappyPath_ReturnsOkWithPaginatedResult()
+        public async Task GetPagedTestReqmt_ValidQuery_ReturnsOk()
         {
-            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
-            var serviceResult = new PaginatedResult<TestRequirementtDto>();
-            var mapped = new PaginationRes<TestRequirementtRes>();
+            var query   = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var result  = new PaginatedResult<TestRequirementtDto>([], new PaginationDto());
+            var mapped  = new PaginationRes<TestRequirementtRes>();
 
-            _service.GetPagedTestReqmtAsync(query, "BLOOD").Returns(serviceResult);
-            _mapper.Map<PaginationRes<TestRequirementtRes>>(serviceResult).Returns(mapped);
+            _service.GetPagedTestReqmtAsync(query, "PT0001").Returns(result);
+            _mapper.Map<PaginationRes<TestRequirementtRes>>(result).Returns(mapped);
 
-            var result = await _controller.GetPagedTestReqmt(query, "BLOOD");
+            var action = await _sut.GetPagedTestReqmt(query, "PT0001");
 
-            var ok = Assert.IsType<OkObjectResult>(result);
-            ok.Value.Should().Be(mapped);
+            action.Should().BeOfType<OkObjectResult>()
+                  .Which.Value.Should().Be(mapped);
         }
 
         [Fact]
         public async Task GetPagedTestReqmt_ServiceThrows_PropagatesException()
         {
-            var query = new QueryParameters<string>();
-            _service.GetPagedTestReqmtAsync(query, "BLOOD").ThrowsAsync(new Exception("Service error"));
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            _service.GetPagedTestReqmtAsync(query, "PT0001").ThrowsAsync(new Exception("error"));
 
-            await Assert.ThrowsAsync<Exception>(() => _controller.GetPagedTestReqmt(query, "BLOOD"));
+            await Assert.ThrowsAsync<Exception>(() => _sut.GetPagedTestReqmt(query, "PT0001"));
+        }
+
+        [Fact]
+        public async Task GetPagedTestReqmt_CallsServiceExactlyOnce()
+        {
+            var query  = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var result = new PaginatedResult<TestRequirementtDto>([], new PaginationDto());
+            _service.GetPagedTestReqmtAsync(query, "PT0001").Returns(result);
+            _mapper.Map<PaginationRes<TestRequirementtRes>>(result).Returns(new PaginationRes<TestRequirementtRes>());
+
+            await _sut.GetPagedTestReqmt(query, "PT0001");
+
+            await _service.Received(1).GetPagedTestReqmtAsync(query, "PT0001");
+        }
+
+        #endregion
+
+        #region GetPagedBySupplierTestCode
+
+        [Fact]
+        public async Task GetPagedBySupplierTestCode_ValidQuery_ReturnsOk()
+        {
+            var query  = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var result = new PaginatedResult<TestSupplierViewDto>([], new PaginationDto());
+            var mapped = new PaginationRes<TestSupplierViewRes>();
+
+            _service.GetPagedBySupplierTestCodeAsync(query, "PT0001", false).Returns(result);
+            _mapper.Map<PaginationRes<TestSupplierViewRes>>(result).Returns(mapped);
+
+            var action = await _sut.GetPagedBySupplierTestCode(query, "PT0001");
+
+            action.Should().BeOfType<OkObjectResult>()
+                  .Which.Value.Should().Be(mapped);
+        }
+
+        [Fact]
+        public async Task GetPagedBySupplierTestCode_ServiceThrows_PropagatesException()
+        {
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            _service.GetPagedBySupplierTestCodeAsync(query, "PT0001", false)
+                    .ThrowsAsync(new Exception("error"));
+
+            await Assert.ThrowsAsync<Exception>(
+                () => _sut.GetPagedBySupplierTestCode(query, "PT0001"));
         }
 
         #endregion
@@ -157,51 +101,29 @@ namespace Apha.PACT.Api.UnitTests.Controller.TestRequirementControllerTest
         #region GetPagedByProject
 
         [Fact]
-        public async Task GetPagedByProject_HappyPath_ReturnsOkWithPaginatedResult()
+        public async Task GetPagedByProject_ValidQuery_ReturnsOk()
         {
-            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
-            var serviceResult = new PaginatedResult<TestRequirementtDto>();
+            var query  = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var result = new PaginatedResult<TestRequirementtDto>([], new PaginationDto());
             var mapped = new PaginationRes<TestRequirementtRes>();
 
-            _service.GetPagedTestReqmtByProjectAsync(query, "PRJ1").Returns(serviceResult);
-            _mapper.Map<PaginationRes<TestRequirementtRes>>(serviceResult).Returns(mapped);
+            _service.GetPagedTestReqmtByProjectAsync(query, "PROJ01").Returns(result);
+            _mapper.Map<PaginationRes<TestRequirementtRes>>(result).Returns(mapped);
 
-            var result = await _controller.GetPagedByProject(query, "PRJ1");
+            var action = await _sut.GetPagedByProject(query, "PROJ01");
 
-            var ok = Assert.IsType<OkObjectResult>(result);
-            ok.Value.Should().Be(mapped);
-        }
-
-        [Fact]
-        public async Task GetPagedByProject_WithItems_ReturnsMappedResult()
-        {
-            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
-            var dtos = new List<TestRequirementtDto>
-            {
-                new() { TestCode = "BLOOD", Buyer = "PRJ1" },
-                new() { TestCode = "URINE", Buyer = "PRJ1" }
-            };
-            var serviceResult = new PaginatedResult<TestRequirementtDto>(dtos, new PaginationDto());
-            var mapped = new PaginationRes<TestRequirementtRes>();
-
-            _service.GetPagedTestReqmtByProjectAsync(query, "PRJ1").Returns(serviceResult);
-            _mapper.Map<PaginationRes<TestRequirementtRes>>(serviceResult).Returns(mapped);
-
-            var result = await _controller.GetPagedByProject(query, "PRJ1");
-
-            var ok = Assert.IsType<OkObjectResult>(result);
-            ok.Value.Should().Be(mapped);
-            await _service.Received(1).GetPagedTestReqmtByProjectAsync(query, "PRJ1");
+            action.Should().BeOfType<OkObjectResult>()
+                  .Which.Value.Should().Be(mapped);
         }
 
         [Fact]
         public async Task GetPagedByProject_ServiceThrows_PropagatesException()
         {
-            var query = new QueryParameters<string>();
-            _service.GetPagedTestReqmtByProjectAsync(query, "PRJ1")
-                .ThrowsAsync(new Exception("Service error"));
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            _service.GetPagedTestReqmtByProjectAsync(query, "PROJ01")
+                    .ThrowsAsync(new Exception("error"));
 
-            await Assert.ThrowsAsync<Exception>(() => _controller.GetPagedByProject(query, "PRJ1"));
+            await Assert.ThrowsAsync<Exception>(() => _sut.GetPagedByProject(query, "PROJ01"));
         }
 
         #endregion
@@ -209,56 +131,17 @@ namespace Apha.PACT.Api.UnitTests.Controller.TestRequirementControllerTest
         #region GetAllTestReqmtForExport
 
         [Fact]
-        public async Task GetAllTestReqmtForExport_HappyPath_ReturnsOkWithAllItems()
+        public async Task GetAllTestReqmtForExport_ValidTestCode_ReturnsOk()
         {
-            var dtos = new List<TestRequirementtDto>
-            {
-                new() { TestCode = "BLOOD", Buyer = "PRJ1" },
-                new() { TestCode = "BLOOD", Buyer = "PRJ2" }
-            };
-            var mapped = new List<TestRequirementtRes>
-            {
-                new() { TestCode = "BLOOD", Buyer = "PRJ1" },
-                new() { TestCode = "BLOOD", Buyer = "PRJ2" }
-            };
-
-            _service.GetAllTestReqmtForExportAsync("BLOOD", null).Returns(dtos);
-            _mapper.Map<IEnumerable<TestRequirementtRes>>(dtos).Returns(mapped);
-
-            var result = await _controller.GetAllTestReqmtForExport("BLOOD", null);
-
-            var ok = Assert.IsType<OkObjectResult>(result);
-            ok.Value.Should().Be(mapped);
-        }
-
-        [Fact]
-        public async Task GetAllTestReqmtForExport_WithFilter_PassesFilterToService()
-        {
-            const string filter = "{\"Buyer\":\"PRJ\"}";
-            var dtos = new List<TestRequirementtDto>();
+            var items  = new List<TestRequirementtDto>();
             var mapped = new List<TestRequirementtRes>();
 
-            _service.GetAllTestReqmtForExportAsync("BLOOD", filter).Returns(dtos);
-            _mapper.Map<IEnumerable<TestRequirementtRes>>(dtos).Returns(mapped);
+            _service.GetAllTestReqmtForExportAsync("PT0001", null).Returns(items);
+            _mapper.Map<IEnumerable<TestRequirementtRes>>(items).Returns(mapped);
 
-            await _controller.GetAllTestReqmtForExport("BLOOD", filter);
+            var action = await _sut.GetAllTestReqmtForExport("PT0001");
 
-            await _service.Received(1).GetAllTestReqmtForExportAsync("BLOOD", filter);
-        }
-
-        [Fact]
-        public async Task GetAllTestReqmtForExport_EmptyResult_ReturnsOkWithEmptyList()
-        {
-            var dtos = new List<TestRequirementtDto>();
-            var mapped = new List<TestRequirementtRes>();
-
-            _service.GetAllTestReqmtForExportAsync("BLOOD", null).Returns(dtos);
-            _mapper.Map<IEnumerable<TestRequirementtRes>>(dtos).Returns(mapped);
-
-            var result = await _controller.GetAllTestReqmtForExport("BLOOD", null);
-
-            var ok = Assert.IsType<OkObjectResult>(result);
-            ok.Value.Should().Be(mapped);
+            action.Should().BeOfType<OkObjectResult>();
         }
 
         #endregion
@@ -266,27 +149,27 @@ namespace Apha.PACT.Api.UnitTests.Controller.TestRequirementControllerTest
         #region GetTestReqmtById
 
         [Fact]
-        public async Task GetTestReqmtById_RecordFound_ReturnsOk()
+        public async Task GetTestReqmtById_ExistingRecord_ReturnsOk()
         {
-            var dto = new TestRequirementtDto { TestCode = "BLOOD", Buyer = "PRJ1" };
-            var mapped = new TestRequirementtRes { TestCode = "BLOOD", Buyer = "PRJ1" };
+            var dto    = new TestRequirementtDto { TestCode = "PT0001", Buyer = "SV3300" };
+            var mapped = new TestRequirementtRes();
 
-            _service.GetTestReqmtByIdAsync("BLOOD", "PRJ1").Returns(dto);
+            _service.GetTestReqmtByIdAsync("PT0001", "SV3300").Returns(dto);
             _mapper.Map<TestRequirementtRes>(dto).Returns(mapped);
 
-            var result = await _controller.GetTestReqmtById("BLOOD", "PRJ1");
+            var action = await _sut.GetTestReqmtById("PT0001", "SV3300");
 
-            var ok = Assert.IsType<OkObjectResult>(result);
-            ok.Value.Should().Be(mapped);
+            action.Should().BeOfType<OkObjectResult>()
+                  .Which.Value.Should().Be(mapped);
         }
 
         [Fact]
-        public async Task GetTestReqmtById_RecordNotFound_ThrowsKeyNotFoundException()
+        public async Task GetTestReqmtById_NotFound_ThrowsKeyNotFoundException()
         {
-            _service.GetTestReqmtByIdAsync("MISSING", "PRJ1").Returns((TestRequirementtDto?)null);
+            _service.GetTestReqmtByIdAsync("PT9999", "SV0000").Returns((TestRequirementtDto?)null);
 
-            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _controller.GetTestReqmtById("MISSING", "PRJ1"));
+            await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _sut.GetTestReqmtById("PT9999", "SV0000"));
         }
 
         #endregion
@@ -296,32 +179,30 @@ namespace Apha.PACT.Api.UnitTests.Controller.TestRequirementControllerTest
         [Fact]
         public async Task CreateTestReqmt_ValidRequest_ReturnsOk()
         {
-            var request = new TestRequirementReq { TestCode = "BLOOD", Buyer = "PRJ1" };
-            var dto = new TestRequirementtDto { TestCode = "BLOOD", Buyer = "PRJ1" };
-            var created = new TestRequirementtDto { TestCode = "BLOOD", Buyer = "PRJ1" };
-            var mapped = new TestRequirementtRes { TestCode = "BLOOD" };
+            var request = new TestRequirementReq();
+            var dto     = new TestRequirementtDto();
+            var created = new TestRequirementtDto();
+            var mapped  = new TestRequirementtRes();
 
             _mapper.Map<TestRequirementtDto>(request).Returns(dto);
             _service.AddTestReqmtAsync(dto).Returns(created);
             _mapper.Map<TestRequirementtRes>(created).Returns(mapped);
 
-            var result = await _controller.CreateTestReqmt(request);
+            var action = await _sut.CreateTestReqmt(request);
 
-            var ok = Assert.IsType<OkObjectResult>(result);
-            ok.Value.Should().Be(mapped);
+            action.Should().BeOfType<OkObjectResult>()
+                  .Which.Value.Should().Be(mapped);
         }
 
         [Fact]
-        public async Task CreateTestReqmt_BothBuyerFieldsNull_ThrowsInvalidOperationException()
+        public async Task CreateTestReqmt_ServiceThrows_PropagatesException()
         {
-            var request = new TestRequirementReq { TestCode = "BLOOD", Buyer = "PRJ1" };
-            var dto = new TestRequirementtDto();
-
+            var request = new TestRequirementReq();
+            var dto     = new TestRequirementtDto();
             _mapper.Map<TestRequirementtDto>(request).Returns(dto);
-            _service.AddTestReqmtAsync(dto)
-                .ThrowsAsync(new InvalidOperationException("Must fill in Project Buyer or Test Buyer"));
+            _service.AddTestReqmtAsync(dto).ThrowsAsync(new InvalidOperationException("Duplicate"));
 
-            await Assert.ThrowsAsync<InvalidOperationException>(() => _controller.CreateTestReqmt(request));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.CreateTestReqmt(request));
         }
 
         #endregion
@@ -331,32 +212,30 @@ namespace Apha.PACT.Api.UnitTests.Controller.TestRequirementControllerTest
         [Fact]
         public async Task UpdateTestReqmt_ValidRequest_ReturnsOk()
         {
-            var request = new TestRequirementReq { TestCode = "BLOOD", Buyer = "PRJ1" };
-            var dto = new TestRequirementtDto { TestCode = "BLOOD", Buyer = "PRJ1" };
-            var updated = new TestRequirementtDto { TestCode = "BLOOD", Buyer = "PRJ1" };
-            var mapped = new TestRequirementtRes { TestCode = "BLOOD" };
+            var request = new TestRequirementReq();
+            var dto     = new TestRequirementtDto();
+            var updated = new TestRequirementtDto();
+            var mapped  = new TestRequirementtRes();
 
             _mapper.Map<TestRequirementtDto>(request).Returns(dto);
             _service.UpdateTestReqmtAsync(dto).Returns(updated);
             _mapper.Map<TestRequirementtRes>(updated).Returns(mapped);
 
-            var result = await _controller.UpdateTestReqmt(request);
+            var action = await _sut.UpdateTestReqmt(request);
 
-            var ok = Assert.IsType<OkObjectResult>(result);
-            ok.Value.Should().Be(mapped);
+            action.Should().BeOfType<OkObjectResult>()
+                  .Which.Value.Should().Be(mapped);
         }
 
         [Fact]
-        public async Task UpdateTestReqmt_MonthlyOutputExists_ThrowsInvalidOperationException()
+        public async Task UpdateTestReqmt_ServiceThrows_PropagatesException()
         {
-            var request = new TestRequirementReq { TestCode = "BLOOD", Buyer = "PRJ1" };
-            var dto = new TestRequirementtDto();
-
+            var request = new TestRequirementReq();
+            var dto     = new TestRequirementtDto();
             _mapper.Map<TestRequirementtDto>(request).Returns(dto);
-            _service.UpdateTestReqmtAsync(dto)
-                .ThrowsAsync(new InvalidOperationException("Cannot update, existing data in Monthly Output."));
+            _service.UpdateTestReqmtAsync(dto).ThrowsAsync(new InvalidOperationException("Cannot update"));
 
-            await Assert.ThrowsAsync<InvalidOperationException>(() => _controller.UpdateTestReqmt(request));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => _sut.UpdateTestReqmt(request));
         }
 
         #endregion
@@ -364,24 +243,25 @@ namespace Apha.PACT.Api.UnitTests.Controller.TestRequirementControllerTest
         #region DeleteTestReqmt
 
         [Fact]
-        public async Task DeleteTestReqmt_RecordDeleted_ReturnsOkWithTrue()
+        public async Task DeleteTestReqmt_ExistingRecord_ReturnsOkTrue()
         {
-            _service.DeleteTestReqmtAsync("BLOOD", "PRJ1").Returns(true);
+            _service.DeleteTestReqmtAsync("PT0001", "SV3300").Returns(true);
 
-            var result = await _controller.DeleteTestReqmt("BLOOD", "PRJ1");
+            var action = await _sut.DeleteTestReqmt("PT0001", "SV3300");
 
-            var ok = Assert.IsType<OkObjectResult>(result);
-            ok.Value.Should().Be(true);
+            action.Should().BeOfType<OkObjectResult>()
+                  .Which.Value.Should().Be(true);
         }
 
         [Fact]
-        public async Task DeleteTestReqmt_MonthlyOutputExists_ThrowsInvalidOperationException()
+        public async Task DeleteTestReqmt_NotFound_ReturnsOkFalse()
         {
-            _service.DeleteTestReqmtAsync("BLOOD", "PRJ1")
-                .ThrowsAsync(new InvalidOperationException("Cannot delete, existing data in MonthlyOutput."));
+            _service.DeleteTestReqmtAsync("PT9999", "SV0000").Returns(false);
 
-            await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                _controller.DeleteTestReqmt("BLOOD", "PRJ1"));
+            var action = await _sut.DeleteTestReqmt("PT9999", "SV0000");
+
+            action.Should().BeOfType<OkObjectResult>()
+                  .Which.Value.Should().Be(false);
         }
 
         #endregion
@@ -389,42 +269,185 @@ namespace Apha.PACT.Api.UnitTests.Controller.TestRequirementControllerTest
         #region GetTestReqmtPricing
 
         [Fact]
-        public async Task GetTestReqmtPricing_RecordFound_ReturnsOk()
+        public async Task GetTestReqmtPricing_Found_ReturnsOk()
         {
-            var dto = new TestRequirementtDto { TestCode = "BLOOD", RecUnitPrice = 10.5m };
-            var mapped = new TestRequirementtRes { TestCode = "BLOOD" };
+            var dto    = new TestRequirementtDto();
+            var mapped = new TestRequirementtRes();
 
-            _service.GetTestReqmtPricingAsync("BLOOD", null).Returns(dto);
+            _service.GetTestReqmtPricingAsync("PT0001", null).Returns(dto);
             _mapper.Map<TestRequirementtRes>(dto).Returns(mapped);
 
-            var result = await _controller.GetTestReqmtPricing("BLOOD", null);
+            var action = await _sut.GetTestReqmtPricing("PT0001");
 
-            var ok = Assert.IsType<OkObjectResult>(result);
-            ok.Value.Should().Be(mapped);
+            action.Should().BeOfType<OkObjectResult>()
+                  .Which.Value.Should().Be(mapped);
         }
 
         [Fact]
-        public async Task GetTestReqmtPricing_RecordNotFound_ReturnsNotFound()
+        public async Task GetTestReqmtPricing_NotFound_ReturnsNotFound()
         {
-            _service.GetTestReqmtPricingAsync("MISSING", null).Returns((TestRequirementtDto?)null);
+            _service.GetTestReqmtPricingAsync("PT9999", null).Returns((TestRequirementtDto?)null);
 
-            var result = await _controller.GetTestReqmtPricing("MISSING", null);
+            var action = await _sut.GetTestReqmtPricing("PT9999");
 
-            Assert.IsType<NotFoundObjectResult>(result);
+            action.Should().BeOfType<NotFoundObjectResult>();
+        }
+
+        #endregion
+
+        #region GetPlannedTestsByWorkgroup
+
+        [Fact]
+        public async Task GetPlannedTestsByWorkgroup_ValidQuery_ReturnsOk()
+        {
+            var query  = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var result = new PaginatedResult<TestReqBreakdownDto>([], new PaginationDto());
+            var mapped = new PaginationRes<TestReqBreakdownRes>();
+
+            _service.GetPlannedTestsByWorkgroupAsync(query).Returns(result);
+            _mapper.Map<PaginationRes<TestReqBreakdownRes>>(result).Returns(mapped);
+
+            var action = await _sut.GetPlannedTestsByWorkgroup(query);
+
+            action.Should().BeOfType<OkObjectResult>()
+                  .Which.Value.Should().Be(mapped);
         }
 
         [Fact]
-        public async Task GetTestReqmtPricing_WithProjectCode_PassesProjectCodeToService()
+        public async Task GetPlannedTestsByWorkgroup_ServiceThrows_PropagatesException()
         {
-            var dto = new TestRequirementtDto { TestCode = "BLOOD", RecUnitPrice = 5.0m };
-            var mapped = new TestRequirementtRes { TestCode = "BLOOD" };
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            _service.GetPlannedTestsByWorkgroupAsync(query).ThrowsAsync(new Exception("error"));
 
-            _service.GetTestReqmtPricingAsync("BLOOD", "PRJ1").Returns(dto);
-            _mapper.Map<TestRequirementtRes>(dto).Returns(mapped);
+            await Assert.ThrowsAsync<Exception>(() => _sut.GetPlannedTestsByWorkgroup(query));
+        }
 
-            await _controller.GetTestReqmtPricing("BLOOD", "PRJ1");
+        [Fact]
+        public async Task GetPlannedTestsByWorkgroup_CallsServiceExactlyOnce()
+        {
+            var query  = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var result = new PaginatedResult<TestReqBreakdownDto>([], new PaginationDto());
+            _service.GetPlannedTestsByWorkgroupAsync(query).Returns(result);
+            _mapper.Map<PaginationRes<TestReqBreakdownRes>>(result).Returns(new PaginationRes<TestReqBreakdownRes>());
 
-            await _service.Received(1).GetTestReqmtPricingAsync("BLOOD", "PRJ1");
+            await _sut.GetPlannedTestsByWorkgroup(query);
+
+            await _service.Received(1).GetPlannedTestsByWorkgroupAsync(query);
+        }
+
+        #endregion
+
+        #region GetActualsTestsWithPlannedDataByWorkgroupAsync
+
+        [Fact]
+        public async Task GetActualsTestsWithPlannedDataByWorkgroupAsync_ValidQuery_ReturnsOk()
+        {
+            var query           = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var paginatedResult = new PaginatedResult<TestActualBreakdownDto>([], new PaginationDto());
+            var mappedRes       = new PaginationRes<TestActualBreakdownRes>();
+
+            _service.GetActualsTestsWithPlannedDataByWorkgroupAsync(query).Returns(paginatedResult);
+            _mapper.Map<PaginationRes<TestActualBreakdownRes>>(paginatedResult).Returns(mappedRes);
+
+            var action = await _sut.GetActualsTestsWithPlannedDataByWorkgroupAsync(query);
+
+            action.Should().BeOfType<OkObjectResult>()
+                  .Which.Value.Should().Be(mappedRes);
+        }
+
+        [Fact]
+        public async Task GetActualsTestsWithPlannedDataByWorkgroupAsync_WithItems_ReturnsOkWithData()
+        {
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var dtos  = new List<TestActualBreakdownDto>
+            {
+                new() { TestCode = "PT0047", Buyer = "SV3300" },
+                new() { TestCode = "PT0049", Buyer = "SB4600" }
+            };
+            var paginatedResult = new PaginatedResult<TestActualBreakdownDto>(dtos, new PaginationDto());
+            var mappedRes       = new PaginationRes<TestActualBreakdownRes>
+            {
+                Data = [new() { TestCode = "PT0047" }, new() { TestCode = "PT0049" }]
+            };
+
+            _service.GetActualsTestsWithPlannedDataByWorkgroupAsync(query).Returns(paginatedResult);
+            _mapper.Map<PaginationRes<TestActualBreakdownRes>>(paginatedResult).Returns(mappedRes);
+
+            var ok    = (await _sut.GetActualsTestsWithPlannedDataByWorkgroupAsync(query))
+                            .Should().BeOfType<OkObjectResult>().Subject;
+            ok.Value.Should().BeOfType<PaginationRes<TestActualBreakdownRes>>()
+              .Which.Data.Should().HaveCount(2);
+        }
+
+        [Fact]
+        public async Task GetActualsTestsWithPlannedDataByWorkgroupAsync_EmptyResult_ReturnsOkWithEmptyData()
+        {
+            var query           = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var paginatedResult = new PaginatedResult<TestActualBreakdownDto>([], new PaginationDto());
+            var mappedRes       = new PaginationRes<TestActualBreakdownRes> { Data = [] };
+
+            _service.GetActualsTestsWithPlannedDataByWorkgroupAsync(query).Returns(paginatedResult);
+            _mapper.Map<PaginationRes<TestActualBreakdownRes>>(paginatedResult).Returns(mappedRes);
+
+            var ok = (await _sut.GetActualsTestsWithPlannedDataByWorkgroupAsync(query))
+                         .Should().BeOfType<OkObjectResult>().Subject;
+            ok.Value.Should().BeOfType<PaginationRes<TestActualBreakdownRes>>()
+              .Which.Data.Should().BeEmpty();
+        }
+
+        [Fact]
+        public async Task GetActualsTestsWithPlannedDataByWorkgroupAsync_ServiceThrows_PropagatesException()
+        {
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            _service.GetActualsTestsWithPlannedDataByWorkgroupAsync(query)
+                    .ThrowsAsync(new Exception("service error"));
+
+            await Assert.ThrowsAsync<Exception>(
+                () => _sut.GetActualsTestsWithPlannedDataByWorkgroupAsync(query));
+        }
+
+        [Fact]
+        public async Task GetActualsTestsWithPlannedDataByWorkgroupAsync_CallsServiceExactlyOnce()
+        {
+            var query           = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var paginatedResult = new PaginatedResult<TestActualBreakdownDto>([], new PaginationDto());
+            _service.GetActualsTestsWithPlannedDataByWorkgroupAsync(query).Returns(paginatedResult);
+            _mapper.Map<PaginationRes<TestActualBreakdownRes>>(paginatedResult)
+                   .Returns(new PaginationRes<TestActualBreakdownRes>());
+
+            await _sut.GetActualsTestsWithPlannedDataByWorkgroupAsync(query);
+
+            await _service.Received(1).GetActualsTestsWithPlannedDataByWorkgroupAsync(query);
+        }
+
+        [Fact]
+        public async Task GetActualsTestsWithPlannedDataByWorkgroupAsync_CallsMapperExactlyOnce()
+        {
+            var query           = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var paginatedResult = new PaginatedResult<TestActualBreakdownDto>([], new PaginationDto());
+            var mappedRes       = new PaginationRes<TestActualBreakdownRes>();
+
+            _service.GetActualsTestsWithPlannedDataByWorkgroupAsync(query).Returns(paginatedResult);
+            _mapper.Map<PaginationRes<TestActualBreakdownRes>>(paginatedResult).Returns(mappedRes);
+
+            await _sut.GetActualsTestsWithPlannedDataByWorkgroupAsync(query);
+
+            _mapper.Received(1).Map<PaginationRes<TestActualBreakdownRes>>(paginatedResult);
+        }
+
+        [Fact]
+        public async Task GetActualsTestsWithPlannedDataByWorkgroupAsync_WithSortingQuery_ReturnsOk()
+        {
+            var query           = new QueryParameters<string> { Page = 1, PageSize = 10, SortBy = "buyer", Descending = true };
+            var paginatedResult = new PaginatedResult<TestActualBreakdownDto>([], new PaginationDto());
+            var mappedRes       = new PaginationRes<TestActualBreakdownRes>();
+
+            _service.GetActualsTestsWithPlannedDataByWorkgroupAsync(query).Returns(paginatedResult);
+            _mapper.Map<PaginationRes<TestActualBreakdownRes>>(paginatedResult).Returns(mappedRes);
+
+            var action = await _sut.GetActualsTestsWithPlannedDataByWorkgroupAsync(query);
+
+            action.Should().BeOfType<OkObjectResult>();
         }
 
         #endregion

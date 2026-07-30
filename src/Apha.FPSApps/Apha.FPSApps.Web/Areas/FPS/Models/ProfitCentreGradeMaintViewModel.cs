@@ -1,5 +1,6 @@
 using Apha.FPSApps.Web.Models.Components.DataGrid;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.ComponentModel.DataAnnotations;
 
 namespace Apha.FPSApps.Web.Areas.FPS.Models
 {
@@ -13,6 +14,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Models
 
     public class ProfitCentreGradeMaintItem
     {
+        [Display(Name = "RCGrade")]
         [GridColumn(Width = 150, Type = GridColumnType.ReadOnly, IsVisible = true, IsFilterable = true)]
         public string PcGrade { get; set; } = null!;
 
@@ -22,6 +24,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Models
         [GridColumn(Width = 120, Type = GridColumnType.Dropdown, IsFilterable = true)]
         public string? GradeCode { get; set; }
 
+        [Display(Name = "RC")]
         [GridColumn(Width = 200, Type = GridColumnType.Dropdown, IsFilterable = true)]
         public string? ProfitCentre { get; set; }
 

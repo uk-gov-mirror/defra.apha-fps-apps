@@ -22,6 +22,7 @@ namespace Apha.FPSApps.Web.Mappings
             // ── Yearly details: Dto ↔ ViewModel/Item ─────────────────────────
             CreateMap<ProjectYearDto, ProjectYearRateItem>().ReverseMap();
             CreateMap<StaffRequirementDto, StaffRequirementItem>().ReverseMap();
+            CreateMap<StaffRequirementDto, StaffRequirementFormItem>().ReverseMap();
             CreateMap<TestRequirementDto, TestRequirementItem>().ReverseMap();
             CreateMap<AnimalRequirementDto, AnimalRequirementItem>().ReverseMap();
             CreateMap<AdditionalCostDto, AdditionalCostItem>().ReverseMap();

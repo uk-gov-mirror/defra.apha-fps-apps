@@ -47,6 +47,16 @@ namespace Apha.FPS.Api.Controllers
             return Ok(_mapper.Map<PaginationRes<WorkGroupEmployeeRes>>(result));
         }
 
+        [HttpGet("activestaff")]
+        public async Task<ActionResult> GetAllActiveWorkGroupEmployeesAsync(
+            [FromQuery] PaginationReq<string> query,
+            [FromQuery] string? wgGrade)
+        {
+            var filter = _mapper.Map<QueryParameters<string>>(query);
+            var result = await _workGroupEmployeeService.GetAllActiveWorkGroupEmployeesAsync(filter, wgGrade ?? string.Empty);
+            return Ok(_mapper.Map<PaginationRes<WorkGroupEmployeeRes>>(result));
+        }
+
         [HttpGet("{pactId}")]
         public async Task<ActionResult<WorkGroupEmployeeRes>> GetWorkGroupEmployeeByIdAsync(string pactId)
         {

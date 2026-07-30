@@ -173,6 +173,62 @@ namespace Apha.FPS.DataAccess.Repositories
             return ApplyPaging(sorted, query.Page, query.PageSize);
         }
 
+        public async Task<PagedData<WorkGroupEmployeeView>> GetAllActiveWorkGroupEmployeesAsync(
+            PaginationParameters<string> query, string wgGrade)
+        {
+            var workGroupEmployeeQuery = _dbContext.WorkGroupEmployees
+                .AsNoTracking()
+                .Where(wg => wg.WorkGroupGrade == wgGrade && wg.PersonStatus.ToUpper() != "I")
+                .Join(
+                    _dbContext.Employees.AsNoTracking(),
+                    wg => wg.SpNumber,
+                    e => e.SPNumber,
+                    (wg, e) => new
+                    {
+                        wg.PactId,
+                        wg.SpNumber,
+                        wg.WorkGroupGrade,
+                        Name = (e.LastName ?? "") + " " + (e.FirstName ?? ""),
+                        wg.PersonStatus,
+                        wg.PersonClass,
+                        wg.HrsPaid,
+                        wg.Leave,
+                        wg.SickSpecial,
+                        wg.HrsAvail,
+                        wg.MakeAvailable,
+                        wg.TimeRecorder,
+                        wg.StartDate,
+                        wg.EndDate,
+                        wg.HoursPerWeek
+                    })
+                .Distinct()
+                .Select(x => new WorkGroupEmployeeView
+                {
+                    PactId = x.PactId,
+                    SpNumber = x.SpNumber,
+                    WorkGroupGrade = x.WorkGroupGrade,
+                    Name = x.Name,
+                    PersonStatus = x.PersonStatus,
+                    PersonClass = x.PersonClass,
+                    HrsPaid = x.HrsPaid,
+                    Leave = x.Leave,
+                    SickSpecial = x.SickSpecial,
+                    HrsAvail = x.HrsAvail,
+                    MakeAvailable = x.MakeAvailable,
+                    TimeRecorder = x.TimeRecorder,
+                    StartDate = x.StartDate,
+                    EndDate = x.EndDate,
+                    HoursPerWeek = x.HoursPerWeek
+                })
+                .AsQueryable();
+
+            workGroupEmployeeQuery = ApplyFilter(workGroupEmployeeQuery, query.Filter);
+            workGroupEmployeeQuery = ApplySorting(workGroupEmployeeQuery, query.SortBy, query.Descending);
+
+            var result = await workGroupEmployeeQuery.ToListAsync();
+            return base.ApplyPaging(result, query.Page, query.PageSize);
+        }
+
         public async Task<bool> DeleteWorkGroupEmployeeAsync(string pactId)
         {
             var entity = await _dbContext.WorkGroupEmployees

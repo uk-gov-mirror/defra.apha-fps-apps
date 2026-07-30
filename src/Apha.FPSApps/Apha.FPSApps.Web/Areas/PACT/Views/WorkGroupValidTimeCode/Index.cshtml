@@ -18,14 +18,14 @@
 
     @* Work Group dropdown *@
     <div class="govuk-grid-column-one-third">
-        <label for="workGroupSelect" class="govuk-label govuk-!-font-weight-bold">Select a Work Group</label>
+        <label for="workGroupSelect" class="govuk-label govuk-!-font-weight-bold govuk-!-margin-top-1">Select a Work Group</label>
         <div style="position: relative; z-index: 50;">
             <input type="text" id="workGroupSelect" placeholder="Select Work Group" autocomplete="off"
                    class="govuk-input govuk-!-font-size-16 down-arrow-img" style="width:100%; cursor:pointer;" readonly />
             <div id="workGroupDropdownPanel" style="display:none; position:absolute; top:100%; left:0; width:100%;
                     max-height:260px; overflow-y:auto; background:#fff; border:1px solid #b1b4b6;
                     box-shadow:0 4px 8px rgba(0,0,0,.2); z-index:2000;">
-                <input type="text" id="workGroupSearchBox" placeholder="Type to search work group"
+                <input type="text" id="workGroupSearchBox" placeholder="Type to search work group"  aria-label="Search work group"
                        style="width:100%; padding:6px 8px; border:0; border-bottom:1px solid #b1b4b6; outline:none; box-sizing:border-box;" />
                 <table style="width:100%; border-collapse:collapse; font-size:14px;">
                     <thead style="background:#f3f2f1; position:sticky; top:0; z-index:10;">
@@ -59,14 +59,14 @@
     </div>
 </div>
 
-<div class="govuk-grid-column-full sup_flex_space_between sup_padding_left_8 sup_margin_bottom_10">
+<div class="govuk-grid-column-full sup_flex_space_between sup_padding_left_8 govuk-!-margin-top-2 sup_margin_bottom_10">
     <div class="sup_flex_center_start govuk-grid-column-two-thirds sup_p_0">
-        <label for="selectedProject" class="govuk-label govuk-!-font-weight-bold sup_margin_right_10">I have selected:</label>
+        <label for="selectedProject" class="govuk-label govuk-!-font-weight-bold  sup_margin_right_10">I have selected:</label>
         <input type="text" id="selectedProject" class="govuk-input govuk-!-width-one-third" readonly="" disabled="">
     </div>
     <div class="sup_float_right">
         <button type="button" class="govuk-button sup_p_8 sup_margin_0" id="btnShowProjectAdministraction" aria-label="Show me Project Administration" data-module="govuk-button" disabled>
-            Show me Project Administraction....
+            Show me Project Administration....
         </button>
     </div>
 </div>

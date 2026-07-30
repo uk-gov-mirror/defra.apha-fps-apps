@@ -1,3 +1,4 @@
+using Apha.Common.Constants;
 using Apha.Common.Contracts;
 using Apha.Common.Contracts.FPS;
 using Apha.FPSApps.Application.Dtos;
@@ -28,7 +29,7 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.FPS.FpsAdditionalCostApi
             new() { JobCode = jobCode, Account = "ACC001", Description = "Test Cost", ItemCost = 100m };
 
         private static AdditionalCostDto BuildDto(string jobCode = "JOB001") =>
-            new() { JobCode = jobCode, Account = "ACC001", Description = "Test Cost", ItemCost = 100m };
+            new() { JobCode = jobCode, Account = "ACC001", Description = "Test Cost", OriginalDescription = "Test Cost", ItemCost = 100m };
 
         #region GetAdditionalCostsAsync Tests
 
@@ -343,7 +344,7 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.FPS.FpsAdditionalCostApi
             var expectedDto = ApiResponseDto<AdditionalCostDto>.SuccessResponse(dto);
 
             _mapper.Map<AdditionalCostReq>(dto).Returns(req);
-            _http.PutAsync<AdditionalCostReq, AdditionalCostRes>("api/v1/additionalcost", req).Returns(apiResponse);
+            _http.PutAsync<AdditionalCostReq, AdditionalCostRes>(FpsApiEndpoints.UpdateAdditionalCost, req).Returns(apiResponse);
             _mapper.Map<ApiResponseDto<AdditionalCostDto>>(apiResponse).Returns(expectedDto);
 
             // Act
@@ -353,7 +354,7 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.FPS.FpsAdditionalCostApi
             Assert.NotNull(result);
             Assert.True(result.Success);
             _mapper.Received(1).Map<AdditionalCostReq>(dto);
-            await _http.Received(1).PutAsync<AdditionalCostReq, AdditionalCostRes>("api/v1/additionalcost", req);
+            await _http.Received(1).PutAsync<AdditionalCostReq, AdditionalCostRes>(FpsApiEndpoints.UpdateAdditionalCost, req);
         }
 
         [Fact]

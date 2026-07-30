@@ -9,27 +9,12 @@
 <!-- Page title bar -->
 <div class="govuk-grid-row sup_margin_left_right_0">
     <div class="govuk-grid-column-full sup_flex_align_center sup_border-bottom">
-        <h1 class="heading_with_txtbox govuk-heading-s sup_margin_bottom_0   govuk-!-margin-bottom-2 govuk-grid-column-one-third">
+        <h1 class="heading_with_txtbox govuk-heading-s sup_margin_bottom_0 govuk-!-margin-bottom-2 sup_whitespace_nowrap">
             Portfolio Time Codes for:           
         </h1>
         <div class="sup_flex_left_center govuk-grid-column-one-third">
-               
-            <label class="sup_hidden_label" for="sp-projectcode">project code</label>
-            <select id="sp-projectcode" class="govuk-select govuk-!-font-size-16 govuk-grid-column-three-quarters"
-                    style="margin-left: 10px;" onchange="onPortfolioChange(this.value)">
-                <option value="">-- Select Portfolio --</option>
-                @foreach (var option in Model.PortfolioOptions)
-                {
-                    if (option.Value == selectedPortfolio)
-                    {
-                        <option value="@option.Value" selected>@option.Text</option>
-                    }
-                    else
-                    {
-                        <option value="@option.Value">@option.Text</option>
-                    }
-                }
-            </select>
+            <div id="portfolioMultiDropdown" 
+                class="govuk-grid-column-two-thirds sup_p_0"></div>
         </div>
         <div class="govuk-grid-column-one-half sup_text_align_right">
             <a asp-area="PACT" asp-controller="PortfolioMaintenance" asp-action="Index" asp-route-portfolio="@Model.SelectedPortfolio"
@@ -41,7 +26,7 @@
 @if (!string.IsNullOrEmpty(selectedPortfolio))
 {
     <!-- Test Purchase Requirements Button -->
-    <div class="govuk-grid-row sup_margin_left_right_0 sup_margin_bottom_10">
+    <div class="govuk-grid-row sup_margin_left_right_0 govuk-!-margin-top-2">
         <div class="govuk-grid-column-full sup_text_align_right">
             <a asp-area="PACT" 
                asp-controller="PortfolioTimeCodes" 
@@ -93,7 +78,16 @@
     </div>
 </div>
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/common/multicolumn-dropdown.css" />
+}
+
 @section Scripts {
+    <script>
+        const portfolioOptionsListData = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.PortfolioOptions));
+        const selectedPortfolioValue = '@Html.Raw(Model.SelectedPortfolio ?? "")';
+    </script>
+    <script src="~/js/common/multicolumn-dropdown.component.js"></script>
     <script src="~/js/pact_js/portfolio-timecodes.js"></script>
     <script src="~/js/ajax-form-validation.js"></script>
     <script>

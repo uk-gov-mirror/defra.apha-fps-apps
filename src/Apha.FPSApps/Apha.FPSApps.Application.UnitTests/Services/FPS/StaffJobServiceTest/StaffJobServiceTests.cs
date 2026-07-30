@@ -777,5 +777,94 @@ namespace Apha.FPSApps.Application.UnitTests.Services.FPS.StaffJobServiceTest
         }
 
         #endregion
+
+        #region GetStaffResourceUtilisationAsync
+
+        [Fact]
+        public async Task GetStaffResourceUtilisationAsync_WithValidWorkgroup_ReturnsSuccessResponse()
+        {
+            // Arrange
+            const string workgroup = "WG01";
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var expectedData = new List<StaffResourceUtilisationDto>
+            {
+                new() { WorkGroup = workgroup, Name = "John Doe", WgGrade = "GR1", HrsAvail = 37.5, ApprovedSoct = 20.0 },
+                new() { WorkGroup = workgroup, Name = "Jane Smith", WgGrade = "GR2", HrsAvail = 30.0, ApprovedSoct = 15.0 }
+            };
+            var expectedResponse = ApiResponseDto<List<StaffResourceUtilisationDto>>.SuccessResponse(expectedData);
+
+            _fpsStaffJobApiClient.GetStaffResourceUtilisationAsync(query, workgroup).Returns(expectedResponse);
+
+            // Act
+            var result = await _staffJobService.GetStaffResourceUtilisationAsync(query, workgroup);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.NotNull(result.Data);
+            Assert.Equal(2, result.Data.Count);
+            Assert.Equal("John Doe", result.Data[0].Name);
+            Assert.Equal(37.5, result.Data[0].HrsAvail);
+            await _fpsStaffJobApiClient.Received(1).GetStaffResourceUtilisationAsync(query, workgroup);
+        }
+
+        [Fact]
+        public async Task GetStaffResourceUtilisationAsync_WithEmptyResult_ReturnsEmptyList()
+        {
+            // Arrange
+            const string workgroup = "WG_EMPTY";
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var expectedResponse = ApiResponseDto<List<StaffResourceUtilisationDto>>.SuccessResponse(
+                new List<StaffResourceUtilisationDto>());
+
+            _fpsStaffJobApiClient.GetStaffResourceUtilisationAsync(query, workgroup).Returns(expectedResponse);
+
+            // Act
+            var result = await _staffJobService.GetStaffResourceUtilisationAsync(query, workgroup);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Empty(result.Data!);
+            await _fpsStaffJobApiClient.Received(1).GetStaffResourceUtilisationAsync(query, workgroup);
+        }
+
+        [Fact]
+        public async Task GetStaffResourceUtilisationAsync_WhenApiFails_ReturnsFailureResponse()
+        {
+            // Arrange
+            const string workgroup = "WG01";
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var failureResponse = ApiResponseDto<List<StaffResourceUtilisationDto>>.FailureResponse(
+                new List<ApiErrorDto> { new() { Message = "API error" } }, new ApiMetaDto());
+
+            _fpsStaffJobApiClient.GetStaffResourceUtilisationAsync(query, workgroup).Returns(failureResponse);
+
+            // Act
+            var result = await _staffJobService.GetStaffResourceUtilisationAsync(query, workgroup);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            await _fpsStaffJobApiClient.Received(1).GetStaffResourceUtilisationAsync(query, workgroup);
+        }
+
+        [Fact]
+        public async Task GetStaffResourceUtilisationAsync_DelegatesDirectlyToApiClient()
+        {
+            // Arrange
+            const string workgroup = "WG02";
+            var query = new QueryParameters<string> { Page = 2, PageSize = 5 };
+            var response = ApiResponseDto<List<StaffResourceUtilisationDto>>.SuccessResponse(new List<StaffResourceUtilisationDto>());
+            _fpsStaffJobApiClient.GetStaffResourceUtilisationAsync(query, workgroup).Returns(response);
+
+            // Act
+            await _staffJobService.GetStaffResourceUtilisationAsync(query, workgroup);
+
+            // Assert — service is a thin pass-through; client called exactly once with same args
+            await _fpsStaffJobApiClient.Received(1).GetStaffResourceUtilisationAsync(query, workgroup);
+        }
+
+        #endregion
     }
 }

@@ -247,7 +247,7 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
             var types = await _jobCodeService.GetTypesAsync();
             var projects = await _projectService.GetAllPactProjectsAsync();
 
-            ViewBag.WorkGroups = workGroups.Data?.Select(w => new SelectListItem(w.WorkGroupName, w.WorkGroupName)).ToList() ?? [];
+            ViewBag.WorkGroupsData = workGroups.Data?.Select(w => new { Value = w.WorkGroupName, Text = (string.IsNullOrEmpty(w.ProfitCentre) ? "" : w.ProfitCentre) }).ToList() ?? [];
             ViewBag.Types = types.Data?.Select(t => new SelectListItem(t, t)).ToList() ?? [];
             ViewBag.Projects = projects.Data?.Select(p => new SelectListItem(p.ParentProject, p.ParentProject)).ToList() ?? [];
 
@@ -299,7 +299,7 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
             var types = await _jobCodeService.GetTypesAsync();
             var projects = await _projectService.GetAllPactProjectsAsync();
 
-            ViewBag.WorkGroups = workGroups.Data?.Select(w => new SelectListItem(w.WorkGroupName, w.WorkGroupName)).ToList() ?? [];
+            ViewBag.WorkGroupsData = workGroups.Data?.Select(w => new { Value = w.WorkGroupName, Text = (string.IsNullOrEmpty(w.ProfitCentre) ? "" : w.ProfitCentre) }).ToList() ?? [];
             ViewBag.Types = types.Data?.Select(t => new SelectListItem(t, t)).ToList() ?? [];
             ViewBag.Projects = projects.Data?.Select(p => new SelectListItem(p.ParentProject, p.ParentProject)).ToList() ?? [];
 

@@ -16,5 +16,6 @@ namespace Apha.FPSApps.Application.Interfaces.PactApiClients
         Task<ApiResponseDto<TestRequirementDto>> GetTestReqmtPricingAsync(string testCode, string? projectCode = null);
         Task<ApiResponseDto<List<TestSupplierViewDto>>> GetPagedBySupplierTestCodeAsync(
             QueryParameters<string> query, string testCode, bool showRejected);
+        Task<ApiResponseDto<List<TestReqBreakdownDto>>> GetPlannedTestsByWorkgroupAsync(QueryParameters<string> query);
     }
 }

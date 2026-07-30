@@ -43,6 +43,7 @@
   <ItemGroup>
     <Folder Include="Controller\JobCodeControllerTest\" />
     <Folder Include="Controller\UserPermissionControllerTest\" />
+    <Folder Include="Controller\WorkgroupControllerTest\" />
   </ItemGroup>
 
 

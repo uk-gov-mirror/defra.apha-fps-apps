@@ -9,7 +9,6 @@ public class StaffRequirementItem
     public int SrIdentity { get; set; }
 
     [Display(Name = "WG Grade")]
-    [Required(ErrorMessage = "WG Grade is required.")]
     [GridColumn(Order = 1, Width = 120, Type = GridColumnType.Text, IsFilterable = false)]
     public string WgGrade { get; set; } = null!;
 

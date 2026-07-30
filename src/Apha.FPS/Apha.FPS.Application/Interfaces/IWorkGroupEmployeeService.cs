@@ -7,6 +7,7 @@ namespace Apha.FPS.Application.Interfaces
     {
         Task<PaginatedResult<WorkGroupEmployeeDto>> GetWorkGroupEmployeeAsync(QueryParameters<string> query, string wgGrade);
         Task<PaginatedResult<WorkGroupEmployeeDto>> GetWorkGroupEmployeeForStaffAsync(QueryParameters<string> query, string wgGrade);
+        Task<PaginatedResult<WorkGroupEmployeeDto>> GetAllActiveWorkGroupEmployeesAsync(QueryParameters<string> query, string wgGrade);
         Task<WorkGroupEmployeeDto?> GetWorkGroupEmployeeByIdAsync(string pactId);
         
         Task<WorkGroupEmployeeDto> CreateWorkGroupEmployeeForStaffAsync(WorkGroupEmployeeDto dto);

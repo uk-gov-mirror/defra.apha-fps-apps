@@ -23,16 +23,17 @@
     </div>
     <form class="row" id="@formId">
         <input type="hidden" asp-for="JobCode" id="JobCode" />
+        @if (isEditMode)
+        {
+            <input type="hidden" name="OriginalDescription" id="OriginalDescription" value="@(Model.OriginalDescription ?? Model.Description)" />
+            <input type="hidden" name="OriginalAccount" id="OriginalAccount" value="@(Model.OriginalAccount ?? Model.Account)" />
+        }
         <div class="col-12">
             <div class="govuk-form-group sup_margin_0">
                 <label for="JobCode" class="govuk-label p-0">Job Code</label>
                 <input type="text" asp-for="JobCode" class="govuk-input sup_width_100" readonly>
             </div>
         </div>
-        @if (isEditMode)
-        {
-            <input type="hidden" asp-for="Account" id="OriginalAccount" />
-        }
         <div class="col-12">
             <div class="govuk-form-group sup_margin_0">
                 <label for="Description" class="govuk-label p-0">Description <span class="sup_color_red">*</span></label>
@@ -43,24 +44,72 @@
         <div class="col-12">
             <div class="govuk-form-group sup_margin_0">
                 <label for="Account" class="govuk-label p-0">Account <span class="sup_color_red">*</span></label>
-                @if (isEditMode)
-                {
-                    <input type="text" class="govuk-input sup_width_100" asp-for="@Model.Account" readonly />                    
+                @{
+                    var selectedAccountDisplay = Model.AccountList?
+                        .FirstOrDefault(a => string.Equals(a.Value, Model.Account, StringComparison.OrdinalIgnoreCase))?
+                        .Text.Split('|')[0].Trim() ?? string.Empty;
                 }
-                else
-                {
-                    <select id="Account" name="Account" required class="govuk-select sup_width_100">
+                <div style="position: relative;">
+                    <input type="text" id="AccountDisplay" placeholder="Select Account" autocomplete="off"
+                           value="@selectedAccountDisplay"
+                           class="govuk-input govuk-!-font-size-16 down-arrow-img" style="width:100%; cursor:pointer;" readonly
+                           onclick="toggleAccountPanel()" />
+                        <div id="AccountDropdownPanel" style="display:none; position:absolute; top:100%; left:0; width:100%;
+                                max-height:260px; overflow-y:auto; background:#fff; border:1px solid #b1b4b6;
+                                box-shadow:0 4px 8px rgba(0,0,0,.2); z-index:2000;">
+                            <input type="text" id="AccountSearchBox" placeholder="Type to search account..."
+                                   style="width:100%; padding:6px 8px; border:0; border-bottom:1px solid #b1b4b6; outline:none; box-sizing:border-box;"
+                                   oninput="filterAccountPanel(this.value)" />
+                            <table style="width:100%; border-collapse:collapse; font-size:14px;">
+                                <thead style="background:#f3f2f1; position:sticky; top:0; z-index:10;">
+                                    <tr>
+                                        <th style="padding:6px 8px; text-align:left;">Account</th>
+                                        <th style="padding:6px 8px; text-align:left;">Description</th>
+                                        <th style="padding:6px 8px; text-align:left;">Constituent Codes</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="AccountDropdownBody">
+                                    @if (Model.AccountList != null)
+                                    {
+                                        foreach (var account in Model.AccountList.Where(a => !string.IsNullOrEmpty(a.Value)))
+                                        {
+                                            var parts = account.Text.Split('|');
+                                            var accShortName = parts.Length > 0 ? parts[0].Trim() : string.Empty;
+                                            var accDesc = parts.Length > 1 ? parts[1].Trim() : string.Empty;
+                                            var accConstituent = parts.Length > 2 ? parts[2].Trim() : string.Empty;
+                                            <tr data-value="@account.Value" data-display="@accShortName"
+                                                onclick="selectAccount('@account.Value', '@Html.Raw(accShortName.Replace("'", "\\'"))', this)"
+                                                style="cursor:pointer;">
+                                                <td style="padding:6px 8px; border-bottom:1px solid #f3f2f1;">@accShortName</td>
+                                                <td style="padding:6px 8px; border-bottom:1px solid #f3f2f1;">@accDesc</td>
+                                                <td style="padding:6px 8px; border-bottom:1px solid #f3f2f1;">@accConstituent</td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    @* hidden select — keeps Account binding + server-side validation *@
+                    <select id="Account" name="Account" required style="display:none;">
                         <option value="">-- Select Account --</option>
                         @if (Model.AccountList != null)
                         {
                             foreach (var account in Model.AccountList)
                             {
-                                <option value="@account.Value">@account.Text</option>
+                                var accCode = account.Text.Split('|')[0].Trim();
+                                if (account.Selected)
+                                {
+                                    <option value="@account.Value" selected>@accCode</option>
+                                }
+                                else
+                                {
+                                    <option value="@account.Value">@accCode</option>
+                                }
                             }
                         }
                     </select>
                     <span asp-validation-for="Account" class="govuk-error-message" style="display:none;"></span>
-                }
             </div>
         </div>
         <div class="col-12">

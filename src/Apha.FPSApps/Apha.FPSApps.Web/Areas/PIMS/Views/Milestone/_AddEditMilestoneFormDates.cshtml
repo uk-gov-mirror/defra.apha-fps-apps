@@ -37,6 +37,7 @@
                            type="text" placeholder="e.g. 2026"
                            maxlength="4" pattern="\d{4}" min="1900" max="2100"
                            style="width: 100%;"
+                           aria-label="Financial Year"
                            required="@(yearReadonly is null ? "required" : null)"
                            readonly="@yearReadonly" />
                     <span asp-validation-for="Year" class="govuk-error-message" style="display:none;"></span>
@@ -50,6 +51,7 @@
                                    value="@Model.Jun?.ToString("dd/MM/yyyy")"
                                    placeholder="dd/mm/yyyy" maxlength="10"
                                    autocomplete="off"
+                                   aria-label="Jun date"
                                    oninput="formatDateInput(this)"
                                    onblur="validateAndSyncDate('JunDisplay', 'JunBinding', 'JunError')"
                                    style="flex:1;">
@@ -60,6 +62,7 @@
                                    value="@(Model.Jun.HasValue ? Model.Jun.Value.ToString("yyyy-MM-dd") : string.Empty)">
                             <input type="date" id="JunPicker"
                                    value="@(Model.Jun.HasValue ? Model.Jun.Value.ToString("yyyy-MM-dd") : string.Empty)"
+                                   aria-label="Jun date picker"
                                    style="position:absolute; top:0; left:0; opacity:0; width:1px; height:1px; pointer-events:auto;"
                                    onchange="syncDateToText('JunPicker', 'JunDisplay', 'JunBinding', 'JunError')">
                         </div>
@@ -72,6 +75,7 @@
                                    value="@Model.Sep?.ToString("dd/MM/yyyy")"
                                    placeholder="dd/mm/yyyy" maxlength="10"
                                    autocomplete="off"
+                                   aria-label="Sep date"
                                    oninput="formatDateInput(this)"
                                    onblur="validateAndSyncDate('SepDisplay', 'SepBinding', 'SepError')"
                                    style="flex:1;">
@@ -82,6 +86,7 @@
                                    value="@(Model.Sep.HasValue ? Model.Sep.Value.ToString("yyyy-MM-dd") : string.Empty)">
                             <input type="date" id="SepPicker"
                                    value="@(Model.Sep.HasValue ? Model.Sep.Value.ToString("yyyy-MM-dd") : string.Empty)"
+                                   aria-label="Sep date picker"
                                    style="position:absolute; top:0; left:0; opacity:0; width:1px; height:1px; pointer-events:auto;"
                                    onchange="syncDateToText('SepPicker', 'SepDisplay', 'SepBinding', 'SepError')">
                         </div>
@@ -94,6 +99,7 @@
                                    value="@Model.Dec?.ToString("dd/MM/yyyy")"
                                    placeholder="dd/mm/yyyy" maxlength="10"
                                    autocomplete="off"
+                                   aria-label="Dec date"
                                    oninput="formatDateInput(this)"
                                    onblur="validateAndSyncDate('DecDisplay', 'DecBinding', 'DecError')"
                                    style="flex:1;">
@@ -104,6 +110,7 @@
                                    value="@(Model.Dec.HasValue ? Model.Dec.Value.ToString("yyyy-MM-dd") : string.Empty)">
                             <input type="date" id="DecPicker"
                                    value="@(Model.Dec.HasValue ? Model.Dec.Value.ToString("yyyy-MM-dd") : string.Empty)"
+                                   aria-label="Dec date picker"
                                    style="position:absolute; top:0; left:0; opacity:0; width:1px; height:1px; pointer-events:auto;"
                                    onchange="syncDateToText('DecPicker', 'DecDisplay', 'DecBinding', 'DecError')">
                         </div>
@@ -116,6 +123,7 @@
                                    value="@Model.Jan?.ToString("dd/MM/yyyy")"
                                    placeholder="dd/mm/yyyy" maxlength="10"
                                    autocomplete="off"
+                                   aria-label="Jan date"
                                    oninput="formatDateInput(this)"
                                    onblur="validateAndSyncDate('JanDisplay', 'JanBinding', 'JanError')"
                                    style="flex:1;">
@@ -126,6 +134,7 @@
                                    value="@(Model.Jan.HasValue ? Model.Jan.Value.ToString("yyyy-MM-dd") : string.Empty)">
                             <input type="date" id="JanPicker"
                                    value="@(Model.Jan.HasValue ? Model.Jan.Value.ToString("yyyy-MM-dd") : string.Empty)"
+                                   aria-label="Jan date picker"
                                    style="position:absolute; top:0; left:0; opacity:0; width:1px; height:1px; pointer-events:auto;"
                                    onchange="syncDateToText('JanPicker', 'JanDisplay', 'JanBinding', 'JanError')">
                         </div>
@@ -138,6 +147,7 @@
                                    value="@Model.Feb?.ToString("dd/MM/yyyy")"
                                    placeholder="dd/mm/yyyy" maxlength="10"
                                    autocomplete="off"
+                                   aria-label="Feb date"
                                    oninput="formatDateInput(this)"
                                    onblur="validateAndSyncDate('FebDisplay', 'FebBinding', 'FebError')"
                                    style="flex:1;">
@@ -148,6 +158,7 @@
                                    value="@(Model.Feb.HasValue ? Model.Feb.Value.ToString("yyyy-MM-dd") : string.Empty)">
                             <input type="date" id="FebPicker"
                                    value="@(Model.Feb.HasValue ? Model.Feb.Value.ToString("yyyy-MM-dd") : string.Empty)"
+                                   aria-label="Feb date picker"
                                    style="position:absolute; top:0; left:0; opacity:0; width:1px; height:1px; pointer-events:auto;"
                                    onchange="syncDateToText('FebPicker', 'FebDisplay', 'FebBinding', 'FebError')">
                         </div>
@@ -160,6 +171,7 @@
                                    value="@Model.Mar?.ToString("dd/MM/yyyy")"
                                    placeholder="dd/mm/yyyy" maxlength="10"
                                    autocomplete="off"
+                                   aria-label="Mar date"
                                    oninput="formatDateInput(this)"
                                    onblur="validateAndSyncDate('MarDisplay', 'MarBinding', 'MarError')"
                                    style="flex:1;">
@@ -170,6 +182,7 @@
                                    value="@(Model.Mar.HasValue ? Model.Mar.Value.ToString("yyyy-MM-dd") : string.Empty)">
                             <input type="date" id="MarPicker"
                                    value="@(Model.Mar.HasValue ? Model.Mar.Value.ToString("yyyy-MM-dd") : string.Empty)"
+                                   aria-label="Mar date picker"
                                    style="position:absolute; top:0; left:0; opacity:0; width:1px; height:1px; pointer-events:auto;"
                                    onchange="syncDateToText('MarPicker', 'MarDisplay', 'MarBinding', 'MarError')">
                         </div>

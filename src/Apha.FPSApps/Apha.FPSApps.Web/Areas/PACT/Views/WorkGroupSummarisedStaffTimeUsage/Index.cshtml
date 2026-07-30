@@ -9,7 +9,7 @@
 <div class="govuk-grid-row sup_margin_left_right_0">
     <div class="govuk-grid-column-full  sup_flex_space_center sup_border-bottom">
         <div class="sup_flex_center_start govuk-grid-column-full sup_p_0 sup_margin_0">
-            <h1 class="sup_padding_bottom_10 govuk-grid-column-one-third sup_p_0">Time Usage "Spreadsheet" for </h1>
+            <h1 class="govuk-heading-s sup_whitespace_nowrap govuk-!-margin-top-2">Time Usage "Spreadsheet" for </h1>
             <div class="govuk-grid-column-three-quarters sup_margin_tb_5 sup_padding_right_8 sup_flex_gap_10">
                 <div class="govuk-!-width-one-half">
                     <input type="text" id="txtselectedPersonname" class="govuk-input govuk-!-font-size-16" asp-for="@Model.SelectedPersonName" aria-label="Person Name" disabled>
@@ -23,7 +23,7 @@
                 </div>
             </div>
         </div>
-        <div class="govuk-grid-column-one-half">
+        <div class="govuk-grid-column-one-quarter sup_flex_end_center">
             <a asp-area="PACT"
                asp-controller="WorkGroupPeople"
                asp-action="Index"
@@ -31,7 +31,7 @@
                class="govuk-back-link sup_align_right sup_margin_0 sup_font_weight_700">
                 Back
             </a>
-            </div>
+        </div>
     </div>
 </div>
 
@@ -56,7 +56,7 @@
                                     <div class="column-total-label">Total time for the Month:</div>
                                     @for (int i = 0; i < 12; i++)
                                     {
-                                        <div class="column-total">@(totals[i] == 0 ? "" : totals[i].ToString("0.##"))</div>
+                                        <div class="column-total">@(totals[i].ToString("0.##"))</div>
                                     }
                                     <div class="column-total">@s.GrandTotalTime.ToString("0.##")</div>
                                     <div class="column-total">£@s.GrandTotalCost.ToString("N2")</div>
@@ -68,10 +68,10 @@
                             @for (int i = 0; i < 12; i++)
                                     {
                                 <div class="column-total" id="stndHrs_april">
-                                    @(totals[i] == 0 ? "" : s.StandardHoursPerMonth.ToString("0.##"))
+                                    @(s.StandardHoursPerMonth.ToString("0.##"))
                                 </div>                        
                                         }
-                             <div class="column-total" id="stndHrs_time">@(s.TotalStandardHours == 0 ? "" : s.TotalStandardHours.ToString("0.##"))</div>
+                             <div class="column-total" id="stndHrs_time">@(s.TotalStandardHours.ToString("0.##"))</div>
                             <div class="column-total" id="stndHrs_cost">&nbsp;</div>
                          </div>
                      
@@ -84,9 +84,9 @@
                         {
                                 <div class="column-total">
                                     
-                                    @(totals[i] == 0 ? "" : pcts[i].ToString("0.#") + "%")</div>
+                                    @(pcts[i].ToString("0.#") + "%")</div>
                         }
-                            <div class="column-total">@(s.GrandTotalPercentAllocated == 0 ? "" : s.GrandTotalPercentAllocated.ToString("0.#") + "%")</div>
+                            <div class="column-total">@(s.GrandTotalPercentAllocated.ToString("0.#") + "%")</div>
                             <div class="column-total"></div>
                      
                         </div> 
@@ -94,16 +94,16 @@
             }
         </div>
     </div>
-    <div class="govuk-grid-row sup_margin_left_right_0 sup_margin_bottom_10">
-        <div class="govuk-grid-column-one-quarter sup_mr_0_pr_0">
+    <div class="govuk-grid-row sup_margin_left_right_0 sup_margin_bottom_10 ">
+        <div class="govuk-grid-column-one-quarter sup_mr_0_pr_0 govuk-!-margin-top-1">
             <div class="sup_flex_between_center">
                 <label for="txtJobCode" class="govuk-label govuk-!-font-weight-bold sup_visually_hidden">Selected Project:</label>
                 <input type="text" id="txtJobCode" class="govuk-input govuk-!-font-size-16" readonly="">
-                <span class="sup_margin_left_10">is</span>
+                <span class="sup_margin_left_10 govuk-!-font-size-19">is</span>
             </div>
         </div>
 
-        <div class="govuk-grid-column-one-half">
+        <div class="govuk-grid-column-one-half govuk-!-margin-top-1">
             <label for="txtJobTitle" class="govuk-label govuk-!-font-weight-bold sup_visually_hidden">Project Description:</label>
             <input type="text" id="txtJobTitle" class="govuk-input govuk-!-font-size-16" readonly="">
         </div>

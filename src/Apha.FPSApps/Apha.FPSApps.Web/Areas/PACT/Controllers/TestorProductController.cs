@@ -169,13 +169,13 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
                 return Json(new { success = false, message = "Item Code cannot be null or empty." });
             }
 
-            var response = await _testListService.DeleteTestOrProductAsync(itemCode);
-            if (response.Success && response.Data)
-            {
-                return Json(new { success = true, message = $"Test/Product with Item Code '{itemCode}' deleted successfully." });
-            }
+            var result = await _testListService.DeleteTestOrProductAsync(itemCode);
 
-            return Json(new { success = false, message = $"Test/Product with Item Code '{itemCode}' not found or could not be deleted." });
+            if (result.Success)
+                return Json(new { success = true, message = $"Test/Product with Item Code '{itemCode}' deleted successfully." });
+
+            var errorMessage = result.Errors?.FirstOrDefault()?.Message ?? "Delete failed";
+            return Json(new { success = false, message = errorMessage });
         }
 
         private async Task<DataGridConfig<TestOrProductViewModel>>  GetTestOrProductGridConfigAsync(PaginationFilter<string> request)

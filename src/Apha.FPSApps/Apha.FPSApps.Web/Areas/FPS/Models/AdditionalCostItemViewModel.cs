@@ -40,5 +40,11 @@ namespace Apha.FPSApps.Web.Areas.FPS.Models
 
         [GridColumn(IsVisible = false)]
         public List<SelectListItem> AccountList { get; set; } = new List<SelectListItem>();
+
+        [GridColumn(Type = GridColumnType.ReadOnly, IsVisible = false)]
+        public string? OriginalDescription { get; set; }
+
+        [GridColumn(Type = GridColumnType.ReadOnly, IsVisible = false)]
+        public string? OriginalAccount { get; set; }
     }
 }

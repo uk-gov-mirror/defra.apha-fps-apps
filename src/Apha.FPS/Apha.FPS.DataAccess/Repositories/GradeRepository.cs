@@ -17,7 +17,6 @@ namespace Apha.FPS.DataAccess.Repositories
         {
         }
 
-        // TRANSFORMENGINE: GetAllPagedAsync — paged list with optional JSON filter and sort
         public async Task<PagedData<Grade>> GetAllPagedAsync(PaginationParameters<string> query)
         {
             ArgumentNullException.ThrowIfNull(query);
@@ -31,7 +30,6 @@ namespace Apha.FPS.DataAccess.Repositories
             return ApplyPaging(list, query.Page, query.PageSize);
         }
 
-        // TRANSFORMENGINE: GetByIdAsync — single GradeCode lookup; FpsYear filter applied by DbContext HasQueryFilter
         public async Task<Grade?> GetByIdAsync(string gradeCode)
         {
             if (string.IsNullOrWhiteSpace(gradeCode))
@@ -44,12 +42,10 @@ namespace Apha.FPS.DataAccess.Repositories
                 .FirstOrDefaultAsync(g => g.GradeCode == gradeCode);
         }
 
-        // TRANSFORMENGINE: CreateAsync — duplicate guard then Add + SaveChangesAsync; FpsYear from FilterFpsYear
         public async Task<Grade> CreateAsync(Grade grade)
         {
             ArgumentNullException.ThrowIfNull(grade);
 
-            // TRANSFORMENGINE: inject the active FPS year so the partition key is always set correctly
             grade.FpsYear = _context.FilterFpsYear;
 
             var exists = await _context.Grades
@@ -67,7 +63,6 @@ namespace Apha.FPS.DataAccess.Repositories
             return grade;
         }
 
-        // TRANSFORMENGINE: UpdateAsync — GradeCode rename uses delete-and-reinsert; non-rename updates properties in place
         public async Task<Grade> UpdateAsync(string originalCode, Grade grade)
         {
             ArgumentNullException.ThrowIfNull(grade);
@@ -77,12 +72,10 @@ namespace Apha.FPS.DataAccess.Repositories
                 throw new ArgumentException("Original grade code is required.", nameof(originalCode));
             }
 
-            // TRANSFORMENGINE: inject active FPS year before persisting
             grade.FpsYear = _context.FilterFpsYear;
 
             if (!originalCode.Equals(grade.GradeCode, StringComparison.OrdinalIgnoreCase))
             {
-                // TRANSFORMENGINE: PK is changing — delete old row and insert new row
                 var existing = await _context.Grades
                     .FirstOrDefaultAsync(g => g.GradeCode == originalCode);
 
@@ -101,7 +94,6 @@ namespace Apha.FPS.DataAccess.Repositories
             }
             else
             {
-                // TRANSFORMENGINE: same PK — update properties in place
                 var existing = await _context.Grades
                     .FirstOrDefaultAsync(g => g.GradeCode == originalCode);
 
@@ -121,7 +113,6 @@ namespace Apha.FPS.DataAccess.Repositories
             }
         }
 
-        // TRANSFORMENGINE: DeleteAsync — guard empty key, Remove + SaveChangesAsync, returns bool
         public async Task<bool> DeleteAsync(string gradeCode)
         {
             if (string.IsNullOrWhiteSpace(gradeCode))
@@ -142,7 +133,6 @@ namespace Apha.FPS.DataAccess.Repositories
             return true;
         }
 
-        // TRANSFORMENGINE: ApplyFilter — JSON-keyed dictionary; supports GradeCode and Description (DescLong) filtering
         private static IQueryable<Grade> ApplyFilter(IQueryable<Grade> query, string? filter)
         {
             if (string.IsNullOrWhiteSpace(filter))
@@ -160,14 +150,12 @@ namespace Apha.FPS.DataAccess.Repositories
 
             if (filterDict.TryGetValue("Description", out var description) && description != null)
             {
-                // TRANSFORMENGINE: "Description" filter key maps to DescLong column (desc_long in DDL)
                 query = query.Where(x => x.DescLong != null && EF.Functions.ILike(x.DescLong, $"%{description}%"));
             }
 
             return query;
         }
 
-        // TRANSFORMENGINE: ApplySorting — switch on lower-invariant sort key; default order by GradeCode
         private static IQueryable<Grade> ApplySorting(IQueryable<Grade> query, string? sortBy, bool descending)
         {
             return sortBy?.ToLowerInvariant() switch
@@ -179,7 +167,6 @@ namespace Apha.FPS.DataAccess.Repositories
             };
         }
 
-        // TRANSFORMENGINE: Order<TKey> — generic ascending/descending helper (pattern from DivisionGradeRepository)
         private static IQueryable<Grade> Order<TKey>(
             IQueryable<Grade> query,
             System.Linq.Expressions.Expression<Func<Grade, TKey>> keySelector,

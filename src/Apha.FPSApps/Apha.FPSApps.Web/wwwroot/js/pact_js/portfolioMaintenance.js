@@ -7,6 +7,10 @@ var currentWorkGroup = '';
 var currentPortfolio = '';
 let portfolioSelectDropdown = null;
 let selectedPortfolio = null;
+let programSelectDropdown = null;
+let selectedProgram = null;
+let testCodeSelectDropdown = null;
+let selectedTestCodeDropdownValue = null;
 function toggleSidebar() {
     document.querySelector('#shortnav').classList.toggle('collapsed');
 }
@@ -14,6 +18,8 @@ function toggleSidebar() {
 // ── Portfolio dropdown init ───────────────────────────────────────────────
 $(document).ready(function () {
     initializePortfolioMultiColumnDropdown();
+    initializeProgramMultiColumnDropdown();
+    
     var $panel = $('#portfolioDropdownPanel');
     var $input = $('#dpselectportfolio');
     var $rows  = $('#portfolioDropdownBody tr');
@@ -197,6 +203,10 @@ function loadPortfolioData(parentProject) {
                 $('#txtProjectTitle').val(d.projectTitle || '');
                 $('#chkFinished').prop('checked', d.finished === -1 || d.finished === true);
                 $('#dpProgramme').val(d.program || '');
+                if (d.program && programSelectDropdown) {
+                    programSelectDropdown.setValue(String(d.program));
+                }
+                
                 $('#dpManager').val(d.manager || '');
                 $('#txtBudgetCvl').val(formatToTwoDecimals(d.budgetCvl || '0'));
                 $('#txtTransferIncome').val(formatToTwoDecimals(d.transferIncome || '0'));
@@ -262,6 +272,7 @@ function addConstituentTest() {
             $('#modaPopupBody').html(html);
             $('#modalPopup').addClass('show');
             $('#modaPopupBody').data('submitFn', 'saveConstituentTest');
+            initializeTestCodeMultiColumnDropdown();
         });
 }
 
@@ -483,4 +494,64 @@ function initializePortfolioMultiColumnDropdown() {
         }
     });
    
+}
+
+function initializeProgramMultiColumnDropdown() {
+    programSelectDropdown = new MultiColumnDropdownComponent({
+        dropdownId: 'programSelectDropdown',
+        containerSelector: '#programSelectMultiDropdown',
+        placeholder: 'Select a Program',
+        showSerialNumber: false,
+        searchPlaceholder: 'Search by Program',
+        labelText: '',
+        columns: [
+            { field: 'Value', header: 'Program No', width: '80px' },
+            { field: 'Text', header: 'Program Name', width: '150px' }
+        ],
+        data: programOptionsListData,
+        displayField: 'Text',
+        valueField: 'Value',
+        clearButtonClearsSelection: true,
+        callbacks: {
+            onSelect: function (selectedItem, dropdown) {
+                selectedProgram = selectedItem.Value;
+
+                $('#dpProgramme').val(selectedProgram);
+            },
+            onClear: function (dropdown) {
+                $('#dpProgramme').val('');
+                programSelectDropdown.clear();
+            }
+        }
+    });
+}
+
+function initializeTestCodeMultiColumnDropdown() {
+    testCodeSelectDropdown = new MultiColumnDropdownComponent({
+        dropdownId: 'testCodeSelectDropdown',
+        containerSelector: '#testCodeSelectMultiDropdown',
+        placeholder: 'Select a Test Code',
+        showSerialNumber: false,
+        searchPlaceholder: 'Search by Test Code',
+        labelText: '',
+        columns: [
+            { field: 'Value', header: 'Test Code', width: '100px' },
+            { field: 'Text', header: 'Test Description', width: '180px' }
+        ],
+        data: testCodeOptionsListData,
+        displayField: 'Text',
+        valueField: 'Value',
+        clearButtonClearsSelection: true,
+        callbacks: {
+            onSelect: function (selectedItem, dropdown) {
+                selectedTestCodeDropdownValue = selectedItem.Value;
+                $('#txtmodal-testcode').val(selectedItem.Value);
+                
+            },
+            onClear: function (dropdown) {
+                testCodeSelectDropdown = null;
+                $('#txtmodal-testcode').val('');
+            }
+        }
+    });
 }

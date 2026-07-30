@@ -19,7 +19,6 @@ namespace Apha.FPS.Api.Controllers
         private readonly IGradeService _gradeService;
         private readonly IMapper _mapper;
 
-        // TRANSFORMENGINE: constructor — inject IGradeService (service-only, no direct repository injection)
         public GradeController(IGradeService gradeService, IMapper mapper)
         {
             _gradeService = gradeService ?? throw new ArgumentNullException(nameof(gradeService));
@@ -31,7 +30,6 @@ namespace Apha.FPS.Api.Controllers
         /// </summary>
         /// <param name="query">Pagination, filter, and sort parameters.</param>
         /// <returns>Paginated list of <see cref="GradeRes"/>.</returns>
-        // TRANSFORMENGINE: GET paged — maps to frmMaintGrade list/search; delegates to IGradeService.GetAllPagedAsync
         [HttpGet("paged")]
         public async Task<ActionResult> GetAllPagedAsync([FromQuery] QueryParameters<string> query)
         {
@@ -48,7 +46,6 @@ namespace Apha.FPS.Api.Controllers
         /// </summary>
         /// <param name="gradeCode">Grade code identifier.</param>
         /// <returns><see cref="GradeRes"/> if found.</returns>
-        // TRANSFORMENGINE: GET by id — maps to frmMaintGrade single-record load; delegates to IGradeService.GetByIdAsync
         [HttpGet("{gradeCode}")]
         public async Task<ActionResult<GradeRes>> GetByIdAsync(string gradeCode)
         {
@@ -65,7 +62,6 @@ namespace Apha.FPS.Api.Controllers
         /// </summary>
         /// <param name="request">Grade creation request.</param>
         /// <returns>Created <see cref="GradeRes"/>.</returns>
-        // TRANSFORMENGINE: POST create — maps to frmMaintGrade add operation; GradeReq → GradeDto via IMapper
         [HttpPost]
         public async Task<ActionResult<GradeRes>> CreateAsync([FromBody] GradeReq request)
         {
@@ -80,7 +76,6 @@ namespace Apha.FPS.Api.Controllers
         /// <param name="gradeCode">Original grade code to identify the record.</param>
         /// <param name="request">Grade update request (may contain a new GradeCode for rename).</param>
         /// <returns>Updated <see cref="GradeRes"/>.</returns>
-        // TRANSFORMENGINE: PUT update — maps to frmMaintGrade edit/save; originalCode passed to support GradeCode rename
         [HttpPut("{gradeCode}")]
         public async Task<ActionResult<GradeRes>> UpdateAsync(
             string gradeCode,
@@ -96,7 +91,6 @@ namespace Apha.FPS.Api.Controllers
         /// </summary>
         /// <param name="gradeCode">Grade code of the record to delete.</param>
         /// <returns>True if deletion succeeded.</returns>
-        // TRANSFORMENGINE: DELETE — maps to frmMaintGrade delete operation; null/empty guard matches DivisionGradeController pattern
         [HttpDelete("{gradeCode}")]
         public async Task<IActionResult> DeleteAsync(string gradeCode)
         {

@@ -32,7 +32,6 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.GradeRepositoryTest
                 AvSickHrs   = avSickHrs
             };
 
-        // TRANSFORMENGINE: CreateRepository — read-only scenarios (no write verification needed)
         private static GradeRepository CreateRepository(IEnumerable<Grade>? grades = null)
         {
             var mockFpsYearContext = new Mock<IFpsRequestContext>();
@@ -51,7 +50,6 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.GradeRepositoryTest
             return new GradeRepository(mockContext.Object);
         }
 
-        // TRANSFORMENGINE: CreateRepositoryWithMocks — write scenarios (Add/Remove/SaveChanges verification)
         private static (
             GradeRepository Repo,
             Mock<DbSet<Grade>> DbSet,
