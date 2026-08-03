@@ -301,12 +301,15 @@ var BulkRates = (function () {
             hideActionError();
             var btn = document.getElementById('btnApprove');
             if (btn) { btn.disabled = true; }
+            showLoader();
 
+            var returnUrl = btn ? (btn.getAttribute('data-return-url') || '/FPS/BulkRates') : '/FPS/BulkRates';
             ajaxPost(
                 '/FPS/BulkRates/Approve',
                 { id: requestId },
-                function () { window.location.reload(); },
+                function () { window.fpsNavigateTo(returnUrl); },
                 function (msg) {
+                    hideLoader();
                     showActionError(msg);
                     if (btn) { btn.disabled = false; }
                 }
@@ -356,16 +359,18 @@ var BulkRates = (function () {
         var btn = document.getElementById('btnConfirmReject');
         if (btn) { btn.disabled = true; }
 
+        var returnBtn = document.getElementById('btnReject');
+        var returnUrl = returnBtn ? (returnBtn.getAttribute('data-return-url') || '/FPS/BulkRates') : '/FPS/BulkRates';
         ajaxPost(
             '/FPS/BulkRates/Reject',
             { id: _pendingRejectId, reason: reasonVal },
             function () {
                 closeRejectModal();
-                window.location.reload();
+                window.fpsNavigateTo(returnUrl);
             },
             function (msg) {
                 if (btn) { btn.disabled = false; }
-                alert(msg);
+                showActionError(msg);
             }
         );
     }
@@ -400,7 +405,7 @@ var BulkRates = (function () {
         ajaxPost(
             '/FPS/BulkRates/Cancel',
             { id: _pendingCancelId, reason: reasonVal },
-            function () { window.location.href = '/FPS/BulkRates/Index'; },
+            function () { window.fpsNavigateTo('/FPS/BulkRates/Index'); },
             function (msg) {
                 if (btn) { btn.disabled = false; }
                 alert(msg);
