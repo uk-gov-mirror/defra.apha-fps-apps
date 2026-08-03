@@ -35,6 +35,13 @@
         _                       => "Index"
     };
 
+    // Insert spaces before each uppercase letter run to humanise PascalCase status values.
+    string FriendlyStatus(string s) => s switch
+    {
+        "ReleasedForApproval" => "Released For Approval",
+        _ => s
+    };
+
     string SideNavItem(string j) => j switch
     {
         "BulkStaffRatesUpdate"  => "BulkRatesStaff",
@@ -95,10 +102,10 @@
                                 @* ── Request header ── *@
                                 <div class="govuk-grid-row govuk-!-margin-top-4 govuk-!-margin-bottom-4">
                                     <div class="govuk-grid-column-full">
-                                        <h2 class="govuk-heading-m govuk-!-margin-bottom-2">
+                                        <h2 class="govuk-heading-m govuk-!-margin-bottom-1">
                                             @FriendlyJobName(entry.JobName) — FPS Year @entry.FpsYear
-                                            <strong class="@StatusBadgeClass(entry.Status) govuk-!-margin-left-2">@entry.Status</strong>
                                         </h2>
+                                        <strong class="@StatusBadgeClass(entry.Status) govuk-!-margin-bottom-2" style="display:inline-block;">@FriendlyStatus(entry.Status)</strong>
                                         <dl class="govuk-summary-list govuk-summary-list--no-border govuk-!-font-size-16 govuk-!-margin-bottom-0">
                                             <div class="govuk-summary-list__row">
                                                 <dt class="govuk-summary-list__key">Request ID</dt>

@@ -176,7 +176,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
                 if (!requestResponse.Success || requestResponse.Data == null)
                 {
                     TempData["ErrorMessage"] = "The requested bulk rates entry could not be found.";
-                    return RedirectToAction(nameof(Index));
+                    return RedirectToAction(nameof(Index), new { year = _fpsYearContext.Year });
                 }
                 requestData = requestResponse.Data;
             }
@@ -184,7 +184,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             {
                 _logger.LogError(ex, "BulkRates Detail failed for {Id}", id);
                 TempData["ErrorMessage"] = "Unable to load the request details. Please try again.";
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(Index), new { year = _fpsYearContext.Year });
             }
 
             var validationResponse = await _bulkRatesService.GetValidationResultsAsync(id);
@@ -552,7 +552,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             {
                 _logger.LogError(ex, "BulkRates DownloadTestData failed for year {Year}", fpsYear);
                 TempData["ErrorMessage"] = "The FEC test data could not be downloaded. Please try again.";
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(Index), new { year = fpsYear });
             }
         }
 
@@ -577,12 +577,14 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
 
         // Download current year Staff test data as Excel
         [HttpGet]
-        public async Task<IActionResult> DownloadStaffTestData(int fpsYear)
+        public async Task<IActionResult> DownloadStaffTestData(int fpsYear, Guid? id = null)
         {
             try
             {
                 var bytes = await _bulkRatesService.DownloadStaffTestDataAsync(fpsYear);
-                var fileName = $"Staff_TestRates_{fpsYear}.xlsx";
+                var fileName = id.HasValue
+                    ? $"Staff_Rates_{id}.xlsx"
+                    : $"Staff_Rates_{fpsYear}.xlsx";
                 return File(bytes,
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     fileName);
@@ -591,18 +593,20 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             {
                 _logger.LogError(ex, "BulkRates DownloadStaffTestData failed for year {Year}", fpsYear);
                 TempData["ErrorMessage"] = "The Staff test data could not be downloaded. Please try again.";
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(Index), new { year = fpsYear });
             }
         }
 
         // Download current year Animal test data as Excel
         [HttpGet]
-        public async Task<IActionResult> DownloadAnimalTestData(int fpsYear)
+        public async Task<IActionResult> DownloadAnimalTestData(int fpsYear, Guid? id = null)
         {
             try
             {
                 var bytes = await _bulkRatesService.DownloadAnimalTestDataAsync(fpsYear);
-                var fileName = $"Animal_TestRates_{fpsYear}.xlsx";
+                var fileName = id.HasValue
+                    ? $"Animal_Rates_{id}.xlsx"
+                    : $"Animal_Rates_{fpsYear}.xlsx";
                 return File(bytes,
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     fileName);
@@ -611,7 +615,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             {
                 _logger.LogError(ex, "BulkRates DownloadAnimalTestData failed for year {Year}", fpsYear);
                 TempData["ErrorMessage"] = "The Animal test data could not be downloaded. Please try again.";
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(Index), new { year = fpsYear });
             }
         }
 

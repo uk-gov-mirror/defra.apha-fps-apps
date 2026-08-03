@@ -795,6 +795,9 @@ public sealed class JobOrchestrator : IJobOrchestrator
         try
         {
             using var doc = JsonDocument.Parse(parametersJson);
+            // EventBridge passes "null" when parametersJson is absent; treat non-object root as absent.
+            if (doc.RootElement.ValueKind != JsonValueKind.Object)
+                return null;
             if (!doc.RootElement.TryGetProperty("targetFpsYear", out var el))
                 return null;
 

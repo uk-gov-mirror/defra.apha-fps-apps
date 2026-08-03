@@ -54,5 +54,6 @@ namespace Apha.FPS.Application.Services
         public IReadOnlyList<ValidationFinding> BlockingErrors { get; init; } = [];
         public IReadOnlyList<BulkRatesFreezeEntry> FecFreezes { get; init; } = [];
         public IReadOnlyList<BulkRatesFreezeEntry> AgrupFreezes { get; init; } = [];
+        public IReadOnlyList<StaffFreezeEntry> StaffFreezes { get; init; } = [];
     }
 }

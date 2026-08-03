@@ -49,8 +49,6 @@ namespace Apha.FPS.Application.Services
             _logger = logger;
         }
 
-        // ── US-API-01: Create request ────────────────────────────────────────────
-
         public async Task<BulkRatesRequestDto> CreateRequestAsync(
             string jobName, int fpsYear, string requestedBy, CancellationToken ct = default)
         {
@@ -92,8 +90,6 @@ namespace Apha.FPS.Application.Services
             return await BuildRequestDtoAsync(entry, ct);
         }
 
-        // ── US-API-02/03/05: Upload file ─────────────────────────────────────────
-
         public async Task<BulkRatesUploadResultDto> UploadFileAsync(
             Guid jobExecutionId, byte[] fileBytes, string filename,
             string requestedBy, CancellationToken ct = default)
@@ -105,7 +101,7 @@ namespace Apha.FPS.Application.Services
                 throw new BusinessValidationErrorException([
                     new("Only the original initiator may upload files for this request.", "NOT_INITIATOR")]);
 
-            // US-API-05: if Rejected, auto-transition back to Initiated before replacing staging
+            // if Rejected, auto-transition back to Initiated before replacing staging
             if (string.Equals(entry.Status, StatusRejected, StringComparison.OrdinalIgnoreCase))
             {
                 var initiatedStatusId = await _repository.GetStatusIdByNameAsync(entry.JobId, StatusInitiated, ct)
@@ -189,8 +185,6 @@ namespace Apha.FPS.Application.Services
             };
         }
 
-        // ── US-API-04: Get validation results ────────────────────────────────────
-
         public async Task<BulkRatesUploadResultDto> GetValidationResultsAsync(
             Guid jobExecutionId, string requestedBy, CancellationToken ct = default)
         {
@@ -215,8 +209,6 @@ namespace Apha.FPS.Application.Services
             };
         }
 
-        // ── US-API-06/12/13: Release for approval ────────────────────────────────
-
         public async Task<BulkRatesRequestDto> ReleaseForApprovalAsync(
             Guid jobExecutionId, string requestedBy, CancellationToken ct = default)
         {
@@ -229,7 +221,6 @@ namespace Apha.FPS.Application.Services
 
             RequireStatus(entry, StatusInitiated, "release for approval");
 
-            // US-API-12: Verify upload metadata (checksum) exists
             if (entry.UploadChecksumSha256 == null)
                 throw new BusinessValidationErrorException([
                     new("No file has been uploaded for this request. Upload a valid file before releasing.", "NO_UPLOAD")]);
@@ -268,6 +259,15 @@ namespace Apha.FPS.Application.Services
 
                 await _repository.FreezeStagingCalculatedActionsAsync(
                     jobQueueId, entry.UploadVersion.Value, freeze.FecFreezes, freeze.AgrupFreezes, ct);
+            }
+            else if (string.Equals(entry.JobName, BulkRatesJobNames.Staff, StringComparison.OrdinalIgnoreCase)
+                  || string.Equals(entry.JobName, BulkRatesJobNames.Animal, StringComparison.OrdinalIgnoreCase))
+            {
+                var freeze = await _validator.BuildFreezeAsync(
+                    jobQueueId, entry.FpsYear, entry.UploadVersion!.Value, entry.ActiveDownloadVersion, ct);
+
+                await _repository.FreezeStaffStagingCalculatedActionsAsync(
+                    jobQueueId, freeze.StaffFreezes, ct);
             }
 
             var initiatedStatusId = entry.StatusId;
@@ -339,7 +339,7 @@ namespace Apha.FPS.Application.Services
                 RunMode = "Manual",
                 RequestedBy = entry.RequestedBy,
                 RequestedAtUtc = entry.RequestedAtUtc,
-                ParametersJson = new BulkRatesEventParameters { Year = entry.FpsYear }
+                ParametersJson = $"{{\"targetFpsYear\":{entry.FpsYear}}}"
             };
 
             await _eventBridgePublisher.PublishApprovalEventAsync(payload, ct);
@@ -783,7 +783,20 @@ namespace Apha.FPS.Application.Services
                 var nprChanged = row.Npr.HasValue && row.Npr.Value != live.Npr;
                 var ohrChanged = row.Ohr.HasValue && row.Ohr.Value != live.Ohr;
                 if (!payRateChanged && !nprChanged && !ohrChanged)
-                    continue; // Unchanged — the worker will skip this row too
+                {
+                    rows.Add(new BulkRatesStagingStaffRowDto
+                    {
+                        Status = "Unchanged",
+                        PcGrade = row.PcGrade,
+                        PayRate = live.PayRate,
+                        PayRateNew = row.PayRate,
+                        Npr = live.Npr,
+                        NprNew = row.Npr,
+                        Ohr = live.Ohr,
+                        OhrNew = row.Ohr
+                    });
+                    continue;
+                }
 
                 rows.Add(new BulkRatesStagingStaffRowDto
                 {
@@ -831,7 +844,21 @@ namespace Apha.FPS.Application.Services
                 var speciesChanged = row.Species is not null && row.Species != live.Species;
                 var securityLevelChanged = row.SecurityLevel is not null && row.SecurityLevel != live.SecurityLevel;
                 if (!dailyRateChanged && !defraDailyRateChanged && !planByWeekChanged && !speciesChanged && !securityLevelChanged)
-                    continue; // Unchanged — the worker will skip this row too
+                {
+                    rows.Add(new BulkRatesStagingAnimalRowDto
+                    {
+                        Status = "Unchanged",
+                        AnimalType = row.AnimalType,
+                        Species = row.Species ?? live.Species,
+                        SecurityLevel = row.SecurityLevel ?? live.SecurityLevel,
+                        DailyRate = live.DailyRate,
+                        DailyRateNew = row.DailyRate,
+                        DefraDailyRate = live.DefraDailyRate,
+                        DefraDailyRateNew = row.DefraDailyRate,
+                        PlanByWeek = row.PlanByWeek ?? live.PlanByWeek
+                    });
+                    continue;
+                }
 
                 rows.Add(new BulkRatesStagingAnimalRowDto
                 {

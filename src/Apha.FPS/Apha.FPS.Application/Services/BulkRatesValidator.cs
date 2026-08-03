@@ -17,6 +17,9 @@ namespace Apha.FPS.Application.Services
     /// </summary>
     public class BulkRatesValidator
     {
+        // Must stay in sync with StaffAnimalValidationVersion.Current in Apha.BatchJobs.
+        private const int StaffValidationVersion = 1;
+
         private readonly IBulkRatesRepository _repository;
         private readonly IBulkRatesValidationService _validationService;
 
@@ -56,8 +59,8 @@ namespace Apha.FPS.Application.Services
                 BulkRatesJobNames.Fec => await ValidateFecAsync(
                     parseResult.JobQueueId, fpsYear, uploadVersion, downloadVersion,
                     parseResult.FecRows, parseResult.AgrupRows, ct),
-                BulkRatesJobNames.Staff => ValidateStaff(parseResult),
-                BulkRatesJobNames.Animal => ValidateAnimal(parseResult),
+                BulkRatesJobNames.Staff => await ValidateStaffAsync(parseResult, fpsYear, ct),
+                BulkRatesJobNames.Animal => await ValidateAnimalAsync(parseResult, fpsYear, ct),
                 _ => new BulkRatesValidationResult
                 {
                     Errors =
@@ -114,8 +117,35 @@ namespace Apha.FPS.Application.Services
             {
                 BlockingErrors = blockingErrors,
                 FecFreezes = fecFreezes,
-                AgrupFreezes = agrupFreezes
+                AgrupFreezes = agrupFreezes,
+                StaffFreezes = await BuildStaffFreezesAsync(jobQueueId, fpsYear, ct)
             };
+        }
+
+        // Computes staff freeze entries by comparing staging rows to live profitcentregrade rates.
+        private async Task<IReadOnlyList<StaffFreezeEntry>> BuildStaffFreezesAsync(
+            Guid jobQueueId, int fpsYear, CancellationToken ct)
+        {
+            var staffRows = await _repository.GetStaffStagingRowsAsync(jobQueueId, ct);
+            if (staffRows.Count == 0)
+                return [];
+
+            var liveRows = await _repository.GetStaffRowsForExportAsync(fpsYear, ct);
+            var liveLookup = liveRows.ToDictionary(r => r.PcGrade, StringComparer.OrdinalIgnoreCase);
+
+            return staffRows.Select(row =>
+            {
+                if (!liveLookup.TryGetValue(row.PcGrade, out var live))
+                    return new StaffFreezeEntry(row.PcGrade, "Update", StaffValidationVersion,
+                        null, null, null, row.PayRate, row.Npr, row.Ohr);
+
+                var changed = (row.PayRate.HasValue && row.PayRate.Value != live.PayRate)
+                           || (row.Npr.HasValue     && row.Npr.Value     != live.Npr)
+                           || (row.Ohr.HasValue     && row.Ohr.Value     != live.Ohr);
+
+                return new StaffFreezeEntry(row.PcGrade, changed ? "Update" : "Unchanged", StaffValidationVersion,
+                    live.PayRate, live.Npr, live.Ohr, row.PayRate, row.Npr, row.Ohr);
+            }).ToList();
         }
 
         // ── Calculated action for display, when nothing is frozen yet ──────────────
@@ -330,9 +360,10 @@ namespace Apha.FPS.Application.Services
             };
         }
 
-        // ── Staff validation (predates DR-VAL-01 — no Staff shape in its ValidationContext) ──
+        // ── Staff validation ──────────────────────────────────────────────────────
 
-        private static BulkRatesValidationResult ValidateStaff(BulkRatesParseResult parseResult)
+        private async Task<BulkRatesValidationResult> ValidateStaffAsync(
+            BulkRatesParseResult parseResult, int fpsYear, CancellationToken ct)
         {
             var errors = new List<StagingValidationError>();
             var rows = parseResult.StaffRows;
@@ -364,22 +395,39 @@ namespace Apha.FPS.Application.Services
                         sheetName: "Staff");
             }
 
+            // Mirror worker comparison to compute accurate Update/Unchanged counts
+            var liveRows = await _repository.GetStaffRowsForExportAsync(fpsYear, ct);
+            var liveLookup = liveRows.ToDictionary(r => r.PcGrade, StringComparer.OrdinalIgnoreCase);
+            int update = 0, unchanged = 0;
+            foreach (var row in rows)
+            {
+                if (!liveLookup.TryGetValue(row.PcGrade ?? string.Empty, out var live))
+                { update++; continue; }
+                var changed = (row.PayRate.HasValue && row.PayRate.Value != live.PayRate)
+                           || (row.Npr.HasValue     && row.Npr.Value     != live.Npr)
+                           || (row.Ohr.HasValue     && row.Ohr.Value     != live.Ohr);
+                if (changed) update++; else unchanged++;
+            }
+
+            var invalid = errors.Count(e => e.Severity == "Error");
             return new BulkRatesValidationResult
             {
                 Errors = errors,
                 RowCounts = new BulkRatesRowCounts
                 {
                     Total = rows.Count,
-                    Update = rows.Count,
-                    Invalid = errors.Count(e => e.Severity == "Error"),
-                    Valid = rows.Count - errors.Count(e => e.Severity == "Error")
+                    Update = update,
+                    Unchanged = unchanged,
+                    Invalid = invalid,
+                    Valid = rows.Count - invalid
                 }
             };
         }
 
-        // ── Animal validation (predates DR-VAL-01 — no Animal shape in its ValidationContext) ──
+        // ── Animal validation ─────────────────────────────────────────────────────
 
-        private static BulkRatesValidationResult ValidateAnimal(BulkRatesParseResult parseResult)
+        private async Task<BulkRatesValidationResult> ValidateAnimalAsync(
+            BulkRatesParseResult parseResult, int fpsYear, CancellationToken ct)
         {
             var errors = new List<StagingValidationError>();
             var rows = parseResult.AnimalRows;
@@ -408,15 +456,33 @@ namespace Apha.FPS.Application.Services
                         sheetName: "Animal");
             }
 
+            // Mirror worker comparison to compute accurate Update/Unchanged counts
+            var liveRows = await _repository.GetAnimalRowsForExportAsync(fpsYear, ct);
+            var liveLookup = liveRows.ToDictionary(r => r.AnimalType, StringComparer.OrdinalIgnoreCase);
+            int update = 0, unchanged = 0;
+            foreach (var row in rows)
+            {
+                if (!liveLookup.TryGetValue(row.AnimalType ?? string.Empty, out var live))
+                { update++; continue; }
+                var changed = (row.DailyRate.HasValue      && row.DailyRate.Value      != live.DailyRate)
+                           || (row.DefraDailyRate.HasValue && row.DefraDailyRate.Value != live.DefraDailyRate)
+                           || (row.PlanByWeek.HasValue     && row.PlanByWeek.Value     != live.PlanByWeek)
+                           || (row.Species      is not null && row.Species      != live.Species)
+                           || (row.SecurityLevel is not null && row.SecurityLevel != live.SecurityLevel);
+                if (changed) update++; else unchanged++;
+            }
+
+            var invalid = errors.Count(e => e.Severity == "Error");
             return new BulkRatesValidationResult
             {
                 Errors = errors,
                 RowCounts = new BulkRatesRowCounts
                 {
                     Total = rows.Count,
-                    Update = rows.Count,
-                    Invalid = errors.Count(e => e.Severity == "Error"),
-                    Valid = rows.Count - errors.Count(e => e.Severity == "Error")
+                    Update = update,
+                    Unchanged = unchanged,
+                    Invalid = invalid,
+                    Valid = rows.Count - invalid
                 }
             };
         }

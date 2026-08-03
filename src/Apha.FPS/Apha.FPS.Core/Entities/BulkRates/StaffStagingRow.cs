@@ -13,5 +13,7 @@ namespace Apha.FPS.Core.Entities.BulkRates
         public decimal? Npr { get; set; }
         public decimal? Ohr { get; set; }
         public string? ValidationComments { get; set; }
+        // Frozen at release time (DR-API-07); null until then.
+        public string? CalculatedAction { get; set; }
     }
 }

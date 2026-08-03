@@ -1,4 +1,7 @@
-﻿using Apha.FPS.Api.Filters;
+﻿using Amazon;
+using Amazon.EventBridge;
+using Apha.Common.Utilities.EventPublisher;
+using Apha.FPS.Api.Filters;
 using Apha.FPS.Api.Mappings;
 using Apha.FPS.Api.Middleware;
 using Apha.FPS.Application.Mappings;
@@ -76,6 +79,12 @@ namespace Apha.FPS.Api.Extensions
 
             // Application services
             services.AddApplicationServices();
+
+            builder.Services.AddSingleton<IAmazonEventBridge>(_ =>
+                new AmazonEventBridgeClient(
+                    RegionEndpoint.GetBySystemName(configuration.GetValue<string>("EventBridge:Region"))));
+
+            builder.Services.AddScoped<IEventPublisherService, EventBridgePublisherService>();
 
             // Authentication
             services.AddAuthenticationServices(configuration);

@@ -563,8 +563,7 @@ public class BulkRatesRequestServiceTests
     [Fact]
     public async Task GetStagingData_ClassifiesUnchangedRateAsNoChange()
     {
-        // DR-UI-03: No Change rows are shown too (not hidden), labelled from the same
-        // DR-VAL-01 classification as Insert/Update/Zero-Rate Withdrawal.
+        // No Change rows are shown too (not hidden), labelled from the same classification as Insert/Update/Zero-Rate Withdrawal.
         var repo = RepoReturning(Entry(status: "Initiated", uploadChecksum: "abc"));
         repo.GetFecStagingRowsAsync(QueueId, Arg.Any<CancellationToken>())
             .Returns(new[] { new FecStagingRow { TestCode = "T003", FecNewRate = 30.0m } } as IReadOnlyList<FecStagingRow>);
@@ -617,7 +616,7 @@ public class BulkRatesRequestServiceTests
         await repo.DidNotReceive().GetAgrupRowsForExportAsync(Arg.Any<int>(), Arg.Any<CancellationToken>());
     }
 
-    // ── DownloadFecTestDataAsync (DR-UI-01) ──────────────────────────────────
+    // ── DownloadFecTestDataAsync ──────────────────────────────────
     //
     // Verification checklist per fec-bulk-rates-plan-05-differential-remediation.md §tracker:
     //  (1) snapshot header created with status Generating

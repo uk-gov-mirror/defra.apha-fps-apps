@@ -283,9 +283,8 @@ public class BulkRatesValidatorTests
     [Fact]
     public async Task ValidateAgrup_ExistingRow_WhenWorkbookDoesNotAssertRoutingField_EchoesLiveValue_NoFalsePositive()
     {
-        // The workbook has no column yet to assert a routing-field value (DR-UI-02 is Phase
-        // D5) — an ordinary rate-only re-upload must not trip DR-API-05 just because the live
-        // row happens to carry routing data this upload never asserted anything about.
+        // a workbook with no routing-field columns must not trip the routing-changed check
+        // just because the live row happens to carry routing data this upload never asserted anything about.
         var liveFec = new[] { new FecStagingRow { TestCode = "TC001", UnitPriceVla = 5m, DefraUnitPrice = 5m } };
         var liveAgrup = new[] { new AgrupStagingRow { TestCode = "TC001", Buyer = "BUYER1", Agrup = 12m, ProjectBuyerCode = "PROJA", TestBuyerCode = "TBC1" } };
         var parse = AgrupParse(new AgrupStagingRow { TestCode = "TC001", Buyer = "BUYER1", AgrupNew = 20m }); // no routing fields supplied
@@ -296,7 +295,7 @@ public class BulkRatesValidatorTests
         result.RowCounts.Update.Should().Be(1);
     }
 
-    // ── DR-API-06/08: downloaded-key preservation (request-level, snapshot-based) ────
+    // ── Downloaded-key preservation (request-level, snapshot-based) ────
 
     [Fact]
     public async Task ValidateFec_WhenDownloadedKeyMissingFromUpload_AddsRequestLevelError()
@@ -314,8 +313,8 @@ public class BulkRatesValidatorTests
 
         var missing = result.Errors.Should().ContainSingle(e => e.ValidationCode == "MISSING_DOWNLOADED_KEY").Which;
         missing.TestCode.Should().Be("TC002");
-        missing.SourceRowNumber.Should().Be(0); // request-level: no uploaded row number to attach to (DR-UI-04)
-        missing.IsRequestLevel.Should().BeTrue(); // DR-UI-04: must render as a distinct request-level message, not a per-row error
+        missing.SourceRowNumber.Should().Be(0); // request-level: no uploaded row number to attach to
+        missing.IsRequestLevel.Should().BeTrue(); // must render as a distinct request-level message, not a per-row error
         result.RowCounts.Total.Should().Be(1); // row-count check (DR-API-08) still runs alongside the key check
     }
 

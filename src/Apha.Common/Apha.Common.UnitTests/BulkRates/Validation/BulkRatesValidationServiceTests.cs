@@ -467,7 +467,7 @@ namespace Apha.Common.UnitTests.BulkRates.Validation
             findings.Should().ContainSingle(f => f.ValidationCode == "AGRUP_POSITIVE_FOR_WITHDRAWN_FEC");
         }
 
-        // ── Downloaded-snapshot preservation (DR-API-06/DR-UI-04, reconciliation §2.6) ──
+        // ── Downloaded-snapshot preservation ──
 
         [Fact]
         public void MissingDownloadedFecKey_RaisesRequestLevelError()

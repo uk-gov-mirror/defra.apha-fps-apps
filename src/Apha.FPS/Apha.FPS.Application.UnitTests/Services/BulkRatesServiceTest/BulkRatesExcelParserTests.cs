@@ -195,7 +195,7 @@ public class BulkRatesExcelParserTests
         result.AgrupRows.Should().ContainSingle(r => r.AgrupNew == null);
     }
 
-    // ── DR-UI-02: AGRUP routing columns ──────────────────────────────────────
+    // ── AGRUP routing columns ──────────────────────────────────────
 
     [Fact]
     public void Parse_AgrupSheet_ParsesRoutingColumns()

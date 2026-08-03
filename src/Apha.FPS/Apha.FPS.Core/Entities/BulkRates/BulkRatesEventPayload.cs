@@ -11,11 +11,7 @@ namespace Apha.FPS.Core.Entities.BulkRates
         public string RunMode { get; set; } = "Manual";
         public string RequestedBy { get; set; } = string.Empty;
         public DateTime RequestedAtUtc { get; set; }
-        public BulkRatesEventParameters ParametersJson { get; set; } = new();
-    }
-
-    public class BulkRatesEventParameters
-    {
-        public int Year { get; set; }
+        // Pre-formed JSON string or null — matches EventDetail.ParametersJson (string?)
+        public string? ParametersJson { get; set; }
     }
 }

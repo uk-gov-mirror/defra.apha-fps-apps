@@ -200,5 +200,10 @@ namespace Apha.FPS.Core.Interfaces
             IReadOnlyList<BulkRatesFreezeEntry> fecFreezes,
             IReadOnlyList<BulkRatesFreezeEntry> agrupFreezes,
             CancellationToken ct = default);
+
+        Task FreezeStaffStagingCalculatedActionsAsync(
+            Guid jobQueueId,
+            IReadOnlyList<StaffFreezeEntry> staffFreezes,
+            CancellationToken ct = default);
     }
 }

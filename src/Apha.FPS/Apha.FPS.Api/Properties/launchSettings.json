@@ -14,7 +14,7 @@
       "dotnetRunMessages": true,
       "launchBrowser": true,
 	  "launchUrl": "swagger",
-      "applicationUrl": "http://localhost:5249",
+      "applicationUrl": "http://localhost:5248",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "local"
       }
@@ -24,9 +24,10 @@
       "dotnetRunMessages": true,
       "launchBrowser": true,
 	  "launchUrl": "swagger",
-      "applicationUrl": "https://localhost:7185;http://localhost:5249",
+      "applicationUrl": "https://localhost:7185;http://localhost:5248",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "local"
+        "ASPNETCORE_ENVIRONMENT": "local",
+        "AWS_PROFILE": "fps"
       }
     },
     "IIS Express": {

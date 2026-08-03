@@ -1,5 +1,6 @@
 ﻿using Apha.FPSApps.Application.Dtos;
 using Apha.FPSApps.Application.Dtos.FPS;
+using Apha.FPSApps.Application.Dtos.FPS.BulkRates;
 using Apha.FPSApps.Application.Dtos.PACT;
 using Apha.FPSApps.Application.Pagination;
 using Apha.FPSApps.Web.Areas.FPS.Models;
@@ -12,6 +13,13 @@ namespace Apha.FPSApps.Web.Mappings
         public FpsViewModelMapper()
         {
             CreateMap(typeof(PaginationFilter<>), typeof(QueryParameters<>)).ReverseMap();
+            CreateMap<BulkRatesQueueEntryDto, BulkRatesQueueGridItem>()
+                .ForMember(d => d.JobName, o => o.MapFrom(s => FriendlyJobName(s.JobName)))
+                .ForMember(d => d.Status, o => o.MapFrom(s => FriendlyStatus(s.Status)));
+            CreateMap<BulkRatesStagingFecRowDto, FecStagingGridItem>();
+            CreateMap<BulkRatesStagingAgrupRowDto, AgrupStagingGridItem>();
+            CreateMap<BulkRatesStagingStaffRowDto, StaffStagingGridItem>();
+            CreateMap<BulkRatesStagingAnimalRowDto, AnimalStagingGridItem>();
             CreateMap<StaffJobItemViewModel, StaffJobViewDto>().ReverseMap();
             CreateMap<PaginationModel, PaginationDto>().ReverseMap();
             CreateMap<TestPriceCheckDto, TestPriceCheckItem>()
@@ -205,5 +213,19 @@ namespace Apha.FPSApps.Web.Mappings
                 .ForMember(d => d.StaffId, o => o.MapFrom(s => s.StaffID));
             CreateMap<ResourceMgmtReplanStaffJobDto, ResourceMgmtReplanStagedItem>().ReverseMap();
         }
+
+        private static string FriendlyJobName(string jobName) => jobName switch
+        {
+            "BulkTestRatesUpdate"   => "FEC Test Rates",
+            "BulkStaffRatesUpdate"  => "Staff Rates",
+            "BulkAnimalRatesUpdate" => "Animal Rates",
+            _                       => jobName
+        };
+
+        private static string FriendlyStatus(string status) => status switch
+        {
+            "ReleasedForApproval" => "Released For Approval",
+            _                     => status
+        };
     }
 }

@@ -285,7 +285,7 @@ namespace Apha.Common.BulkRates.Validation
             }
         }
 
-        // ── Downloaded-snapshot preservation (DR-API-06/DR-UI-04, reconciliation §2.6) ──
+        // ── Downloaded-snapshot preservation ──
 
         private static void ValidateSnapshotPreservation(ValidationContext ctx, ICollection<ValidationFinding> findings)
         {

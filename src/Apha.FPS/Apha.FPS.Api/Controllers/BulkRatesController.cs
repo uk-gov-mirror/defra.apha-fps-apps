@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Apha.FPS.Api.Controllers
 {
     /// <summary>
-    /// Controller for the Bulk Rates Update request lifecycle (Phase 3, US-API-01 through US-API-14).
+    /// Controller for the Bulk Rates Update request lifecycle.
     /// All operations require the API-FPSAdmin role. User identity is read from the
     /// authenticated token via <see cref="IFpsRequestContext.UserEmailId"/>.
     /// </summary>
@@ -30,7 +30,7 @@ namespace Apha.FPS.Api.Controllers
             _requestContext = requestContext ?? throw new ArgumentNullException(nameof(requestContext));
         }
 
-        /// <summary>US-API-01: Create a new Bulk Rates request in Initiated status.</summary>
+        /// <summary>Create a new Bulk Rates request in Initiated status.</summary>
         [HttpPost("requests")]
         public async Task<ActionResult<BulkRatesRequestDto>> CreateRequestAsync(
             [FromBody] CreateBulkRatesReq req,
@@ -41,7 +41,7 @@ namespace Apha.FPS.Api.Controllers
             return Ok(result);
         }
 
-        /// <summary>US-API-02/03/05: Upload (or re-upload) an Excel file, replacing previous staging and re-running validation.</summary>
+        /// <summary>Upload (or re-upload) an Excel file, replacing previous staging and re-running validation.</summary>
         [HttpPost("requests/{jobExecutionId:guid}/upload")]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<BulkRatesUploadResultDto>> UploadFileAsync(
@@ -58,7 +58,7 @@ namespace Apha.FPS.Api.Controllers
             return Ok(result);
         }
 
-        /// <summary>US-API-04: Retrieve structured validation results for a request.</summary>
+        /// <summary>Retrieve structured validation results for a request.</summary>
         [HttpGet("requests/{jobExecutionId:guid}/validation")]
         public async Task<ActionResult<BulkRatesUploadResultDto>> GetValidationResultsAsync(
             Guid jobExecutionId, CancellationToken ct)
@@ -68,7 +68,7 @@ namespace Apha.FPS.Api.Controllers
             return Ok(result);
         }
 
-        /// <summary>US-API-06/12/13: Release a fully-valid request for approval.</summary>
+        /// <summary>Release a fully-valid request for approval.</summary>
         [HttpPost("requests/{jobExecutionId:guid}/release")]
         public async Task<ActionResult<BulkRatesRequestDto>> ReleaseForApprovalAsync(
             Guid jobExecutionId, CancellationToken ct)
@@ -78,7 +78,7 @@ namespace Apha.FPS.Api.Controllers
             return Ok(result);
         }
 
-        /// <summary>US-API-07/09/10/12/13: Approve and publish EventBridge trigger.</summary>
+        /// <summary>Approve and publish EventBridge trigger.</summary>
         [HttpPost("requests/{jobExecutionId:guid}/approve")]
         public async Task<ActionResult<BulkRatesRequestDto>> ApproveAsync(
             Guid jobExecutionId, CancellationToken ct)
@@ -88,7 +88,7 @@ namespace Apha.FPS.Api.Controllers
             return Ok(result);
         }
 
-        /// <summary>US-API-08/13: Reject with mandatory reason.</summary>
+        /// <summary>Reject with mandatory reason.</summary>
         [HttpPost("requests/{jobExecutionId:guid}/reject")]
         public async Task<ActionResult<BulkRatesRequestDto>> RejectAsync(
             Guid jobExecutionId, [FromBody] RejectBulkRatesReq req, CancellationToken ct)
@@ -98,7 +98,7 @@ namespace Apha.FPS.Api.Controllers
             return Ok(result);
         }
 
-        /// <summary>US-API-14/13: Cancel an Initiated or Rejected request (initiator only).</summary>
+        /// <summary>Cancel an Initiated or Rejected request (initiator only).</summary>
         [HttpPost("requests/{jobExecutionId:guid}/cancel")]
         public async Task<ActionResult<BulkRatesRequestDto>> CancelAsync(
             Guid jobExecutionId, [FromBody] CancelBulkRatesReq req, CancellationToken ct)
@@ -108,7 +108,7 @@ namespace Apha.FPS.Api.Controllers
             return Ok(result);
         }
 
-        /// <summary>US-API-11: Get full request detail including log history.</summary>
+        /// <summary>Get full request detail including log history.</summary>
         [HttpGet("requests/{jobExecutionId:guid}")]
         public async Task<ActionResult<BulkRatesRequestDto>> GetRequestAsync(
             Guid jobExecutionId, CancellationToken ct)
@@ -119,7 +119,7 @@ namespace Apha.FPS.Api.Controllers
             return Ok(result);
         }
 
-        /// <summary>US-API-11: Server-side paged/sorted list, optionally filtered by job name, year and status.</summary>
+        /// <summary>Server-side paged/sorted list, optionally filtered by job name, year and status.</summary>
         [HttpGet("requests")]
         public async Task<ActionResult> GetRequestsAsync(
             [FromQuery] string? jobName,
@@ -170,7 +170,7 @@ namespace Apha.FPS.Api.Controllers
                 $"BulkRates_Staging_{jobExecutionId}.xlsx");
         }
 
-        /// <summary>DR-UI-01: Atomically snapshot live FEC/AGRUP data for a specific request and return the workbook.</summary>
+        /// <summary>Atomically snapshot live FEC/AGRUP data for a specific request and return the workbook.</summary>
         [HttpGet("requests/{jobExecutionId:guid}/download")]
         public async Task<IActionResult> DownloadFecTestDataAsync(
             Guid jobExecutionId, CancellationToken ct)
@@ -199,7 +199,7 @@ namespace Apha.FPS.Api.Controllers
             [FromQuery] int fpsYear, CancellationToken ct)
         {
             var bytes = await _service.ExportStaffTestDataAsync(fpsYear, ct);
-            var fileName = $"Staff_TestRates_{fpsYear}.xlsx";
+            var fileName = $"Staff_Rates_{fpsYear}.xlsx";
             return File(bytes,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 fileName);
@@ -211,7 +211,7 @@ namespace Apha.FPS.Api.Controllers
             [FromQuery] int fpsYear, CancellationToken ct)
         {
             var bytes = await _service.ExportAnimalTestDataAsync(fpsYear, ct);
-            var fileName = $"Animal_TestRates_{fpsYear}.xlsx";
+            var fileName = $"Animal_Rates_{fpsYear}.xlsx";
             return File(bytes,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 fileName);

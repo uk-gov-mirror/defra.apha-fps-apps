@@ -1,4 +1,5 @@
-﻿using Apha.Common.Utilities.StateManagement;
+﻿using Apha.Common.BulkRates.Validation;
+using Apha.Common.Utilities.StateManagement;
 using Apha.Common.Utilities.ExcelExport;
 using Apha.FPS.Application.Interfaces;
 using Apha.FPS.Application.Services;
@@ -108,6 +109,13 @@ namespace Apha.FPS.Api.Extensions
             services.AddScoped<ITestRequirementRCCostRepository, TestRequirementRCCostRepository>();
             services.AddScoped<ITotalBusinessOverheadsRepository, TotalBusinessOverheadsRepository>();
             services.AddScoped<IResourceAllocationRepository, ResourceAllocationRepository>();
+            services.AddScoped<IBulkRatesRepository, BulkRatesRepository>();
+            services.AddScoped<IBulkRatesRequestService, BulkRatesRequestService>();
+            services.AddScoped<IBulkRatesValidationService, BulkRatesValidationService>();
+            services.AddScoped<BulkRatesExcelParser>();
+            services.AddScoped<BulkRatesValidator>();
+            services.AddScoped<IBulkRatesNotificationService, LogOnlyBulkRatesNotificationService>();
+            services.AddScoped<IEventBridgePublisher, EventBridgePublisher>();
             return services;
 
         }

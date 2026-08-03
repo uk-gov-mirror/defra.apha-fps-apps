@@ -217,7 +217,7 @@ namespace Apha.FPS.DataAccess.Repositories
                 JOIN fps.job_master m ON m.jobid = q.jobid
                 JOIN fps.job_status s ON s.statusid = q.statusid AND s.jobid = q.jobid
                 WHERE m.jobname = @jobname
-                  AND s.status IN ('Initiated','ReleasedForApproval','Approved','Running','Failed','Rejected')
+                  AND s.status IN ('Initiated','ReleasedForApproval','Approved','Running')
                 ORDER BY q.requested_at_utc DESC
                 LIMIT 1;";
             cmd.Parameters.AddWithValue("jobname", jobName);
@@ -965,7 +965,7 @@ namespace Apha.FPS.DataAccess.Repositories
             return result;
         }
 
-        // ── Download snapshot (DR-UI-01, CR057/CR060) ─────────────────────────────
+        // ── Download snapshot ─────────────────────────────
 
         public async Task<int> GetNextDownloadVersionAsync(Guid jobQueueId, CancellationToken ct = default)
         {
@@ -1364,6 +1364,49 @@ namespace Apha.FPS.DataAccess.Repositories
             _logger.LogInformation(
                 "FreezeStagingCalculatedActions | JobQueueId={JobQueueId} | ValidationVersion={ValidationVersion} | FecRows={FecRows} | AgrupRows={AgrupRows}",
                 jobQueueId, validationVersion, fecFreezes.Count, agrupFreezes.Count);
+        }
+
+        public async Task FreezeStaffStagingCalculatedActionsAsync(
+            Guid jobQueueId,
+            IReadOnlyList<StaffFreezeEntry> staffFreezes,
+            CancellationToken ct = default)
+        {
+            var conn = await OpenAsync(ct);
+            await using var tx = await conn.BeginTransactionAsync(ct);
+
+            foreach (var entry in staffFreezes)
+            {
+                await using var upd = conn.CreateCommand();
+                upd.Transaction = tx;
+                upd.CommandText = @"
+                    UPDATE fps.tblstagingprofitcentregrade
+                    SET calculated_action  = @calculated_action,
+                        validation_version = @validation_version,
+                        source_payrate     = @source_payrate,
+                        source_npr         = @source_npr,
+                        source_ohr         = @source_ohr,
+                        effective_payrate  = @effective_payrate,
+                        effective_npr      = @effective_npr,
+                        effective_ohr      = @effective_ohr
+                    WHERE jobqueueid = @jobqueueid AND pcgrade = @pcgrade;";
+                upd.Parameters.AddWithValue("jobqueueid",         jobQueueId);
+                upd.Parameters.AddWithValue("pcgrade",            entry.PcGrade);
+                upd.Parameters.AddWithValue("calculated_action",  entry.CalculatedAction);
+                upd.Parameters.AddWithValue("validation_version", entry.ValidationVersion);
+                upd.Parameters.AddWithValue("source_payrate",     (object?)entry.SourcePayRate    ?? DBNull.Value);
+                upd.Parameters.AddWithValue("source_npr",         (object?)entry.SourceNpr        ?? DBNull.Value);
+                upd.Parameters.AddWithValue("source_ohr",         (object?)entry.SourceOhr        ?? DBNull.Value);
+                upd.Parameters.AddWithValue("effective_payrate",  (object?)entry.EffectivePayRate ?? DBNull.Value);
+                upd.Parameters.AddWithValue("effective_npr",      (object?)entry.EffectiveNpr     ?? DBNull.Value);
+                upd.Parameters.AddWithValue("effective_ohr",      (object?)entry.EffectiveOhr     ?? DBNull.Value);
+                await upd.ExecuteNonQueryAsync(ct);
+            }
+
+            await tx.CommitAsync(ct);
+
+            _logger.LogInformation(
+                "FreezeStaffStagingCalculatedActions | JobQueueId={JobQueueId} | StaffRows={StaffRows}",
+                jobQueueId, staffFreezes.Count);
         }
 
         // ── Private helpers ──────────────────────────────────────────────────────
