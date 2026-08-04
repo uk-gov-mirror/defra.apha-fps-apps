@@ -1,4 +1,5 @@
 using Apha.Costbook.Application.Dtos;
+using Apha.Costbook.Application.Interfaces;
 using Apha.Costbook.Application.Pagination;
 using Apha.Costbook.Application.Services;
 using Apha.Costbook.Application.Validation;
@@ -18,6 +19,7 @@ public class YearlyDetailsServiceTests
     private readonly ITestRequirementRepository _testRepo;
     private readonly IAnimalRequirementRepository _animalRepo;
     private readonly IAdditionalCostRepository _additionalCostRepo;
+    private readonly ISettingsService _settingsService;
     private readonly IMapper _mapper;
     private readonly YearlyDetailsService _sut;
 
@@ -29,11 +31,12 @@ public class YearlyDetailsServiceTests
         _testRepo = Substitute.For<ITestRequirementRepository>();
         _animalRepo = Substitute.For<IAnimalRequirementRepository>();
         _additionalCostRepo = Substitute.For<IAdditionalCostRepository>();
+        _settingsService = Substitute.For<ISettingsService>();
         _mapper = Substitute.For<IMapper>();
 
         _sut = new YearlyDetailsService(
             _projectRepo, _projectYearRepo, _staffRepo,
-            _testRepo, _animalRepo, _additionalCostRepo, _mapper);
+            _testRepo, _animalRepo, _additionalCostRepo, _settingsService, _mapper);
     }
 
     #region GetProjectHeaderAsync

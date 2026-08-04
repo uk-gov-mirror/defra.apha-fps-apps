@@ -16,6 +16,10 @@ namespace Apha.FPS.Application.Interfaces
         // Animal Cost (AnimalJob)
         Task<List<AnimalDto>> GetAnimalLookupAsync();
         Task<PaginatedResult<AnimalCostViewDto>> GetAnimalCostAsync(QueryParameters<string> query, string jobCode);
+
+        // Animal Costs ASU View (AnimalCosts — frmAnimalCosts)
+        Task<PaginatedResult<AnimalCostViewDto>> GetAnimalCostByAnimalTypeAsync(QueryParameters<string> query, string animalType);
+        Task<PaginatedResult<AnimalSnapshotViewDto>> GetAnimalSnapshotAsync(QueryParameters<string> query);
         Task<decimal> GetTotalAnimalCostAsync(string jobCode);
         Task<AnimalCostViewDto?> GetAnimalCostViewByIdAsync(int indCounter, string jobCode);
         Task<decimal?> GetAnimalRateByIdAsync(string animalType, string jobCode);

@@ -37,17 +37,17 @@ namespace Apha.FPSApps.Application.UnitTests.Services.PIMS.ProjectCommentService
             };
             var expectedResponse = ApiResponseDto<List<CommentDto>>.SuccessResponse(comments);
 
-            _pimsProjectCommentApiClient.GetCommentsByProjectAsync(project, year, query).Returns(expectedResponse);
+            _pimsProjectCommentApiClient.GetCommentsByProjectAsync(project, year, null, query).Returns(expectedResponse);
 
             // Act
-            var result = await _projectCommentService.GetCommentsByProjectAsync(project, year, query);
+            var result = await _projectCommentService.GetCommentsByProjectAsync(project, year, null, query);
 
             // Assert
             Assert.NotNull(result);
             Assert.True(result.Success);
             Assert.NotNull(result.Data);
             Assert.Equal(2, result.Data.Count);
-            await _pimsProjectCommentApiClient.Received(1).GetCommentsByProjectAsync(project, year, query);
+            await _pimsProjectCommentApiClient.Received(1).GetCommentsByProjectAsync(project, year, null, query);
         }
 
         [Fact]
@@ -58,10 +58,10 @@ namespace Apha.FPSApps.Application.UnitTests.Services.PIMS.ProjectCommentService
             var query = new QueryParameters<string>();
             var expectedResponse = ApiResponseDto<List<CommentDto>>.SuccessResponse(new List<CommentDto>());
 
-            _pimsProjectCommentApiClient.GetCommentsByProjectAsync(project, null, query).Returns(expectedResponse);
+            _pimsProjectCommentApiClient.GetCommentsByProjectAsync(project, null, null, query).Returns(expectedResponse);
 
             // Act
-            var result = await _projectCommentService.GetCommentsByProjectAsync(project, null, query);
+            var result = await _projectCommentService.GetCommentsByProjectAsync(project, null, null, query);
 
             // Assert
             Assert.NotNull(result);
@@ -81,10 +81,10 @@ namespace Apha.FPSApps.Application.UnitTests.Services.PIMS.ProjectCommentService
             };
             var expectedResponse = ApiResponseDto<List<CommentDto>>.FailureResponse(errors, new ApiMetaDto());
 
-            _pimsProjectCommentApiClient.GetCommentsByProjectAsync(project, null, query).Returns(expectedResponse);
+            _pimsProjectCommentApiClient.GetCommentsByProjectAsync(project, null, null, query).Returns(expectedResponse);
 
             // Act
-            var result = await _projectCommentService.GetCommentsByProjectAsync(project, null, query);
+            var result = await _projectCommentService.GetCommentsByProjectAsync(project, null, null, query);
 
             // Assert
             Assert.NotNull(result);
@@ -102,15 +102,16 @@ namespace Apha.FPSApps.Application.UnitTests.Services.PIMS.ProjectCommentService
             var query = new QueryParameters<string> { Page = 2, PageSize = 5 };
             var expectedResponse = ApiResponseDto<List<CommentDto>>.SuccessResponse(new List<CommentDto>());
 
-            _pimsProjectCommentApiClient.GetCommentsByProjectAsync(project, year, query).Returns(expectedResponse);
+            _pimsProjectCommentApiClient.GetCommentsByProjectAsync(project, year, null, query).Returns(expectedResponse);
 
             // Act
-            await _projectCommentService.GetCommentsByProjectAsync(project, year, query);
+            await _projectCommentService.GetCommentsByProjectAsync(project, year, null, query);
 
             // Assert
             await _pimsProjectCommentApiClient.Received(1).GetCommentsByProjectAsync(
                 Arg.Is<string>(p => p == project),
                 Arg.Is<int?>(y => y == year),
+                Arg.Is<string?>(t => t == null),
                 Arg.Is<QueryParameters<string>>(q => q.Page == 2 && q.PageSize == 5)
             );
         }
@@ -418,6 +419,238 @@ namespace Apha.FPSApps.Application.UnitTests.Services.PIMS.ProjectCommentService
 
             // Assert
             Assert.NotNull(service);
+        }
+
+        #endregion
+
+       
+        #region GetCommentsByProjectAsync Topic Filter Tests
+
+        [Fact]
+        public async Task GetCommentsByProjectAsync_WithTopicFilter_PassesTopicToApiClient()
+        {
+            // Arrange
+            var project = "PP001";
+            var year = 2024;
+            var topic = "Budget";
+            var query = new QueryParameters<string>();
+            var expectedResponse = ApiResponseDto<List<CommentDto>>.SuccessResponse(new List<CommentDto>());
+
+            _pimsProjectCommentApiClient.GetCommentsByProjectAsync(project, year, topic, query).Returns(expectedResponse);
+
+            // Act
+            var result = await _projectCommentService.GetCommentsByProjectAsync(project, year, topic, query);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            await _pimsProjectCommentApiClient.Received(1).GetCommentsByProjectAsync(
+                Arg.Is<string>(p => p == project),
+                Arg.Is<int?>(y => y == year),
+                Arg.Is<string?>(t => t == topic),
+                Arg.Is<QueryParameters<string>>(q => q == query));
+        }
+
+        [Fact]
+        public async Task GetCommentsByProjectAsync_WithNullTopicFilter_PassesNullToApiClient()
+        {
+            // Arrange
+            var project = "PP001";
+            var query = new QueryParameters<string>();
+            var expectedResponse = ApiResponseDto<List<CommentDto>>.SuccessResponse(new List<CommentDto>());
+
+            _pimsProjectCommentApiClient.GetCommentsByProjectAsync(project, null, null, query).Returns(expectedResponse);
+
+            // Act
+            var result = await _projectCommentService.GetCommentsByProjectAsync(project, null, null, query);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            await _pimsProjectCommentApiClient.Received(1).GetCommentsByProjectAsync(
+                project, null, null, query);
+        }
+
+        #endregion
+
+       
+        #region GetCommentTopicsAsync Tests
+
+        [Fact]
+        public async Task GetCommentTopicsAsync_ApiClientReturnsTopics_ReturnsSuccessWithTopicList()
+        {
+            // Arrange
+            var topics = new List<CommentTopicDto>
+            {
+                new CommentTopicDto { Topic = "Budget" },
+                new CommentTopicDto { Topic = "Risk" },
+                new CommentTopicDto { Topic = "Schedule" }
+            };
+            var expectedResponse = ApiResponseDto<List<CommentTopicDto>>.SuccessResponse(topics);
+            _pimsProjectCommentApiClient.GetCommentTopicsAsync().Returns(expectedResponse);
+
+            // Act
+            var result = await _projectCommentService.GetCommentTopicsAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.NotNull(result.Data);
+            Assert.Equal(3, result.Data.Count);
+            await _pimsProjectCommentApiClient.Received(1).GetCommentTopicsAsync();
+        }
+
+        [Fact]
+        public async Task GetCommentTopicsAsync_ApiClientReturnsEmptyList_ReturnsSuccessWithEmptyData()
+        {
+            // Arrange
+            var expectedResponse = ApiResponseDto<List<CommentTopicDto>>.SuccessResponse(new List<CommentTopicDto>());
+            _pimsProjectCommentApiClient.GetCommentTopicsAsync().Returns(expectedResponse);
+
+            // Act
+            var result = await _projectCommentService.GetCommentTopicsAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Empty(result.Data!);
+        }
+
+        [Fact]
+        public async Task GetCommentTopicsAsync_ApiClientReturnsFailure_ReturnsFailureResponse()
+        {
+            // Arrange
+            var errors = new List<ApiErrorDto>
+            {
+                new ApiErrorDto { Code = "TOPICS_ERROR", Message = "Failed to retrieve comment topics" }
+            };
+            var expectedResponse = ApiResponseDto<List<CommentTopicDto>>.FailureResponse(errors, new ApiMetaDto());
+            _pimsProjectCommentApiClient.GetCommentTopicsAsync().Returns(expectedResponse);
+
+            // Act
+            var result = await _projectCommentService.GetCommentTopicsAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.NotNull(result.Errors);
+            Assert.Single(result.Errors);
+            Assert.Equal("TOPICS_ERROR", result.Errors[0].Code);
+            await _pimsProjectCommentApiClient.Received(1).GetCommentTopicsAsync();
+        }
+
+        [Fact]
+        public async Task GetCommentTopicsAsync_DelegatesToPimsProjectCommentApiClient()
+        {
+            // Arrange
+            _pimsProjectCommentApiClient.GetCommentTopicsAsync()
+                .Returns(ApiResponseDto<List<CommentTopicDto>>.SuccessResponse([]));
+
+            // Act
+            await _projectCommentService.GetCommentTopicsAsync();
+
+            // Assert — verify thin delegation: exactly one call to the correct API client method
+            await _pimsProjectCommentApiClient.Received(1).GetCommentTopicsAsync();
+        }
+
+        #endregion
+
+        #region GetForecastSpendByProjectAsync Tests
+
+        [Fact]
+        public async Task GetForecastSpendByProjectAsync_WithSuccessResponse_ReturnsForecastSpend()
+        {
+            // Arrange
+            var project = "PP001";
+            var forecastSpend = new ProjectCommentForecastSpendDto { ForecastSpend = 12345.67 };
+            var expectedResponse = ApiResponseDto<ProjectCommentForecastSpendDto>.SuccessResponse(forecastSpend);
+
+            _pimsProjectCommentApiClient.GetForecastSpendByProjectAsync(project).Returns(expectedResponse);
+
+            // Act
+            var result = await _projectCommentService.GetForecastSpendByProjectAsync(project);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.NotNull(result.Data);
+            Assert.Equal(12345.67, result.Data.ForecastSpend);
+            await _pimsProjectCommentApiClient.Received(1).GetForecastSpendByProjectAsync(project);
+        }
+
+        [Fact]
+        public async Task GetForecastSpendByProjectAsync_WhenApiFails_ReturnsFailureResponse()
+        {
+            // Arrange
+            var project = "INVALID";
+            var errors = new List<ApiErrorDto>
+            {
+                new ApiErrorDto { Message = "Forecast spend not found", Code = "NOT_FOUND" }
+            };
+            var expectedResponse = ApiResponseDto<ProjectCommentForecastSpendDto>.FailureResponse(errors, new ApiMetaDto());
+
+            _pimsProjectCommentApiClient.GetForecastSpendByProjectAsync(project).Returns(expectedResponse);
+
+            // Act
+            var result = await _projectCommentService.GetForecastSpendByProjectAsync(project);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.NotNull(result.Errors);
+            Assert.Single(result.Errors);
+            await _pimsProjectCommentApiClient.Received(1).GetForecastSpendByProjectAsync(project);
+        }
+
+        #endregion
+
+        #region UpdateForecastSpendByProjectAsync Tests
+
+        [Fact]
+        public async Task UpdateForecastSpendByProjectAsync_WithSuccessResponse_ReturnsUpdatedForecastSpend()
+        {
+            // Arrange
+            var project = "PP001";
+            double? forecastSpend = 20000.50;
+            var updatedForecastSpend = new ProjectCommentForecastSpendDto { ForecastSpend = forecastSpend };
+            var expectedResponse = ApiResponseDto<ProjectCommentForecastSpendDto>.SuccessResponse(updatedForecastSpend);
+
+            _pimsProjectCommentApiClient.UpdateForecastSpendByProjectAsync(project, forecastSpend).Returns(expectedResponse);
+
+            // Act
+            var result = await _projectCommentService.UpdateForecastSpendByProjectAsync(project, forecastSpend);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.NotNull(result.Data);
+            Assert.Equal(forecastSpend, result.Data.ForecastSpend);
+            await _pimsProjectCommentApiClient.Received(1).UpdateForecastSpendByProjectAsync(project, forecastSpend);
+        }
+
+        [Fact]
+        public async Task UpdateForecastSpendByProjectAsync_WhenApiFails_ReturnsFailureResponse()
+        {
+            // Arrange
+            var project = "PP001";
+            double? forecastSpend = 0;
+            var errors = new List<ApiErrorDto>
+            {
+                new ApiErrorDto { Message = "Unable to update forecast spend", Code = "UPDATE_FAILED" }
+            };
+            var expectedResponse = ApiResponseDto<ProjectCommentForecastSpendDto>.FailureResponse(errors, new ApiMetaDto());
+
+            _pimsProjectCommentApiClient.UpdateForecastSpendByProjectAsync(project, forecastSpend).Returns(expectedResponse);
+
+            // Act
+            var result = await _projectCommentService.UpdateForecastSpendByProjectAsync(project, forecastSpend);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.NotNull(result.Errors);
+            Assert.Single(result.Errors);
+            await _pimsProjectCommentApiClient.Received(1).UpdateForecastSpendByProjectAsync(project, forecastSpend);
         }
 
         #endregion

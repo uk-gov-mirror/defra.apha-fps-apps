@@ -1,5 +1,6 @@
 ﻿namespace Apha.PIMS.Core.Pagination
 {
+    
     public class PaginationParameters<TFilter>
     {
         public string? Search { get; set; }

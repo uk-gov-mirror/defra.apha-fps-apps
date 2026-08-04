@@ -112,7 +112,7 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactTestCapabilityA
             var expectedDto = ApiResponseDto<TestCapabilityDto>.SuccessResponse(new TestCapabilityDto { TestCode = "TC1" });
 
             _http.GetAsync<TestCapabilityRes>(Arg.Is<string>(url =>
-                url.Contains("api/v1/testcapability/testcapability/") &&
+                url.Contains("api/v1/testcapability/testcapability?testCode=") &&
                 url.Contains(Uri.EscapeDataString("TC1")) && url.Contains(Uri.EscapeDataString("WG1"))))
                 .Returns(apiResponse);
             _mapper.Map<ApiResponseDto<TestCapabilityDto>>(apiResponse).Returns(expectedDto);
@@ -230,7 +230,7 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactTestCapabilityA
             var expectedDto = ApiResponseDto<bool>.SuccessResponse(true);
 
             _http.DeleteAsync<bool?>(Arg.Is<string>(url =>
-                url.Contains("api/v1/testcapability/testcapability/") &&
+                url.Contains("api/v1/testcapability/testcapability?testCode=") &&
                 url.Contains(Uri.EscapeDataString("TC1")) && url.Contains(Uri.EscapeDataString("WG1"))))
                 .Returns(apiResponse);
             _mapper.Map<ApiResponseDto<bool>>(apiResponse).Returns(expectedDto);

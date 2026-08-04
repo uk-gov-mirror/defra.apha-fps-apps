@@ -912,7 +912,7 @@ namespace Apha.PACT.Api.UnitTests.Controller.WorkGroupControllerTest
 
             // Assert
             var badRequest = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal("WorkGroupName in the request body does not match the route parameter.", badRequest.Value);
+            Assert.Equal("WorkGroupName in the request body does not match the query parameter.", badRequest.Value);
             await _serviceMock.DidNotReceiveWithAnyArgs().UpdateWorkGroupEmailAsync(default!, default, default);
         }
 

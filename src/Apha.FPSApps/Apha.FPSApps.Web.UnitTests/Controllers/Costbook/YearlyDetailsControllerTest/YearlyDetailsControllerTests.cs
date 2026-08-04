@@ -111,6 +111,47 @@ public class YearlyDetailsControllerTests
 
     #endregion
 
+    #region GetAdditionalCostinflamation Tests
+
+    [Fact]
+    public async Task GetAdditionalCostinflamation_ReturnsSuccess_WhenServiceSucceeds()
+    {
+        // Arrange
+        var encodedProjectId = Uri.EscapeDataString("2024/001");
+        _service.GetAdditionalCostinflamationAsync("2024/001", 2025)
+            .Returns(ApiResponseDto<string>.SuccessResponse("1.23"));
+
+        // Act
+        var result = await _controller.GetAdditionalCostinflamation(encodedProjectId, 2025);
+
+        // Assert
+        var jsonResult = Assert.IsType<JsonResult>(result);
+        var element = GetJsonResultElement(jsonResult);
+        Assert.True(element.GetProperty("success").GetBoolean());
+        Assert.Equal("1.23", element.GetProperty("additionalCostInflamation").GetString());
+
+        await _service.Received(1).GetAdditionalCostinflamationAsync("2024/001", 2025);
+    }
+
+    [Fact]
+    public async Task GetAdditionalCostinflamation_ReturnsFailureDefault_WhenServiceFails()
+    {
+        // Arrange
+        _service.GetAdditionalCostinflamationAsync(Arg.Any<string>(), Arg.Any<int>())
+            .Returns(ApiResponseDto<string>.FailureResponse(null, new ApiMetaDto()));
+
+        // Act
+        var result = await _controller.GetAdditionalCostinflamation("2024/001", 2025);
+
+        // Assert
+        var jsonResult = Assert.IsType<JsonResult>(result);
+        var element = GetJsonResultElement(jsonResult);
+        Assert.False(element.GetProperty("success").GetBoolean());
+        Assert.Equal("0", element.GetProperty("additionalCostInflamation").GetString());
+    }
+
+    #endregion
+
     #region AddProjectYear Tests
 
     [Fact]

@@ -67,8 +67,8 @@ namespace Apha.PACT.Api.Controllers
         }
 
         /// <summary>Retrieves a Project Sub-Contract record by sub-contract counter.</summary>
-        [HttpGet("{id:int}")]
-        public async Task<IActionResult> GetById(int id)
+        [HttpGet("subcontract/id")]
+        public async Task<IActionResult> GetById([FromQuery] int id)
         {
             ProjectSubContractDto? item = await _service.GetByIdAsync(id);
             if (item is null)
@@ -86,8 +86,8 @@ namespace Apha.PACT.Api.Controllers
         }
 
         /// <summary>Updates an existing Project Sub-Contract record.</summary>
-        [HttpPut("{id:int}")]
-        public async Task<IActionResult> Update(int id, [FromBody] ProjectSubContractReq request)
+        [HttpPut("subcontract/id")]
+        public async Task<IActionResult> Update([FromQuery] int id, [FromBody] ProjectSubContractReq request)
         {
             ProjectSubContractDto dto = _mapper.Map<ProjectSubContractDto>(request);
             dto.SubContCounter = id;
@@ -96,8 +96,8 @@ namespace Apha.PACT.Api.Controllers
         }
 
         /// <summary>Deletes a Project Sub-Contract record.</summary>
-        [HttpDelete("{id:int}")]
-        public async Task<IActionResult> Delete(int id)
+        [HttpDelete("subcontract/id")]
+        public async Task<IActionResult> Delete([FromQuery] int id)
         {
             bool deleted = await _service.DeleteAsync(id);
             return Ok(deleted);

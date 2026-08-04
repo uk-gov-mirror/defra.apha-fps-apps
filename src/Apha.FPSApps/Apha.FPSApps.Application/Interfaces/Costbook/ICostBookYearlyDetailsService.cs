@@ -38,4 +38,5 @@ public interface ICostBookYearlyDetailsService
     Task<ApiResponseDto<List<AccountCategoryDto>>> GetAccountCategoriesAsync();
     Task<ApiResponseDto<List<TestCodeLookupDto>>> GetTestCodeLookupsAsync(string projectId, int year, bool isDefra);
     Task<ApiResponseDto<List<AnimalLookupDto>>> GetAllAnimalsAsync();
+    Task<ApiResponseDto<string>> GetAdditionalCostinflamationAsync(string projectId, int year);
 }

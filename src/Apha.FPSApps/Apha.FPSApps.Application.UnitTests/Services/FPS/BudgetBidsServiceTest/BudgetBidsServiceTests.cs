@@ -446,5 +446,72 @@ namespace Apha.FPSApps.Application.UnitTests.Services.FPS.BudgetBidsServiceTest
         }
 
         #endregion
+
+        #region GetGenericBidsPagedAsync Tests
+
+        [Fact]
+        public async Task GetGenericBidsPagedAsync_WithData_ReturnsPagedSuccessResponse()
+        {
+            // Arrange
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var bidList = new List<GenericBidViewDto>
+            {
+                new() { ProfitCentre = "PC1", WorkGroupName = "WG01", Account = "ACC1", GenBid = 100m, AccountType = "TYPE1" },
+                new() { ProfitCentre = "PC1", WorkGroupName = "WG01", Account = "ACC2", GenBid = 200m, AccountType = "TYPE2" }
+            };
+            var expectedResponse = ApiResponseDto<List<GenericBidViewDto>>.SuccessResponse(
+                bidList, new PaginationDto { PageNumber = 1, PageSize = 10, TotalRecords = 2, TotalPages = 1 });
+            _fpsBudgetBidsApiClient.GetGenericBidsPagedAsync(query).Returns(expectedResponse);
+
+            // Act
+            var result = await _sut.GetGenericBidsPagedAsync(query);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Equal(2, result.Data!.Count);
+            Assert.NotNull(result.Pagination);
+            Assert.Equal(2, result.Pagination!.TotalRecords);
+            await _fpsBudgetBidsApiClient.Received(1).GetGenericBidsPagedAsync(query);
+        }
+
+        [Fact]
+        public async Task GetGenericBidsPagedAsync_WithEmptyResult_ReturnsSuccessWithEmptyData()
+        {
+            // Arrange
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var expectedResponse = ApiResponseDto<List<GenericBidViewDto>>.SuccessResponse(
+                new List<GenericBidViewDto>(), new PaginationDto { PageNumber = 1, PageSize = 10, TotalRecords = 0, TotalPages = 0 });
+            _fpsBudgetBidsApiClient.GetGenericBidsPagedAsync(query).Returns(expectedResponse);
+
+            // Act
+            var result = await _sut.GetGenericBidsPagedAsync(query);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Empty(result.Data!);
+        }
+
+        [Fact]
+        public async Task GetGenericBidsPagedAsync_WhenApiFails_ReturnsFailureResponse()
+        {
+            // Arrange
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var errors = new List<ApiErrorDto> { new() { Message = "API Error", Code = "API_ERROR" } };
+            var expectedResponse = ApiResponseDto<List<GenericBidViewDto>>.FailureResponse(errors, new ApiMetaDto());
+            _fpsBudgetBidsApiClient.GetGenericBidsPagedAsync(query).Returns(expectedResponse);
+
+            // Act
+            var result = await _sut.GetGenericBidsPagedAsync(query);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.Single(result.Errors!);
+            await _fpsBudgetBidsApiClient.Received(1).GetGenericBidsPagedAsync(query);
+        }
+
+        #endregion
     }
 }

@@ -199,7 +199,7 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactProjectInvoiceA
                 new ProjectInvoiceDto { InvoiceCounter = invoiceCounter, ProjectParent = "PP001" }
             );
 
-            _http.GetAsync<ProjectInvoiceRes>($"api/v1/projectinvoice/{invoiceCounter}").Returns(apiResponse);
+            _http.GetAsync<ProjectInvoiceRes>($"api/v1/projectinvoice/invoice/id?id={invoiceCounter}").Returns(apiResponse);
             _mapper.Map<ApiResponseDto<ProjectInvoiceDto>>(apiResponse).Returns(expectedDto);
 
             // Act
@@ -209,7 +209,7 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactProjectInvoiceA
             Assert.NotNull(result);
             Assert.True(result.Success);
             Assert.Equal(invoiceCounter, result.Data?.InvoiceCounter);
-            await _http.Received(1).GetAsync<ProjectInvoiceRes>($"api/v1/projectinvoice/{invoiceCounter}");
+            await _http.Received(1).GetAsync<ProjectInvoiceRes>($"api/v1/projectinvoice/invoice/id?id={invoiceCounter}");
         }
 
         [Fact]
@@ -308,9 +308,9 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactProjectInvoiceA
             var apiResponse = new ApiResponse<ProjectInvoiceRes> { Success = true, Data = invoiceRes };
             var expectedDto = ApiResponseDto<ProjectInvoiceDto>.SuccessResponse(invoiceDto);
 
-            _mapper.Map<ProjectInvoiceReq>(invoiceDto).Returns(invoiceReq);
-            _http.PutAsync<ProjectInvoiceReq, ProjectInvoiceRes>($"api/v1/projectinvoice/{invoiceCounter}", invoiceReq).Returns(apiResponse);
-            _mapper.Map<ApiResponseDto<ProjectInvoiceDto>>(apiResponse).Returns(expectedDto);
+            _mapper.Map<ProjectInvoiceReq>(Arg.Any<ProjectInvoiceDto>()).Returns(invoiceReq);
+            _http.PutAsync<ProjectInvoiceReq, ProjectInvoiceRes>($"api/v1/projectinvoice/invoice/id?id={invoiceCounter}", Arg.Any<ProjectInvoiceReq>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<ProjectInvoiceDto>>(Arg.Any<ApiResponse<ProjectInvoiceRes>>()).Returns(expectedDto);
 
             // Act
             var result = await _client.UpdateAsync(invoiceCounter, invoiceDto);
@@ -319,7 +319,7 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactProjectInvoiceA
             Assert.NotNull(result);
             Assert.True(result.Success);
             Assert.Equal(900.00m, result.Data?.Amount);
-            await _http.Received(1).PutAsync<ProjectInvoiceReq, ProjectInvoiceRes>($"api/v1/projectinvoice/{invoiceCounter}", invoiceReq);
+            await _http.Received(1).PutAsync<ProjectInvoiceReq, ProjectInvoiceRes>($"api/v1/projectinvoice/invoice/id?id={invoiceCounter}", Arg.Any<ProjectInvoiceReq>());
         }
 
         [Fact]
@@ -363,7 +363,7 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactProjectInvoiceA
             var apiResponse = new ApiResponse<bool?> { Success = true, Data = true };
             var expectedDto = ApiResponseDto<bool>.SuccessResponse(true);
 
-            _http.DeleteAsync<bool?>($"api/v1/projectinvoice/{invoiceCounter}").Returns(apiResponse);
+            _http.DeleteAsync<bool?>($"api/v1/projectinvoice/invoice/id?id={invoiceCounter}").Returns(apiResponse);
             _mapper.Map<ApiResponseDto<bool>>(apiResponse).Returns(expectedDto);
 
             // Act
@@ -373,7 +373,7 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactProjectInvoiceA
             Assert.NotNull(result);
             Assert.True(result.Success);
             Assert.True(result.Data);
-            await _http.Received(1).DeleteAsync<bool?>($"api/v1/projectinvoice/{invoiceCounter}");
+            await _http.Received(1).DeleteAsync<bool?>($"api/v1/projectinvoice/invoice/id?id={invoiceCounter}");
         }
 
         [Fact]

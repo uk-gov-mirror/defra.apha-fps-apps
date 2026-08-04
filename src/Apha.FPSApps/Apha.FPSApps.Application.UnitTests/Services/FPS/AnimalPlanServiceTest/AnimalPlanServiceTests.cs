@@ -92,6 +92,76 @@ namespace Apha.FPSApps.Application.UnitTests.Services.FPS.AnimalPlanServiceTest
 
         #endregion
 
+        #region GetAnimalCostByAnimalTypeAsync Tests
+
+        [Fact]
+        public async Task GetAnimalCostByAnimalTypeAsync_WithSuccessResponse_ReturnsAnimalCostList()
+        {
+            // Arrange
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var animalType = "Cattle";
+            var animalCosts = new List<AnimalCostViewDto>
+            {
+                new() { IndCounter = 1, AnimalType = "Cattle", JobCode = "JOB001", NumberOfDays = 5, NumberOfAnimals = 10, DailyRate = 25m },
+                new() { IndCounter = 2, AnimalType = "Cattle", JobCode = "JOB002", NumberOfDays = 3, NumberOfAnimals = 20, DailyRate = 25m }
+            };
+            var expectedResponse = ApiResponseDto<List<AnimalCostViewDto>>.SuccessResponse(
+                animalCosts, new PaginationDto { PageNumber = 1, PageSize = 10, TotalRecords = 2 });
+
+            _fpsAnimalPlanApiClient.GetAnimalCostByAnimalTypeAsync(query, animalType).Returns(expectedResponse);
+
+            // Act
+            var result = await _animalPlanService.GetAnimalCostByAnimalTypeAsync(query, animalType);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Equal(2, result.Data?.Count);
+            await _fpsAnimalPlanApiClient.Received(1).GetAnimalCostByAnimalTypeAsync(query, animalType);
+        }
+
+        [Fact]
+        public async Task GetAnimalCostByAnimalTypeAsync_WithEmptyResult_ReturnsSuccessWithEmptyList()
+        {
+            // Arrange
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var animalType = "Cattle";
+            var expectedResponse = ApiResponseDto<List<AnimalCostViewDto>>.SuccessResponse(
+                new List<AnimalCostViewDto>(), new PaginationDto { PageNumber = 1, PageSize = 10, TotalRecords = 0 });
+
+            _fpsAnimalPlanApiClient.GetAnimalCostByAnimalTypeAsync(query, animalType).Returns(expectedResponse);
+
+            // Act
+            var result = await _animalPlanService.GetAnimalCostByAnimalTypeAsync(query, animalType);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Empty(result.Data!);
+        }
+
+        [Fact]
+        public async Task GetAnimalCostByAnimalTypeAsync_WhenApiFails_ReturnsFailureResponse()
+        {
+            // Arrange
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var animalType = "Cattle";
+            var errors = new List<ApiErrorDto> { new() { Message = "API Error", Code = "API_ERROR" } };
+            var expectedResponse = ApiResponseDto<List<AnimalCostViewDto>>.FailureResponse(errors, new ApiMetaDto());
+
+            _fpsAnimalPlanApiClient.GetAnimalCostByAnimalTypeAsync(query, animalType).Returns(expectedResponse);
+
+            // Act
+            var result = await _animalPlanService.GetAnimalCostByAnimalTypeAsync(query, animalType);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.Single(result.Errors!);
+        }
+
+        #endregion
+
         #region GetAnimalLookupAsync Tests
 
         [Fact]

@@ -19,7 +19,18 @@ namespace Apha.FPSApps.Web.Mappings
             CreateMap<ProposedProjectViewModel, ProposedProjectDto>().ReverseMap();
             CreateMap<ProjectDetailsViewModel, ProjectDetailDto>().ReverseMap();
             CreateMap<ProjectDetailsViewModel, ProposedProjectDto>().ReverseMap();
-            CreateMap<ProjectCommentItem, CommentDto>().ReverseMap();            
+            CreateMap<ProjectCommentItem, CommentDto>()
+                .ForMember(dest => dest.CommentText, opt => opt.MapFrom(src => src.Comment))
+                .ForMember(dest => dest.MadeBy, opt => opt.MapFrom(src => src.MadeBy))
+                .ForMember(dest => dest.DateEntered, opt => opt.MapFrom(src => src.DateEntered))
+                .ReverseMap()
+                .ForMember(dest => dest.Comment, opt => opt.MapFrom(src => src.CommentText))
+                .ForMember(dest => dest.MadeBy, opt => opt.MapFrom(src => src.MadeBy))
+                .ForMember(dest => dest.DateEntered, opt => opt.MapFrom(src => src.DateEntered));
+            
+            // Maps CommentNo, Project, Year, Topic, CommentText → CommentDto fields; ReverseMap for pre-population on edit
+            CreateMap<AddEditCommentViewModel, CommentDto>().ReverseMap();
+            // Plan grid item — maps from plan fields on the shared DTO
             CreateMap<AdditionalCostDto, AdditionalCostPlanItem>().ReverseMap();
             CreateMap<AdditionalCostDto, AdditionalCostActualItem>().ReverseMap();
             CreateMap<AnimalCostDto, AnimalCostPlanItem>().ReverseMap();

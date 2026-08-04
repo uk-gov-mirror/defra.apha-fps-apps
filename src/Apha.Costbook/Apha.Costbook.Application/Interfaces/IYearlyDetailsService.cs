@@ -37,4 +37,5 @@ public interface IYearlyDetailsService
     Task<IEnumerable<AccountCategoryDto>> GetAccountCategoriesAsync();
     Task<IEnumerable<TestCodeLookupDto>> GetTestCodeLookupsAsync(string projectId, int year, bool isDefra);
     Task<IEnumerable<AnimalLookupDto>> GetAllAnimalsAsync();
+    Task<string> GetAdditionalCostinflamationAsync(string projectId, int year);
 }

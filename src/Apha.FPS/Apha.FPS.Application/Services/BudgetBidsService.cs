@@ -97,5 +97,12 @@ namespace Apha.FPS.Application.Services
             var categories = await _repository.GetAccountCategoriesAsync();
             return _mapper.Map<List<AccountCategoryDto>>(categories);
         }
+
+        public async Task<PaginatedResult<GenericBidViewDto>> GetGenericBidsPagedAsync(QueryParameters<string> query)
+        {
+            var parameters = _mapper.Map<Apha.FPS.Core.Pagination.PaginationParameters<string>>(query);
+            var pagedData = await _repository.GetGenericBidsPagedAsync(parameters);
+            return _mapper.Map<PaginatedResult<GenericBidViewDto>>(pagedData);
+        }
     }
 }

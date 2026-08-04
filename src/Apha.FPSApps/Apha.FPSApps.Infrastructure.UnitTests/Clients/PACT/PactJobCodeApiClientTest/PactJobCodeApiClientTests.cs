@@ -125,7 +125,7 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactJobCodeApiClien
                 }
             );
 
-            _http.GetAsync<List<JobCodeRes>>(Arg.Is<string>(url => url.Contains($"api/v1/jobcode/project/{Uri.EscapeDataString(parentProject)}")))
+            _http.GetAsync<List<JobCodeRes>>(Arg.Is<string>(url => url.Contains($"api/v1/jobcode/project?parentProject={Uri.EscapeDataString(parentProject)}")))
                 .Returns(apiResponse);
             _mapper.Map<ApiResponseDto<List<JobCodeDto>>>(apiResponse).Returns(expectedDto);
 
@@ -137,7 +137,75 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactJobCodeApiClien
             Assert.True(result.Success);
             Assert.Equal(2, result.Data?.Count);
             await _http.Received(1).GetAsync<List<JobCodeRes>>(
-                Arg.Is<string>(url => url.Contains($"api/v1/jobcode/project/{Uri.EscapeDataString(parentProject)}")));
+                Arg.Is<string>(url => url.Contains($"api/v1/jobcode/project?parentProject={Uri.EscapeDataString(parentProject)}")));
+        }
+
+        [Fact]
+        public async Task GetJobCodesByProjectAsync_WithSpecialCharacters_EncodesUrlCorrectly()
+        {
+            // Arrange
+            var parentProject = "PP/001 & Test";
+            var expectedEncodedProject = Uri.EscapeDataString(parentProject); // Should be "PP%2F001%20%26%20Test"
+            var jobCodeList = new List<JobCodeRes>
+            {
+                new() { JobCodeId = "JC001", ParentProject = parentProject, JobCodeName = "Job Code One" }
+            };
+            var apiResponse = new ApiResponse<List<JobCodeRes>> { Success = true, Data = jobCodeList };
+            var expectedDto = ApiResponseDto<List<JobCodeDto>>.SuccessResponse(
+                new List<JobCodeDto>
+                {
+                    new() { JobCodeId = "JC001", ParentProject = parentProject }
+                }
+            );
+
+            _http.GetAsync<List<JobCodeRes>>(Arg.Is<string>(url => url.Contains($"api/v1/jobcode/project?parentProject={expectedEncodedProject}")))
+                .Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<JobCodeDto>>>(apiResponse).Returns(expectedDto);
+
+            // Act
+            var result = await _client.GetJobCodesByProjectAsync(parentProject);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Single(result.Data!);
+            await _http.Received(1).GetAsync<List<JobCodeRes>>(
+                Arg.Is<string>(url => url.Contains($"api/v1/jobcode/project?parentProject={expectedEncodedProject}")));
+        }
+
+        [Theory]
+        [InlineData("PP/001", "PP%2F001")]
+        [InlineData("PP 001", "PP%20001")]
+        [InlineData("PP&001", "PP%26001")]
+        [InlineData("PP+001", "PP%2B001")]
+        [InlineData("PP#001", "PP%23001")]
+        public async Task GetJobCodesByProjectAsync_WithVariousSpecialCharacters_EncodesCorrectly(string parentProject, string expectedEncoded)
+        {
+            // Arrange
+            var jobCodeList = new List<JobCodeRes>
+            {
+                new() { JobCodeId = "JC001", ParentProject = parentProject }
+            };
+            var apiResponse = new ApiResponse<List<JobCodeRes>> { Success = true, Data = jobCodeList };
+            var expectedDto = ApiResponseDto<List<JobCodeDto>>.SuccessResponse(
+                new List<JobCodeDto>
+                {
+                    new() { JobCodeId = "JC001", ParentProject = parentProject }
+                }
+            );
+
+            _http.GetAsync<List<JobCodeRes>>(Arg.Is<string>(url => url.Contains($"api/v1/jobcode/project?parentProject={expectedEncoded}")))
+                .Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<JobCodeDto>>>(apiResponse).Returns(expectedDto);
+
+            // Act
+            var result = await _client.GetJobCodesByProjectAsync(parentProject);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            await _http.Received(1).GetAsync<List<JobCodeRes>>(
+                Arg.Is<string>(url => url.Contains($"api/v1/jobcode/project?parentProject={expectedEncoded}")));
         }
 
         [Fact]
@@ -223,6 +291,40 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactJobCodeApiClien
             await _http.Received(1).GetAsync<List<JobCodeRes>>(Arg.Is<string>(url => url.Contains("api/v1/jobcode/paged")));
         }
 
+        [Fact]
+        public async Task GetPagedJobCodesAsync_WithSpecialCharactersInProject_EncodesUrlCorrectly()
+        {
+            // Arrange
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var parentProject = "PP/001 & Test";
+            var expectedEncoded = Uri.EscapeDataString(parentProject);
+            var jobCodeList = new List<JobCodeRes> { new() { JobCodeId = "JC001" } };
+            var apiResponse = new ApiResponse<List<JobCodeRes>>
+            {
+                Success = true,
+                Data = jobCodeList,
+                Pagination = new Pagination { PageNumber = 1, PageSize = 10, TotalRecords = 1 }
+            };
+            var expectedDto = ApiResponseDto<List<JobCodeDto>>.SuccessResponse(
+                new List<JobCodeDto> { new() { JobCodeId = "JC001" } },
+                new PaginationDto { PageNumber = 1, PageSize = 10, TotalRecords = 1 }
+            );
+
+            _http.GetAsync<List<JobCodeRes>>(Arg.Is<string>(url =>
+                url.Contains("api/v1/jobcode/paged") && url.Contains($"parentProject={expectedEncoded}")))
+                .Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<JobCodeDto>>>(apiResponse).Returns(expectedDto);
+
+            // Act
+            var result = await _client.GetPagedJobCodesAsync(query, parentProject);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            await _http.Received(1).GetAsync<List<JobCodeRes>>(
+                Arg.Is<string>(url => url.Contains("api/v1/jobcode/paged") && url.Contains($"parentProject={expectedEncoded}")));
+        }
+
         #endregion
 
         #region GetJobCodeByIdAsync Tests
@@ -238,7 +340,7 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactJobCodeApiClien
                 new JobCodeDto { JobCodeId = jobCodeId, JobCodeName = "Test Job Code" }
             );
 
-            _http.GetAsync<JobCodeRes>($"api/v1/jobcode/{Uri.EscapeDataString(jobCodeId)}").Returns(apiResponse);
+            _http.GetAsync<JobCodeRes>($"api/v1/jobcode/jobCodeId?jobCodeId={Uri.EscapeDataString(jobCodeId)}").Returns(apiResponse);
             _mapper.Map<ApiResponseDto<JobCodeDto>>(apiResponse).Returns(expectedDto);
 
             // Act
@@ -248,7 +350,7 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactJobCodeApiClien
             Assert.NotNull(result);
             Assert.True(result.Success);
             Assert.Equal(jobCodeId, result.Data?.JobCodeId);
-            await _http.Received(1).GetAsync<JobCodeRes>($"api/v1/jobcode/{Uri.EscapeDataString(jobCodeId)}");
+            await _http.Received(1).GetAsync<JobCodeRes>($"api/v1/jobcode/jobCodeId?jobCodeId={Uri.EscapeDataString(jobCodeId)}");
         }
 
         [Fact]
@@ -274,6 +376,58 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactJobCodeApiClien
             Assert.NotNull(result);
             Assert.False(result.Success);
             Assert.NotNull(result.Errors);
+        }
+
+        [Fact]
+        public async Task GetJobCodeByIdAsync_WithSpecialCharactersInId_EncodesUrlCorrectly()
+        {
+            // Arrange
+            var jobCodeId = "JC/001 & Test";
+            var expectedEncoded = Uri.EscapeDataString(jobCodeId);
+            var jobCodeRes = new JobCodeRes { JobCodeId = jobCodeId, JobCodeName = "Test Job Code" };
+            var apiResponse = new ApiResponse<JobCodeRes> { Success = true, Data = jobCodeRes };
+            var expectedDto = ApiResponseDto<JobCodeDto>.SuccessResponse(
+                new JobCodeDto { JobCodeId = jobCodeId, JobCodeName = "Test Job Code" }
+            );
+
+            _http.GetAsync<JobCodeRes>($"api/v1/jobcode/jobCodeId?jobCodeId={expectedEncoded}").Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<JobCodeDto>>(apiResponse).Returns(expectedDto);
+
+            // Act
+            var result = await _client.GetJobCodeByIdAsync(jobCodeId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Equal(jobCodeId, result.Data?.JobCodeId);
+            await _http.Received(1).GetAsync<JobCodeRes>($"api/v1/jobcode/jobCodeId?jobCodeId={expectedEncoded}");
+        }
+
+        [Theory]
+        [InlineData("JC/001", "JC%2F001")]
+        [InlineData("JC 001", "JC%20001")]
+        [InlineData("JC&001", "JC%26001")]
+        [InlineData("JC+001", "JC%2B001")]
+        [InlineData("JC#001", "JC%23001")]
+        public async Task GetJobCodeByIdAsync_WithVariousSpecialCharacters_EncodesCorrectly(string jobCodeId, string expectedEncoded)
+        {
+            // Arrange
+            var jobCodeRes = new JobCodeRes { JobCodeId = jobCodeId };
+            var apiResponse = new ApiResponse<JobCodeRes> { Success = true, Data = jobCodeRes };
+            var expectedDto = ApiResponseDto<JobCodeDto>.SuccessResponse(
+                new JobCodeDto { JobCodeId = jobCodeId }
+            );
+
+            _http.GetAsync<JobCodeRes>($"api/v1/jobcode/jobCodeId?jobCodeId={expectedEncoded}").Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<JobCodeDto>>(apiResponse).Returns(expectedDto);
+
+            // Act
+            var result = await _client.GetJobCodeByIdAsync(jobCodeId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            await _http.Received(1).GetAsync<JobCodeRes>($"api/v1/jobcode/jobCodeId?jobCodeId={expectedEncoded}");
         }
 
         #endregion
@@ -450,7 +604,7 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactJobCodeApiClien
             var apiResponse = new ApiResponse<bool?> { Success = true, Data = true };
             var expectedDto = ApiResponseDto<bool>.SuccessResponse(true);
 
-            _http.DeleteAsync<bool?>($"api/v1/jobcode/{Uri.EscapeDataString(jobCodeId)}").Returns(apiResponse);
+            _http.DeleteAsync<bool?>($"api/v1/jobcode/jobCodeId?jobCodeId={Uri.EscapeDataString(jobCodeId)}").Returns(apiResponse);
             _mapper.Map<ApiResponseDto<bool>>(apiResponse).Returns(expectedDto);
 
             // Act
@@ -460,7 +614,7 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactJobCodeApiClien
             Assert.NotNull(result);
             Assert.True(result.Success);
             Assert.True(result.Data);
-            await _http.Received(1).DeleteAsync<bool?>($"api/v1/jobcode/{Uri.EscapeDataString(jobCodeId)}");
+            await _http.Received(1).DeleteAsync<bool?>($"api/v1/jobcode/jobCodeId?jobCodeId={Uri.EscapeDataString(jobCodeId)}");
         }
 
         [Fact]
@@ -511,6 +665,51 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactJobCodeApiClien
             Assert.NotNull(result);
             Assert.False(result.Success);
             Assert.Contains(result.Errors!, e => e.Code == "BUSINESS_RULE_VIOLATION");
+        }
+
+        [Fact]
+        public async Task DeleteJobCodeAsync_WithSpecialCharactersInId_EncodesUrlCorrectly()
+        {
+            // Arrange
+            var jobCodeId = "JC/001 & Test";
+            var expectedEncoded = Uri.EscapeDataString(jobCodeId);
+            var apiResponse = new ApiResponse<bool?> { Success = true, Data = true };
+            var expectedDto = ApiResponseDto<bool>.SuccessResponse(true);
+
+            _http.DeleteAsync<bool?>($"api/v1/jobcode/jobCodeId?jobCodeId={expectedEncoded}").Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<bool>>(apiResponse).Returns(expectedDto);
+
+            // Act
+            var result = await _client.DeleteJobCodeAsync(jobCodeId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            await _http.Received(1).DeleteAsync<bool?>($"api/v1/jobcode/jobCodeId?jobCodeId={expectedEncoded}");
+        }
+
+        [Theory]
+        [InlineData("JC/001", "JC%2F001")]
+        [InlineData("JC 001", "JC%20001")]
+        [InlineData("JC&001", "JC%26001")]
+        [InlineData("JC+001", "JC%2B001")]
+        [InlineData("JC#001", "JC%23001")]
+        public async Task DeleteJobCodeAsync_WithVariousSpecialCharacters_EncodesCorrectly(string jobCodeId, string expectedEncoded)
+        {
+            // Arrange
+            var apiResponse = new ApiResponse<bool?> { Success = true, Data = true };
+            var expectedDto = ApiResponseDto<bool>.SuccessResponse(true);
+
+            _http.DeleteAsync<bool?>($"api/v1/jobcode/jobCodeId?jobCodeId={expectedEncoded}").Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<bool>>(apiResponse).Returns(expectedDto);
+
+            // Act
+            var result = await _client.DeleteJobCodeAsync(jobCodeId);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            await _http.Received(1).DeleteAsync<bool?>($"api/v1/jobcode/jobCodeId?jobCodeId={expectedEncoded}");
         }
 
         #endregion

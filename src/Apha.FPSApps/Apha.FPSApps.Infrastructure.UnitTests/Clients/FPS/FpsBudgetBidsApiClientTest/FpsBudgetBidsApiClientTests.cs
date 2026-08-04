@@ -2,6 +2,7 @@ using Apha.Common.Contracts;
 using Apha.Common.Contracts.FPS;
 using Apha.FPSApps.Application.Dtos;
 using Apha.FPSApps.Application.Dtos.FPS;
+using Apha.FPSApps.Application.Pagination;
 using Apha.FPSApps.Infrastructure.Integrations.FPSApis.Clients;
 using Apha.FPSApps.Infrastructure.Integrations.HttpExecutor;
 using AutoMapper;
@@ -365,6 +366,107 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.FPS.FpsBudgetBidsApiClie
             // Assert
             Assert.NotNull(result);
             Assert.False(result.Success);
+        }
+
+        #endregion
+
+        #region GetGenericBidsPagedAsync Tests
+
+        [Fact]
+        public async Task GetGenericBidsPagedAsync_WithSuccessResponse_ReturnsMappedDtos()
+        {
+            // Arrange
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var res = new List<GenericBidViewRes>
+            {
+                new() { ProfitCentre = "PC1", WorkGroupName = "WG01", Account = "ACC1", GenBid = 100m, AccountType = "TYPE1" }
+            };
+            var apiResponse = new ApiResponse<IEnumerable<GenericBidViewRes>> { Success = true, Data = res };
+            var expectedDto = ApiResponseDto<List<GenericBidViewDto>>.SuccessResponse(new List<GenericBidViewDto>
+            {
+                new() { ProfitCentre = "PC1", WorkGroupName = "WG01", Account = "ACC1", GenBid = 100m, AccountType = "TYPE1" }
+            });
+
+            _http.GetAsync<IEnumerable<GenericBidViewRes>>(Arg.Is<string>(url => url.Contains("generic")))
+                .Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<GenericBidViewDto>>>(apiResponse).Returns(expectedDto);
+
+            // Act
+            var result = await _client.GetGenericBidsPagedAsync(query);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Single(result.Data!);
+            Assert.Equal("WG01", result.Data![0].WorkGroupName);
+        }
+
+        [Fact]
+        public async Task GetGenericBidsPagedAsync_WithEmptyResult_ReturnsSuccessWithEmptyList()
+        {
+            // Arrange
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var apiResponse = new ApiResponse<IEnumerable<GenericBidViewRes>> { Success = true, Data = new List<GenericBidViewRes>() };
+            var expectedDto = ApiResponseDto<List<GenericBidViewDto>>.SuccessResponse(new List<GenericBidViewDto>());
+
+            _http.GetAsync<IEnumerable<GenericBidViewRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<GenericBidViewDto>>>(apiResponse).Returns(expectedDto);
+
+            // Act
+            var result = await _client.GetGenericBidsPagedAsync(query);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Empty(result.Data!);
+        }
+
+        [Fact]
+        public async Task GetGenericBidsPagedAsync_WhenApiReturnsFailure_ReturnsFailureResponse()
+        {
+            // Arrange
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var apiResponse = new ApiResponse<IEnumerable<GenericBidViewRes>>
+            {
+                Success = false,
+                Errors  = new List<ApiError> { new() { Message = "Error", Code = "ERR" } }
+            };
+            var mappedResponse = new ApiResponseDto<List<GenericBidViewDto>>
+            {
+                Success = false,
+                Errors  = new List<ApiErrorDto> { new() { Message = "Error", Code = "ERR" } },
+                Meta    = new ApiMetaDto()
+            };
+
+            _http.GetAsync<IEnumerable<GenericBidViewRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<GenericBidViewDto>>>(apiResponse).Returns(mappedResponse);
+
+            // Act
+            var result = await _client.GetGenericBidsPagedAsync(query);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.Single(result.Errors!);
+        }
+
+        [Fact]
+        public async Task GetGenericBidsPagedAsync_PassesQueryParametersToUrl()
+        {
+            // Arrange
+            var query = new QueryParameters<string> { Page = 2, PageSize = 5, SortBy = "Account", Descending = true };
+            var apiResponse = new ApiResponse<IEnumerable<GenericBidViewRes>> { Success = true, Data = new List<GenericBidViewRes>() };
+            var expectedDto = ApiResponseDto<List<GenericBidViewDto>>.SuccessResponse(new List<GenericBidViewDto>());
+
+            _http.GetAsync<IEnumerable<GenericBidViewRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<GenericBidViewDto>>>(apiResponse).Returns(expectedDto);
+
+            // Act
+            await _client.GetGenericBidsPagedAsync(query);
+
+            // Assert
+            await _http.Received(1).GetAsync<IEnumerable<GenericBidViewRes>>(
+                Arg.Is<string>(url => url.Contains("Account") && url.Contains("2")));
         }
 
         #endregion

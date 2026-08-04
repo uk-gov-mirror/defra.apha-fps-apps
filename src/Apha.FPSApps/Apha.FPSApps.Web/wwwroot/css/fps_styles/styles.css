@@ -5243,3 +5243,39 @@ body,
     max-width: 150px;
     height: 26px;
 }
+
+.asu-dropdown-wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.asu-dropdown-wrapper {
+    position: relative;
+}
+
+.asu-side-card {
+    background-color: #f3f2f1;
+    border: 1px solid #b1b4b6;
+    border-radius: 4px;
+    padding: 16px;
+}
+
+.asu-side-button {
+    display: block;
+    width: 100%;
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+.asu-summary-row {
+    display: flex;
+    gap: 24px;
+    margin-top: 8px;
+}
+
+#gridContainer_asuUsageList .grid-scroll-container {
+    height: 340px;
+    max-height: 340px;
+}

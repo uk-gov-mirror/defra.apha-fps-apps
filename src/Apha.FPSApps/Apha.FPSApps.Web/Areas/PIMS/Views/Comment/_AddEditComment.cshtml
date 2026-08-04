@@ -1,0 +1,117 @@
+@model Apha.FPSApps.Web.Areas.PIMS.Models.AddEditCommentViewModel
+
+@{
+    var title     = Model.IsAddingNew ? "Add Comment" : "Edit Comment";
+    var saveLabel = Model.IsAddingNew ? "Save"        : "Update";
+}
+
+<div class="modal-header sup_flex_between_center">
+    <h3 class="govuk-heading-s sup_margin_0" id="tblCommentsModalLabel">@title</h3>
+    <button type="button" class="btn-close btn-red" onclick="closeCommentModal()" aria-label="Close">x</button>
+</div>
+<div class="modal-body">
+    <div class="app-mandatory-note">* Mandatory Fields</div>
+    <form id="formTblComments" class="app-form row">
+        @Html.AntiForgeryToken()
+
+        
+        <input type="hidden" asp-for="CommentNo" id="hdnCommentNo" />
+        
+        <input type="hidden" asp-for="Project" id="hdnProject" />
+       
+        <input type="hidden" asp-for="IsAddingNew" id="hdnIsAddingNew" />
+
+        <div id="tblCommentsDbError" class="govuk-error-summary sup_display_none" aria-live="assertive">
+            <div role="alert">
+                <h2 class="govuk-error-summary__title">There is a problem</h2>
+                <div class="govuk-error-summary__body">
+                    <p id="tblCommentsDbErrorText" class="sup_margin_0"></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-one-half">
+               
+                <div class="govuk-form-group sup_margin_bottom_10" data-field-group="modal-commentYear">
+                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16"
+                           asp-for="Year">
+                        Year <span class="app-required" aria-hidden="true">*</span>
+                    </label>
+                    <select class="govuk-select govuk-!-font-size-16 govuk-!-width-full"
+                            asp-for="Year"
+                            id="selCommentYear"
+                            asp-items="Model.YearOptions"
+                            aria-required="true">
+                        <option value="">-- Select year --</option>
+                    </select>
+                    <span asp-validation-for="Year" class="govuk-error-message" style="display:none;"></span>
+                    <p class="govuk-error-message sup_display_none" id="modal-commentYear-error">
+                        <span class="govuk-visually-hidden">Error:</span> <span></span>
+                    </p>
+                </div>
+            </div>
+            <div class="govuk-grid-column-one-half">
+                @* ── Topic field (modal-commentYearTopic) ── *@
+                
+                <div class="govuk-form-group sup_margin_bottom_10" data-field-group="modal-commentYearTopic">
+                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16"
+                           asp-for="Topic">
+                        Year Topic <span class="app-required" aria-hidden="true">*</span>
+                    </label>
+                    <select class="govuk-select govuk-!-font-size-16 govuk-!-width-full"
+                            asp-for="Topic"
+                            id="selCommentTopic"
+                            asp-items="Model.TopicOptions"
+                            aria-required="true">
+                    </select>
+                    <span asp-validation-for="Topic" class="govuk-error-message" style="display:none;"></span>
+                    <p class="govuk-error-message sup_display_none" id="modal-commentYearTopic-error">
+                        <span class="govuk-visually-hidden">Error:</span> <span></span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        @* ── Date and MadeBy fields omitted ── *@
+       
+
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                @* ── Comment text field (modal-commentText) ── *@
+                
+                <div class="govuk-form-group sup_margin_bottom_10" data-field-group="modal-commentText">
+                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16"
+                           asp-for="CommentText">
+                        Comment <span class="app-required" aria-hidden="true">*</span>
+                    </label>
+                    <textarea class="govuk-textarea govuk-!-font-size-16 govuk-!-width-full sup_margin_0"
+                              asp-for="CommentText"
+                              id="txtCommentText"
+                              rows="5"
+                              aria-required="true"></textarea>
+                    <span asp-validation-for="CommentText" class="govuk-error-message" style="display:none;"></span>
+                    <p class="govuk-error-message sup_display_none" id="modal-commentText-error">
+                        <span class="govuk-visually-hidden">Error:</span> <span></span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 govuk-!-margin-top-2" style="display: flex; justify-content: space-between;">
+            <button type="button"
+                    class="govuk-button govuk-button--secondary sup_margin_0"
+                    data-module="govuk-button"
+                    onclick="closeCommentModal()">
+                Cancel
+            </button>
+            <button type="button"
+                    class="govuk-button sup_margin_0"
+                    data-module="govuk-button"
+                    id="tblCommentsSaveBtn"
+                    onclick="saveComment()">
+                @saveLabel
+            </button>
+        </div>
+    </form>
+</div>

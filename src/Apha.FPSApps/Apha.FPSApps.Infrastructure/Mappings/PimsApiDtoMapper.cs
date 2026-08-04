@@ -33,8 +33,14 @@ namespace Apha.FPSApps.Infrastructure.Mappings
             CreateMap<ProjectsRes, ProjectsDto>().ReverseMap();
 
             // Comments
-            CreateMap<CommentRes, CommentDto>().ReverseMap();
-            CreateMap<CommentDto, CommentReq>().ReverseMap();
+            CreateMap<CommentRes, CommentDto>()
+                .ForMember(dest => dest.CommentText, opt => opt.MapFrom(src => src.Comment))
+                .ReverseMap()
+                .ForMember(dest => dest.Comment, opt => opt.MapFrom(src => src.CommentText));
+            CreateMap<CommentDto, CommentReq>()
+                .ForMember(dest => dest.Comment, opt => opt.MapFrom(src => src.CommentText))
+                .ReverseMap()
+                .ForMember(dest => dest.CommentText, opt => opt.MapFrom(src => src.Comment));
 
             // PIMS Project Detail
             CreateMap<ProjectDetailRes, ProjectDetailDto>().ReverseMap();
@@ -42,6 +48,7 @@ namespace Apha.FPSApps.Infrastructure.Mappings
 
             // Comment Topics
             CreateMap<CommentTopicRes, CommentTopicDto>().ReverseMap();
+            CreateMap<ProjectCommentForecastSpendRes, ProjectCommentForecastSpendDto>().ReverseMap();
 
             // Risk
             CreateMap<RiskRes, RiskDto>().ReverseMap();

@@ -133,5 +133,22 @@ namespace Apha.FPSApps.Infrastructure.Integrations.FPSApis.Clients
                 return ApiResponseDto<List<AccountCategoryDto>>.FailureResponse(responseDto.Errors, responseDto.Meta);
             }
         }
+
+        public async Task<ApiResponseDto<List<GenericBidViewDto>>> GetGenericBidsPagedAsync(QueryParameters<string> query)
+        {
+            var url = QueryStringHelper.AddQueryString(FpsApiEndpoints.GetGenericBidsPaged, query);
+
+            var response = await _http.GetAsync<IEnumerable<GenericBidViewRes>>(url);
+
+            if (response.Success)
+            {
+                return _mapper.Map<ApiResponseDto<List<GenericBidViewDto>>>(response);
+            }
+            else
+            {
+                var responseDto = _mapper.Map<ApiResponseDto<List<GenericBidViewDto>>>(response);
+                return ApiResponseDto<List<GenericBidViewDto>>.FailureResponse(responseDto.Errors, responseDto.Meta);
+            }
+        }
     }
 }

@@ -97,6 +97,103 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.FPS.FpsAnimalPlanApiClie
 
         #endregion
 
+        #region GetAnimalCostByAnimalTypeAsync Tests
+
+        [Fact]
+        public async Task GetAnimalCostByAnimalTypeAsync_WithSuccessResponse_ReturnsMappedAnimalCostList()
+        {
+            // Arrange
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var animalType = "Cattle";
+            var resList = new List<AnimalCostViewRes>
+            {
+                new() { IndCounter = 1, AnimalType = "Cattle", JobCode = "JOB001", NumberOfDays = 5 },
+                new() { IndCounter = 2, AnimalType = "Cattle", JobCode = "JOB002", NumberOfDays = 3 }
+            };
+            var apiResponse = new ApiResponse<List<AnimalCostViewRes>>
+            {
+                Success = true, Data = resList,
+                Pagination = new Pagination { PageNumber = 1, PageSize = 10, TotalRecords = 2 }
+            };
+            var expectedDto = ApiResponseDto<List<AnimalCostViewDto>>.SuccessResponse(
+                new List<AnimalCostViewDto>
+                {
+                    new() { IndCounter = 1, AnimalType = "Cattle" },
+                    new() { IndCounter = 2, AnimalType = "Cattle" }
+                },
+                new PaginationDto { PageNumber = 1, PageSize = 10, TotalRecords = 2 }
+            );
+
+            _http.GetAsync<List<AnimalCostViewRes>>(
+                    Arg.Is<string>(url => url.Contains("api/v1/animalrequest/byanimaltype") && url.Contains($"animalType={animalType}")))
+                .Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<AnimalCostViewDto>>>(apiResponse).Returns(expectedDto);
+
+            // Act
+            var result = await _client.GetAnimalCostByAnimalTypeAsync(query, animalType);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Equal(2, result.Data?.Count);
+            await _http.Received(1).GetAsync<List<AnimalCostViewRes>>(
+                Arg.Is<string>(url => url.Contains("api/v1/animalrequest/byanimaltype") && url.Contains($"animalType={animalType}")));
+            _mapper.Received(1).Map<ApiResponseDto<List<AnimalCostViewDto>>>(apiResponse);
+        }
+
+        [Fact]
+        public async Task GetAnimalCostByAnimalTypeAsync_WithoutAnimalType_DoesNotAppendAnimalTypeQuery()
+        {
+            // Arrange
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var apiResponse = new ApiResponse<List<AnimalCostViewRes>>
+            {
+                Success = true, Data = new List<AnimalCostViewRes>()
+            };
+            var expectedDto = ApiResponseDto<List<AnimalCostViewDto>>.SuccessResponse(new List<AnimalCostViewDto>());
+
+            _http.GetAsync<List<AnimalCostViewRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<AnimalCostViewDto>>>(apiResponse).Returns(expectedDto);
+
+            // Act
+            var result = await _client.GetAnimalCostByAnimalTypeAsync(query, "");
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            await _http.Received(1).GetAsync<List<AnimalCostViewRes>>(
+                Arg.Is<string>(url => !url.Contains("animalType=")));
+        }
+
+        [Fact]
+        public async Task GetAnimalCostByAnimalTypeAsync_WhenApiReturnsFailure_ReturnsFailureResponse()
+        {
+            // Arrange
+            var apiResponse = new ApiResponse<List<AnimalCostViewRes>>
+            {
+                Success = false,
+                Errors = new List<ApiError> { new() { Message = "Not Found", Code = "NOT_FOUND" } }
+            };
+            var mappedResponse = new ApiResponseDto<List<AnimalCostViewDto>>
+            {
+                Success = false,
+                Errors = new List<ApiErrorDto> { new() { Message = "Not Found", Code = "NOT_FOUND" } },
+                Meta = new ApiMetaDto()
+            };
+
+            _http.GetAsync<List<AnimalCostViewRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<AnimalCostViewDto>>>(apiResponse).Returns(mappedResponse);
+
+            // Act
+            var result = await _client.GetAnimalCostByAnimalTypeAsync(new QueryParameters<string>(), "Cattle");
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+        }
+
+        #endregion
+
         #region GetAnimalLookupAsync Tests
 
         [Fact]

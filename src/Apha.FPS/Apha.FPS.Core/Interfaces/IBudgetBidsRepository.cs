@@ -13,5 +13,6 @@ namespace Apha.FPS.Core.Interfaces
         Task<Bid> UpdateBidAsync(Bid bid);
         Task<bool> DeleteBidAsync(string WorkGroupName, string account);
         Task<List<AccountCategory>> GetAccountCategoriesAsync();
+        Task<PagedData<GenericBidView>> GetGenericBidsPagedAsync(PaginationParameters<string> query);
     }
 }

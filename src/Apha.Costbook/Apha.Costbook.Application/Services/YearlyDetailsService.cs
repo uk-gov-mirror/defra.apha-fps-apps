@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using Apha.Costbook.Application.Dtos;
 using Apha.Costbook.Application.Interfaces;
 using Apha.Costbook.Application.Pagination;
@@ -19,6 +20,7 @@ public class YearlyDetailsService : IYearlyDetailsService
     private readonly ITestRequirementRepository _testRepo;
     private readonly IAnimalRequirementRepository _animalRepo;
     private readonly IAdditionalCostRepository _additionalCostRepo;
+    private readonly ISettingsService _settingsService;
     private readonly IMapper _mapper;
 
     public YearlyDetailsService(
@@ -28,6 +30,7 @@ public class YearlyDetailsService : IYearlyDetailsService
         ITestRequirementRepository testRepo,
         IAnimalRequirementRepository animalRepo,
         IAdditionalCostRepository additionalCostRepo,
+        ISettingsService settingsService,
         IMapper mapper)
     {
         _projectRepo = projectRepo;
@@ -36,6 +39,7 @@ public class YearlyDetailsService : IYearlyDetailsService
         _testRepo = testRepo;
         _animalRepo = animalRepo;
         _additionalCostRepo = additionalCostRepo;
+        _settingsService = settingsService;
         _mapper = mapper;
     }
 
@@ -299,6 +303,15 @@ public class YearlyDetailsService : IYearlyDetailsService
             PlanByWeek = a.PlanByWeek,
             DefraDailyRate = a.DefraDailyRate
         });
+    }
+
+    public async Task<string> GetAdditionalCostinflamationAsync(string projectId, int year)
+    {
+        var currentYearValue = await _settingsService.GetSettingValueByIdAsync("CurrentYear");
+        var currentYear = int.TryParse(currentYearValue, out var parsedCurrentYear) ? parsedCurrentYear : 2025;
+
+        var inflationFactor = await _projectRepo.GetInflationFactorAsync("InflationExceptional", projectId, year, currentYear);
+        return inflationFactor.ToString(CultureInfo.InvariantCulture);
     }
 
     // ── Private helpers

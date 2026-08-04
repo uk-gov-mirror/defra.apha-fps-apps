@@ -32,6 +32,7 @@ namespace Apha.Common.Constants
         public const string UpdateComment = "api/v1/projectcomment/{0}";
         public const string DeleteComment = "api/v1/projectcomment/{0}";
         public const string GetCommentTopics = "api/v1/projectcomment/commenttopics";
+        public const string GetCommentForecastSpend = "api/v1/projectcomment/forecastspend";
 
         // Project Year Costs
         public const string GetAdditionalActuals = "api/v1/projectyearcosts/{0}/{1}/additionalactuals";

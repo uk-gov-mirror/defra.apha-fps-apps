@@ -18,6 +18,11 @@ namespace Apha.FPSApps.Application.Services.FPS
         public async Task<ApiResponseDto<List<AnimalCostViewDto>>> GetAllAnimalCostAsync(QueryParameters<string> query, string jobCode)
             => await _fpsClient.FpsAnimalPlan.GetAllAnimalCostAsync(query, jobCode);
 
+        // Animal Costs ASU View (AnimalCosts — frmAnimalCosts)
+        public async Task<ApiResponseDto<List<AnimalCostViewDto>>> GetAnimalCostByAnimalTypeAsync(
+            QueryParameters<string> query, string animalType)
+            => await _fpsClient.FpsAnimalPlan.GetAnimalCostByAnimalTypeAsync(query, animalType);
+
         public async Task<ApiResponseDto<List<AnimalDto>>> GetAnimalLookupAsync()
             => await _fpsClient.FpsAnimalPlan.GetAnimalLookupAsync();
 

@@ -30,8 +30,8 @@ namespace Apha.PACT.Api.Controllers
         /// <summary>Retrieves all cost profile months for a given project.</summary>
         /// <param name="project">The project code to retrieve cost profile months for.</param>
         /// <returns>Returns <c>200 OK</c> with a list of <see cref="ProjectMonthRes"/> objects.</returns>
-        [HttpGet("project/{project}")]
-        public async Task<IActionResult> GetProjectMonthByProject(string project)
+        [HttpGet("project")]
+        public async Task<IActionResult> GetProjectMonthByProject([FromQuery] string project)
         {
             IList<ProjectMonthDto> items = await _service.GetProjectMonthByProjectAsync(project);
             return Ok(_mapper.Map<IList<ProjectMonthRes>>(items));
@@ -41,8 +41,8 @@ namespace Apha.PACT.Api.Controllers
         /// <param name="project">The project code the month record belongs to.</param>
         /// <param name="monthNo">The month number to retrieve.</param>
         /// <returns>Returns <c>200 OK</c> with the matching <see cref="ProjectMonthRes"/>, or throws <see cref="KeyNotFoundException"/> if not found.</returns>
-        [HttpGet("project/{project}/month/{monthNo:int}")]
-        public async Task<IActionResult> GetProjectMonth(string project, int monthNo)
+        [HttpGet("project/month")]
+        public async Task<IActionResult> GetProjectMonth([FromQuery] string project, [FromQuery] int monthNo)
         {
             ProjectMonthDto? item = await _service.GetProjectMonthAsync(project, monthNo);
             if (item is null)
@@ -79,8 +79,8 @@ namespace Apha.PACT.Api.Controllers
         /// <param name="project">The project code the month record belongs to.</param>
         /// <param name="monthNo">The month number of the record to delete.</param>
         /// <returns>Returns <c>200 OK</c> with a success flag if deleted, or <c>404 Not Found</c> if the record does not exist.</returns>
-        [HttpDelete("project/{project}/month/{monthNo:int}")]
-        public async Task<IActionResult> DeleteProjectMonth(string project, int monthNo)
+        [HttpDelete("project/month")]
+        public async Task<IActionResult> DeleteProjectMonth([FromQuery] string project, [FromQuery] int monthNo)
         {
             bool deleted = await _service.DeleteProjectMonthAsync(project, monthNo);
             if (!deleted)

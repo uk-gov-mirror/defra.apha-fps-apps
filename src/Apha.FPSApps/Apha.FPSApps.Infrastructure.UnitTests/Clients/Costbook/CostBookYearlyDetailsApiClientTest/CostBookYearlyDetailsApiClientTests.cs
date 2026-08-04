@@ -1078,5 +1078,49 @@ public class CostBookYearlyDetailsApiClientTests
     }
 
     #endregion
+
+    #region GetAdditionalCostinflamationAsync
+
+    [Fact]
+    public async Task GetAdditionalCostinflamationAsync_WithSuccessResponse_ReturnsValue()
+    {
+        var apiResponse = new ApiResponse<string> { Success = true, Data = "1.25" };
+        _http.GetAsync<string>(Arg.Is<string>(s => s.Contains("additionalcostinflamation") && s.Contains("projectId=2024%2f001") && s.Contains("year=2024")))
+            .Returns(apiResponse);
+
+        var result = await _client.GetAdditionalCostinflamationAsync("2024/001", 2024);
+
+        Assert.True(result.Success);
+        Assert.Equal("1.25", result.Data);
+        await _http.Received(1).GetAsync<string>(Arg.Is<string>(s => s.Contains("additionalcostinflamation") && s.Contains("projectId=2024%2f001") && s.Contains("year=2024")));
+    }
+
+    [Fact]
+    public async Task GetAdditionalCostinflamationAsync_WithNullData_ReturnsFailureResponse()
+    {
+        var apiResponse = new ApiResponse<string> { Success = true, Data = null };
+        _http.GetAsync<string>(Arg.Any<string>()).Returns(apiResponse);
+        _mapper.Map<ApiResponseDto<string>>(apiResponse)
+            .Returns(new ApiResponseDto<string> { Success = false, Errors = new(), Meta = new() });
+
+        var result = await _client.GetAdditionalCostinflamationAsync("2024/001", 2024);
+
+        Assert.False(result.Success);
+    }
+
+    [Fact]
+    public async Task GetAdditionalCostinflamationAsync_WhenApiFails_ReturnsFailureResponse()
+    {
+        var apiResponse = new ApiResponse<string> { Success = false, Data = null };
+        _http.GetAsync<string>(Arg.Any<string>()).Returns(apiResponse);
+        _mapper.Map<ApiResponseDto<string>>(apiResponse)
+            .Returns(new ApiResponseDto<string> { Success = false, Errors = new(), Meta = new() });
+
+        var result = await _client.GetAdditionalCostinflamationAsync("2024/001", 2024);
+
+        Assert.False(result.Success);
+    }
+
+    #endregion
 }
 

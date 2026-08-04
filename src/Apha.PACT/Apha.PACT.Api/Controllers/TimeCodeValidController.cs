@@ -25,8 +25,8 @@ namespace Apha.PACT.Api.Controllers
             _mapper = mapper;
         }
 
-        [HttpGet("jobcode/{jobCode}/project/{parentProject}")]
-        public async Task<IActionResult> GetByJobCode(string jobCode, string parentProject)
+        [HttpGet("jobcode")]
+        public async Task<IActionResult> GetByJobCode([FromQuery] string jobCode, [FromQuery] string parentProject)
         {
             var items = await _service.GetByJobCodeAsync(jobCode, parentProject);
             return Ok(_mapper.Map<IEnumerable<TimeCodeValidRes>>(items));
@@ -39,16 +39,16 @@ namespace Apha.PACT.Api.Controllers
             return Ok(_mapper.Map<PaginationRes<TimeCodeValidRes>>(pagedResult));
         }
 
-        [HttpGet("paged/project/{parentProject}/testcode/{testCode}")]
+        [HttpGet("paged/byprojectandtest")]
         public async Task<IActionResult> GetPagedByProjectAndTestCode(
-            [FromQuery] QueryParameters<string> query, string parentProject, string testCode)
+            [FromQuery] QueryParameters<string> query, [FromQuery] string parentProject, [FromQuery] string testCode)
         {
             var pagedResult = await _service.GetPagedByProjectAndTestCodeAsync(query, parentProject, testCode);
             return Ok(_mapper.Map<PaginationRes<TimeCodeValidRes>>(pagedResult));
         }
 
-        [HttpGet("{workGroup}/{timeCode}/{parentProject}")]
-        public async Task<IActionResult> GetById(string workGroup, string timeCode, string parentProject)
+        [HttpGet("wgtimecodeprojectcode")]
+        public async Task<IActionResult> GetById([FromQuery] string workGroup, [FromQuery] string timeCode, [FromQuery] string parentProject)
         {
             var item = await _service.GetTimeCodeValidAsync(workGroup, timeCode, parentProject);
             if (item == null) return NotFound();
@@ -71,8 +71,8 @@ namespace Apha.PACT.Api.Controllers
             return Ok(_mapper.Map<TimeCodeValidRes>(updated));
         }
 
-        [HttpDelete("{workGroup}/{timeCode}/{parentProject}")]
-        public async Task<IActionResult> Delete(string workGroup, string timeCode, string parentProject)
+        [HttpDelete("delete")]
+        public async Task<IActionResult> Delete([FromQuery] string workGroup, [FromQuery] string timeCode, [FromQuery] string parentProject)
         {
             var isDeleted = await _service.DeleteTimeCodeValidAsync(workGroup, timeCode, parentProject);
             if (!isDeleted)
@@ -82,8 +82,8 @@ namespace Apha.PACT.Api.Controllers
             return Ok(isDeleted);
         }
 
-        [HttpDelete("jobcode/{jobCode}/project/{parentProject}")]
-        public async Task<IActionResult> DeleteAllByJobCode(string jobCode, string parentProject)
+        [HttpDelete("deletebyjobcode")]
+        public async Task<IActionResult> DeleteAllByJobCode([FromQuery] string jobCode, [FromQuery] string parentProject)
         {
            var isDeleted = await _service.DeleteAllByJobCodeAsync(jobCode, parentProject);
             if (!isDeleted)

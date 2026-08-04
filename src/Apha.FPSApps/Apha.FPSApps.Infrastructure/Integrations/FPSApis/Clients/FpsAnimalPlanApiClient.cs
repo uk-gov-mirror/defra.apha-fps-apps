@@ -33,6 +33,22 @@ namespace Apha.FPSApps.Infrastructure.Integrations.FPSApis.Clients
             return ApiResponseDto<List<AnimalCostViewDto>>.FailureResponse(dto.Errors, dto.Meta);
         }
 
+        // Animal Costs ASU View (AnimalCosts — frmAnimalCosts)
+        public async Task<ApiResponseDto<List<AnimalCostViewDto>>> GetAnimalCostByAnimalTypeAsync(
+            QueryParameters<string> query, string animalType)
+        {
+            var url = QueryStringHelper.AddQueryString(FpsApiEndpoints.GetAnimalCostsByAnimalType, query);
+            if (!string.IsNullOrWhiteSpace(animalType))
+                url = $"{url}&animalType={Uri.EscapeDataString(animalType)}";
+
+            var response = await _http.GetAsync<List<AnimalCostViewRes>>(url);
+            if (response.Success)
+                return _mapper.Map<ApiResponseDto<List<AnimalCostViewDto>>>(response);
+
+            var dto = _mapper.Map<ApiResponseDto<List<AnimalCostViewDto>>>(response);
+            return ApiResponseDto<List<AnimalCostViewDto>>.FailureResponse(dto.Errors, dto.Meta);
+        }
+
         public async Task<ApiResponseDto<List<AnimalDto>>> GetAnimalLookupAsync()
         {
             var response = await _http.GetAsync<List<AnimalRes>>(FpsApiEndpoints.GetAnimalLookup);

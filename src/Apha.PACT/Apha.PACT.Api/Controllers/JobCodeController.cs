@@ -39,8 +39,8 @@ namespace Apha.PACT.Api.Controllers
             return Ok(_mapper.Map<IEnumerable<JobCodeZtRes>>(result));
         }
 
-        [HttpGet("project/{parentProject}")]
-        public async Task<IActionResult> GetByProject(string parentProject)
+        [HttpGet("project")]
+        public async Task<IActionResult> GetByProject([FromQuery] string parentProject)
         {
             var items = await _service.GetJobCodesByProjectAsync(parentProject);
             var result = _mapper.Map<IEnumerable<JobCodeRes>>(items);
@@ -54,8 +54,8 @@ namespace Apha.PACT.Api.Controllers
             return Ok(_mapper.Map<PaginationRes<JobCodeRes>>(pagedResult));
         }
 
-        [HttpGet("{jobCodeId}")]
-        public async Task<IActionResult> GetById(string jobCodeId)
+        [HttpGet("jobCodeId")]
+        public async Task<IActionResult> GetById([FromQuery] string jobCodeId)
         {
             var item = await _service.GetJobCodeByIdAsync(jobCodeId);
             if (item == null) return NotFound();
@@ -85,8 +85,8 @@ namespace Apha.PACT.Api.Controllers
             return Ok(_mapper.Map<JobCodeRes>(updated));
         }
 
-        [HttpDelete("{jobCodeId}")]
-        public async Task<IActionResult> Delete(string jobCodeId)
+        [HttpDelete("jobCodeId")]
+        public async Task<IActionResult> Delete([FromQuery] string jobCodeId)
         {
             var deleted = await _service.DeleteJobCodeAsync(jobCodeId);            
             if (!deleted)

@@ -24,12 +24,17 @@ namespace Apha.FPSApps.Web.Mappings
             CreateMap<EmployeeViewModel, EmployeeDto>().ReverseMap();
             CreateMap<StaffJobViewDto, StaffJobDto>().ReverseMap();
             CreateMap<ProjectDto, ProjectViewModel>().ReverseMap();
+            CreateMap<ProjectSpecificQueryDto, ProjectSpecificQueryItem>().ReverseMap();
             CreateMap<ProjectDto, ProgramProjectEditViewModel>().ReverseMap();
             CreateMap<ProjectDto, ProgramProjectItem>()
                 .ForMember(d => d.TransferIncome, o => o.MapFrom(s => s.TransferIncome))
                 .ReverseMap();
             CreateMap<AnimalPlanItem, AnimalCostViewDto>().ReverseMap();
             CreateMap<AnimalPlanItem, AnimalRequestDto>().ReverseMap();
+            CreateMap<AnimalCostsItem, AnimalCostViewDto>().ReverseMap();
+            CreateMap<AnimalSnapshotItem, AnimalSnapshotViewDto>().ReverseMap();
+            CreateMap<GenericBidItem, GenericBidViewDto>().ReverseMap();
+            CreateMap<ExceptionalCostSnapshotItem, ProjectExceptionalCostViewDto>().ReverseMap();
             CreateMap<CompareStaff2Item, TimeCostCalcsViewDto>().ReverseMap();
             CreateMap<ActualProjectCostItem, ProjectSubContractDto>().ReverseMap();
             CreateMap<DivisionViewModel, DivisionDto>().ReverseMap();

@@ -381,4 +381,16 @@ public class CostBookYearlyDetailsApiClient : ICostBookYearlyDetailsApiClient
         var err = _mapper.Map<ApiResponseDto<List<AnimalLookupDto>>>(response);
         return ApiResponseDto<List<AnimalLookupDto>>.FailureResponse(err.Errors, err.Meta);
     }
+
+    public async Task<ApiResponseDto<string>> GetAdditionalCostinflamationAsync(string projectId, int year)
+    {
+        var query = $"{CostBookApiEndpoints.GetAdditionalCostinflamation}?projectId={HttpUtility.UrlEncode(projectId)}&year={year}";
+        var response = await _http.GetAsync<string>(query);
+
+        if (response.Success && response.Data != null)
+            return ApiResponseDto<string>.SuccessResponse(response.Data);
+
+        var err = _mapper.Map<ApiResponseDto<string>>(response);
+        return ApiResponseDto<string>.FailureResponse(err.Errors, err.Meta);
+    }
 }

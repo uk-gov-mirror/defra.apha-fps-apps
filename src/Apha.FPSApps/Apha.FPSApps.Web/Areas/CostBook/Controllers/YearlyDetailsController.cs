@@ -126,6 +126,18 @@ public class YearlyDetailsController : Controller
         });
     }
 
+    [HttpGet]
+    public async Task<IActionResult> GetAdditionalCostinflamation(string projectId, int year)
+    {
+        var decodedProjectId = HttpUtility.UrlDecode(projectId);
+        var result = await _service.GetAdditionalCostinflamationAsync(decodedProjectId, year);
+
+        if (result.Success)
+            return Json(new { success = true, additionalCostInflamation = result.Data });
+
+        return Json(new { success = false, additionalCostInflamation = "0" });
+    }
+
     [HttpPost]
     public async Task<IActionResult> LoadStaffGrid(PaginationFilter<string> request, string projectId, int year)
     {

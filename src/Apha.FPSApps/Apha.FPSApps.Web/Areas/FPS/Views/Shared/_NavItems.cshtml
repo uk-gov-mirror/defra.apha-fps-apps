@@ -34,11 +34,11 @@
             </button>
             <div class="sub-dropdown-menu" id="pm-review-plans">
                 <a class="dropdown-item" asp-area="FPS" asp-controller="ProjectProfitability" asp-action="Index">Project Profitability</a>
-                            <a class="dropdown-item" asp-area="FPS" asp-controller="StaffPlan" asp-action="Index">Staff Plan Pivot</a>
+                <a class="dropdown-item" asp-area="FPS" asp-controller="StaffPlan" asp-action="Index">Staff Plan Pivot</a>
                         </div>
-                    </div>
                 </div>
-            </div>
+                </div>
+         </div>
 
 <!-- Resource Management -->
 <div class="nav-item dropdown">
@@ -65,6 +65,7 @@
             <div class="sub-dropdown-menu" id="rm-review-plans">
                 <a class="dropdown-item" asp-area="FPS" asp-controller="ContributionSummary" asp-action="Index">Contribution Summary</a>
                 <a class="dropdown-item" asp-area="FPS" asp-controller="StaffPlanDetails" asp-action="Index">Staff Plan Pivot</a>
+                <a class="dropdown-item" asp-area="FPS" asp-controller="BBQuery" asp-action="Index">BB Query</a>
                 <a class="dropdown-item" asp-area="FPS" asp-controller="StaffResource" asp-action="Index">Resource Utilization View</a>
                 <a class="dropdown-item" asp-area="FPS" asp-controller="ResourceMgmtReplan" asp-action="Index">View/Replan Staff Hours</a>
             </div>
@@ -84,7 +85,7 @@
         <div class="dropdown-col" style="min-width:200px">
             <a class="dropdown-item" asp-area="FPS" asp-controller="StaffMaintenance" asp-action="Index">Maintenance Menu</a>
             <a class="dropdown-item" href="#">Stage 1 Plans</a>
-            <a class="dropdown-item" href="#">ASU Data View</a>
+            <a class="dropdown-item" asp-area="FPS" asp-controller="AnimalCosts" asp-action="Index">ASU Data View</a>
             <a class="dropdown-item" asp-area="FPS" asp-controller="ProjectProfitabilityVla" asp-action="Index">VLA Project Totals</a>
             <a class="dropdown-item" asp-area="FPS" asp-controller="BudgetResourceLevel" asp-action="Index">Generic Bids</a>
             <a class="dropdown-item" href="#">Project Audit Trails</a>
@@ -98,14 +99,14 @@
             <a class="dropdown-item" href="#">Program Exceptional Bids</a>
             <a class="dropdown-item" href="#">Income Contribution Rpt</a>
             <a class="dropdown-item" href="#">Income Cont - Summary</a>
-            <a class="dropdown-item" href="#">Project Specific - Query</a>
+            <a class="dropdown-item" asp-area="FPS" asp-controller="ProjectSpecificQuery" asp-action="Index">Project Specific - Query</a>
         </div>
         <div class="dropdown-col" style="min-width:240px">
             <a class="dropdown-item" href="#">Resource Grades by Programme</a>
             <a class="dropdown-item" href="#">Resource Utilisation</a>
             <a class="dropdown-item" href="#">Open FPS</a>
             <a class="dropdown-item" href="#">Close FPS</a>
-            <a class="dropdown-item" href="#">Run Snapshot Queries</a>
+            <a class="dropdown-item" asp-area="FPS" asp-controller="AnimalSnapshotData" asp-action="Index">Run Snapshot Queries</a>
             <a class="dropdown-item" href="#">Run Comparison Queries</a>
         </div>
     </div>

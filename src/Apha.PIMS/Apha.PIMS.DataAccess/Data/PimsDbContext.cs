@@ -47,6 +47,7 @@ namespace Apha.PIMS.DataAccess.Data
         public virtual DbSet<StagingMilestone> StagingMilestones { get; set; }
         public virtual DbSet<RadTrackInvoice> RadTrackInvoices { get; set; }
 
+       
         public virtual DbSet<RadTrackContract> RadTrackContracts { get; set; }
 
         public virtual DbSet<YearlyFinancialData> YearlyFinancialData { get; set; }

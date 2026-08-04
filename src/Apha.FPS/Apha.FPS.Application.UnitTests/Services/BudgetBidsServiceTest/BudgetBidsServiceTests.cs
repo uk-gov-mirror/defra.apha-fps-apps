@@ -134,5 +134,71 @@ namespace Apha.FPS.Application.UnitTests.Services.BudgetBidsServiceTest
         }
 
         #endregion
+
+        #region GetGenericBidsPagedAsync Tests
+
+        [Fact]
+        public async Task GetGenericBidsPagedAsync_MapsQueryCallsRepositoryAndMapsResult()
+        {
+            // Arrange
+            var query = new Apha.FPS.Application.Pagination.QueryParameters<string> { Page = 1, PageSize = 10 };
+            var mappedParameters = new Apha.FPS.Core.Pagination.PaginationParameters<string>();
+            var pagedData = new Apha.FPS.Core.Pagination.PagedData<Apha.FPS.Core.Entities.GenericBidView>(
+                new List<Apha.FPS.Core.Entities.GenericBidView>
+                {
+                    new() { ProfitCentre = "PC1", WorkGroupName = "WG01", Account = "ACC1", GenBid = 100m, AccountType = "TYPE1" }
+                },
+                new Apha.FPS.Core.Pagination.PaginationData { PageNumber = 1, PageSize = 10, TotalRecords = 1, TotalPages = 1 });
+            var expected = new Apha.FPS.Application.Pagination.PaginatedResult<GenericBidViewDto>();
+
+            _mapperMock
+                .Setup(m => m.Map<Apha.FPS.Core.Pagination.PaginationParameters<string>>(query))
+                .Returns(mappedParameters);
+            _repositoryMock
+                .Setup(r => r.GetGenericBidsPagedAsync(mappedParameters))
+                .ReturnsAsync(pagedData);
+            _mapperMock
+                .Setup(m => m.Map<Apha.FPS.Application.Pagination.PaginatedResult<GenericBidViewDto>>(pagedData))
+                .Returns(expected);
+
+            // Act
+            var result = await _sut.GetGenericBidsPagedAsync(query);
+
+            // Assert
+            Assert.Same(expected, result);
+            _repositoryMock.Verify(r => r.GetGenericBidsPagedAsync(mappedParameters), Times.Once);
+            _mapperMock.Verify(m => m.Map<Apha.FPS.Application.Pagination.PaginatedResult<GenericBidViewDto>>(pagedData), Times.Once);
+        }
+
+        [Fact]
+        public async Task GetGenericBidsPagedAsync_WhenRepositoryReturnsEmpty_ReturnsMappedEmptyResult()
+        {
+            // Arrange
+            var query = new Apha.FPS.Application.Pagination.QueryParameters<string> { Page = 1, PageSize = 10 };
+            var mappedParameters = new Apha.FPS.Core.Pagination.PaginationParameters<string>();
+            var pagedData = new Apha.FPS.Core.Pagination.PagedData<Apha.FPS.Core.Entities.GenericBidView>(
+                new List<Apha.FPS.Core.Entities.GenericBidView>(),
+                new Apha.FPS.Core.Pagination.PaginationData { PageNumber = 1, PageSize = 10, TotalRecords = 0, TotalPages = 0 });
+            var expected = new Apha.FPS.Application.Pagination.PaginatedResult<GenericBidViewDto>();
+
+            _mapperMock
+                .Setup(m => m.Map<Apha.FPS.Core.Pagination.PaginationParameters<string>>(query))
+                .Returns(mappedParameters);
+            _repositoryMock
+                .Setup(r => r.GetGenericBidsPagedAsync(mappedParameters))
+                .ReturnsAsync(pagedData);
+            _mapperMock
+                .Setup(m => m.Map<Apha.FPS.Application.Pagination.PaginatedResult<GenericBidViewDto>>(pagedData))
+                .Returns(expected);
+
+            // Act
+            var result = await _sut.GetGenericBidsPagedAsync(query);
+
+            // Assert
+            Assert.Same(expected, result);
+            _repositoryMock.Verify(r => r.GetGenericBidsPagedAsync(mappedParameters), Times.Once);
+        }
+
+        #endregion
     }
 }

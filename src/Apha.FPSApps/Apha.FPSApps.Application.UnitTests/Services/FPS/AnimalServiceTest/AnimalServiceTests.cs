@@ -237,5 +237,75 @@ namespace Apha.FPSApps.Application.UnitTests.Services.FPS.AnimalServiceTest
         }
 
         #endregion
+
+        #region GetAnimalSnapshotAsync Tests
+
+        private static AnimalSnapshotViewDto BuildSnapshotDto(string animalType = "CATTLE") =>
+            new()
+            {
+                Directorate = "Dir",
+                Program = "PRG",
+                Contract = "C1",
+                Project = "P1",
+                ProjectStatus = "Approved",
+                Species = "Bovine",
+                SecurityLevel = "L1",
+                AnimalType = animalType,
+                DailyRate = 50m,
+                JobCode = "JOB001",
+                NumberOfDays = 5,
+                NumberOfAnimals = 3,
+                Cost = 750m
+            };
+
+        [Fact]
+        public async Task GetAnimalSnapshotAsync_ReturnsApiResponse()
+        {
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var dtos = new List<AnimalSnapshotViewDto> { BuildSnapshotDto() };
+            var pagination = new PaginationDto { PageNumber = 1, PageSize = 10, TotalRecords = 1 };
+            var response = ApiResponseDto<List<AnimalSnapshotViewDto>>.SuccessResponse(dtos, pagination);
+            _mockApiClient.GetAnimalSnapshotAsync(query).Returns(response);
+
+            var result = await _sut.GetAnimalSnapshotAsync(query);
+
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Single(result.Data!);
+            await _mockApiClient.Received(1).GetAnimalSnapshotAsync(query);
+        }
+
+        [Fact]
+        public async Task GetAnimalSnapshotAsync_PropagatesApiErrors()
+        {
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var errors = new List<ApiErrorDto> { new() { Message = "Error", Code = "ERROR" } };
+            var response = ApiResponseDto<List<AnimalSnapshotViewDto>>.FailureResponse(errors, new ApiMetaDto());
+            _mockApiClient.GetAnimalSnapshotAsync(query).Returns(response);
+
+            var result = await _sut.GetAnimalSnapshotAsync(query);
+
+            Assert.False(result.Success);
+            Assert.Single(result.Errors!);
+        }
+
+        [Fact]
+        public async Task GetAnimalSnapshotAsync_PassesFilterAndSortParameters()
+        {
+            var query = new QueryParameters<string>
+            {
+                Page = 2, PageSize = 5, SortBy = "Cost", Descending = true,
+                Filter = "{\"AnimalType\":\"CAT\"}"
+            };
+            var response = ApiResponseDto<List<AnimalSnapshotViewDto>>.SuccessResponse([]);
+            _mockApiClient.GetAnimalSnapshotAsync(query).Returns(response);
+
+            await _sut.GetAnimalSnapshotAsync(query);
+
+            await _mockApiClient.Received(1).GetAnimalSnapshotAsync(Arg.Is<QueryParameters<string>>(
+                q => q.Page == 2 && q.PageSize == 5 && q.SortBy == "Cost" && q.Descending == true));
+        }
+
+        #endregion
     }
 }

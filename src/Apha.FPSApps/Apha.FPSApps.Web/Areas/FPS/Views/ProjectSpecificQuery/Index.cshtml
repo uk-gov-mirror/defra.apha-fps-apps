@@ -1,0 +1,30 @@
+@using Apha.FPSApps.Web.Models.Components.DataGrid
+@model Apha.FPSApps.Web.Areas.FPS.Models.ProjectSpecificQueryViewModel
+
+@{
+    ViewData["Title"] = "Project Specifics Query";
+}
+
+<main id="main-content">
+    <div class="container-fluid">
+
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <h1 class="govuk-heading-s sup_border-bottom govuk-!-margin-top-2 govuk-!-padding-bottom-2 govuk-!-padding-left-4">Project Specifics Query</h1>
+            </div>
+        </div>
+
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <div class="govuk-grid-row sup_margin_left_right_10 sup_margin_bottom_10">
+                    <div class="govuk-grid-column-full sup_p_0">
+                        <div id="gridContainer_@Model.ProjectSpecificQueryGrid.GridId">
+                            @await Html.PartialAsync("_DataGrid", Model.ProjectSpecificQueryGrid)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</main>

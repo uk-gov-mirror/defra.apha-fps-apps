@@ -29,20 +29,20 @@ namespace Apha.PACT.Api.Controllers
         }
 
         /// <summary>Retrieves a paged list of TestReqmt records for a given TestCode.</summary>
-        [HttpGet("paged/{testCode}")]
+        [HttpGet("testcode/paged")]
         public async Task<IActionResult> GetPagedTestReqmt(
             [FromQuery] QueryParameters<string> query,
-            string testCode)
+            [FromQuery] string testCode)
         {
             var result = await _service.GetPagedTestReqmtAsync(query, testCode);
             return Ok(_mapper.Map<PaginationRes<TestRequirementtRes>>(result));
         }
 
         /// <summary>Retrieves a paged supplier list for a given test code including project manager and computed test cost.</summary>
-        [HttpGet("supplier/paged/{testCode}")]
+        [HttpGet("supplier/paged")]
         public async Task<IActionResult> GetPagedBySupplierTestCode(
             [FromQuery] QueryParameters<string> query,
-            string testCode,
+            [FromQuery] string testCode,
             [FromQuery] bool showRejected = false)
         {
             var result = await _service.GetPagedBySupplierTestCodeAsync(query, testCode, showRejected);
@@ -50,26 +50,26 @@ namespace Apha.PACT.Api.Controllers
         }
 
         /// <summary>Retrieves a paged list of TestReqmt records for a given ParentProject.</summary>
-        [HttpGet("pagedbyproject/{parentProject}")]
+        [HttpGet("pagedbyproject")]
         public async Task<IActionResult> GetPagedByProject(
             [FromQuery] QueryParameters<string> query,
-            string parentProject)
+            [FromQuery] string parentProject)
         {
             var result = await _service.GetPagedTestReqmtByProjectAsync(query, parentProject);
             return Ok(_mapper.Map<PaginationRes<TestRequirementtRes>>(result));
         }
 
         /// <summary>Retrieves all TestReqmt records for a given TestCode without pagination (for export).</summary>
-        [HttpGet("all/{testCode}")]
-        public async Task<IActionResult> GetAllTestReqmtForExport(string testCode, [FromQuery] string? filter = null)
+        [HttpGet("export")]
+        public async Task<IActionResult> GetAllTestReqmtForExport([FromQuery] string testCode, [FromQuery] string? filter = null)
         {
             var items = await _service.GetAllTestReqmtForExportAsync(testCode, filter);
             return Ok(_mapper.Map<IEnumerable<TestRequirementtRes>>(items));
         }
 
         /// <summary>Retrieves a TestReqmt record by composite key.</summary>
-        [HttpGet("{testCode}/{buyer}")]
-        public async Task<IActionResult> GetTestReqmtById(string testCode, string buyer)
+        [HttpGet("testcodebuyer")]
+        public async Task<IActionResult> GetTestReqmtById([FromQuery] string testCode, [FromQuery] string buyer)
         {
             var result = await _service.GetTestReqmtByIdAsync(testCode, buyer);
             if (result is null)
@@ -96,8 +96,8 @@ namespace Apha.PACT.Api.Controllers
         }
 
         /// <summary>Deletes a TestReqmt record by composite key.</summary>
-        [HttpDelete("{testCode}/{buyer}")]
-        public async Task<IActionResult> DeleteTestReqmt(string testCode, string buyer)
+        [HttpDelete("testcodebuyer")]
+        public async Task<IActionResult> DeleteTestReqmt([FromQuery] string testCode, [FromQuery] string buyer)
         {
             var deleted = await _service.DeleteTestReqmtAsync(testCode, buyer);
             return Ok(deleted);

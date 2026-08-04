@@ -65,6 +65,7 @@ namespace Apha.Common.Constants
 
         // Settings
         public const string GetSettingValueById = "api/v1/settings/getvaluebyid";
+        public const string GetAdditionalCostinflamation = "api/v1/yearlydetails/additionalcostinflamation";
         // Maintenance – Settings (Tabs 1 + 4)
         public const string GetMaintenanceSettings = "api/v1/maintenance/settings";
         public const string UpdateMaintenanceSettings = "api/v1/maintenance/settings";

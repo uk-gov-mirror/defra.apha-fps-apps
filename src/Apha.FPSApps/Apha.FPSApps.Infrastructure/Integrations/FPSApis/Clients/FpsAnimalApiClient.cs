@@ -41,6 +41,17 @@ namespace Apha.FPSApps.Infrastructure.Integrations.FPSApis.Clients
             return ApiResponseDto<List<AnimalDto>>.FailureResponse(responseDto.Errors, responseDto.Meta);
         }
 
+        public async Task<ApiResponseDto<List<AnimalSnapshotViewDto>>> GetAnimalSnapshotAsync(QueryParameters<string> query)
+        {
+            var url = QueryStringHelper.AddQueryString(FpsApiEndpoints.GetAnimalSnapshot, query);
+            var response = await _http.GetAsync<List<AnimalSnapshotViewDto>>(url);
+            if (response.Success)
+                return _mapper.Map<ApiResponseDto<List<AnimalSnapshotViewDto>>>(response);
+
+            var responseDto = _mapper.Map<ApiResponseDto<List<AnimalSnapshotViewDto>>>(response);
+            return ApiResponseDto<List<AnimalSnapshotViewDto>>.FailureResponse(responseDto.Errors, responseDto.Meta);
+        }
+
         public async Task<ApiResponseDto<AnimalDto?>> GetAnimalByIdAsync(string animalType)
         {
             var response = await _http.GetAsync<AnimalDto>(string.Format(FpsApiEndpoints.GetAnimalMasterById, animalType));

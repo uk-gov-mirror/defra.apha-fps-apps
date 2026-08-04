@@ -105,5 +105,16 @@ namespace Apha.FPS.Api.Controllers
             var categories = await _service.GetAccountCategoriesAsync();
             return Ok(_mapper.Map<List<AccountCategoryRes>>(categories));
         }
+
+        /// <summary>
+        /// Returns a paged, filtered and sorted list of generic bid records
+        /// joined across bids, workgroups and account categories.
+        /// </summary>
+        [HttpGet("generic/paged")]
+        public async Task<IActionResult> GetGenericBidsPagedAsync([FromQuery] QueryParameters<string> query)
+        {
+            var result = await _service.GetGenericBidsPagedAsync(query);
+            return Ok(_mapper.Map<PaginationRes<GenericBidViewRes>>(result));
+        }
     }
 }

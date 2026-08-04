@@ -8,12 +8,10 @@
 
 <div class="modal-header">
     <h5 class="modal-title">@modalTitle</h5>
-    <button type="button" class="btn-close" style="color:red;" onclick="closeModal()" aria-label="Close">&#x2715;</button>
+    <button type="button" class="btn-close" onclick="closeModal()" aria-label="Close">&#x2715;</button>
 </div>
 <div class="modal-body">
-    <p class="app-mandatory-note" style="text-align:right;">
-        <span aria-hidden="true" class="app-required">*</span> Mandatory fields
-    </p>
+    
     <form class="govuk-grid-column-full" id="formTblCsg7" novalidate>
         @Html.AntiForgeryToken()
 

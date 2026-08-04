@@ -12,7 +12,7 @@
 <div class="govuk-template__body govuk-frontend-supported project-requirement-page">
     <div class="govuk-grid-row sup_margin_left_right_0">
         <div class="govuk-grid-column-full sup_border-bottom">
-            <h1 class="govuk-heading-s sup_margin_0 govuk-grid-row govuk-!-padding-top-2">
+            <h1 class="govuk-heading-s sup_margin_0 govuk-grid-row govuk-!-padding-top-2 govuk-!-padding-bottom-2">
                 Maintenance Screen               
             </h1>
         </div>
@@ -64,7 +64,7 @@
                         </ul>
 
                         @* ── TAB 1 — Inflation ──────────────────────────────────────────────── *@
-                        <section id="tab-inflation" class="govuk-tabs__panel active" role="tabpanel"
+                        <section id="tab-inflation" class="govuk-!-padding-top-0 govuk-tabs__panel active" role="tabpanel"
                                  aria-labelledby="tab-link-inflation">
                             <form id="formInflation" novalidate>
                                 @Html.AntiForgeryToken()
@@ -78,9 +78,11 @@
                                     </div>
                                 </div>
 
-                                <p class="govuk-body govuk-!-font-weight-bold govuk-!-font-size-16 maint-intro-text">
-                                    Set Inflation figures etc.
-                                </p>
+                               <h2 class="sup_border-bottom sup_text_color sup_heading_bg_color govuk-heading-s sup_margin_0 sup_align_heading">
+                                    <div class="sup_flex_end_center_100 govuk-!-padding-3">
+                                        <div> Set Inflation figures etc.</div>                                        
+                                    </div>
+                                </h2>
 
                                 <div class="govuk-grid-row">
 
@@ -234,7 +236,7 @@
                                  aria-labelledby="tab-link-account-categories">
 
                             <div class="govuk-grid-row sup_margin_left_right_0 sup_margin_bottom_10">
-                                <div class="govuk-grid-column-full sup_p_0">
+                                <div class="govuk-grid-column-full sup_p_0 isDataGridWrapper">
                                     <div id="gridContainer_accCatGrid">
                                         @await Html.PartialAsync("_DataGrid", Model.AccountCategoryGrid)
                                     </div>
@@ -252,7 +254,7 @@
 
                             <div>
                                 <div class="govuk-grid-row sup_margin_left_right_0 sup_margin_bottom_10">
-                                    <div class="govuk-grid-column-full sup_p_0">
+                                    <div class="govuk-grid-column-full sup_p_0 isDataGridWrapper">
                                         <div id="gridContainer_csg7Grid">
                                             @await Html.PartialAsync("_DataGrid", Model.Csg7GroupGrid)
                                         </div>
@@ -269,7 +271,7 @@
                        
 
                         @* ── TAB 4 — Profit Margins ──────────────────────────────────────────── *@
-                        <section id="tab-profit-margins" class="govuk-tabs__panel" role="tabpanel"
+                        <section id="tab-profit-margins" class="govuk-tabs__panel govuk-!-padding-top-3" role="tabpanel"
                                  aria-labelledby="tab-link-profit-margins">
 
                             <form id="formProfitMargins" novalidate>
@@ -285,9 +287,11 @@
                                     </div>
                                 </div>
 
-                                <p class="govuk-body govuk-!-font-weight-bold govuk-!-font-size-16 maint-intro-text">
-                                    These apply only to commercial programme projects.
-                                </p>
+                               <h2 class="sup_border-bottom sup_text_color sup_heading_bg_color govuk-heading-s sup_margin_0 sup_align_heading">
+                                    <div class="sup_flex_end_center_100 govuk-!-padding-bottom-3">
+                                        <div> These apply only to commercial programme projects.</div>
+                                    </div>
+                                </h2>
 
                                 <div class="govuk-grid-row">
                                     <div class="govuk-grid-column-full">
@@ -381,7 +385,7 @@
 
                             <div>
                                 <div class="govuk-grid-row sup_margin_left_right_0 sup_margin_bottom_10">
-                                    <div class="govuk-grid-column-full sup_p_0">
+                                    <div class="govuk-grid-column-full sup_p_0 isDataGridWrapper">
                                         <div id="gridContainer_capsStaffGrid">
                                             @await Html.PartialAsync("_DataGrid", Model.CapsStaffGrid)
                                         </div>

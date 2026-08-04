@@ -30,8 +30,8 @@ namespace Apha.PACT.Api.Controllers
         /// <summary>Retrieves the monthly profile and cost data for a given project, used to render the non-cumulative chart.</summary>
         /// <param name="project">The project code to retrieve profile data for.</param>
         /// <returns>Returns <c>200 OK</c> with a list of <see cref="ProjectProfileRes"/> objects.</returns>
-        [HttpGet("{project}/data")]
-        public async Task<IActionResult> GetProfile(string project)
+        [HttpGet("project/data")]
+        public async Task<IActionResult> GetProfile([FromQuery] string project)
         {
             IList<ProjectProfileDto> data = await _service.GetProfileDataAsync(project);
             return Ok(_mapper.Map<IList<ProjectProfileRes>>(data));
@@ -40,8 +40,8 @@ namespace Apha.PACT.Api.Controllers
         /// <summary>Retrieves the cumulative profile and cost data for a given project, used to render the cumulative chart.</summary>
         /// <param name="project">The project code to retrieve cumulative data for.</param>
         /// <returns>Returns <c>200 OK</c> with a list of <see cref="ProjectProfileCumulativeRes"/> objects.</returns>
-        [HttpGet("{project}/data/cumulative")]
-        public async Task<IActionResult> GetCumulative(string project)
+        [HttpGet("project/data/cumulative")]
+        public async Task<IActionResult> GetCumulative([FromQuery] string project)
         {
             IList<ProjectProfileCumulativeDto> data = await _service.GetCumulativeDataAsync(project);
             return Ok(_mapper.Map<IList<ProjectProfileCumulativeRes>>(data));

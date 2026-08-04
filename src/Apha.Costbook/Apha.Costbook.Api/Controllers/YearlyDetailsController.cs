@@ -269,6 +269,13 @@ public class YearlyDetailsController : ControllerBase
         return Ok(BuildOk(_mapper.Map<List<AnimalLookupRes>>(dtos)));
     }
 
+    [HttpGet("additionalcostinflamation")]
+    public async Task<IActionResult> GetAdditionalCostinflamation([FromQuery] string projectId, [FromQuery] int year)
+    {
+        var value = await _service.GetAdditionalCostinflamationAsync(projectId, year);
+        return Ok(BuildOk(value));
+    }
+
     private static ApiResponse<T> BuildOk<T>(T data) => new()
     {
         Success = true,

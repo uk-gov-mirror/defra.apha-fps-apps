@@ -12,5 +12,6 @@ namespace Apha.FPS.Application.Interfaces
         Task<BidDto> UpdateBidAsync(BidDto bid);
         Task<bool> DeleteBidAsync(string WorkGroupName, string account);
         Task<List<AccountCategoryDto>> GetAccountCategoriesAsync();
+        Task<PaginatedResult<GenericBidViewDto>> GetGenericBidsPagedAsync(QueryParameters<string> query);
     }
 }

@@ -95,4 +95,7 @@ public class CostBookYearlyDetailsService : ICostBookYearlyDetailsService
 
     public Task<ApiResponseDto<List<AnimalLookupDto>>> GetAllAnimalsAsync()
         => _client.YearlyDetails.GetAllAnimalsAsync();
+
+    public Task<ApiResponseDto<string>> GetAdditionalCostinflamationAsync(string projectId, int year)
+        => _client.YearlyDetails.GetAdditionalCostinflamationAsync(projectId, year);
 }

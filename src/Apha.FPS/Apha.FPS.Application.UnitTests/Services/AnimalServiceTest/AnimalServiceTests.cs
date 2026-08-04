@@ -297,6 +297,112 @@ namespace Apha.FPS.Application.UnitTests.Services.AnimalServiceTest
 
         #endregion
 
+        #region GetAnimalCostByAnimalTypeAsync
+
+        [Fact]
+        public async Task GetAnimalCostByAnimalTypeAsync_WithValidQueryAndAnimalType_ReturnsPaginatedResult()
+        {
+            // Arrange
+            var animalType = "CATTLE";
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var mappedParams = new PaginationParameters<string> { Page = 1, PageSize = 10 };
+
+            var repositoryResult = new PagedData<AnimalCostView>
+            {
+                Data = new List<AnimalCostView>
+                {
+                    new AnimalCostView { IndCounter = 1, JobCode = "JOB001", AnimalType = "CATTLE", NumberOfDays = 5, NumberOfAnimals = 10 },
+                    new AnimalCostView { IndCounter = 2, JobCode = "JOB002", AnimalType = "CATTLE", NumberOfDays = 3, NumberOfAnimals = 5 }
+                },
+                PaginationData = new PaginationData { TotalPages = 1, PageNumber = 1, PageSize = 10, TotalRecords = 2 }
+            };
+
+            var expectedResult = new PaginatedResult<AnimalCostViewDto>
+            {
+                Data = new List<AnimalCostViewDto>
+                {
+                    new AnimalCostViewDto { IndCounter = 1, JobCode = "JOB001", AnimalType = "CATTLE", NumberOfDays = 5, NumberOfAnimals = 10 },
+                    new AnimalCostViewDto { IndCounter = 2, JobCode = "JOB002", AnimalType = "CATTLE", NumberOfDays = 3, NumberOfAnimals = 5 }
+                },
+                PaginationData = new PaginationDto { TotalPages = 1, PageNumber = 1, PageSize = 10, TotalRecords = 2 }
+            };
+
+            _mockMapper.Map<PaginationParameters<string>>(query).Returns(mappedParams);
+            _mockRepository.GetAnimalCostByAnimalTypeAsync(mappedParams, animalType).Returns(repositoryResult);
+            _mockMapper.Map<PaginatedResult<AnimalCostViewDto>>(repositoryResult).Returns(expectedResult);
+
+            // Act
+            var result = await _sut.GetAnimalCostByAnimalTypeAsync(query, animalType);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Data.Should().HaveCount(2);
+            result.PaginationData.TotalRecords.Should().Be(2);
+            result.Data.First().AnimalType.Should().Be("CATTLE");
+
+            _mockMapper.Received(1).Map<PaginationParameters<string>>(query);
+            await _mockRepository.Received(1).GetAnimalCostByAnimalTypeAsync(mappedParams, animalType);
+            _mockMapper.Received(1).Map<PaginatedResult<AnimalCostViewDto>>(repositoryResult);
+        }
+
+        [Fact]
+        public async Task GetAnimalCostByAnimalTypeAsync_WithNoMatchingRecords_ReturnsEmptyPaginatedResult()
+        {
+            // Arrange
+            var animalType = "NONEXISTENT";
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var mappedParams = new PaginationParameters<string> { Page = 1, PageSize = 10 };
+
+            var emptyRepositoryResult = new PagedData<AnimalCostView>
+            {
+                Data = new List<AnimalCostView>(),
+                PaginationData = new PaginationData { TotalPages = 0, PageNumber = 1, PageSize = 10, TotalRecords = 0 }
+            };
+
+            var emptyExpectedResult = new PaginatedResult<AnimalCostViewDto>
+            {
+                Data = new List<AnimalCostViewDto>(),
+                PaginationData = new PaginationDto { TotalPages = 0, PageNumber = 1, PageSize = 10, TotalRecords = 0 }
+            };
+
+            _mockMapper.Map<PaginationParameters<string>>(query).Returns(mappedParams);
+            _mockRepository.GetAnimalCostByAnimalTypeAsync(mappedParams, animalType).Returns(emptyRepositoryResult);
+            _mockMapper.Map<PaginatedResult<AnimalCostViewDto>>(emptyRepositoryResult).Returns(emptyExpectedResult);
+
+            // Act
+            var result = await _sut.GetAnimalCostByAnimalTypeAsync(query, animalType);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Data.Should().BeEmpty();
+            result.PaginationData.TotalRecords.Should().Be(0);
+
+            await _mockRepository.Received(1).GetAnimalCostByAnimalTypeAsync(mappedParams, animalType);
+        }
+
+        [Fact]
+        public async Task GetAnimalCostByAnimalTypeAsync_WhenRepositoryThrowsException_PropagatesException()
+        {
+            // Arrange
+            var animalType = "CATTLE";
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var mappedParams = new PaginationParameters<string> { Page = 1, PageSize = 10 };
+
+            _mockMapper.Map<PaginationParameters<string>>(query).Returns(mappedParams);
+            _mockRepository.GetAnimalCostByAnimalTypeAsync(mappedParams, animalType)
+                .Throws(new InvalidOperationException("Database connection failed"));
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+                async () => await _sut.GetAnimalCostByAnimalTypeAsync(query, animalType)
+            );
+
+            exception.Message.Should().Be("Database connection failed");
+            _mockMapper.DidNotReceive().Map<PaginatedResult<AnimalCostViewDto>>(Arg.Any<PagedData<AnimalCostView>>());
+        }
+
+        #endregion
+
         #region GetAnimalLookupAsync
 
         [Fact]
@@ -1054,6 +1160,71 @@ namespace Apha.FPS.Application.UnitTests.Services.AnimalServiceTest
             _mockRepository.DeleteAnimalAsync("CATTLE").ThrowsAsync(new Exception("DB error"));
 
             await Assert.ThrowsAsync<Exception>(() => _sut.DeleteAnimalAsync("CATTLE"));
+        }
+
+        #endregion
+
+        #region GetAnimalSnapshotAsync
+
+        [Fact]
+        public async Task GetAnimalSnapshotAsync_WithValidQuery_ReturnsPaginatedResult()
+        {
+            // Arrange
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10, Filter = "{\"AnimalType\":\"CAT\"}" };
+            var mappedParams = new PaginationParameters<string> { Page = 1, PageSize = 10, Filter = "{\"AnimalType\":\"CAT\"}" };
+
+            var repositoryResult = new PagedData<AnimalSnapshotView>
+            {
+                Data = new List<AnimalSnapshotView>
+                {
+                    new() { AnimalType = "CAT", JobCode = "JOB001", NumberOfDays = 5, NumberOfAnimals = 10, Cost = 750m }
+                },
+                PaginationData = new PaginationData { TotalPages = 1, PageNumber = 1, PageSize = 10, TotalRecords = 1 }
+            };
+
+            var expectedResult = new PaginatedResult<AnimalSnapshotViewDto>
+            {
+                Data = new List<AnimalSnapshotViewDto>
+                {
+                    new() { AnimalType = "CAT", JobCode = "JOB001", NumberOfDays = 5, NumberOfAnimals = 10, Cost = 750m }
+                },
+                PaginationData = new PaginationDto { TotalPages = 1, PageNumber = 1, PageSize = 10, TotalRecords = 1 }
+            };
+
+            _mockMapper.Map<PaginationParameters<string>>(query).Returns(mappedParams);
+            _mockRepository.GetAnimalSnapshotAsync(mappedParams).Returns(repositoryResult);
+            _mockMapper.Map<PaginatedResult<AnimalSnapshotViewDto>>(repositoryResult).Returns(expectedResult);
+
+            // Act
+            var result = await _sut.GetAnimalSnapshotAsync(query);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Data.Should().HaveCount(1);
+            result.PaginationData.TotalRecords.Should().Be(1);
+            result.Data.First().AnimalType.Should().Be("CAT");
+
+            _mockMapper.Received(1).Map<PaginationParameters<string>>(query);
+            await _mockRepository.Received(1).GetAnimalSnapshotAsync(mappedParams);
+            _mockMapper.Received(1).Map<PaginatedResult<AnimalSnapshotViewDto>>(repositoryResult);
+        }
+
+        [Fact]
+        public async Task GetAnimalSnapshotAsync_WithNullQuery_ThrowsArgumentNullException()
+        {
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _sut.GetAnimalSnapshotAsync(null!));
+        }
+
+        [Fact]
+        public async Task GetAnimalSnapshotAsync_ThrowsException_WhenRepositoryThrows()
+        {
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var mappedParams = new PaginationParameters<string> { Page = 1, PageSize = 10 };
+
+            _mockMapper.Map<PaginationParameters<string>>(query).Returns(mappedParams);
+            _mockRepository.GetAnimalSnapshotAsync(mappedParams).ThrowsAsync(new Exception("DB error"));
+
+            await Assert.ThrowsAsync<Exception>(() => _sut.GetAnimalSnapshotAsync(query));
         }
 
         #endregion

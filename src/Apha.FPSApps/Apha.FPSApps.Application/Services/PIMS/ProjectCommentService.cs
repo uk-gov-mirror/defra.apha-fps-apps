@@ -18,8 +18,9 @@ namespace Apha.FPSApps.Application.Services.PIMS
             _client = client;
         }
 
-        public async Task<ApiResponseDto<List<CommentDto>>> GetCommentsByProjectAsync(string project, int? year, QueryParameters<string> query)
-            => await _client.PimsProjectComment.GetCommentsByProjectAsync(project, year, query);
+       
+        public async Task<ApiResponseDto<List<CommentDto>>> GetCommentsByProjectAsync(string project, int? year, string? topic, QueryParameters<string> query)
+            => await _client.PimsProjectComment.GetCommentsByProjectAsync(project, year, topic, query);
 
         public async Task<ApiResponseDto<CommentDto>> GetByIdAsync(int commentno)
             => await _client.PimsProjectComment.GetByIdAsync(commentno);
@@ -35,5 +36,11 @@ namespace Apha.FPSApps.Application.Services.PIMS
 
         public async Task<ApiResponseDto<List<CommentTopicDto>>> GetCommentTopicsAsync()
             => await _client.PimsProjectComment.GetCommentTopicsAsync();
+
+        public async Task<ApiResponseDto<ProjectCommentForecastSpendDto>> GetForecastSpendByProjectAsync(string project)
+            => await _client.PimsProjectComment.GetForecastSpendByProjectAsync(project);
+
+        public async Task<ApiResponseDto<ProjectCommentForecastSpendDto>> UpdateForecastSpendByProjectAsync(string project, double? forecastSpend)
+            => await _client.PimsProjectComment.UpdateForecastSpendByProjectAsync(project, forecastSpend);
     }
 }

@@ -49,5 +49,10 @@ namespace Apha.FPSApps.Application.Services.FPS
         {
             return await _fpsClient.FpsBudgetBids.GetAccountCategoriesAsync();
         }
+
+        public async Task<ApiResponseDto<List<GenericBidViewDto>>> GetGenericBidsPagedAsync(QueryParameters<string> query)
+        {
+            return await _fpsClient.FpsBudgetBids.GetGenericBidsPagedAsync(query);
+        }
     }
 }

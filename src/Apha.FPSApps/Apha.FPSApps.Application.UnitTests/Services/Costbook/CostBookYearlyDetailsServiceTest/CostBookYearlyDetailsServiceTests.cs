@@ -737,6 +737,31 @@ public class CostBookYearlyDetailsServiceTests
         Assert.False(result.Success);
     }
 
+    [Fact]
+    public async Task GetAdditionalCostinflamationAsync_WithValidInputs_DelegatesToClient()
+    {
+        var expected = ApiResponseDto<string>.SuccessResponse("1.25");
+        _yearlyDetailsClient.GetAdditionalCostinflamationAsync("2024/001", 2024).Returns(expected);
+
+        var result = await _sut.GetAdditionalCostinflamationAsync("2024/001", 2024);
+
+        Assert.True(result.Success);
+        Assert.Equal("1.25", result.Data);
+        await _yearlyDetailsClient.Received(1).GetAdditionalCostinflamationAsync("2024/001", 2024);
+    }
+
+    [Fact]
+    public async Task GetAdditionalCostinflamationAsync_WhenApiFails_ReturnsFailure()
+    {
+        _yearlyDetailsClient.GetAdditionalCostinflamationAsync(Arg.Any<string>(), Arg.Any<int>())
+            .Returns(ApiResponseDto<string>.FailureResponse(
+                new List<ApiErrorDto> { new() { Code = "ERR", Message = "Failed" } }, new ApiMetaDto()));
+
+        var result = await _sut.GetAdditionalCostinflamationAsync("2024/001", 2024);
+
+        Assert.False(result.Success);
+    }
+
     #endregion
 }
 

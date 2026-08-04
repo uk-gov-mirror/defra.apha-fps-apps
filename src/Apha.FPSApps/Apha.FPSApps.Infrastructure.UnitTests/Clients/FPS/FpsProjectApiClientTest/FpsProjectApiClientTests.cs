@@ -1086,5 +1086,184 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.FPS.FpsProjectApiClientT
         }
 
         #endregion
+
+        #region GetPagedProjectSpecificQueryAsync Tests
+
+        [Fact]
+        public async Task GetPagedProjectSpecificQueryAsync_WithSuccessResponse_ReturnsMappedData()
+        {
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var list = new List<ProjectSpecificQueryRes> { new() { ParentProject = "PP001", Account = "ACC1" } };
+            var apiResponse = new ApiResponse<List<ProjectSpecificQueryRes>>
+            {
+                Success = true,
+                Data = list,
+                Pagination = new Pagination { PageNumber = 1, PageSize = 10, TotalRecords = 1 }
+            };
+            var expectedDto = ApiResponseDto<List<ProjectSpecificQueryDto>>.SuccessResponse(
+                new List<ProjectSpecificQueryDto> { new() { ParentProject = "PP001", Account = "ACC1" } },
+                new PaginationDto { PageNumber = 1, PageSize = 10, TotalRecords = 1 });
+
+            _http.GetAsync<List<ProjectSpecificQueryRes>>(Arg.Is<string>(url => url.Contains("api/v1/project/specific-query/paged"))).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<ProjectSpecificQueryDto>>>(apiResponse).Returns(expectedDto);
+
+            var result = await _client.GetPagedProjectSpecificQueryAsync(query);
+
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Single(result.Data!);
+            await _http.Received(1).GetAsync<List<ProjectSpecificQueryRes>>(Arg.Is<string>(url => url.Contains("api/v1/project/specific-query/paged")));
+        }
+
+        [Fact]
+        public async Task GetPagedProjectSpecificQueryAsync_WhenApiReturnsFailure_ReturnsFailureResponse()
+        {
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var apiResponse = new ApiResponse<List<ProjectSpecificQueryRes>>
+            {
+                Success = false,
+                Errors = new List<ApiError> { new() { Message = "Not Found", Code = "NOT_FOUND" } }
+            };
+            var mappedResponse = new ApiResponseDto<List<ProjectSpecificQueryDto>>
+            {
+                Success = false,
+                Errors = new List<ApiErrorDto> { new() { Message = "Not Found", Code = "NOT_FOUND" } },
+                Meta = new ApiMetaDto()
+            };
+
+            _http.GetAsync<List<ProjectSpecificQueryRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<ProjectSpecificQueryDto>>>(apiResponse).Returns(mappedResponse);
+
+            var result = await _client.GetPagedProjectSpecificQueryAsync(query);
+
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.NotNull(result.Errors);
+        }
+
+        #endregion
+
+        #region GetProjectExceptionalCostsPagedAsync Tests
+
+        [Fact]
+        public async Task GetProjectExceptionalCostsPagedAsync_WithSuccessResponse_ReturnsMappedDtos()
+        {
+            // Arrange
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var data = new List<ProjectExceptionalCostViewRes>
+            {
+                new() { Directorate = "DIR1", Programme = "P001", Project = "PP001", AccountCat = "ACC1", ItemCost = 100m },
+                new() { Directorate = "DIR2", Programme = "P002", Project = "PP002", AccountCat = "ACC2", ItemCost = 200m }
+            };
+            var apiResponse = new ApiResponse<IEnumerable<ProjectExceptionalCostViewRes>>
+            {
+                Success = true,
+                Data = data,
+                Pagination = new Pagination { PageNumber = 1, PageSize = 10, TotalRecords = 2 }
+            };
+            var expectedDto = ApiResponseDto<List<ProjectExceptionalCostViewDto>>.SuccessResponse(
+                new List<ProjectExceptionalCostViewDto>
+                {
+                    new() { Directorate = "DIR1", Programme = "P001", Project = "PP001", AccountCat = "ACC1", ItemCost = 100m },
+                    new() { Directorate = "DIR2", Programme = "P002", Project = "PP002", AccountCat = "ACC2", ItemCost = 200m }
+                },
+                new PaginationDto { PageNumber = 1, PageSize = 10, TotalRecords = 2 });
+
+            _http.GetAsync<IEnumerable<ProjectExceptionalCostViewRes>>(Arg.Is<string>(url =>
+                    url.Contains("api/v1/project/exceptionalcosts/paged")))
+                .Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<ProjectExceptionalCostViewDto>>>(apiResponse).Returns(expectedDto);
+
+            // Act
+            var result = await _client.GetProjectExceptionalCostsPagedAsync(query);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Equal(2, result.Data?.Count);
+            await _http.Received(1).GetAsync<IEnumerable<ProjectExceptionalCostViewRes>>(
+                Arg.Is<string>(url => url.Contains("api/v1/project/exceptionalcosts/paged")));
+            _mapper.Received(1).Map<ApiResponseDto<List<ProjectExceptionalCostViewDto>>>(apiResponse);
+        }
+
+        [Fact]
+        public async Task GetProjectExceptionalCostsPagedAsync_WithEmptyResult_ReturnsSuccessWithEmptyList()
+        {
+            // Arrange
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var apiResponse = new ApiResponse<IEnumerable<ProjectExceptionalCostViewRes>>
+            {
+                Success = true,
+                Data = new List<ProjectExceptionalCostViewRes>()
+            };
+            var expectedDto = ApiResponseDto<List<ProjectExceptionalCostViewDto>>.SuccessResponse(
+                new List<ProjectExceptionalCostViewDto>());
+
+            _http.GetAsync<IEnumerable<ProjectExceptionalCostViewRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<ProjectExceptionalCostViewDto>>>(apiResponse).Returns(expectedDto);
+
+            // Act
+            var result = await _client.GetProjectExceptionalCostsPagedAsync(query);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Empty(result.Data!);
+        }
+
+        [Fact]
+        public async Task GetProjectExceptionalCostsPagedAsync_WhenApiReturnsFailure_ReturnsFailureResponse()
+        {
+            // Arrange
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var apiResponse = new ApiResponse<IEnumerable<ProjectExceptionalCostViewRes>>
+            {
+                Success = false,
+                Errors = new List<ApiError> { new() { Message = "Not Found", Code = "NOT_FOUND" } }
+            };
+            var mappedResponse = new ApiResponseDto<List<ProjectExceptionalCostViewDto>>
+            {
+                Success = false,
+                Errors = new List<ApiErrorDto> { new() { Message = "Not Found", Code = "NOT_FOUND" } },
+                Meta = new ApiMetaDto()
+            };
+
+            _http.GetAsync<IEnumerable<ProjectExceptionalCostViewRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<ProjectExceptionalCostViewDto>>>(apiResponse).Returns(mappedResponse);
+
+            // Act
+            var result = await _client.GetProjectExceptionalCostsPagedAsync(query);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.NotNull(result.Errors);
+        }
+
+        [Fact]
+        public async Task GetProjectExceptionalCostsPagedAsync_PassesQueryParametersToUrl()
+        {
+            // Arrange
+            var query = new QueryParameters<string> { Page = 2, PageSize = 25, SortBy = "Directorate", Descending = true };
+            var apiResponse = new ApiResponse<IEnumerable<ProjectExceptionalCostViewRes>>
+            {
+                Success = true,
+                Data = new List<ProjectExceptionalCostViewRes>()
+            };
+            var expectedDto = ApiResponseDto<List<ProjectExceptionalCostViewDto>>.SuccessResponse(
+                new List<ProjectExceptionalCostViewDto>());
+
+            _http.GetAsync<IEnumerable<ProjectExceptionalCostViewRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<ProjectExceptionalCostViewDto>>>(apiResponse).Returns(expectedDto);
+
+            // Act
+            await _client.GetProjectExceptionalCostsPagedAsync(query);
+
+            // Assert
+            await _http.Received(1).GetAsync<IEnumerable<ProjectExceptionalCostViewRes>>(
+                Arg.Is<string>(url => url.Contains("Page=2") && url.Contains("PageSize=25")));
+        }
+
+        #endregion
     }
 }

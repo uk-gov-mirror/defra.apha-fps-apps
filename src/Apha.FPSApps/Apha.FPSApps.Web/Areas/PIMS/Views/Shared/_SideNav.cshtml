@@ -25,7 +25,8 @@
             <a href="#" style="color: #fff">Invoices</a>
         </li>
         <li class="sidebar-link-two" style="border-radius: 0 8px 8px 0; cursor: pointer; background-color: #1d70b8;">
-            <a href="#" style="color: #fff">Comments</a>
+            <a href="@Url.Action("Index", "Comment", new { area = "PIMS", parentproject = Model.Parentproject })"
+               style="color: #fff">Comments</a>
         </li>
        
       

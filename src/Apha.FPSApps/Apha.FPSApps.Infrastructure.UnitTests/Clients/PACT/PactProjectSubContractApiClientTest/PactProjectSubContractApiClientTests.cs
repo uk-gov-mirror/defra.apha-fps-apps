@@ -287,7 +287,7 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactProjectSubContr
                 new ProjectSubContractDto { SubContCounter = subContCounter, Project = "PP001" }
             );
 
-            _http.GetAsync<ProjectSubContractRes>($"api/v1/projectsubcontract/{subContCounter}").Returns(apiResponse);
+            _http.GetAsync<ProjectSubContractRes>($"api/v1/projectsubcontract/subcontract/id?id={subContCounter}").Returns(apiResponse);
             _mapper.Map<ApiResponseDto<ProjectSubContractDto>>(apiResponse).Returns(expectedDto);
 
             // Act
@@ -297,7 +297,7 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactProjectSubContr
             Assert.NotNull(result);
             Assert.True(result.Success);
             Assert.Equal(subContCounter, result.Data?.SubContCounter);
-            await _http.Received(1).GetAsync<ProjectSubContractRes>($"api/v1/projectsubcontract/{subContCounter}");
+            await _http.Received(1).GetAsync<ProjectSubContractRes>($"api/v1/projectsubcontract/subcontract/id?id={subContCounter}");
         }
 
         [Fact]
@@ -397,7 +397,7 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactProjectSubContr
             var expectedDto = ApiResponseDto<ProjectSubContractDto>.SuccessResponse(subContractDto);
 
             _mapper.Map<ProjectSubContractReq>(subContractDto).Returns(subContractReq);
-            _http.PutAsync<ProjectSubContractReq, ProjectSubContractRes>($"api/v1/projectsubcontract/{subContCounter}", subContractReq).Returns(apiResponse);
+            _http.PutAsync<ProjectSubContractReq, ProjectSubContractRes>($"api/v1/projectsubcontract/subcontract/id?id={subContCounter}", Arg.Any<ProjectSubContractReq>()).Returns(apiResponse);
             _mapper.Map<ApiResponseDto<ProjectSubContractDto>>(apiResponse).Returns(expectedDto);
 
             // Act
@@ -407,7 +407,7 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactProjectSubContr
             Assert.NotNull(result);
             Assert.True(result.Success);
             Assert.Equal(800.00m, result.Data?.Amount);
-            await _http.Received(1).PutAsync<ProjectSubContractReq, ProjectSubContractRes>($"api/v1/projectsubcontract/{subContCounter}", subContractReq);
+            await _http.Received(1).PutAsync<ProjectSubContractReq, ProjectSubContractRes>($"api/v1/projectsubcontract/subcontract/id?id={subContCounter}", Arg.Any<ProjectSubContractReq>());
         }
 
         [Fact]
@@ -906,7 +906,7 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactProjectSubContr
             var apiResponse = new ApiResponse<bool?> { Success = true, Data = true };
             var expectedDto = ApiResponseDto<bool>.SuccessResponse(true);
 
-            _http.DeleteAsync<bool?>($"api/v1/projectsubcontract/{subContCounter}").Returns(apiResponse);
+            _http.DeleteAsync<bool?>($"api/v1/projectsubcontract/subcontract/id?id={subContCounter}").Returns(apiResponse);
             _mapper.Map<ApiResponseDto<bool>>(apiResponse).Returns(expectedDto);
 
             // Act
@@ -916,7 +916,7 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactProjectSubContr
             Assert.NotNull(result);
             Assert.True(result.Success);
             Assert.True(result.Data);
-            await _http.Received(1).DeleteAsync<bool?>($"api/v1/projectsubcontract/{subContCounter}");
+            await _http.Received(1).DeleteAsync<bool?>($"api/v1/projectsubcontract/subcontract/id?id={subContCounter}");
         }
 
         [Fact]

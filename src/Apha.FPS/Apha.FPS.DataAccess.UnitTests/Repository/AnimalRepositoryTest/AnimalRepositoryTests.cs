@@ -79,6 +79,61 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.AnimalRepositoryTest
             return new AnimalRepository(dbContext.Object, requestCtx.Object);
         }
 
+        private static AnimalRepository CreateRepositoryForProgrammeCost(
+            IEnumerable<Project> projects,
+            IEnumerable<AnimalRequest> animalRequests,
+            IEnumerable<Animal> animals)
+        {
+            var requestCtx = CreateRequestContextMock();
+            var dbContext = RepositoryTestHelper.CreateMockDbContext<FpsDbContext>(requestCtx.Object);
+
+            var projectSet = RepositoryTestHelper.CreateMockDbSet(projects);
+            RepositoryTestHelper.SetupDbSetOperations(projectSet);
+            dbContext.Setup(x => x.Projects).Returns(projectSet.Object);
+
+            var animalRequestSet = RepositoryTestHelper.CreateMockDbSet(animalRequests);
+            RepositoryTestHelper.SetupDbSetOperations(animalRequestSet);
+            dbContext.Setup(x => x.AnimalRequests).Returns(animalRequestSet.Object);
+
+            var animalSet = RepositoryTestHelper.CreateMockDbSet(animals);
+            RepositoryTestHelper.SetupDbSetOperations(animalSet);
+            dbContext.Setup(x => x.Animals).Returns(animalSet.Object);
+
+            RepositoryTestHelper.SetupSaveChanges(dbContext);
+            return new AnimalRepository(dbContext.Object, requestCtx.Object);
+        }
+
+        private static Project BuildProject(
+            string parentProject = "J1",
+            string program = "PROG1",
+            short isDefraProject = 0) =>
+            new()
+            {
+                ParentProject = parentProject,
+                ProjectTitle = "Title",
+                Program = program,
+                Customer = "CUST",
+                ProjectStatus = "Open",
+                Disease = "TB",
+                IsDefraProject = isDefraProject
+            };
+
+        private static AnimalRequest BuildAnimalRequest(
+            string jobCode = "J1",
+            string animalType = "CATTLE",
+            double numberOfDays = 2d,
+            double numberOfAnimals = 3d,
+            int indCounter = 1) =>
+            new()
+            {
+                JobCode = jobCode,
+                AnimalType = animalType,
+                NumberOfDays = numberOfDays,
+                NumberOfAnimals = numberOfAnimals,
+                IndCounter = indCounter,
+                FpsYear = DefaultFpsYear
+            };
+
         private static (AnimalRepository Repo, Mock<FpsDbContext> Context, Mock<DbSet<Animal>> DbSet)
             CreateRepositoryWithMocks(IEnumerable<Animal>? animals = null)
         {
@@ -569,6 +624,344 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.AnimalRepositoryTest
             var repo = CreateRepositoryForGlobalCost(requests, animals);
             var result = await repo.GetGlobalAnimalCostAsync();
             Assert.Equal(0m, result);
+        }
+
+        #endregion
+
+        #region GetAnimalCostByAnimalTypeAsync Tests
+
+        [Fact]
+        public async Task GetAnimalCostByAnimalTypeAsync_ReturnsEmpty_WhenNoMatchingRecords()
+        {
+            var repo = CreateRepositoryForProgrammeCost([], [], []);
+            var query = new PaginationParameters<string> { Page = 1, PageSize = 10 };
+
+            var result = await repo.GetAnimalCostByAnimalTypeAsync(query, "CATTLE");
+
+            Assert.NotNull(result);
+            Assert.Empty(result.Data);
+        }
+
+        [Fact]
+        public async Task GetAnimalCostByAnimalTypeAsync_ReturnsRecord_WithComputedAnimalCost_ForNonDefraProject()
+        {
+            // Non-Defra (IsDefraProject = 0) → uses DailyRate (10). 2 days × 3 animals × £10 = £60
+            var projects = new List<Project> { BuildProject("J1", "PROG1", isDefraProject: 0) };
+            var requests = new List<AnimalRequest> { BuildAnimalRequest("J1", "CATTLE", 2d, 3d, 1) };
+            var animals = new List<Animal> { BuildAnimal("CATTLE", dailyRate: 10m, defraDailyRate: 99m) };
+            var repo = CreateRepositoryForProgrammeCost(projects, requests, animals);
+            var query = new PaginationParameters<string> { Page = 1, PageSize = 10 };
+
+            var result = await repo.GetAnimalCostByAnimalTypeAsync(query, "CATTLE");
+
+            var row = Assert.Single(result.Data);
+            Assert.Equal("CATTLE", row.AnimalType);
+            Assert.Equal("PROG1", row.Programme);
+            Assert.Equal(10m, row.DailyRate);
+            Assert.Equal(60m, row.AnimalCost);
+            Assert.Equal(6d, row.TotalDays);
+        }
+
+        [Fact]
+        public async Task GetAnimalCostByAnimalTypeAsync_UsesDefraDailyRate_ForDefraProject()
+        {
+            // Defra (IsDefraProject = 1) → uses DefraDailyRate (20). 2 × 3 × £20 = £120
+            var projects = new List<Project> { BuildProject("J1", "PROG1", isDefraProject: 1) };
+            var requests = new List<AnimalRequest> { BuildAnimalRequest("J1", "CATTLE", 2d, 3d, 1) };
+            var animals = new List<Animal> { BuildAnimal("CATTLE", dailyRate: 10m, defraDailyRate: 20m) };
+            var repo = CreateRepositoryForProgrammeCost(projects, requests, animals);
+            var query = new PaginationParameters<string> { Page = 1, PageSize = 10 };
+
+            var result = await repo.GetAnimalCostByAnimalTypeAsync(query, "CATTLE");
+
+            var row = Assert.Single(result.Data);
+            Assert.Equal(20m, row.DailyRate);
+            Assert.Equal(120m, row.AnimalCost);
+        }
+
+        [Fact]
+        public async Task GetAnimalCostByAnimalTypeAsync_FiltersByAnimalType_CaseInsensitive()
+        {
+            var projects = new List<Project>
+            {
+                BuildProject("J1", "PROG1"),
+                BuildProject("J2", "PROG2")
+            };
+            var requests = new List<AnimalRequest>
+            {
+                BuildAnimalRequest("J1", "CATTLE", 1d, 1d, 1),
+                BuildAnimalRequest("J2", "SHEEP",  1d, 1d, 2)
+            };
+            var animals = new List<Animal>
+            {
+                BuildAnimal("CATTLE", dailyRate: 10m),
+                BuildAnimal("SHEEP",  dailyRate: 5m)
+            };
+            var repo = CreateRepositoryForProgrammeCost(projects, requests, animals);
+            var query = new PaginationParameters<string> { Page = 1, PageSize = 10 };
+
+            var result = await repo.GetAnimalCostByAnimalTypeAsync(query, "cattle");
+
+            var row = Assert.Single(result.Data);
+            Assert.Equal("CATTLE", row.AnimalType);
+        }
+
+        [Fact]
+        public async Task GetAnimalCostByAnimalTypeAsync_TreatsNullDailyRateAsZeroCost()
+        {
+            var projects = new List<Project> { BuildProject("J1", "PROG1", isDefraProject: 0) };
+            var requests = new List<AnimalRequest> { BuildAnimalRequest("J1", "CATTLE", 5d, 2d, 1) };
+            var animals = new List<Animal> { BuildAnimal("CATTLE", dailyRate: null) };
+            var repo = CreateRepositoryForProgrammeCost(projects, requests, animals);
+            var query = new PaginationParameters<string> { Page = 1, PageSize = 10 };
+
+            var result = await repo.GetAnimalCostByAnimalTypeAsync(query, "CATTLE");
+
+            var row = Assert.Single(result.Data);
+            Assert.Equal(0m, row.AnimalCost);
+        }
+
+        [Fact]
+        public async Task GetAnimalCostByAnimalTypeAsync_SortsByAnimalCostDescending()
+        {
+            var projects = new List<Project>
+            {
+                BuildProject("J1", "PROG1"),
+                BuildProject("J2", "PROG2")
+            };
+            var requests = new List<AnimalRequest>
+            {
+                BuildAnimalRequest("J1", "CATTLE", 1d, 1d, 1), // 1×1×10 = 10
+                BuildAnimalRequest("J2", "CATTLE", 5d, 2d, 2)  // 5×2×10 = 100
+            };
+            var animals = new List<Animal> { BuildAnimal("CATTLE", dailyRate: 10m) };
+            var repo = CreateRepositoryForProgrammeCost(projects, requests, animals);
+            var query = new PaginationParameters<string>
+            {
+                Page = 1,
+                PageSize = 10,
+                SortBy = "AnimalCost",
+                Descending = true
+            };
+
+            var result = await repo.GetAnimalCostByAnimalTypeAsync(query, "CATTLE");
+
+            Assert.Equal(2, result.Data.Count());
+            Assert.Equal(100m, result.Data.First().AnimalCost);
+            Assert.Equal(10m, result.Data.Last().AnimalCost);
+        }
+
+        [Fact]
+        public async Task GetAnimalCostByAnimalTypeAsync_SortsByJobCodeAscending()
+        {
+            var projects = new List<Project>
+            {
+                BuildProject("J2", "PROG2"),
+                BuildProject("J1", "PROG1")
+            };
+            var requests = new List<AnimalRequest>
+            {
+                BuildAnimalRequest("J2", "CATTLE", 1d, 1d, 1),
+                BuildAnimalRequest("J1", "CATTLE", 1d, 1d, 2)
+            };
+            var animals = new List<Animal> { BuildAnimal("CATTLE", dailyRate: 10m) };
+            var repo = CreateRepositoryForProgrammeCost(projects, requests, animals);
+            var query = new PaginationParameters<string>
+            {
+                Page = 1,
+                PageSize = 10,
+                SortBy = "JobCode",
+                Descending = false
+            };
+
+            var result = await repo.GetAnimalCostByAnimalTypeAsync(query, "CATTLE");
+
+            Assert.Equal(2, result.Data.Count());
+            Assert.Equal("J1", result.Data.First().JobCode);
+            Assert.Equal("J2", result.Data.Last().JobCode);
+        }
+
+        [Fact]
+        public async Task GetAnimalCostByAnimalTypeAsync_SortsByDailyRateAscending()
+        {
+            var projects = new List<Project>
+            {
+                BuildProject("J1", "PROG1"),
+                BuildProject("J2", "PROG2")
+            };
+            var requests = new List<AnimalRequest>
+            {
+                BuildAnimalRequest("J1", "CATTLE", 1d, 1d, 1),
+                BuildAnimalRequest("J2", "SHEEP",  1d, 1d, 2)
+            };
+            var animals = new List<Animal>
+            {
+                BuildAnimal("CATTLE", dailyRate: 20m),
+                BuildAnimal("SHEEP",  dailyRate: 5m)
+            };
+            var repo = CreateRepositoryForProgrammeCost(projects, requests, animals);
+            var query = new PaginationParameters<string>
+            {
+                Page = 1,
+                PageSize = 10,
+                SortBy = "DailyRate",
+                Descending = false
+            };
+
+            var result = await repo.GetAnimalCostByAnimalTypeAsync(query, "CATTLE");
+
+            var row = Assert.Single(result.Data);
+            Assert.Equal(20m, row.DailyRate);
+        }
+
+        [Fact]
+        public async Task GetAnimalCostByAnimalTypeAsync_SortsByTotalDaysDescending()
+        {
+            var projects = new List<Project>
+            {
+                BuildProject("J1", "PROG1"),
+                BuildProject("J2", "PROG2")
+            };
+            var requests = new List<AnimalRequest>
+            {
+                BuildAnimalRequest("J1", "CATTLE", 1d, 1d, 1), // TotalDays = 1
+                BuildAnimalRequest("J2", "CATTLE", 5d, 2d, 2)  // TotalDays = 10
+            };
+            var animals = new List<Animal> { BuildAnimal("CATTLE", dailyRate: 10m) };
+            var repo = CreateRepositoryForProgrammeCost(projects, requests, animals);
+            var query = new PaginationParameters<string>
+            {
+                Page = 1,
+                PageSize = 10,
+                SortBy = "TotalDays",
+                Descending = true
+            };
+
+            var result = await repo.GetAnimalCostByAnimalTypeAsync(query, "CATTLE");
+
+            Assert.Equal(2, result.Data.Count());
+            Assert.Equal(10d, result.Data.First().TotalDays);
+            Assert.Equal(1d, result.Data.Last().TotalDays);
+        }
+
+        [Fact]
+        public async Task GetAnimalCostByAnimalTypeAsync_SortsByNumberOfAnimalsAscending()
+        {
+            var projects = new List<Project>
+            {
+                BuildProject("J1", "PROG1"),
+                BuildProject("J2", "PROG2")
+            };
+            var requests = new List<AnimalRequest>
+            {
+                BuildAnimalRequest("J1", "CATTLE", 1d, 4d, 1), // NumberOfAnimals = 4
+                BuildAnimalRequest("J2", "CATTLE", 1d, 2d, 2)  // NumberOfAnimals = 2
+            };
+            var animals = new List<Animal> { BuildAnimal("CATTLE", dailyRate: 10m) };
+            var repo = CreateRepositoryForProgrammeCost(projects, requests, animals);
+            var query = new PaginationParameters<string>
+            {
+                Page = 1,
+                PageSize = 10,
+                SortBy = "NumberOfAnimals",
+                Descending = false
+            };
+
+            var result = await repo.GetAnimalCostByAnimalTypeAsync(query, "CATTLE");
+
+            Assert.Equal(2, result.Data.Count());
+            Assert.Equal(2d, result.Data.First().NumberOfAnimals);
+            Assert.Equal(4d, result.Data.Last().NumberOfAnimals);
+        }
+
+        [Fact]
+        public async Task GetAnimalCostByAnimalTypeAsync_UnknownSortBy_ReturnsUnsorted()
+        {
+            var projects = new List<Project>
+            {
+                BuildProject("J2", "PROG2"),
+                BuildProject("J1", "PROG1")
+            };
+            var requests = new List<AnimalRequest>
+            {
+                BuildAnimalRequest("J2", "CATTLE", 1d, 1d, 1),
+                BuildAnimalRequest("J1", "CATTLE", 1d, 1d, 2)
+            };
+            var animals = new List<Animal> { BuildAnimal("CATTLE", dailyRate: 10m) };
+            var repo = CreateRepositoryForProgrammeCost(projects, requests, animals);
+            var query = new PaginationParameters<string>
+            {
+                Page = 1,
+                PageSize = 10,
+                SortBy = "DoesNotExist",
+                Descending = false
+            };
+
+            var result = await repo.GetAnimalCostByAnimalTypeAsync(query, "CATTLE");
+
+            // Unknown sort key → original ordering preserved
+            Assert.Equal(2, result.Data.Count());
+            Assert.Equal("J2", result.Data.First().JobCode);
+            Assert.Equal("J1", result.Data.Last().JobCode);
+        }
+
+        [Fact]
+        public async Task GetAnimalCostByAnimalTypeAsync_EmptySortBy_ReturnsUnsorted()
+        {
+            var projects = new List<Project>
+            {
+                BuildProject("J2", "PROG2"),
+                BuildProject("J1", "PROG1")
+            };
+            var requests = new List<AnimalRequest>
+            {
+                BuildAnimalRequest("J2", "CATTLE", 1d, 1d, 1),
+                BuildAnimalRequest("J1", "CATTLE", 1d, 1d, 2)
+            };
+            var animals = new List<Animal> { BuildAnimal("CATTLE", dailyRate: 10m) };
+            var repo = CreateRepositoryForProgrammeCost(projects, requests, animals);
+            var query = new PaginationParameters<string>
+            {
+                Page = 1,
+                PageSize = 10,
+                SortBy = string.Empty,
+                Descending = false
+            };
+
+            var result = await repo.GetAnimalCostByAnimalTypeAsync(query, "CATTLE");
+
+            // Empty sort key → original ordering preserved
+            Assert.Equal(2, result.Data.Count());
+            Assert.Equal("J2", result.Data.First().JobCode);
+            Assert.Equal("J1", result.Data.Last().JobCode);
+        }
+
+        #endregion
+
+        #region GetAnimalSnapshotAsync Tests
+
+        // NOTE: GetAnimalSnapshotAsync builds its query via BuildAnimalSnapshotQuery which
+        // joins Programs, ProjectViews, AnimalRequests and Animals and filters with
+        // EF.Functions.ILike(prj.UserEmail, _requestContext.UserEmailId). EF.Functions.ILike
+        // cannot be evaluated client-side by the in-memory/mock provider and requires a real
+        // PostgreSQL connection, so these paths are covered by integration tests.
+
+        [Fact(Skip = "EF.Functions.ILike in join query requires PostgreSQL provider; covered by integration tests.")]
+        public async Task GetAnimalSnapshotAsync_WithMatchingRows_ReturnsPagedData()
+        {
+            await Task.CompletedTask;
+        }
+
+        [Fact(Skip = "EF.Functions.ILike in join query requires PostgreSQL provider; covered by integration tests.")]
+        public async Task GetAnimalSnapshotAsync_WithNoMatchingRows_ReturnsEmptyPage()
+        {
+            await Task.CompletedTask;
+        }
+
+        [Fact(Skip = "EF.Functions.ILike in join query requires PostgreSQL provider; covered by integration tests.")]
+        public async Task GetAnimalSnapshotAsync_AppliesFilterSortingAndPaging()
+        {
+            await Task.CompletedTask;
         }
 
         #endregion

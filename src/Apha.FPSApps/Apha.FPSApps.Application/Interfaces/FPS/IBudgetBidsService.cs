@@ -13,5 +13,6 @@ namespace Apha.FPSApps.Application.Interfaces.FPS
         Task<ApiResponseDto<BidDto>> UpdateBidAsync(BidDto bid);
         Task<ApiResponseDto<bool>> DeleteBidAsync(BidDto bid);
         Task<ApiResponseDto<List<AccountCategoryDto>>> GetAccountCategoriesAsync();
+        Task<ApiResponseDto<List<GenericBidViewDto>>> GetGenericBidsPagedAsync(QueryParameters<string> query);
     }
 }

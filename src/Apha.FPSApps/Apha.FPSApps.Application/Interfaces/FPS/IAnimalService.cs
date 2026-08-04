@@ -8,6 +8,7 @@ namespace Apha.FPSApps.Application.Interfaces.FPS
     {
         Task<ApiResponseDto<IEnumerable<AnimalDto>>> GetAllAnimalsAsync();
         Task<ApiResponseDto<List<AnimalDto>>> GetAllAnimalsAsync(QueryParameters<string> query);
+        Task<ApiResponseDto<List<AnimalSnapshotViewDto>>> GetAnimalSnapshotAsync(QueryParameters<string> query);
         Task<ApiResponseDto<AnimalDto?>> GetAnimalByIdAsync(string animalType);
         Task<ApiResponseDto<AnimalDto>> AddAnimalAsync(AnimalDto animalDto);
         Task<ApiResponseDto<AnimalDto>> UpdateAnimalAsync(AnimalDto animalDto);

@@ -30,6 +30,9 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.ProjectRepositoryTest
             IEnumerable<ProjectSubContract>? projectSubContracts = null,
             IEnumerable<ProjectGroupView>? projectGroupViews = null,
             IEnumerable<Program>? programs = null,
+            IEnumerable<AdditionalCostView>? additionalCostViews = null,
+            IEnumerable<AccountCategory>? accountCategories = null,
+            IEnumerable<AdditionalCost>? additionalCosts = null,
             string userEmailId = "test@example.com", // always lowercase - matches middleware ToLowerInvariant()
             int fpsYear = 2024)
         {
@@ -114,6 +117,24 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.ProjectRepositoryTest
             {
                 var mockSet = RepositoryTestHelper.CreateMockDbSet(programs);
                 mockContext.Setup(x => x.Programs).Returns(mockSet.Object);
+            }
+
+            if (additionalCostViews != null)
+            {
+                var mockSet = RepositoryTestHelper.CreateMockDbSet(additionalCostViews);
+                mockContext.Setup(x => x.AdditionalCostViews).Returns(mockSet.Object);
+            }
+
+            if (accountCategories != null)
+            {
+                var mockSet = RepositoryTestHelper.CreateMockDbSet(accountCategories);
+                mockContext.Setup(x => x.AccountCategories).Returns(mockSet.Object);
+            }
+
+            if (additionalCosts != null)
+            {
+                var mockSet = RepositoryTestHelper.CreateMockDbSet(additionalCosts);
+                mockContext.Setup(x => x.AdditionalCosts).Returns(mockSet.Object);
             }
 
             return new ProjectRepository(mockContext.Object, mockRequestContext.Object);
@@ -3404,6 +3425,257 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.ProjectRepositoryTest
             Assert.Equal(30m, items[0].PlanCaseWorkDebit);
             Assert.Equal(20m, items[1].PlanCaseWorkDebit);
             Assert.Equal(10m, items[2].PlanCaseWorkDebit);
+        }
+
+        #endregion
+
+        #region GetPagedProjectSpecificQueryAsync Tests
+
+        private static (List<ProjectView>, List<AdditionalCostView>, List<AccountCategory>) MakeSpecificQueryData(int fpsYear = 2024)
+        {
+            var views = new List<ProjectView>
+            {
+                new() { ParentProject = "PP001", Program = "PR1", ProjectTitle = "Title 1", ShortTitle = "S1", ProjectStatus = "Open", Manager = "Mgr1", FpsYear = fpsYear, UserEmail = "test@example.com" },
+                new() { ParentProject = "PP002", Program = "PR2", ProjectTitle = "Title 2", ShortTitle = "S2", ProjectStatus = "Closed", Manager = "Mgr2", FpsYear = fpsYear, UserEmail = "test@example.com" }
+            };
+            var costs = new List<AdditionalCostView>
+            {
+                new() { JobCode = "PP001", Account = "ACC1", Description = "Desc 1", Freq = "M", Supplier = "Sup1", ItemCost = 100m, FpsYear = fpsYear },
+                new() { JobCode = "PP002", Account = "ACC2", Description = "Desc 2", Freq = "Y", Supplier = "Sup2", ItemCost = 200m, FpsYear = fpsYear }
+            };
+            var categories = new List<AccountCategory>
+            {
+                new() { AccShortName = "ACC1", AccountDescription = "Account 1", ConstituentAccountCodes = "1000", FpsYear = fpsYear },
+                new() { AccShortName = "ACC2", AccountDescription = "Account 2", ConstituentAccountCodes = "2000", FpsYear = fpsYear }
+            };
+            return (views, costs, categories);
+        }
+
+        [Fact]
+        public async Task GetPagedProjectSpecificQueryAsync_ReturnsJoinedRows()
+        {
+            var (views, costs, categories) = MakeSpecificQueryData();
+            var repo = CreateRepository(projectViews: views, additionalCostViews: costs, accountCategories: categories);
+            var query = new PaginationParameters<string>(page: 1, pageSize: 10);
+
+            var result = await repo.GetPagedProjectSpecificQueryAsync(query);
+
+            var items = result.Data.ToList();
+            Assert.Equal(2, items.Count);
+            Assert.Contains(items, i => i.ParentProject == "PP001" && i.Account == "ACC1" && i.AccountDescription == "Account 1");
+            Assert.Contains(items, i => i.ParentProject == "PP002" && i.Account == "ACC2");
+        }
+
+        [Fact]
+        public async Task GetPagedProjectSpecificQueryAsync_FiltersByProgram()
+        {
+            var (views, costs, categories) = MakeSpecificQueryData();
+            var repo = CreateRepository(projectViews: views, additionalCostViews: costs, accountCategories: categories);
+            var filter = Newtonsoft.Json.JsonConvert.SerializeObject(new Dictionary<string, string> { { "Program", "PR1" } });
+            var query = new PaginationParameters<string>(page: 1, pageSize: 10) { Filter = filter };
+
+            var result = await repo.GetPagedProjectSpecificQueryAsync(query);
+
+            var items = result.Data.ToList();
+            Assert.Single(items);
+            Assert.Equal("PR1", items[0].Program);
+        }
+
+        [Fact]
+        public async Task GetPagedProjectSpecificQueryAsync_FiltersByItemCost()
+        {
+            var (views, costs, categories) = MakeSpecificQueryData();
+            var repo = CreateRepository(projectViews: views, additionalCostViews: costs, accountCategories: categories);
+            var filter = Newtonsoft.Json.JsonConvert.SerializeObject(new Dictionary<string, string> { { "ItemCost", "200" } });
+            var query = new PaginationParameters<string>(page: 1, pageSize: 10) { Filter = filter };
+
+            var result = await repo.GetPagedProjectSpecificQueryAsync(query);
+
+            var items = result.Data.ToList();
+            Assert.Single(items);
+            Assert.Equal(200m, items[0].ItemCost);
+        }
+
+        [Theory]
+        [InlineData("account", false, "ACC1")]
+        [InlineData("account", true, "ACC2")]
+        [InlineData("itemcost", true, "ACC2")]
+        [InlineData("manager", false, "ACC1")]
+        public async Task GetPagedProjectSpecificQueryAsync_SortsByColumn(string sortBy, bool descending, string expectedFirstAccount)
+        {
+            var (views, costs, categories) = MakeSpecificQueryData();
+            var repo = CreateRepository(projectViews: views, additionalCostViews: costs, accountCategories: categories);
+            var query = new PaginationParameters<string>(sortBy: sortBy, descending: descending, page: 1, pageSize: 10);
+
+            var result = await repo.GetPagedProjectSpecificQueryAsync(query);
+
+            var items = result.Data.ToList();
+            Assert.Equal(expectedFirstAccount, items[0].Account);
+        }
+
+        [Fact]
+        public async Task GetPagedProjectSpecificQueryAsync_DefaultSort_OrdersByParentProject()
+        {
+            var (views, costs, categories) = MakeSpecificQueryData();
+            var repo = CreateRepository(projectViews: views, additionalCostViews: costs, accountCategories: categories);
+            var query = new PaginationParameters<string>(page: 1, pageSize: 10);
+
+            var result = await repo.GetPagedProjectSpecificQueryAsync(query);
+
+            var items = result.Data.ToList();
+            Assert.Equal("PP001", items[0].ParentProject);
+        }
+
+        [Fact]
+        public async Task GetPagedProjectSpecificQueryAsync_ExcludesOtherUsers()
+        {
+            var (views, costs, categories) = MakeSpecificQueryData();
+            views[0].UserEmail = "other@example.com";
+            var repo = CreateRepository(projectViews: views, additionalCostViews: costs, accountCategories: categories);
+            var query = new PaginationParameters<string>(page: 1, pageSize: 10);
+
+            var result = await repo.GetPagedProjectSpecificQueryAsync(query);
+
+            var items = result.Data.ToList();
+            Assert.Single(items);
+            Assert.Equal("PP002", items[0].ParentProject);
+        }
+
+        #endregion
+
+        #region GetProjectExceptionalCostsPagedAsync Tests
+
+        private static (List<Project> projects, List<FpsProgram> programs, List<AdditionalCost> additionalCosts) BuildExceptionalCostData()
+        {
+            var projects = new List<Project>
+            {
+                new() { ParentProject = "PP001", ProjectTitle = "Alpha", Program = "P001", Contract = "CON1", Customer = "DEFRA", ProjectStatus = "Active", IncomeAccountCode = "IA1", Disease = "TB" },
+                new() { ParentProject = "PP002", ProjectTitle = "Beta",  Program = "P002", Contract = "CON2", Customer = "DEFRA", ProjectStatus = "Active", IncomeAccountCode = "IA2", Disease = "FMD" }
+            };
+            var programs = new List<FpsProgram>
+            {
+                new() { ProgramNo = "P001", Directorate = "DIR1" },
+                new() { ProgramNo = "P002", Directorate = "DIR2" }
+            };
+            var additionalCosts = new List<AdditionalCost>
+            {
+                new() { JobCode = "PP001", Account = "ACC1", Description = "Travel",   ItemCost = 100m },
+                new() { JobCode = "PP002", Account = "ACC2", Description = "Equipment", ItemCost = 200m }
+            };
+            return (projects, programs, additionalCosts);
+        }
+
+        [Fact]
+        public async Task GetProjectExceptionalCostsPagedAsync_JoinsProjectsProgramsAndAdditionalCosts()
+        {
+            // Arrange
+            var (projects, programs, additionalCosts) = BuildExceptionalCostData();
+            var repo = CreateRepository(projects: projects, programs: programs, additionalCosts: additionalCosts);
+            var query = new PaginationParameters<string>(page: 1, pageSize: 10);
+
+            // Act
+            var result = await repo.GetProjectExceptionalCostsPagedAsync(query);
+
+            // Assert
+            Assert.Equal(2, result.PaginationData.TotalRecords);
+            var first = result.Data.First(x => x.Project == "PP001");
+            Assert.Equal("DIR1", first.Directorate);
+            Assert.Equal("P001", first.Programme);
+            Assert.Equal("CON1", first.ContractNumber);
+            Assert.Equal("ACC1", first.AccountCat);
+            Assert.Equal("Travel", first.Description);
+            Assert.Equal(100m, first.ItemCost);
+        }
+
+        [Fact]
+        public async Task GetProjectExceptionalCostsPagedAsync_ExcludesProjectsWithoutMatchingAdditionalCost()
+        {
+            // Arrange
+            var projects = new List<Project>
+            {
+                new() { ParentProject = "PP001", ProjectTitle = "Alpha", Program = "P001", Contract = "CON1", Customer = "DEFRA", ProjectStatus = "Active", IncomeAccountCode = "IA1", Disease = "TB" },
+                new() { ParentProject = "PPX",   ProjectTitle = "Ghost", Program = "P001", Contract = "CONX", Customer = "DEFRA", ProjectStatus = "Active", IncomeAccountCode = "IAX", Disease = "TB" }
+            };
+            var programs = new List<FpsProgram> { new() { ProgramNo = "P001", Directorate = "DIR1" } };
+            var additionalCosts = new List<AdditionalCost> { new() { JobCode = "PP001", Account = "ACC1", Description = "Travel", ItemCost = 100m } };
+            var repo = CreateRepository(projects: projects, programs: programs, additionalCosts: additionalCosts);
+            var query = new PaginationParameters<string>(page: 1, pageSize: 10);
+
+            // Act
+            var result = await repo.GetProjectExceptionalCostsPagedAsync(query);
+
+            // Assert
+            Assert.Equal(1, result.PaginationData.TotalRecords);
+            Assert.Equal("PP001", result.Data.Single().Project);
+        }
+
+        [Fact]
+        public async Task GetProjectExceptionalCostsPagedAsync_FiltersByDirectorate()
+        {
+            // Arrange
+            var (projects, programs, additionalCosts) = BuildExceptionalCostData();
+            var repo = CreateRepository(projects: projects, programs: programs, additionalCosts: additionalCosts);
+            var query = new PaginationParameters<string>(page: 1, pageSize: 10)
+            {
+                Filter = "{\"Directorate\":\"DIR1\"}"
+            };
+
+            // Act
+            var result = await repo.GetProjectExceptionalCostsPagedAsync(query);
+
+            // Assert
+            Assert.Equal(1, result.PaginationData.TotalRecords);
+            Assert.Equal("DIR1", result.Data.Single().Directorate);
+        }
+
+        [Fact]
+        public async Task GetProjectExceptionalCostsPagedAsync_SortsByItemCostDescending()
+        {
+            // Arrange
+            var (projects, programs, additionalCosts) = BuildExceptionalCostData();
+            var repo = CreateRepository(projects: projects, programs: programs, additionalCosts: additionalCosts);
+            var query = new PaginationParameters<string>(sortBy: "itemcost", descending: true, page: 1, pageSize: 10);
+
+            // Act
+            var result = await repo.GetProjectExceptionalCostsPagedAsync(query);
+
+            // Assert
+            Assert.Equal(200m, result.Data.First().ItemCost);
+        }
+
+        [Fact]
+        public async Task GetProjectExceptionalCostsPagedAsync_AppliesPaging()
+        {
+            // Arrange
+            var (projects, programs, additionalCosts) = BuildExceptionalCostData();
+            var repo = CreateRepository(projects: projects, programs: programs, additionalCosts: additionalCosts);
+            var query = new PaginationParameters<string>(page: 1, pageSize: 1);
+
+            // Act
+            var result = await repo.GetProjectExceptionalCostsPagedAsync(query);
+
+            // Assert
+            Assert.Single(result.Data);
+            Assert.Equal(2, result.PaginationData.TotalRecords);
+            Assert.Equal(2, result.PaginationData.TotalPages);
+        }
+
+        [Fact]
+        public async Task GetProjectExceptionalCostsPagedAsync_WithNoData_ReturnsEmpty()
+        {
+            // Arrange
+            var repo = CreateRepository(
+                projects: new List<Project>(),
+                programs: new List<FpsProgram>(),
+                additionalCosts: new List<AdditionalCost>());
+            var query = new PaginationParameters<string>(page: 1, pageSize: 10);
+
+            // Act
+            var result = await repo.GetProjectExceptionalCostsPagedAsync(query);
+
+            // Assert
+            Assert.Empty(result.Data);
+            Assert.Equal(0, result.PaginationData.TotalRecords);
         }
 
         #endregion

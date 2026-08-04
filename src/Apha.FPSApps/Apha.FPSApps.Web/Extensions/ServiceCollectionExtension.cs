@@ -33,7 +33,6 @@ namespace Apha.FPSApps.Web.Extensions
             services.AddScoped<IProjectService, ProjectService>();
             services.AddScoped<IProjectJobCodeService, ProjectJobCodeService>();
             services.AddScoped<IPactTimeCodeValidService, PactTimeCodeValidService>();
-            services.AddScoped<IProjectService, ProjectService>();
             services.AddScoped<IAnimalPlanService, AnimalPlanService>();
             services.AddScoped<ISettingService, SettingService>();
             // CostBook services - Following FPS pattern
@@ -83,7 +82,6 @@ namespace Apha.FPSApps.Web.Extensions
 
             services.AddScoped<IProfitCentreService, ProfitCentreService>();
             services.AddScoped<IProfitCentreGradeService, ProfitCentreGradeService>();
-            services.AddScoped<IWorkGroupGradeService, WorkGroupGradeService>();
             services.AddScoped<IWorkGroupEmployeeService, WorkGroupEmployeeService>();
             services.AddScoped<ITestorProductService, TestorProductService>();
             services.AddScoped<IMonthlyOutputService, MonthlyOutputService>();
@@ -91,10 +89,8 @@ namespace Apha.FPSApps.Web.Extensions
             services.AddScoped<IPactMonthlyTimeService, PactMonthlyTimeService>();
             services.AddScoped<IProjectProfileService, ProjectProfileService>();
             services.AddScoped<IProjectMonthService, ProjectMonthService>();
-            services.AddScoped<ICalenderMonthService, CalenderMonthService>();
             services.AddScoped<IWorkGroupReportEmailService, WorkGroupReportEmailService>();
-            // TRANSFORMENGINE: IWorkgroupMaintenanceService registered — Phase 10 (Step 15c)
-            // FPS CRUD maintenance service for frmMaintWorkGroup2 (distinct from PACT IWorkGroupService read-only lookup)
+           
             services.AddScoped<IWorkgroupMaintenanceService, WorkgroupMaintenanceService>();
             services.AddScoped<Apha.FPSApps.Application.Interfaces.PACT.IWorkGroupService, Apha.FPSApps.Application.Services.PACT.WorkGroupService>();
             services.AddScoped<IDivisionGradeService, DivisionGradeService>();

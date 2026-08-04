@@ -20,10 +20,11 @@ namespace Apha.PIMS.Application.Services
             _mapper = mapper;
         }
 
-        public async Task<PaginatedResult<CommentDto>> GetCommentsByProjectAsync(string project, int? year, QueryParameters<string> query)
+        
+        public async Task<PaginatedResult<CommentDto>> GetCommentsByProjectAsync(string project, int? year, QueryParameters<string> query, string? topic = null)
         {
             PaginationParameters<string> filter = _mapper.Map<PaginationParameters<string>>(query);
-            PagedData<Comment> result = await _repository.GetCommentsByProjectAsync(project, year, filter);
+            PagedData<Comment> result = await _repository.GetCommentsByProjectAsync(project, year, filter, topic);
             return _mapper.Map<PaginatedResult<CommentDto>>(result);
         }
 
@@ -104,6 +105,16 @@ namespace Apha.PIMS.Application.Services
         {
             var topics = await _repository.GetCommentTopicsAsync();
             return _mapper.Map<IEnumerable<CommentTopicDto>>(topics);
+        }
+
+        public async Task<double?> GetForecastSpendByProjectAsync(string project)
+        {
+            return await _repository.GetForecastSpendByProjectAsync(project);
+        }
+
+        public async Task<double?> UpdateForecastSpendByProjectAsync(string project, double? forecastSpend)
+        {
+            return await _repository.UpdateForecastSpendByProjectAsync(project, forecastSpend);
         }
     }
 }

@@ -14,6 +14,7 @@ namespace Apha.FPS.Core.Interfaces
         Task<IEnumerable<Project>> GetAllProjectsForAllUsersAsync();
         Task<IEnumerable<PactProjectView>> GetAllPactProjectsAsync();
         Task<PagedData<Project>> GetPagedProjectsAsync(PaginationParameters<string> query);
+        Task<PagedData<ProjectSpecificQueryItem>> GetPagedProjectSpecificQueryAsync(PaginationParameters<string> query);
         Task<PagedData<ProjectView>> GetPagedProjectsByUserAsync(PaginationParameters<string> query);
         Task<PagedData<PactProjectView>> GetPagedPactProjectsAsync(PaginationParameters<string> query);
         Task<PagedData<PactProjectView>> GetPagedPactProjectsByProgramAsync(PaginationParameters<string> query, string programNo);
@@ -48,5 +49,8 @@ namespace Apha.FPS.Core.Interfaces
 
         // Resource Replan — staff data for a workgroup, paged/filtered/sorted
         Task<PagedData<ProjectStaffReplanView>> GetProjectStaffReplanAsync(PaginationParameters<string> query, string workgroup);
+
+        // Exceptional (additional) costs joined across projects, programmes and additional costs — paged/filtered/sorted
+        Task<PagedData<ProjectExceptionalCostView>> GetProjectExceptionalCostsPagedAsync(PaginationParameters<string> query);
     }
 }

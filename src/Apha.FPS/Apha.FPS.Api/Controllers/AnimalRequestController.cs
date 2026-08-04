@@ -36,7 +36,7 @@ namespace Apha.FPS.Api.Controllers
         }
 
         /// <summary>
-        /// Gets a paginated list of animal costs for a specific job code.
+        /// Gets a paged list of animal costs for a specific job code.
         /// </summary>
         /// <param name="query">Pagination and filter parameters.</param>
         /// <param name="jobCode">The job code to filter animal costs.</param>
@@ -47,6 +47,35 @@ namespace Apha.FPS.Api.Controllers
             var filter = _mapper.Map<QueryParameters<string>>(query);
             var result = await _animalService.GetAnimalCostAsync(filter, jobCode);
             return Ok(_mapper.Map<PaginationRes<AnimalCostViewRes>>(result));
+        }
+
+        /// <summary>
+        /// Gets a paged list of animal costs filtered by animal type (ASU Data View — frmAnimalCosts).
+        /// No user-email guard: returns records across all projects for the current FPS year.
+        /// Converted from qryJobAnimalCost filtered via fsubAnimalCosts LinkMasterFields (AnimalType).
+        /// </summary>
+        /// <param name="query">Pagination and filter parameters.</param>
+        /// <param name="animalType">animal type filter (e.g. "Cattle")</param>
+        /// <returns>A paginated list of animal cost view results.</returns>
+        [HttpGet("byanimaltype")]
+        public async Task<IActionResult> GetAnimalCostByAnimalTypeAsync([FromQuery] PaginationReq<string> query, string animalType)
+        {
+            var filter = _mapper.Map<QueryParameters<string>>(query);
+            var result = await _animalService.GetAnimalCostByAnimalTypeAsync(filter, animalType);
+            return Ok(_mapper.Map<PaginationRes<AnimalCostViewRes>>(result));
+        }
+
+        /// <summary>
+        /// Gets a paginated snapshot of animal costs across programmes, projects and animal requests.
+        /// </summary>
+        /// <param name="query">Pagination and filter parameters.</param>
+        /// <returns>A paginated list of animal snapshot view results.</returns>
+        [HttpGet("snapshot")]
+        public async Task<IActionResult> GetAnimalSnapshotAsync([FromQuery] PaginationReq<string> query)
+        {
+            var filter = _mapper.Map<QueryParameters<string>>(query);
+            var result = await _animalService.GetAnimalSnapshotAsync(filter);
+            return Ok(_mapper.Map<PaginationRes<AnimalSnapshotViewRes>>(result));
         }
 
         /// <summary>

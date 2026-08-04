@@ -486,8 +486,12 @@ function openAddAdditionalCostModal(pid, year) {
             document.getElementById('project1ModalContent').innerHTML = html;
             _additionalCostIsAddingNew = true;
             _additionalCostCurrentIdentity = null;
-            openModal();
-            initAccountCatDropdown();
+
+            fetchadditionalcostinflamation(pid, year)
+                .finally(function () {
+                    openModal();
+                    initAccountCatDropdown();
+                });
         });
 }
 function openEditAdditionalCostModal(pid, year, acIdentity) {
@@ -497,14 +501,18 @@ function openEditAdditionalCostModal(pid, year, acIdentity) {
             document.getElementById('project1ModalContent').innerHTML = html;
             _additionalCostIsAddingNew = false;
             _additionalCostCurrentIdentity = acIdentity;
-            openModal();
-            initAccountCatDropdown();
-            var hiddenCat = document.getElementById('AccountCat');
-            var displayInput = document.getElementById('accountCatSelect');
-            if (hiddenCat && displayInput && hiddenCat.value) {
-                var matchRow = document.querySelector('#accountCatDropdownBody tr[data-value="' + hiddenCat.value + '"]');
-                displayInput.value = matchRow ? matchRow.querySelector('td').textContent.trim() : hiddenCat.value;
-            }
+
+            fetchadditionalcostinflamation(pid, year)
+                .finally(function () {
+                    openModal();
+                    initAccountCatDropdown();
+                    var hiddenCat = document.getElementById('AccountCat');
+                    var displayInput = document.getElementById('accountCatSelect');
+                    if (hiddenCat && displayInput && hiddenCat.value) {
+                        var matchRow = document.querySelector('#accountCatDropdownBody tr[data-value="' + hiddenCat.value + '"]');
+                        displayInput.value = matchRow ? matchRow.querySelector('td').textContent.trim() : hiddenCat.value;
+                    }
+                });
         });
 }
 function saveAdditionalCost() {
@@ -896,11 +904,32 @@ function filterWgGradeRows(term) {
 }
 
 var _hoursPerDay = 7.2;
+var _additioncostinflamation = 1.00;
+
 function fetchHoursPerDay() {
     fetch(yearlyDetailsUrls.getHoursInDay)
         .then(function (r) { return r.json(); })
         .then(function (result) { if (result.success && result.hoursPerDay) _hoursPerDay = result.hoursPerDay; })
         .catch(function () { /* fallback: keep default 7.2 */ });
+}
+
+function fetchadditionalcostinflamation(pid, year) {
+    var url = yearlyDetailsUrls.getAdditionalCostinflamation
+        + '?projectId=' + encodeURIComponent(pid || projectId)
+        + '&year=' + (year || selectedYear);
+
+    return fetch(url)
+        .then(function (r) { return r.json(); })
+        .then(function (result) {
+            if (result.success && result.additionalCostInflamation) {
+                _additioncostinflamation = result.additionalCostInflamation;
+            }
+            syncItemCost();
+        })
+        .catch(function (err) {
+            console.warn('Failed to fetch additional cost inflamation, using previous/default value.', err);
+            syncItemCost();
+        });
 }
 
 var _calcStaffGuard = false;
@@ -978,7 +1007,7 @@ function calcTestCost() {
     var noStr = noEl.value.trim();
     var no = parseFloat(noStr);
     var price = parseFloat(unitPriceEl.value);
-    costEl.value = (noStr !== '' && !isNaN(no) && !isNaN(price)) ? (no * price).toFixed(2) : '';
+    costEl.value = (noStr !== '' && !isNaN(no) && !isNaN(price)) ? (no * price) : '';
 }
 
 // ── Animal Type custom dropdown ────────────────────────────────────
@@ -1027,7 +1056,7 @@ function calcAnimalCost() {
     var days = parseFloat(daysStr);
     var rate = parseFloat(rateEl.value);
     costEl.value = (noStr !== '' && daysStr !== '' && !isNaN(no) && !isNaN(days) && !isNaN(rate))
-        ? (no * days * rate).toFixed(2) : '';
+        ? (no * days * rate) : '';
 }
 
 // ── Account Category custom dropdown ──────────────────────────────
@@ -1040,10 +1069,13 @@ function initAccountCatDropdown() {
         filterRows: filterAccountCatRows,
         onRowSelect: function (row, input) {
             var cat = row.getAttribute('data-value');
+            var useInflation = row.getAttribute('data-useinflation') === 'true';
             input.value = cat;
+            input.setAttribute('data-current-useinflation', useInflation ? 'true' : 'false');
             document.getElementById('AccountCat').value = cat;
             input.dispatchEvent(new Event('input', { bubbles: true }));
             input.dispatchEvent(new Event('change', { bubbles: true }));
+            setTimeout(syncItemCost, 0);
         }
     });
 
@@ -1053,6 +1085,8 @@ function initAccountCatDropdown() {
             costInput.addEventListener(evt, function () { setTimeout(syncItemCost, 0); });
         });
     }
+
+    setTimeout(syncItemCost, 0);
 }
 function filterAccountCatRows(term) {
     document.querySelectorAll('#accountCatDropdownBody tr').forEach(function (row) {
@@ -1062,10 +1096,42 @@ function filterAccountCatRows(term) {
 function syncItemCost() {
     var costEl = document.getElementById('CostEntered');
     var itemCostEl = document.getElementById('ItemCost');
+    var catEl = document.getElementById('AccountCat');
+    var catSelectEl = document.getElementById('accountCatSelect');
     if (!costEl || !itemCostEl) return;
+
     var costStr = costEl.value.trim();
     var cost = parseFloat(costStr);
-    itemCostEl.value = (costStr !== '' && !isNaN(cost)) ? cost.toFixed(2) : '';
+    if (costStr === '' || isNaN(cost)) {
+        itemCostEl.value = '';
+        return;
+    }
+
+    var useInflation = false;
+    if (catSelectEl) {
+        useInflation = catSelectEl.getAttribute('data-current-useinflation') === 'true';
+    }
+
+    if (!useInflation) {
+        var cat = catEl ? catEl.value : '';
+        if (cat) {
+            var row = document.querySelector('#accountCatDropdownBody tr[data-value="' + cat + '"]');
+            useInflation = !!row && row.getAttribute('data-useinflation') === 'true';
+            if (catSelectEl) {
+                catSelectEl.setAttribute('data-current-useinflation', useInflation ? 'true' : 'false');
+            }
+        }
+    }
+
+    var itemCost = cost;
+    if (useInflation) {
+        var inflation = parseFloat(_additioncostinflamation);
+        if (!isNaN(inflation)) {
+            itemCost = cost * inflation;
+        }
+    }
+
+    itemCostEl.value = itemCost;
 }
 
 // ── Private helper ─────────────────────────────────────────────────

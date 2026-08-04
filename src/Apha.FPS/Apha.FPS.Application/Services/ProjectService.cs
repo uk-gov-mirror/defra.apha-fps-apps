@@ -45,6 +45,13 @@ namespace Apha.FPS.Application.Services
             return _mapper.Map<PaginatedResult<ProjectDto>>(pagedProjects);
         }
 
+        public async Task<PaginatedResult<ProjectSpecificQueryDto>> GetPagedProjectSpecificQueryAsync(QueryParameters<string> query)
+        {
+            var pagedItems = await _projectRepository.GetPagedProjectSpecificQueryAsync(
+                _mapper.Map<PaginationParameters<string>>(query));
+            return _mapper.Map<PaginatedResult<ProjectSpecificQueryDto>>(pagedItems);
+        }
+
         public async Task<PaginatedResult<ProjectDto>> GetPagedProjectsByUserAsync(QueryParameters<string> query)
         {
             var pagedProjects = await _projectRepository.GetPagedProjectsByUserAsync(
@@ -298,6 +305,13 @@ namespace Apha.FPS.Application.Services
             var pagedResult = await _projectRepository.GetProjectStaffReplanAsync(
                 _mapper.Map<PaginationParameters<string>>(query), workgroup);
             return _mapper.Map<PaginatedResult<ProjectStaffReplanDto>>(pagedResult);
+        }
+
+        public async Task<PaginatedResult<ProjectExceptionalCostViewDto>> GetProjectExceptionalCostsPagedAsync(QueryParameters<string> query)
+        {
+            var pagedResult = await _projectRepository.GetProjectExceptionalCostsPagedAsync(
+                _mapper.Map<PaginationParameters<string>>(query));
+            return _mapper.Map<PaginatedResult<ProjectExceptionalCostViewDto>>(pagedResult);
         }
     }
 }

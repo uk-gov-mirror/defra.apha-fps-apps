@@ -1,0 +1,210 @@
+@using Apha.FPSApps.Web.Models.Components.DataGrid
+@model Apha.FPSApps.Web.Areas.FPS.Models.AnimalCostsViewModel
+@{
+    ViewData["Title"] = "ASU Data View";
+}
+
+<div class="govuk-!-margin-bottom-5">
+    <div class="govuk-grid-row">
+        <div class="govuk-grid-column-full">
+            <div class="fps-sr-breadcrumb-row">
+                <div class="fps-sr-breadcrumb-flex sup_context_row">
+                    <div class="govuk-grid-column-two-thirds govuk-!-padding-left-0"></div>
+                </div>
+            </div>
+        </div>
+        <div class="govuk-grid-column-full">
+            <h1 class="govuk-grid-row govuk-heading-s sup_border-bottom govuk-!-margin-top-2 govuk-!-padding-bottom-2 govuk-!-padding-left-4">
+                ASU Data View
+            </h1>
+        </div>
+    </div>
+
+    <div class="govuk-grid-row sup_margin_left_right_10">
+        <!-- Left column: filter + grid + totals -->
+        <div class="govuk-grid-column-two-thirds govuk-!-padding-left-0">
+
+            <!-- Animal Type multicolumn dropdown (mirrors pickAnimalType RowSource on frmAnimalCosts) -->
+            <div class="govuk-form-group govuk-!-margin-bottom-2 fps-test-inline-select asu-dropdown-wrapper"
+                 id="animal-type-dropdown">
+                <label class="govuk-label govuk-!-font-weight-bold" for="animal-type-input">
+                    Choose an Animal Type
+                </label>
+                <input type="text"
+                       id="animal-type-input"
+                       value=""
+                       class="dropdown-input down-arrow-img govuk-input govuk-!-font-size-16"
+                       readonly
+                       aria-label="Choose an animal type">
+
+                <div class="multicolumn-dropdown-panel" id="animal-type-panel">
+                    <div class="search-box-wrapper">
+                        <input type="text"
+                               class="search-box"
+                               id="animal-type-search"
+                               placeholder="Type to search animal type"
+                               aria-label="Type to search animal type">
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Animal Type</th>
+                                <th>Daily Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody id="animal-type-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Read-only animal costs DataGrid (fsubAnimalCosts — DefaultView=2, all Allow* disabled) -->
+            <div id="gridContainer_@Model.AnimalCostsGrid.GridId">
+                @await Html.PartialAsync("_DataGrid", Model.AnimalCostsGrid)
+            </div>
+
+            <!-- Summary totals (fsubAnimalCosts footer: TotalAnimalDays + TotalAnimalCost) -->
+            <div class="asu-summary-row govuk-!-margin-bottom-2">
+                <div class="govuk-form-group govuk-!-margin-bottom-0">
+                    <label class="govuk-label govuk-label--s govuk-!-margin-bottom-0" for="asuTotalDays">
+                        Total Animal Days
+                    </label>
+                    <input type="text"
+                           id="asuTotalDays"
+                           class="govuk-input text-AlignRight pva-input-95"
+                           value="0"
+                           readonly
+                           aria-label="Total animal days">
+                </div>
+                <div class="govuk-form-group govuk-!-margin-bottom-0">
+                    <label class="govuk-label govuk-label--s govuk-!-margin-bottom-0" for="asuTotalCost">
+                        Total Cost
+                    </label>
+                    <input type="text"
+                           id="asuTotalCost"
+                           class="govuk-input text-AlignRight pva-input-160"
+                           value="£0.00"
+                           readonly
+                           aria-label="Total cost">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Animal type data loaded from the API (mirrors pickAnimalType RowSource on frmAnimalCosts)
+        let animalTypeData = [];
+        let currentAnimalType = '';
+
+        // ── Initialise the grid and populate the animal type dropdown on page load ──
+
+        document.addEventListener('DOMContentLoaded', function () {
+            loadAnimalTypes();
+
+            // Show the loader whenever an ajax request is in flight (grid sort/filter/pagination,
+            // dropdown reload) and hide it once all requests complete.
+            $(document).ajaxStart(showLoader).ajaxStop(hideLoader);
+
+            // DataGrid dispatches 'gridReloaded' on document after each ajax replacement
+            document.addEventListener('gridReloaded', function (e) {
+                if (e && e.detail && e.detail.gridId === '@Model.AnimalCostsGrid.GridId') {
+                    calculateAnimalCostTotals();
+                }
+            });
+        });
+
+        function loadAnimalTypes() {
+            $.getJSON('@Url.Action("GetAnimalTypes", "AnimalCosts", new { area = "FPS" })',
+                function (result) {
+                    if (!result.success) return;
+                    animalTypeData = result.data;
+                    renderAnimalTypeDropdownRows(animalTypeData);
+                });
+        }
+
+        function renderAnimalTypeDropdownRows(items) {
+            const tbody = document.getElementById('animal-type-body');
+            tbody.innerHTML = '';
+            items.forEach(function (item) {
+                const tr = document.createElement('tr');
+                tr.style.cursor = 'pointer';
+                tr.innerHTML = '<td>' + escapeHtml(item.label) + '</td><td>' + escapeHtml(item.dailyRate) + '</td>';
+                tr.addEventListener('click', function () {
+                    selectAnimalType(item.value, item.label);
+                });
+                tbody.appendChild(tr);
+            });
+        }
+
+        function selectAnimalType(value, label) {
+            currentAnimalType = value;
+            document.getElementById('animal-type-input').value = label;
+            document.getElementById('animal-type-panel').style.display = 'none';
+
+            // Reset totals while grid reloads
+            document.getElementById('asuTotalDays').value = '0';
+            document.getElementById('asuTotalCost').value = '£0.00';
+
+            // Reload the DataGrid with the selected animal type as an extra filter
+            window['gridManager_@Model.AnimalCostsGrid.GridId'].reloadGrid({ page: 1 });
+        }
+
+        // ── Animal type dropdown toggle / search ──
+
+        document.getElementById('animal-type-input').addEventListener('click', function () {
+            const panel = document.getElementById('animal-type-panel');
+            panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+        });
+
+        document.getElementById('animal-type-search').addEventListener('input', function () {
+            const term = this.value.toLowerCase();
+            const filtered = animalTypeData.filter(function (item) {
+                return item.label.toLowerCase().includes(term);
+            });
+            renderAnimalTypeDropdownRows(filtered);
+        });
+
+        document.addEventListener('click', function (e) {
+            const wrapper = document.getElementById('animal-type-dropdown');
+            if (!wrapper.contains(e.target)) {
+                document.getElementById('animal-type-panel').style.display = 'none';
+            }
+        });
+
+        // ── Extra filter passed to LoadAnimalCostsGrid (mirrors fsubAnimalCosts LinkMasterFields) ──
+
+        function getAnimalCostsExtraFilters() {
+            return { animalType: currentAnimalType || '' };
+        }
+
+        // ── Recompute summary totals after each grid reload (replaces fsubAnimalCosts footer Sum expressions) ──
+
+        function calculateAnimalCostTotals() {
+            let totalDays = 0;
+            let totalCost = 0;
+
+            $('#gridContainer_@Model.AnimalCostsGrid.GridId td[data-property="TotalDays"] span').each(function () {
+                totalDays += parseFloat($(this).text().replace(/[,\s]/g, '')) || 0;
+            });
+
+            $('#gridContainer_@Model.AnimalCostsGrid.GridId td[data-property="AnimalCost"] span').each(function () {
+                var val = $(this).text().replace(/[£,\s]/g, '') || '0';
+                totalCost += parseFloat(val) || 0;
+            });
+
+            document.getElementById('asuTotalDays').value = totalDays.toFixed(2);
+            document.getElementById('asuTotalCost').value = '£' + totalCost.toFixed(2)
+                .replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+    </script>
+}

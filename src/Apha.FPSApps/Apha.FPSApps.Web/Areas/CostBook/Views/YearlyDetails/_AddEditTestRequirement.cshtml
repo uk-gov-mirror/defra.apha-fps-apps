@@ -47,8 +47,8 @@
                             {
                                 <tr data-value="@t.ItemCode"
                                     data-description="@t.ItemDescription"
-                                    data-unitprice="@(t.UnitPrice?.ToString("F2") ?? "")"
-                                    data-unitpricewithinflamation="@(t.UnitPriceWithInflamation?.ToString("F2") ?? "")"
+                                    data-unitprice="@(t.UnitPrice?.ToString() ?? "")"
+                                    data-unitpricewithinflamation="@(t.UnitPriceWithInflamation?.ToString() ?? "")"
                                     style="cursor:pointer;">
                                     <td style="padding:6px 8px; border-bottom:1px solid #f3f2f1;">@t.ItemCode</td>
                                     <td style="padding:6px 8px; border-bottom:1px solid #f3f2f1;">@t.ItemDescription</td>

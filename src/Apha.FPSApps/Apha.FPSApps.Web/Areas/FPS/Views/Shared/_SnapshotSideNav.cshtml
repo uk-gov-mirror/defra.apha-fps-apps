@@ -1,0 +1,47 @@
+@*
+    Reusable Snapshot queries side navigation.
+    Usage:  @await Html.PartialAsync("_SnapshotSideNav")
+
+    Requires a toggleSidebar() JS function on the host page (toggles '.sidenav.collapsed').
+    The nav item whose controller matches the current page is highlighted via the "active" class.
+*@
+@{
+    // Resolve the controller of the currently loaded page so the matching sub-menu stays highlighted.
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+
+    string ActiveClass(string controller) =>
+        string.Equals(currentController, controller, StringComparison.OrdinalIgnoreCase) ? " active" : string.Empty;
+}
+
+<nav class="sidenav flex-column flex-shrink-0 govuk-!-padding-left-2"
+     id="shortnav"
+     aria-label="Maintenance navigation">
+    <button class="toggle-btn" type="button"
+            aria-label="Toggle side navigation"
+            aria-expanded="true"
+            aria-controls="shortnav-list"
+            onclick="toggleSidebar()"
+            style="right: -8px; top: 30px;">
+        <img src="~/images/chevron-left-solid-full.svg" alt="" aria-hidden="true" width="24" />
+    </button>
+    <ul id="shortnav-list">
+        <li>
+            <a class="dropdown-item@(ActiveClass("AnimalSnapshotData"))"
+               asp-area="FPS" asp-controller="AnimalSnapshotData" asp-action="Index"
+               aria-current="@(ActiveClass("AnimalSnapshotData") == string.Empty ? null : "page")">SnapshotAnimalReq</a>
+        </li>
+        <li>
+            <a class="dropdown-item@(ActiveClass("ExceptionalCostSnapshotData"))"
+               asp-area="FPS" asp-controller="ExceptionalCostSnapshotData" asp-action="Index"
+               aria-current="@(ActiveClass("ExceptionalCostSnapshotData") == string.Empty ? null : "page")">SnapshotExceptionalCosts</a>
+        </li>
+        <li><a class="dropdown-item" href="#">SnapshotsTests</a></li>
+        <li><a class="dropdown-item" href="#">SnapshotTime</a></li>
+        <li>
+            <a class="dropdown-item@(ActiveClass("BidSnapshotData"))"
+               asp-area="FPS" asp-controller="BidSnapshotData" asp-action="Index"
+               aria-current="@(ActiveClass("BidSnapshotData") == string.Empty ? null : "page")">SnapshotBids</a>
+        </li>
+        <li><a class="dropdown-item" href="#">SnapshotProjects</a></li>
+    </ul>
+</nav>

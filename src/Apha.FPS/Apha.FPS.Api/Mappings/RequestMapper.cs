@@ -25,6 +25,7 @@ namespace Apha.FPS.Api.Mappings
             CreateMap<FpsSettingRes, FpsSettingDto>().ReverseMap();
 
             CreateMap<AnimalCostViewDto, AnimalCostViewRes>().ReverseMap();
+            CreateMap<AnimalSnapshotViewDto, AnimalSnapshotViewRes>().ReverseMap();
             CreateMap<AnimalDto, AnimalRes>().ReverseMap();
             CreateMap<AnimalReq, AnimalDto>().ReverseMap();
             CreateMap<AnimalRequestDto, AnimalRequestReq>().ReverseMap();
@@ -48,6 +49,9 @@ namespace Apha.FPS.Api.Mappings
                 .ForMember(d => d.Id, o => o.MapFrom(s => s.Id.GetValueOrDefault(0)))
                 .ForMember(d => d.Project, o => o.MapFrom(s => s.JobCode));
             CreateMap<PaginatedResult<ProjectProfitabilityVlaDto>, PaginationRes<ProjectProfitabilityVlaRes>>();
+
+            CreateMap<ProjectSpecificQueryDto, ProjectSpecificQueryRes>().ReverseMap();
+            CreateMap<PaginatedResult<ProjectSpecificQueryDto>, PaginationRes<ProjectSpecificQueryRes>>();
 
             CreateMap<ContractDto, ContractRes>()
                 .ForMember(d => d.ContractNo, o => o.MapFrom(s => s.Contractno))
@@ -120,6 +124,8 @@ namespace Apha.FPS.Api.Mappings
             CreateMap<BidDto, BidReq>().ReverseMap();
             CreateMap<BidDto, BidRes>().ReverseMap();
             CreateMap<BidViewDto, BidViewRes>().ReverseMap();
+            CreateMap<GenericBidViewDto, GenericBidViewRes>().ReverseMap();
+            CreateMap<ProjectExceptionalCostViewDto, ProjectExceptionalCostViewRes>().ReverseMap();
             CreateMap<PurchaseDto, PurchaseReq>().ReverseMap();
             CreateMap<PurchaseDto, PurchaseRes>().ReverseMap();
 

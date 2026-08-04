@@ -35,7 +35,10 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactTimeCodeValidAp
                 new TimeCodeValidDto { TimeCode = "TC001", WorkGroup = "WG001", ParentProject = "PP001" });
 
             _http.GetAsync<TimeCodeValidRes>(Arg.Is<string>(url =>
-                url.Contains("api/v1/timecodevalid/WG001") && url.Contains("TC001") && url.Contains("PP001")))
+                url.Contains("api/v1/timecodevalid/wgtimecodeprojectcode") && 
+                url.Contains($"workGroup={Uri.EscapeDataString("WG001")}") && 
+                url.Contains($"timeCode={Uri.EscapeDataString("TC001")}") && 
+                url.Contains($"parentProject={Uri.EscapeDataString("PP001")}")))
                 .Returns(apiResponse);
             _mapper.Map<ApiResponseDto<TimeCodeValidDto>>(apiResponse).Returns(expectedDto);
 
@@ -89,9 +92,9 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactTimeCodeValidAp
                 new PaginationDto { PageNumber = 1, PageSize = 10, TotalRecords = 1 });
 
             _http.GetAsync<List<TimeCodeValidRes>>(Arg.Is<string>(url =>
-                url.Contains("api/v1/timecodevalid/paged/project/") &&
-                url.Contains(Uri.EscapeDataString("PP001")) &&
-                url.Contains(Uri.EscapeDataString("TST001"))))
+                url.Contains("api/v1/timecodevalid/paged/byprojectandtest") &&
+                url.Contains($"parentProject={Uri.EscapeDataString("PP001")}") &&
+                url.Contains($"testCode={Uri.EscapeDataString("TST001")}")))
                 .Returns(apiResponse);
             _mapper.Map<ApiResponseDto<List<TimeCodeValidDto>>>(apiResponse).Returns(expectedDto);
 
@@ -148,7 +151,9 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactTimeCodeValidAp
             );
 
             _http.GetAsync<List<TimeCodeValidRes>>(Arg.Is<string>(url =>
-                url.Contains($"api/v1/timecodevalid/jobcode/{Uri.EscapeDataString(jobCode)}/project/{Uri.EscapeDataString(parentProject)}")))
+                url.Contains("api/v1/timecodevalid/jobcode") &&
+                url.Contains($"jobCode={Uri.EscapeDataString(jobCode)}") &&
+                url.Contains($"parentProject={Uri.EscapeDataString(parentProject)}")))
                 .Returns(apiResponse);
             _mapper.Map<ApiResponseDto<List<TimeCodeValidDto>>>(apiResponse).Returns(expectedDto);
 
@@ -160,7 +165,10 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactTimeCodeValidAp
             Assert.True(result.Success);
             Assert.Equal(2, result.Data?.Count);
             await _http.Received(1).GetAsync<List<TimeCodeValidRes>>(
-                Arg.Is<string>(url => url.Contains($"api/v1/timecodevalid/jobcode/{Uri.EscapeDataString(jobCode)}/project/{Uri.EscapeDataString(parentProject)}")));
+                Arg.Is<string>(url => 
+                    url.Contains("api/v1/timecodevalid/jobcode") &&
+                    url.Contains($"jobCode={Uri.EscapeDataString(jobCode)}") &&
+                    url.Contains($"parentProject={Uri.EscapeDataString(parentProject)}")));
         }
 
         [Fact]
@@ -186,6 +194,44 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactTimeCodeValidAp
             Assert.NotNull(result);
             Assert.False(result.Success);
             Assert.NotNull(result.Errors);
+        }
+
+        [Fact]
+        public async Task GetByJobCodeAsync_WithSpecialCharacters_UrlEncodesParams()
+        {
+            // Arrange
+            var jobCode = "JC&001";  // Contains special character &
+            var parentProject = "PP 001";  // Contains space
+            var timeCodeList = new List<TimeCodeValidRes>
+            {
+                new() { TimeCode = "TC001", WorkGroup = "WG001", ParentProject = parentProject, JobCode = jobCode }
+            };
+            var apiResponse = new ApiResponse<List<TimeCodeValidRes>> { Success = true, Data = timeCodeList };
+            var expectedDto = ApiResponseDto<List<TimeCodeValidDto>>.SuccessResponse(
+                new List<TimeCodeValidDto>
+                {
+                    new() { TimeCode = "TC001", WorkGroup = "WG001", ParentProject = parentProject }
+                }
+            );
+
+            _http.GetAsync<List<TimeCodeValidRes>>(Arg.Is<string>(url =>
+                url.Contains("api/v1/timecodevalid/jobcode") &&
+                url.Contains($"jobCode={Uri.EscapeDataString(jobCode)}") &&
+                url.Contains($"parentProject={Uri.EscapeDataString(parentProject)}")))
+                .Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<TimeCodeValidDto>>>(apiResponse).Returns(expectedDto);
+
+            // Act
+            var result = await _client.GetByJobCodeAsync(jobCode, parentProject);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Single(result.Data!);
+            await _http.Received(1).GetAsync<List<TimeCodeValidRes>>(
+                Arg.Is<string>(url =>
+                    url.Contains("jobCode=JC%26001") &&  // & should be encoded as %26
+                    url.Contains("parentProject=PP%20001")));  // space should be encoded as %20
         }
 
         #endregion
@@ -420,7 +466,7 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactTimeCodeValidAp
             var workGroup = "WG001";
             var timeCode = "TC001";
             var parentProject = "PP001";
-            var expectedUrl = $"api/v1/timecodevalid/{Uri.EscapeDataString(workGroup)}/{Uri.EscapeDataString(timeCode)}/{Uri.EscapeDataString(parentProject)}";
+            var expectedUrl = $"api/v1/timecodevalid/delete?workGroup={Uri.EscapeDataString(workGroup)}&timeCode={Uri.EscapeDataString(timeCode)}&parentProject={Uri.EscapeDataString(parentProject)}";
             var apiResponse = new ApiResponse<bool?> { Success = true, Data = true };
             var expectedDto = ApiResponseDto<bool>.SuccessResponse(true);
 
@@ -472,7 +518,7 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactTimeCodeValidAp
             // Arrange
             var jobCode = "JC001";
             var parentProject = "PP001";
-            var expectedUrl = $"api/v1/timecodevalid/jobcode/{Uri.EscapeDataString(jobCode)}/project/{Uri.EscapeDataString(parentProject)}";
+            var expectedUrl = $"api/v1/timecodevalid/deletebyjobcode?jobCode={Uri.EscapeDataString(jobCode)}&parentProject={Uri.EscapeDataString(parentProject)}";
             var apiResponse = new ApiResponse<bool?> { Success = true, Data = true };
             var expectedDto = ApiResponseDto<bool>.SuccessResponse(true);
 

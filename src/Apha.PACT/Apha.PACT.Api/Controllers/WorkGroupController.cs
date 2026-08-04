@@ -198,9 +198,9 @@ namespace Apha.PACT.Api.Controllers
         /// </summary>
         /// <param name="workGroupName">The unique name of the work group to update.</param>
         /// <param name="request">Contains the new send-email flag value and optional email recipient address.</param>
-        [HttpPut("{workGroupName}/email")]
+        [HttpPut("email")]
         public async Task<IActionResult> UpdateWorkGroupEmail(
-            string workGroupName,
+            [FromQuery] string workGroupName,
             [FromBody] UpdateWorkGroupEmailReq request)
         {
             if (string.IsNullOrWhiteSpace(workGroupName))
@@ -208,7 +208,7 @@ namespace Apha.PACT.Api.Controllers
 
             if (!string.IsNullOrWhiteSpace(request.WorkGroupName) &&
                 !string.Equals(request.WorkGroupName, workGroupName, StringComparison.OrdinalIgnoreCase))
-                return BadRequest("WorkGroupName in the request body does not match the route parameter.");
+                return BadRequest("WorkGroupName in the request body does not match the query parameter.");
 
             var success = await _service.UpdateWorkGroupEmailAsync(workGroupName, request.SendEmail, request.EmailRecipient);
             return Ok(success);

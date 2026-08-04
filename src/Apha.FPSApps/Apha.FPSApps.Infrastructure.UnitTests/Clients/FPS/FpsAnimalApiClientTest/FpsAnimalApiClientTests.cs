@@ -300,5 +300,70 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.FPS.FpsAnimalApiClientTe
         }
 
         #endregion
+
+        #region GetAnimalSnapshotAsync Tests
+
+        private static AnimalSnapshotViewDto BuildSnapshotDto(string animalType = "CATTLE") =>
+            new()
+            {
+                Directorate = "Dir",
+                Program = "PRG",
+                Contract = "C1",
+                Project = "P1",
+                ProjectStatus = "Approved",
+                Species = "Bovine",
+                SecurityLevel = "L1",
+                AnimalType = animalType,
+                DailyRate = 50m,
+                JobCode = "JOB001",
+                NumberOfDays = 5,
+                NumberOfAnimals = 3,
+                Cost = 750m
+            };
+
+        [Fact]
+        public async Task GetAnimalSnapshotAsync_WithSuccessResponse_ReturnsMappedList()
+        {
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var dtos = new List<AnimalSnapshotViewDto> { BuildSnapshotDto() };
+            var apiResponse = SuccessApiResponse(dtos);
+            var expected = ApiResponseDto<List<AnimalSnapshotViewDto>>.SuccessResponse(dtos,
+                new PaginationDto { PageNumber = 1, PageSize = 10, TotalRecords = 1 });
+
+            _http.GetAsync<List<AnimalSnapshotViewDto>>(Arg.Is<string>(u => u.Contains(FpsApiEndpoints.GetAnimalSnapshot)))
+                .Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<AnimalSnapshotViewDto>>>(apiResponse).Returns(expected);
+
+            var result = await _client.GetAnimalSnapshotAsync(query);
+
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Single(result.Data!);
+            await _http.Received(1).GetAsync<List<AnimalSnapshotViewDto>>(
+                Arg.Is<string>(u => u.Contains(FpsApiEndpoints.GetAnimalSnapshot)));
+        }
+
+        [Fact]
+        public async Task GetAnimalSnapshotAsync_WhenApiReturnsFailure_ReturnsFailureResponse()
+        {
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var apiResponse = FailureApiResponse<List<AnimalSnapshotViewDto>>();
+            var failDto = new ApiResponseDto<List<AnimalSnapshotViewDto>>
+            {
+                Success = false,
+                Errors = [new ApiErrorDto { Message = "Error", Code = "ERROR" }],
+                Meta = new ApiMetaDto()
+            };
+
+            _http.GetAsync<List<AnimalSnapshotViewDto>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<AnimalSnapshotViewDto>>>(apiResponse).Returns(failDto);
+
+            var result = await _client.GetAnimalSnapshotAsync(query);
+
+            Assert.False(result.Success);
+            Assert.NotEmpty(result.Errors!);
+        }
+
+        #endregion
     }
 }

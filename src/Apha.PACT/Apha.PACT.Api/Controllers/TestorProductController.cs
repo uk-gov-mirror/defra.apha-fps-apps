@@ -51,8 +51,8 @@ namespace Apha.PACT.Api.Controllers
         }
 
         /// <summary>Retrieves a Test or Product record by ItemCode.</summary>
-        [HttpGet("{itemCode}")]
-        public async Task<IActionResult> GetById(string itemCode)
+        [HttpGet("itemCode")]
+        public async Task<IActionResult> GetById([FromQuery] string itemCode)
         {
             var item = await _service.GetTestorProductByIdAsync(itemCode);
             if (item == null)
@@ -72,8 +72,8 @@ namespace Apha.PACT.Api.Controllers
         }
 
         /// <summary>Updates an existing Test or Product record.</summary>
-        [HttpPut("{itemCode}")]
-        public async Task<IActionResult> Update(string itemCode, [FromBody] TestorProductReq request)
+        [HttpPut("itemCode")]
+        public async Task<IActionResult> Update([FromQuery] string itemCode, [FromBody] TestorProductReq request)
         {
             var dto = _mapper.Map<TestorProductDto>(request);
             dto.ItemCode = itemCode;
@@ -82,8 +82,8 @@ namespace Apha.PACT.Api.Controllers
         }
 
         /// <summary>Deletes a Test or Product record.</summary>
-        [HttpDelete("{itemCode}")]
-        public async Task<IActionResult> Delete(string itemCode)
+        [HttpDelete("itemCode")]
+        public async Task<IActionResult> Delete([FromQuery] string itemCode)
         {
             var deleted = await _service.DeleteTestorProductAsync(itemCode);
             if (!deleted)
@@ -113,8 +113,8 @@ namespace Apha.PACT.Api.Controllers
         }
 
         /// <summary>Returns a single test price check row by testCode and jobCode.</summary>
-        [HttpGet("testpricecheck/{testCode}/{jobCode}")]
-        public async Task<IActionResult> GetTestPriceCheckByKey(string testCode, string jobCode)
+        [HttpGet("testpricechecktestCodejobCode")]
+        public async Task<IActionResult> GetTestPriceCheckByKey([FromQuery] string testCode, [FromQuery] string jobCode)
         {
             var result = await _service.GetTestPriceCheckByKeyAsync(testCode, jobCode);
             if (result == null)
@@ -123,9 +123,10 @@ namespace Apha.PACT.Api.Controllers
         }
 
         /// <summary>Updates IsDefraProject, TestPrice and DefraUnitPrice across their respective tables.</summary>
-        [HttpPut("testpricecheck/{testCode}/{jobCode}")]
+        [HttpPut("testpricecheck")]
         public async Task<IActionResult> UpdateTestPriceCheck(
-            string testCode, string jobCode,
+            [FromQuery] string testCode,
+            [FromQuery] string jobCode,
             [FromBody] TestPriceCheckReq request)
         {
             var dto = _mapper.Map<TestPriceCheckDto>(request);

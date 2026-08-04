@@ -46,8 +46,8 @@
                             @foreach (var a in animalTypes)
                             {
                                 <tr data-value="@a.AnimalType"
-                                    data-dailyrate="@(a.DailyRate?.ToString("F2") ?? "")"
-                                    data-dailyratewithinflamation="@(a.DailyRateWithInflamation?.ToString("F2") ?? "")"
+                                    data-dailyrate="@(a.DailyRate?.ToString() ?? "")"
+                                    data-dailyratewithinflamation="@(a.DailyRateWithInflamation?.ToString() ?? "")"
                                     style="cursor:pointer;">
                                     <td style="padding:6px 8px; border-bottom:1px solid #f3f2f1;">@a.AnimalType</td>
                                     <td style="padding:6px 8px; border-bottom:1px solid #f3f2f1;">@(a.DailyRate?.ToString("F2") ?? "N/A")</td>

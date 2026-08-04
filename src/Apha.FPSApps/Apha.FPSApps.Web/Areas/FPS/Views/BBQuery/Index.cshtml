@@ -1,0 +1,64 @@
+@using Apha.FPSApps.Web.Models.Components.DataGrid
+@model Apha.FPSApps.Web.Areas.FPS.Models.BBQueryViewModel
+
+@{
+    ViewData["Title"] = "Budget Bids Query";
+}
+
+<div class="govuk-grid-row sup_margin_left_right_0">
+    <div class="govuk-grid-column-full">
+        <h1 class="heading_with_txtbox govuk-heading-s sup_border-bottom" style="display:flex; align-items:center;">
+            <span class="sup_flex_left_center">Budget Bids Query</span>
+            <div class="govuk-form-group govuk-!-margin-bottom-0" style="margin-left:auto; display:flex; align-items:center; gap:8px;">
+                <label class="govuk-label govuk-label--s govuk-!-margin-bottom-0" for="SelectedProfitCentre" style="white-space:nowrap;">
+                    Resource Centre:
+                </label>
+                <select class="govuk-select govuk-!-font-size-16" style="width:auto; min-width:360px;"
+                        id="SelectedProfitCentre"
+                        name="SelectedProfitCentre">
+                    <option value="">--Select Resource Centre--</option>
+                    @foreach (var pc in Model.ProfitCentreOptions)
+                    {
+                        if (Model.SelectedProfitCentre == pc.Value)
+                        {
+                            <option value="@pc.Value" selected>@pc.Text</option>
+                        }
+                        else
+                        {
+                            <option value="@pc.Value">@pc.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+        </h1>
+    </div>
+</div>
+
+<div class="govuk-grid-row sup_margin_left_right_0 sup_margin_bottom_10">
+    <div class="govuk-grid-column-full">
+        <div id="gridContainer_bbQueryGrid">
+            @await Html.PartialAsync("_DataGrid", Model.Grid)
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @* getBBQueryExtraFilters must be global before the _DataGrid grid manager is used *@
+    <script>
+        function getBBQueryExtraFilters() {
+            return { profitCentre: document.getElementById('SelectedProfitCentre')?.value ?? '' };
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var pc = document.getElementById('SelectedProfitCentre');
+            if (!pc) return;
+
+            pc.addEventListener('change', function () {
+                var gm = window['gridManager_bbQueryGrid'];
+                if (gm) {
+                    gm.reloadGrid({ filter: '{}', sortBy: '', descending: false, page: 1 });
+                }
+            });
+        });
+    </script>
+}
