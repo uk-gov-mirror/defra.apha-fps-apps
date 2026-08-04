@@ -2999,3 +2999,27 @@ main {
         border-bottom: 1px solid #8eb8dc;
     }
 }
+
+.isResultGrid {
+    label{
+        text-align:center;
+    }
+    .ps-tfoot__input{
+        width: 100%;
+    }
+    td:nth-child(1) {
+        width: 242px;
+    }
+
+    td:nth-child(2) {
+        width: 321px;
+    }
+
+    td:nth-child(3) {
+        width: 260px;
+    }
+
+    .isDislayBlock {
+        display: block !important;
+    }
+}

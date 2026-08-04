@@ -175,41 +175,42 @@
                                 </div>
 
                                 <!-- Totals footer (below pagination) -->
-                                <div class="project-summary-table-wrap">
-                                    <table class="govuk-table fps-sr-themed-table" style="margin-bottom:0;">
+                                <div class="project-summary-table-wrap govuk-form-group">
+                                    <table class="govuk-table fps-sr-themed-table isResultGrid" style="margin-bottom:0;">
                                         <tfoot class="ps-tfoot" id="summaryTableFootBtm">
                                             <!-- Row 1: column totals -->
                                             <tr class="ps-tfoot__row">
-                                                <td class="ps-tfoot__label" colspan="2">
-                                                    <label for="total-additional-costs-btm">Total Additional Costs</label>
+                                                <td class="ps-tfoot__label">&nbsp;</td>
+                                                <td class="ps-tfoot__label">
+                                                    <label for="total-additional-costs-btm" class="isDislayBlock">Total Additional Costs</label>
                                                     <input id="total-additional-costs-btm" type="text" readonly
                                                            class="govuk-input ps-tfoot__input"
                                                            value="@Model.TotalAdditionalCosts.ToString("£#,##0.00")"
                                                            aria-label="Total Additional Costs">
                                                 </td>
                                                 <td class="ps-tfoot__label">
-                                                    <label for="total-staff-costs-btm">Total Staff Costs</label>
+                                                    <label for="total-staff-costs-btm" class="isDislayBlock">Total Staff Costs</label>
                                                     <input id="total-staff-costs-btm" type="text" readonly
                                                            class="govuk-input ps-tfoot__input"
                                                            value="@Model.TotalStaffCosts.ToString("£#,##0.00")"
                                                            aria-label="Total Staff Costs">
                                                 </td>
                                                 <td class="ps-tfoot__label">
-                                                    <label for="total-test-costs-btm">Total Test Costs</label>
+                                                    <label for="total-test-costs-btm" class="isDislayBlock">Total Test Costs</label>
                                                     <input id="total-test-costs-btm" type="text" readonly
                                                            class="govuk-input ps-tfoot__input"
                                                            value="@Model.TotalTestCosts.ToString("£#,##0.00")"
                                                            aria-label="Total Test Costs">
                                                 </td>
                                                 <td class="ps-tfoot__label">
-                                                    <label for="total-animal-costs-btm">Total Animal Costs</label>
+                                                    <label for="total-animal-costs-btm" class="isDislayBlock">Total Animal Costs</label>
                                                     <input id="total-animal-costs-btm" type="text" readonly
                                                            class="govuk-input ps-tfoot__input"
                                                            value="@Model.TotalAnimalCosts.ToString("£#,##0.00")"
                                                            aria-label="Total Animal Costs">
                                                 </td>
                                                 <td class="ps-tfoot__label">
-                                                    <label for="total-costs-btm">Total Costs</label>
+                                                    <label for="total-costs-btm" class="isDislayBlock">Total Costs</label>
                                                     <input id="total-costs-btm" type="text" readonly
                                                            class="govuk-input ps-tfoot__input"
                                                            value="@Model.TotalCosts.ToString("£#,##0.00")"
