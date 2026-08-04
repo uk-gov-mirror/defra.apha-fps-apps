@@ -66,9 +66,16 @@ namespace Apha.FPS.Application.Services
                         $"Status={active.Status}, Requested by {active.RequestedBy}). Complete, reject, " +
                         "or cancel it before creating a new one.", "ACTIVE_REQUEST_EXISTS")]);
 
-            if (!await _repository.FpsYearExistsAsync(fpsYear, ct))
+            var yearStatus = await _repository.GetFpsYearStatusAsync(fpsYear, ct);
+            if (yearStatus is null)
                 throw new BusinessValidationErrorException([
                     new($"FPS year {fpsYear} does not exist.", "INVALID_FPS_YEAR")]);
+
+            var requiredStatus = BulkRatesJobNames.RequiredYearStatus(jobName);
+            if (!string.Equals(yearStatus, requiredStatus, StringComparison.OrdinalIgnoreCase))
+                throw new BusinessValidationErrorException([
+                    new($"{jobName} requests can only be created for the {requiredStatus} FPS year. " +
+                        $"FPS year {fpsYear} is currently {yearStatus}.", "INVALID_YEAR_STATUS_FOR_JOB")]);
 
             var initiatedStatusId = await _repository.GetStatusIdByNameAsync(jobId, StatusInitiated, ct)
                 ?? throw new InvalidOperationException($"Status '{StatusInitiated}' not found for job '{jobName}'.");
@@ -357,7 +364,7 @@ namespace Apha.FPS.Application.Services
                 approvedStatusId, ct);
 
             await _repository.WriteJobQueueLogAsync(
-                jobQueueId, $"Request approved. EventBridge trigger published.", approvedBy, ct);
+                jobQueueId, "Request approved.", approvedBy, ct);
 
             // Publish EventBridge trigger
             var payload = new BulkRatesEventPayload
@@ -371,6 +378,9 @@ namespace Apha.FPS.Application.Services
             };
 
             await _eventBridgePublisher.PublishApprovalEventAsync(payload, ct);
+
+            await _repository.WriteJobQueueLogAsync(
+                jobQueueId, "Processing has been triggered.", approvedBy, ct);
 
             _logger.LogInformation(
                 "[BulkRates.Approved] JobQueueId={JobQueueId} | JobName={JobName} | FpsYear={FpsYear} | Actor={Actor} | JobExecutionId={JobExecutionId} | FromStatus={FromStatus} | ToStatus={ToStatus}",

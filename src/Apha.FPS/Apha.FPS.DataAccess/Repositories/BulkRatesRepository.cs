@@ -894,14 +894,14 @@ namespace Apha.FPS.DataAccess.Repositories
 
         // ── Reference checks ─────────────────────────────────────────────────────
 
-        public async Task<bool> FpsYearExistsAsync(int fpsYear, CancellationToken ct = default)
+        public async Task<string?> GetFpsYearStatusAsync(int fpsYear, CancellationToken ct = default)
         {
             var conn = await OpenAsync(ct);
             await using var cmd = conn.CreateCommand();
-            cmd.CommandText = "SELECT 1 FROM fps.tblyearmaster WHERE fpsyear = @fpsyear AND active = true;";
+            cmd.CommandText = "SELECT yearstatus FROM fps.tblyearmaster WHERE fpsyear = @fpsyear AND active = true;";
             cmd.Parameters.AddWithValue("fpsyear", fpsYear);
             var result = await cmd.ExecuteScalarAsync(ct);
-            return result is not null;
+            return result as string;
         }
 
         public async Task<IReadOnlySet<string>> GetExistingProjectCodesAsync(

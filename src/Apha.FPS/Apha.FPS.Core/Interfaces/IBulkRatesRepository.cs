@@ -122,7 +122,11 @@ namespace Apha.FPS.Core.Interfaces
             CancellationToken ct = default);
 
         // ── Reference checks (used during upload validation) ─────────────────────
-        Task<bool> FpsYearExistsAsync(int fpsYear, CancellationToken ct = default);
+        /// <summary>
+        /// Returns the fps.tblyearmaster yearstatus for the given year (e.g. "Open", "Planned",
+        /// "Closed"), or null if the year doesn't exist or isn't active.
+        /// </summary>
+        Task<string?> GetFpsYearStatusAsync(int fpsYear, CancellationToken ct = default);
 
         /// <summary>
         /// Bulk check for ValidationContext.ProjectLookup: returns the subset of

@@ -79,6 +79,14 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             {
                 var activeResponse = await _bulkRatesService.GetActiveRequestAsync(jobName);
                 vm.ActiveRequest = activeResponse.Success ? activeResponse.Data : null;
+
+                if (jobName is JobNameFec or JobNameStaff or JobNameAnimal)
+                {
+                    vm.RequiredYearStatus = BulkRatesJobNames.RequiredYearStatus(jobName);
+                    vm.CurrentYearStatus = _fpsYearContext.YearStatus;
+                    vm.CanCreateForYear = string.Equals(
+                        vm.CurrentYearStatus, vm.RequiredYearStatus, StringComparison.OrdinalIgnoreCase);
+                }
             }
 
             return View("Index", vm);
@@ -153,12 +161,41 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
                 return RedirectToAction(nameof(Detail), new { id = activeResponse.Data.JobExecutionId });
             }
 
+            // Direct-navigation guard — the Index page already hides/disables "New Request" for
+            // the wrong year, but this protects against a user hitting the URL directly.
+            if (jobName is JobNameFec or JobNameStaff or JobNameAnimal)
+            {
+                var requiredStatus = BulkRatesJobNames.RequiredYearStatus(jobName);
+                if (!string.Equals(_fpsYearContext.YearStatus, requiredStatus, StringComparison.OrdinalIgnoreCase))
+                {
+                    TempData["ErrorMessage"] =
+                        $"{FriendlyJobName(jobName)} requests can only be created for the {requiredStatus} FPS year. " +
+                        $"FPS year {_fpsYearContext.Year} is currently {_fpsYearContext.YearStatus ?? "unknown"}.";
+                    return RedirectToAction(IndexActionFor(jobName));
+                }
+            }
+
             return View(new BulkRatesCreateViewModel
             {
                 JobName = jobName,
                 FpsYear = _fpsYearContext.Year
             });
         }
+
+        private static string IndexActionFor(string jobName) => jobName switch
+        {
+            JobNameStaff => nameof(Staff),
+            JobNameAnimal => nameof(Animal),
+            _ => nameof(Fec)
+        };
+
+        private static string FriendlyJobName(string jobName) => jobName switch
+        {
+            JobNameFec => "FEC Test Rates",
+            JobNameStaff => "Staff Rates",
+            JobNameAnimal => "Animal Rates",
+            _ => jobName
+        };
 
         // Create request — POST (AJAX)
         // FPS year is not user-selectable: the posted fpsYear is ignored and the header
@@ -671,7 +708,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             try
             {
                 var bytes = await _bulkRatesService.DownloadStaffTestDataForRequestAsync(id);
-                var fileName = $"Staff_TestRates_{id}.xlsx";
+                var fileName = $"Staff_Rates_{id}.xlsx";
                 return File(bytes,
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     fileName);
@@ -691,7 +728,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             try
             {
                 var bytes = await _bulkRatesService.DownloadAnimalTestDataForRequestAsync(id);
-                var fileName = $"Animal_TestRates_{id}.xlsx";
+                var fileName = $"Animal_Rates_{id}.xlsx";
                 return File(bytes,
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     fileName);
@@ -711,7 +748,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             try
             {
                 var bytes = await _bulkRatesService.DownloadStaffTestDataAsync(fpsYear);
-                var fileName = $"Staff_TestRates_{fpsYear}.xlsx";
+                var fileName = $"Staff_Rates_{fpsYear}.xlsx";
                 return File(bytes,
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     fileName);
@@ -731,7 +768,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             try
             {
                 var bytes = await _bulkRatesService.DownloadAnimalTestDataAsync(fpsYear);
-                var fileName = $"Animal_TestRates_{fpsYear}.xlsx";
+                var fileName = $"Animal_Rates_{fpsYear}.xlsx";
                 return File(bytes,
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     fileName);

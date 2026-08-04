@@ -93,7 +93,7 @@ public class BulkRatesRequestServiceTests
         var repo = Substitute.For<IBulkRatesRepository>();
         repo.GetRequestAsync(QueueId, Arg.Any<CancellationToken>()).Returns(entry);
         repo.GetJobIdByNameAsync(JobName, Arg.Any<CancellationToken>()).Returns((int?)10);
-        repo.FpsYearExistsAsync(FpsYear, Arg.Any<CancellationToken>()).Returns(true);
+        repo.GetFpsYearStatusAsync(FpsYear, Arg.Any<CancellationToken>()).Returns("Open");
         repo.GetStatusIdByNameAsync(Arg.Any<int>(), Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns((int?)42);
         repo.GetValidationErrorsAsync(QueueId, Arg.Any<CancellationToken>()).Returns(Array.Empty<StagingValidationError>() as IReadOnlyList<StagingValidationError>);
         repo.GetJobQueueLogsAsync(QueueId, Arg.Any<CancellationToken>()).Returns(Array.Empty<BulkRatesQueueLog>() as IReadOnlyList<BulkRatesQueueLog>);
@@ -139,13 +139,80 @@ public class BulkRatesRequestServiceTests
     {
         var repo = Substitute.For<IBulkRatesRepository>();
         repo.GetJobIdByNameAsync(JobName, Arg.Any<CancellationToken>()).Returns((int?)10);
-        repo.FpsYearExistsAsync(FpsYear, Arg.Any<CancellationToken>()).Returns(false);
+        repo.GetFpsYearStatusAsync(FpsYear, Arg.Any<CancellationToken>()).Returns((string?)null);
 
         var svc = CreateService(repo);
 
         await svc.Invoking(s => s.CreateRequestAsync(JobName, FpsYear, Initiator))
             .Should().ThrowAsync<BusinessValidationErrorException>()
             .WithMessage("*does not exist*");
+    }
+
+    // ── CreateRequestAsync year-status gating ────────────────────────────────
+    // FEC Test Rates changes apply to the year currently being processed (Open);
+    // Staff/Animal rate changes are prepared ahead of the year they take effect in (Planned).
+
+    [Fact]
+    public async Task CreateRequest_WhenFecJobAndYearIsPlannedNotOpen_ThrowsBusinessValidation()
+    {
+        var repo = Substitute.For<IBulkRatesRepository>();
+        repo.GetJobIdByNameAsync(BulkRatesJobNames.Fec, Arg.Any<CancellationToken>()).Returns((int?)10);
+        repo.GetFpsYearStatusAsync(FpsYear, Arg.Any<CancellationToken>()).Returns("Planned");
+
+        var svc = CreateService(repo);
+
+        await svc.Invoking(s => s.CreateRequestAsync(BulkRatesJobNames.Fec, FpsYear, Initiator))
+            .Should().ThrowAsync<BusinessValidationErrorException>()
+            .WithMessage("*Open*");
+    }
+
+    [Fact]
+    public async Task CreateRequest_WhenStaffJobAndYearIsOpenNotPlanned_ThrowsBusinessValidation()
+    {
+        var repo = Substitute.For<IBulkRatesRepository>();
+        repo.GetJobIdByNameAsync(BulkRatesJobNames.Staff, Arg.Any<CancellationToken>()).Returns((int?)10);
+        repo.GetFpsYearStatusAsync(FpsYear, Arg.Any<CancellationToken>()).Returns("Open");
+
+        var svc = CreateService(repo);
+
+        await svc.Invoking(s => s.CreateRequestAsync(BulkRatesJobNames.Staff, FpsYear, Initiator))
+            .Should().ThrowAsync<BusinessValidationErrorException>()
+            .WithMessage("*Planned*");
+    }
+
+    [Fact]
+    public async Task CreateRequest_WhenAnimalJobAndYearIsOpenNotPlanned_ThrowsBusinessValidation()
+    {
+        var repo = Substitute.For<IBulkRatesRepository>();
+        repo.GetJobIdByNameAsync(BulkRatesJobNames.Animal, Arg.Any<CancellationToken>()).Returns((int?)10);
+        repo.GetFpsYearStatusAsync(FpsYear, Arg.Any<CancellationToken>()).Returns("Open");
+
+        var svc = CreateService(repo);
+
+        await svc.Invoking(s => s.CreateRequestAsync(BulkRatesJobNames.Animal, FpsYear, Initiator))
+            .Should().ThrowAsync<BusinessValidationErrorException>()
+            .WithMessage("*Planned*");
+    }
+
+    [Fact]
+    public async Task CreateRequest_WhenFecJobAndYearIsOpen_Succeeds()
+    {
+        var repo = Substitute.For<IBulkRatesRepository>();
+        repo.GetJobIdByNameAsync(BulkRatesJobNames.Fec, Arg.Any<CancellationToken>()).Returns((int?)10);
+        repo.GetActiveRequestAsync(BulkRatesJobNames.Fec, Arg.Any<CancellationToken>()).Returns((BulkRatesQueueEntry?)null);
+        repo.GetFpsYearStatusAsync(FpsYear, Arg.Any<CancellationToken>()).Returns("Open");
+        repo.GetStatusIdByNameAsync(10, "Initiated", Arg.Any<CancellationToken>()).Returns((int?)1);
+        repo.CreateRequestAsync(
+                Arg.Any<Guid>(), Arg.Any<Guid>(), 10, 1, Initiator, Arg.Any<DateTime>(), FpsYear, Arg.Any<CancellationToken>())
+            .Returns(Entry(status: "Initiated"));
+        repo.GetJobQueueLogsAsync(QueueId, Arg.Any<CancellationToken>()).Returns(Array.Empty<BulkRatesQueueLog>() as IReadOnlyList<BulkRatesQueueLog>);
+        repo.GetValidationErrorsAsync(QueueId, Arg.Any<CancellationToken>()).Returns(Array.Empty<StagingValidationError>() as IReadOnlyList<StagingValidationError>);
+
+        var svc = CreateService(repo);
+
+        var result = await svc.CreateRequestAsync(BulkRatesJobNames.Fec, FpsYear, Initiator);
+
+        result.Entry.Status.Should().Be("Initiated");
     }
 
     // ── ReleaseForApprovalAsync status guards ────────────────────────────────

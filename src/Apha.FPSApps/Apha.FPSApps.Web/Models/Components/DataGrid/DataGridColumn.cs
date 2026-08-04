@@ -15,6 +15,9 @@
         public GridColumnType? FilterType { get; set; }
         public Dictionary<string, string>? FilterOptions { get; set; }
 
+        /// <summary>See GridColumnAttribute.CssClassSourceProperty.</summary>
+        public string? CssClassSourceProperty { get; set; }
+
         public DataGridColumn()
         {
             IsVisible = true;

@@ -15,6 +15,7 @@
         GbpValueRounded, // £0 (rounded, no decimals)
         DoubleNumber,
         Percentage, // 0.00%
-        RoundTwoDecimal // decimal/double/string-backed decimal, formatted as £#,##0.00
+        RoundTwoDecimal, // decimal/double/string-backed decimal, formatted as £#,##0.00
+        Badge // renders as a GOV.UK tag (<strong class="govuk-tag ...">); see GridColumnAttribute.CssClassSourceProperty
     }
 }

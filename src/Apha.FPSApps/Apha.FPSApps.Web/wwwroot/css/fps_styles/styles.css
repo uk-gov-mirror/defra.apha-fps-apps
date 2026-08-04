@@ -4514,6 +4514,22 @@ body,
     border-top: 1px solid #c8cdd3;
 }
 
+/* Bulk Rates grids (queue + Detail page staging grids) — every one of these is already
+   paginated (10/20/50/100 rows via the page-size dropdown), so a fixed-height inner scroll
+   box is solving a problem pagination already solves, while adding a scrollbar that competes
+   with the page's own — especially on the Detail page, which stacks several other sections
+   above/below the grid. No inner scroll: the box grows to fit its (already-bounded) content,
+   and the page is the only thing that scrolls. */
+#gridContainer_bulkRatesGrid .grid-scroll-container,
+#gridContainer_fecStagingGrid .grid-scroll-container,
+#gridContainer_agrupStagingGrid .grid-scroll-container,
+#gridContainer_staffStagingGrid .grid-scroll-container,
+#gridContainer_animalStagingGrid .grid-scroll-container {
+    max-height: none !important;
+    height: auto !important;
+    overflow-y: visible !important;
+}
+
 #stage2StaffAllocationGridContainer .editable-grid-table th,
 #stage2StaffAllocationGridContainer .editable-grid-table td,
 #stage2StaffJobsGridContainer .editable-grid-table th,

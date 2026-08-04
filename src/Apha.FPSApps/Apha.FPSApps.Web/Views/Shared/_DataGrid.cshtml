@@ -262,6 +262,15 @@
                                             </div>
                                         </td>
                                     }
+                                    else if (column.ColumnType == GridColumnType.Badge)
+                                    {
+                                        var badgeModifier = !string.IsNullOrEmpty(column.CssClassSourceProperty)
+                                            ? GridHelpers.GetPropertyValue(row, column.CssClassSourceProperty)?.ToString()
+                                            : null;
+                                        <td data-property="@column.PropertyName" data-type="@column.ColumnType" class="govuk-table__cell @column.CssClass">
+                                            <strong class="govuk-tag @badgeModifier">@GridHelpers.FormatValue(value, column)</strong>
+                                        </td>
+                                    }
                                     else
                                     {
                                         <td data-property="@column.PropertyName" data-type="@column.ColumnType" class="govuk-table__cell @column.CssClass @GridHelpers.GetAlignmentCssClass(column)">
