@@ -285,6 +285,26 @@
         public const string UpdateCostCentre = "api/v1/costcentre/{0}";
         public const string DeleteCostCentre = "api/v1/costcentre/{0}";
 
+        // Bulk Rates Update (FEC Phase 3)
+        public const string CreateBulkRatesRequest = "api/v1/bulk-rates/requests";
+        public const string GetBulkRatesRequests = "api/v1/bulk-rates/requests";
+        public const string GetActiveBulkRatesRequest = "api/v1/bulk-rates/requests/active?jobName={0}";
+        public const string GetBulkRatesRequest = "api/v1/bulk-rates/requests/{0}";
+        public const string UploadBulkRatesFile = "api/v1/bulk-rates/requests/{0}/upload";
+        public const string GetBulkRatesValidation = "api/v1/bulk-rates/requests/{0}/validation";
+        public const string ReleaseBulkRatesRequest = "api/v1/bulk-rates/requests/{0}/release";
+        public const string ApproveBulkRatesRequest = "api/v1/bulk-rates/requests/{0}/approve";
+        public const string RejectBulkRatesRequest = "api/v1/bulk-rates/requests/{0}/reject";
+        public const string CancelBulkRatesRequest = "api/v1/bulk-rates/requests/{0}/cancel";
+        public const string DownloadBulkRatesFecTestDataForRequest = "api/v1/bulk-rates/requests/{0}/download";
+        public const string DownloadBulkRatesStaffTestDataForRequest = "api/v1/bulk-rates/requests/{0}/download/staff";
+        public const string DownloadBulkRatesAnimalTestDataForRequest = "api/v1/bulk-rates/requests/{0}/download/animal";
+        public const string ExportBulkRatesFecTestData = "api/v1/bulk-rates/export?fpsYear={0}";
+        public const string ExportBulkRatesStaffTestData = "api/v1/bulk-rates/export/staff?fpsYear={0}";
+        public const string ExportBulkRatesAnimalTestData = "api/v1/bulk-rates/export/animal?fpsYear={0}";
+        public const string GetBulkRatesStagingData = "api/v1/bulk-rates/requests/{0}/staging";
+        public const string ExportBulkRatesStagingData = "api/v1/bulk-rates/requests/{0}/staging/export";
+
         // ResourceAllocation — Stage 2 Check Resource Allocation
         public const string GetPagedResourceStaffAllocations = "api/v1/ResourceAllocation/staffallocations/paged";
         public const string GetPagedResourceStaffJobDetails = "api/v1/ResourceAllocation/staffjobdetails/paged";
