@@ -31,7 +31,7 @@ namespace Apha.FPS.Application.Dtos.BulkRates
         [Display(Name = "Comments")]
         public string? Comments { get; set; }
 
-        // ── Routing fields (CR056/CR059/CR062) ────────────────────────────────────
+        // ── Routing fields ─────────────────────────────────────────────────────────
         // Existing rows: reference-only (protected, see BuildFecAgrupSheets) — the current
         // live values, for visibility only; the API rejects any attempted change regardless.
         // New rows: the user supplies routing through these controlled columns

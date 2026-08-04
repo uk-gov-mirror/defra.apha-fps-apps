@@ -18,7 +18,7 @@ namespace Apha.Common.Utilities.ExcelExport
 
             for (int i = 0; i < properties.Length; i++)
             {
-                worksheet.Cell(1, i + 1).Value = GetColumnHeader(properties[i]);
+                worksheet.Cell(1, i + 1).Value = properties[i].Name;
             }
 
             int row = 2;
@@ -28,23 +28,11 @@ namespace Apha.Common.Utilities.ExcelExport
                 for (int col = 0; col < properties.Length; col++)
                 {
                     var rawValue = ConvertExcelValue(properties[col].GetValue(item));
-                    worksheet.Cell(row, col + 1).Value = XLCellValue.FromObject(rawValue);
+                    worksheet.Cell(row, col + 1).Value = XLCellValue.FromObject(rawValue);                     
                 }
 
                 row++;
             }
-
-            int lastDataRow = Math.Max(1, row - 1);
-            int lastDataColumn = Math.Max(1, properties.Length);
-
-            var headerRange = worksheet.Range(1, 1, 1, lastDataColumn);
-            headerRange.Style.Font.Bold = true;
-
-            var allCellsRange = worksheet.Range(1, 1, lastDataRow, lastDataColumn);
-            allCellsRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
-            allCellsRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
-            // Auto-fit all used columns
-            worksheet.Columns().AdjustToContents();
 
             using var stream = new MemoryStream();
             workbook.SaveAs(stream);
@@ -127,9 +115,12 @@ namespace Apha.Common.Utilities.ExcelExport
         /// <summary>
         /// Locks the named columns' data cells (rows 2..lastDataRow) and protects the sheet,
         /// leaving every other cell — including any row a user adds below lastDataRow —
-        /// editable. Row/column insertion, sorting and autofiltering stay allowed; this is a
-        /// UX signal that a cell is reference-only, not the security boundary (the API
-        /// re-validates and rejects any actual change regardless — DR-API-05).
+        /// editable. Row/column insertion, sorting, autofiltering, and column/row resizing all
+        /// stay allowed; this is a UX signal that a cell is reference-only, not the security
+        /// boundary (the API re-validates and rejects any actual change regardless).
+        /// FormatColumns/FormatRows must be explicitly included here — ClosedXML/Excel's sheet
+        /// protection denies every element not explicitly allowed, so without them a protected
+        /// sheet blocks column/row resize entirely (reported as a "permission" error in Excel).
         /// </summary>
         private static void ProtectColumns(
             IXLWorksheet worksheet, PropertyInfo[] properties, IReadOnlyCollection<string> protectedColumnNames, int lastDataRow)
@@ -145,6 +136,8 @@ namespace Apha.Common.Utilities.ExcelExport
             worksheet.Protect(
                 XLSheetProtectionElements.SelectEverything
                 | XLSheetProtectionElements.FormatCells
+                | XLSheetProtectionElements.FormatColumns
+                | XLSheetProtectionElements.FormatRows
                 | XLSheetProtectionElements.InsertRows
                 | XLSheetProtectionElements.Sort
                 | XLSheetProtectionElements.AutoFilter);

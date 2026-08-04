@@ -6,9 +6,8 @@ using Npgsql;
 namespace Apha.FPS.DataAccess.Repositories
 {
     /// <summary>
-    /// DR-VAL-02 implementation: queries fps.tlkptestcapability directly on (testcode,
-    /// workgroup) as two real columns. Deliberately does not reference Apha.PACT — see the
-    /// D2 addendum in fec-bulk-rates-plan-05-differential-remediation.md §3: fps.tlkptestcapability
+    /// Implementation: queries fps.tlkptestcapability directly on (testcode,
+    /// workgroup) as two real columns. Deliberately does not reference Apha.PACT — fps.tlkptestcapability
     /// is the real reference table behind the legacy trigger's capability check (distinct from
     /// fps.tlkptestreqmt, which is what Apha.PACT's own ExistsByTestBuyerCodeAsync actually
     /// queries today), and Bulk Rates already reads other PACT-conceptually-owned live tables

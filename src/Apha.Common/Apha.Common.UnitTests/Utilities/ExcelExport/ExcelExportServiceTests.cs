@@ -5,7 +5,7 @@ using FluentAssertions;
 namespace Apha.Common.UnitTests.Utilities.ExcelExport;
 
 /// <summary>
-/// Unit tests for <see cref="ExcelExportService"/>'s DR-UI-02 column-protection support
+/// Unit tests for <see cref="ExcelExportService"/>'s column-protection support
 /// (<see cref="ExcelSheetDefinition.ProtectedColumnNames"/>) — existing-row routing cells must
 /// render locked/protected while every other cell (and any row a user adds afterward) stays
 /// editable, and sheets that never set this property must be completely unaffected.
@@ -54,6 +54,32 @@ public class ExcelExportServiceTests
             ws.Cell(row, 3).Style.Protection.Locked.Should().BeTrue("ProjectBuyerCode is protected");
             ws.Cell(row, 4).Style.Protection.Locked.Should().BeTrue("TestBuyerCode is protected");
         }
+    }
+
+    [Fact]
+    public void ExportToExcelMultiSheet_WhenProtectedColumnNamesSet_StillAllowsColumnAndRowResize()
+    {
+        // Regression test: ClosedXML/Excel sheet protection denies every element not explicitly
+        // allowed. FormatColumns/FormatRows must be in the allowed set, or a user opening a
+        // protected Staff/Animal/FEC/AGRUP template cannot resize columns or rows at all —
+        // Excel reports this as if it were a permissions error.
+        var rows = new[] { new SampleRow { TestCode = "TC001", ProjectBuyerCode = "PRJ1" } };
+        var sheet = new ExcelSheetDefinition
+        {
+            SheetName = "AGRUP",
+            Data = rows.Cast<object>(),
+            DataType = typeof(SampleRow),
+            ProtectedColumnNames = [nameof(SampleRow.ProjectBuyerCode)]
+        };
+
+        var bytes = _service.ExportToExcelMultiSheet([sheet]);
+
+        using var wb = new XLWorkbook(new MemoryStream(bytes));
+        var ws = wb.Worksheet("AGRUP");
+
+        ws.IsProtected.Should().BeTrue();
+        ws.Protection.AllowedElements.Should().HaveFlag(XLSheetProtectionElements.FormatColumns);
+        ws.Protection.AllowedElements.Should().HaveFlag(XLSheetProtectionElements.FormatRows);
     }
 
     [Fact]

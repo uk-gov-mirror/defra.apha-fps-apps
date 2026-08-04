@@ -1,8 +1,8 @@
 namespace Apha.Common.BulkRates.Validation
 {
     /// <summary>
-    /// DR-VAL-01's common result model (plan §3), one per finding. The API validator,
-    /// the worker's revalidation pass, and the UI (DR-UI-03/DR-UI-04) all consume this
+    /// Common result model, one per finding. The API validator,
+    /// the worker's revalidation pass, and the UI all consume this
     /// shape rather than re-deriving classifications from raw staging rows.
     /// </summary>
     public sealed record ValidationFinding
@@ -27,7 +27,7 @@ namespace Apha.Common.BulkRates.Validation
         /// <summary>
         /// True when this finding has no single uploaded row to attach to (e.g. a downloaded
         /// key missing from the re-upload, reconciliation §2.6) and must be surfaced as a
-        /// request-level message, not rendered like an ordinary per-row error (DR-UI-04).
+        /// request-level message, not rendered like an ordinary per-row error.
         /// </summary>
         public bool IsRequestLevel { get; init; }
 
@@ -38,7 +38,7 @@ namespace Apha.Common.BulkRates.Validation
 
         /// <summary>
         /// The value CalculatedAction implies applying — e.g. 0 for ZeroRateWithdrawal — so
-        /// blank-to-zero handling has one unambiguous source (plan §3.1). Null when
+        /// blank-to-zero handling has one unambiguous source. Null when
         /// CalculatedAction is null or the value is not yet determinable (e.g. a blocking
         /// Error on a new row with no rate supplied).
         /// </summary>

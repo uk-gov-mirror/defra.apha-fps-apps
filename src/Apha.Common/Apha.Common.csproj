@@ -11,9 +11,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<!-- Exclude the separate UnitTests sub-project; its obj/ folder contains auto-generated
-		     AssemblyInfo.cs files that clash with this project's own generated attributes. -->
-		<Compile Remove="Apha.Common.UnitTests\**\*" />
+		<Compile Remove="Apha.Common.UnitTests\**\*.cs" />
+		<EmbeddedResource Remove="Apha.Common.UnitTests\**\*" />
+		<None Remove="Apha.Common.UnitTests\**\*" />
 	</ItemGroup>
 
 	<ItemGroup>

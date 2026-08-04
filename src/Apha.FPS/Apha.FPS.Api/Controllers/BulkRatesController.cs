@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Apha.FPS.Api.Controllers
 {
     /// <summary>
-    /// Controller for the Bulk Rates Update request lifecycle.
+    /// Controller for the Bulk Rates Update request lifecycle (Phase 3).
     /// All operations require the API-FPSAdmin role. User identity is read from the
     /// authenticated token via <see cref="IFpsRequestContext.UserEmailId"/>.
     /// </summary>
@@ -181,6 +181,28 @@ namespace Apha.FPS.Api.Controllers
                 $"FEC_TestRates_{jobExecutionId}.xlsx");
         }
 
+        /// <summary>Request-scoped Staff workbook download, parity with DownloadFecTestDataAsync.</summary>
+        [HttpGet("requests/{jobExecutionId:guid}/download/staff")]
+        public async Task<IActionResult> DownloadStaffTestDataForRequestAsync(
+            Guid jobExecutionId, CancellationToken ct)
+        {
+            var bytes = await _service.DownloadStaffTestDataAsync(jobExecutionId, ct);
+            return File(bytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"Staff_TestRates_{jobExecutionId}.xlsx");
+        }
+
+        /// <summary>As DownloadStaffTestDataForRequestAsync, for Animal.</summary>
+        [HttpGet("requests/{jobExecutionId:guid}/download/animal")]
+        public async Task<IActionResult> DownloadAnimalTestDataForRequestAsync(
+            Guid jobExecutionId, CancellationToken ct)
+        {
+            var bytes = await _service.DownloadAnimalTestDataAsync(jobExecutionId, ct);
+            return File(bytes,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"Animal_TestRates_{jobExecutionId}.xlsx");
+        }
+
         /// <summary>Export current FEC test rates for a given FPS year as an Excel file.</summary>
         [HttpGet("export")]
         public async Task<IActionResult> ExportFecTestDataAsync(
@@ -199,7 +221,7 @@ namespace Apha.FPS.Api.Controllers
             [FromQuery] int fpsYear, CancellationToken ct)
         {
             var bytes = await _service.ExportStaffTestDataAsync(fpsYear, ct);
-            var fileName = $"Staff_Rates_{fpsYear}.xlsx";
+            var fileName = $"Staff_TestRates_{fpsYear}.xlsx";
             return File(bytes,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 fileName);
@@ -211,7 +233,7 @@ namespace Apha.FPS.Api.Controllers
             [FromQuery] int fpsYear, CancellationToken ct)
         {
             var bytes = await _service.ExportAnimalTestDataAsync(fpsYear, ct);
-            var fileName = $"Animal_Rates_{fpsYear}.xlsx";
+            var fileName = $"Animal_TestRates_{fpsYear}.xlsx";
             return File(bytes,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 fileName);

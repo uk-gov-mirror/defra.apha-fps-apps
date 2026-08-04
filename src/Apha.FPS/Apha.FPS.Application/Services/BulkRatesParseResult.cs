@@ -44,9 +44,9 @@ namespace Apha.FPS.Application.Services
     }
 
     /// <summary>
-    /// DR-API-07: output of BulkRatesValidator.BuildFreezeAsync — the release-time
+    /// Output of BulkRatesValidator.BuildFreezeAsync — the release-time
     /// re-validation's blocking findings (if any) plus, when clean, the per-row
-    /// classification to freeze onto staging (CR056) via
+    /// classification to freeze onto staging via
     /// IBulkRatesRepository.FreezeStagingCalculatedActionsAsync.
     /// </summary>
     public sealed record BulkRatesFreezeResult
@@ -54,6 +54,23 @@ namespace Apha.FPS.Application.Services
         public IReadOnlyList<ValidationFinding> BlockingErrors { get; init; } = [];
         public IReadOnlyList<BulkRatesFreezeEntry> FecFreezes { get; init; } = [];
         public IReadOnlyList<BulkRatesFreezeEntry> AgrupFreezes { get; init; } = [];
-        public IReadOnlyList<StaffFreezeEntry> StaffFreezes { get; init; } = [];
+    }
+
+    /// <summary>
+    /// Output of BulkRatesValidator.BuildStaffFreezeAsync — the
+    /// Staff-only equivalent of BulkRatesFreezeResult (a Staff request never has an AGRUP-like
+    /// second sheet, so this doesn't need FEC's two-list shape).
+    /// </summary>
+    public sealed record BulkRatesStaffFreezeResult
+    {
+        public IReadOnlyList<ValidationFinding> BlockingErrors { get; init; } = [];
+        public IReadOnlyList<StaffFreezeEntry> Freezes { get; init; } = [];
+    }
+
+    /// <summary>As BulkRatesStaffFreezeResult, for Animal (BulkRatesValidator.BuildAnimalFreezeAsync).</summary>
+    public sealed record BulkRatesAnimalFreezeResult
+    {
+        public IReadOnlyList<ValidationFinding> BlockingErrors { get; init; } = [];
+        public IReadOnlyList<AnimalFreezeEntry> Freezes { get; init; } = [];
     }
 }

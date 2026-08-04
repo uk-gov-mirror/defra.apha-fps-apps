@@ -32,6 +32,11 @@
         _                      => j
     };
 
+    // "A Staff Rates request" / "An Animal Rates request" — English article agreement
+    // on the first letter of the friendly name.
+    string Article(string friendlyName) =>
+        friendlyName.Length > 0 && "AEIOU".Contains(char.ToUpperInvariant(friendlyName[0])) ? "An" : "A";
+
     string SideNavItem(string? j) => j switch
     {
         "BulkStaffRatesUpdate"  => "BulkRatesStaff",
@@ -91,7 +96,7 @@
                         <span class="govuk-warning-text__icon" aria-hidden="true">!</span>
                         <strong class="govuk-warning-text__text">
                             <span class="govuk-visually-hidden">Warning</span>
-                            A @FriendlyJobName(Model.ActiveRequest.JobName) request is already in progress
+                            @Article(FriendlyJobName(Model.ActiveRequest.JobName)) @FriendlyJobName(Model.ActiveRequest.JobName) request is already in progress
                             (Status: @Model.ActiveRequest.Status, requested by @Model.ActiveRequest.RequestedBy).
                             A new request cannot be created until it is completed, rejected, or cancelled.
                             <a asp-area="FPS" asp-controller="BulkRates" asp-action="Detail"
@@ -241,4 +246,12 @@
 
 @section Scripts {
     <script src="~/js/fps_js/fec_testmanagement.js" asp-append-version="true"></script>
+    @if (Model.ActiveRequest != null)
+    {
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                BulkRates.startActiveRequestPolling('@Model.ActiveRequest.JobExecutionId', '@Model.ActiveRequest.Status');
+            });
+        </script>
+    }
 }

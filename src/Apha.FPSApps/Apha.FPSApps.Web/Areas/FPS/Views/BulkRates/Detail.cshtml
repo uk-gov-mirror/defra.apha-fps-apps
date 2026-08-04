@@ -19,6 +19,13 @@
         _                 => "govuk-tag govuk-tag--grey"
     };
 
+    // Display-only: inserts a space before each internal capital letter so multi-word statuses
+    // (e.g. "ReleasedForApproval") read naturally in the badge. The raw PascalCase value is left
+    // untouched everywhere else (StatusBadgeClass switch, entry.Status == "Completed" checks,
+    // Status history table, JS) — only the visible label goes through this.
+    string FriendlyStatus(string s) =>
+        System.Text.RegularExpressions.Regex.Replace(s, "(?<!^)([A-Z])", " $1");
+
     string FriendlyJobName(string j) => j switch
     {
         "BulkTestRatesUpdate"   => "FEC Test Rates",
@@ -33,13 +40,6 @@
         "BulkStaffRatesUpdate"  => "Staff",
         "BulkAnimalRatesUpdate" => "Animal",
         _                       => "Index"
-    };
-
-    // Insert spaces before each uppercase letter run to humanise PascalCase status values.
-    string FriendlyStatus(string s) => s switch
-    {
-        "ReleasedForApproval" => "Released For Approval",
-        _ => s
     };
 
     string SideNavItem(string j) => j switch
@@ -102,10 +102,10 @@
                                 @* ── Request header ── *@
                                 <div class="govuk-grid-row govuk-!-margin-top-4 govuk-!-margin-bottom-4">
                                     <div class="govuk-grid-column-full">
-                                        <h2 class="govuk-heading-m govuk-!-margin-bottom-1">
+                                        <h2 class="govuk-heading-m govuk-!-margin-bottom-2">
                                             @FriendlyJobName(entry.JobName) — FPS Year @entry.FpsYear
+                                            <strong class="@StatusBadgeClass(entry.Status) govuk-!-margin-left-2">@FriendlyStatus(entry.Status)</strong>
                                         </h2>
-                                        <strong class="@StatusBadgeClass(entry.Status) govuk-!-margin-bottom-2" style="display:inline-block;">@FriendlyStatus(entry.Status)</strong>
                                         <dl class="govuk-summary-list govuk-summary-list--no-border govuk-!-font-size-16 govuk-!-margin-bottom-0">
                                             <div class="govuk-summary-list__row">
                                                 <dt class="govuk-summary-list__key">Request ID</dt>
@@ -166,8 +166,8 @@
                                         @{
                                             var (testDataDownloadUrl, testDataDownloadLabel) = entry.JobName switch
                                             {
-                                                "BulkStaffRatesUpdate"  => ($"/FPS/BulkRates/DownloadStaffTestData?fpsYear={entry.FpsYear}&id={entry.JobExecutionId}", "Download Staff Data (Excel)"),
-                                                "BulkAnimalRatesUpdate" => ($"/FPS/BulkRates/DownloadAnimalTestData?fpsYear={entry.FpsYear}&id={entry.JobExecutionId}", "Download Animal Data (Excel)"),
+                                                "BulkStaffRatesUpdate"  => ($"/FPS/BulkRates/DownloadStaffTestDataForRequest?id={entry.JobExecutionId}", "Download Staff Data (Excel)"),
+                                                "BulkAnimalRatesUpdate" => ($"/FPS/BulkRates/DownloadAnimalTestDataForRequest?id={entry.JobExecutionId}", "Download Animal Data (Excel)"),
                                                 _                       => ($"/FPS/BulkRates/DownloadTestDataForRequest?id={entry.JobExecutionId}", "Download Test Data (Excel)")
                                             };
                                         }
@@ -203,14 +203,15 @@
                                     var errors = uploadResult.ValidationErrors.Where(e => e.Severity == "Error").ToList();
                                     var warnings = uploadResult.ValidationErrors.Where(e => e.Severity == "Warning").ToList();
 
-                                    // FEC/AGRUP rows with a TestCode are shown inline against the matching row
-                                    // in the staging grids below. Everything else — file-parse errors, request-level
-                                    // findings with no single row to attach to, and all Staff/Animal findings —
-                                    // has nowhere else to appear, so it's listed here.
-                                    var isFec = entry.JobName == "BulkTestRatesUpdate";
-                                    var unmatchedErrors = (isFec
-                                        ? uploadResult.ValidationErrors.Where(e => string.IsNullOrEmpty(e.TestCode))
-                                        : uploadResult.ValidationErrors)
+                                    // Every job type's row-level findings carry a TestCode business key (TestCode
+                                    // itself for FEC/AGRUP, PcGrade for Staff, AnimalType for Animal — see
+                                    // BulkRatesValidator), so those findings are shown inline against the matching
+                                    // row in the staging grids below instead of in a list here. Everything else —
+                                    // file-parse errors, request-level findings with no single row to attach to,
+                                    // and findings with no usable key (e.g. a missing PcGrade/AnimalType/
+                                    // TestCode itself) — has nowhere else to appear, so it's listed here.
+                                    var unmatchedErrors = uploadResult.ValidationErrors
+                                        .Where(e => string.IsNullOrEmpty(e.TestCode))
                                         .OrderBy(e => e.Severity == "Error" ? 0 : 1)
                                         .ThenBy(e => e.SourceRowNumber)
                                         .ToList();
@@ -235,7 +236,7 @@
                                             Insert: @rc.Insert, Update: @rc.Update, Unchanged: @rc.Unchanged
                                         </p>
 
-                                        @if (isFec && unmatchedErrors.Count < uploadResult.ValidationErrors.Count)
+                                        @if (unmatchedErrors.Count < uploadResult.ValidationErrors.Count)
                                         {
                                             <p class="govuk-body-s govuk-!-margin-bottom-2">
                                                 Row-level findings for staged rows are shown in the Validation column of the tables below.
@@ -277,12 +278,14 @@
                                     </section>
                                 }
 
-                                @* ── Action buttons — placed right after the validation summary, before the
-                                   staging grids below, so approving/rejecting/cancelling a request never
-                                   requires scrolling past a potentially long grid to reach them. ── *@
+                                @* ── Action buttons — placed right after the validation
+                                   summary, before the staging grids below, so approving/rejecting/cancelling a
+                                   request never requires scrolling past a potentially long grid to reach them. ── *@
                                 @if (Model.CanRelease || Model.CanApprove || Model.CanReject || Model.CanCancel)
                                 {
-                                    <div class="govuk-button-group govuk-!-margin-bottom-4">
+                                    <section class="sup_border govuk-!-padding-3 govuk-!-margin-bottom-4" aria-labelledby="actions-section-title">
+                                    <h3 class="govuk-visually-hidden" id="actions-section-title">Actions</h3>
+                                    <div class="govuk-button-group govuk-!-margin-bottom-0">
 
                                         @* Release — initiator + Initiated + no blocking errors *@
                                         @if (Model.CanRelease)
@@ -323,6 +326,7 @@
                                         }
 
                                     </div>
+                                    </section>
                                 }
 
                                 @* ── FEC Data (Staging) / Agrup Details — staged rows for this request vs. live data ── *@
@@ -399,14 +403,24 @@
                                             </div>
                                         </div>
 
-                                        <div id="gridContainer_@Model.StaffStagingGrid.GridId">
-                                            @await Html.PartialAsync("_DataGrid", Model.StaffStagingGrid)
-                                        </div>
+                                        @if (entry.Status == "Completed")
+                                        {
+                                            <p class="govuk-body-s govuk-!-margin-bottom-0">
+                                                Staging data was cleared after this request completed. See the row counts in
+                                                Validation results above, and Status history below, for what was applied.
+                                            </p>
+                                        }
+                                        else
+                                        {
+                                            <div id="gridContainer_@Model.StaffStagingGrid.GridId">
+                                                @await Html.PartialAsync("_DataGrid", Model.StaffStagingGrid)
+                                            </div>
 
-                                        <p class="govuk-body-s govuk-!-margin-bottom-0 govuk-!-margin-top-2">
-                                            Note: Only records which are Updated or Not Found are shown. "Not Found"
-                                            means the PcGrade doesn't exist for this FPS year — it will be skipped, not created.
-                                        </p>
+                                            <p class="govuk-body-s govuk-!-margin-bottom-0 govuk-!-margin-top-2">
+                                                Note: Status shows No Change, Updated, or Not Found. "Not Found" means the
+                                                PcGrade doesn't exist for this FPS year — it will be skipped, not created.
+                                            </p>
+                                        }
                                     </section>
                                 }
 
@@ -426,14 +440,24 @@
                                             </div>
                                         </div>
 
-                                        <div id="gridContainer_@Model.AnimalStagingGrid.GridId">
-                                            @await Html.PartialAsync("_DataGrid", Model.AnimalStagingGrid)
-                                        </div>
+                                        @if (entry.Status == "Completed")
+                                        {
+                                            <p class="govuk-body-s govuk-!-margin-bottom-0">
+                                                Staging data was cleared after this request completed. See the row counts in
+                                                Validation results above, and Status history below, for what was applied.
+                                            </p>
+                                        }
+                                        else
+                                        {
+                                            <div id="gridContainer_@Model.AnimalStagingGrid.GridId">
+                                                @await Html.PartialAsync("_DataGrid", Model.AnimalStagingGrid)
+                                            </div>
 
-                                        <p class="govuk-body-s govuk-!-margin-bottom-0 govuk-!-margin-top-2">
-                                            Note: Only records which are Updated or Not Found are shown. "Not Found"
-                                            means the Animal Type doesn't exist for this FPS year — it will be skipped, not created.
-                                        </p>
+                                            <p class="govuk-body-s govuk-!-margin-bottom-0 govuk-!-margin-top-2">
+                                                Note: Status shows No Change, Updated, or Not Found. "Not Found" means the
+                                                Animal Type doesn't exist for this FPS year — it will be skipped, not created.
+                                            </p>
+                                        }
                                     </section>
                                 }
 
@@ -475,7 +499,10 @@
     </div>
 </main>
 
+@* Rejection modal (rendered at body end, toggled by JS) *@
 @await Html.PartialAsync("_RejectModal")
+
+@* Cancellation modal (rendered at body end, toggled by JS) *@
 @await Html.PartialAsync("_CancelModal")
 
 @section Scripts {

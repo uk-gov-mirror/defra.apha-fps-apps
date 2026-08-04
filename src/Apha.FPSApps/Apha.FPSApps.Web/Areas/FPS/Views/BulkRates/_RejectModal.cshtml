@@ -6,7 +6,10 @@
 <div id="rejectModalOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:9999;"
      role="dialog" aria-modal="true" aria-labelledby="rejectModalTitle">
     <div style="background:#fff; max-width:480px; margin:10vh auto; padding:2rem; border:2px solid #0b0c0c;">
-        <h2 class="govuk-heading-m" id="rejectModalTitle">Reject request</h2>
+        <div class="modal-header">
+            <h2 class="govuk-heading-m" id="rejectModalTitle">Reject request</h2>
+            <button type="button" class="btn-close btn-red" aria-label="Close" onclick="BulkRates.closeRejectModal()">X</button>
+        </div>
         <p class="govuk-body-s">You must enter a reason before confirming rejection.</p>
 
         <div class="govuk-form-group govuk-!-margin-bottom-4" id="rejectReasonGroup">

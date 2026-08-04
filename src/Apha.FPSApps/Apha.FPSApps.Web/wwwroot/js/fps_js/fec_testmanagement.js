@@ -1,7 +1,5 @@
 // fec_testmanagement.js
 // FEC Bulk Rates Update — Phase 4 MVC/UI layer.
-// Covers US-UI-01 (create), US-UI-02/03 (upload + validation), US-UI-04 (release),
-// US-UI-05 (approve), US-UI-06 (reject modal), US-UI-07 (detail), US-UI-08 (cancel).
 
 /* jshint esversion: 6 */
 /* global $, showLoader, hideLoader, showAlertMessage, showGovukConfirm, AlertType */
@@ -63,7 +61,7 @@ var BulkRates = (function () {
         });
     }
 
-    // ── US-UI-01: Create Request ────────────────────────────────────────────
+    // ── Create Request ──────────────────────────────────────────────────────
 
     function submitCreate() {
         var jobName = document.getElementById('jobName');
@@ -115,7 +113,7 @@ var BulkRates = (function () {
         window.location.href = endpoint + '?fpsYear=' + fpsYear;
     }
 
-    // ── US-UI-02/03: Upload Excel file ──────────────────────────────────────
+    // ── Upload Excel file ───────────────────────────────────────────────────
     function uploadFile(requestId) {
         var fileInput = document.getElementById('ratesFile');
         if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
@@ -246,7 +244,7 @@ var BulkRates = (function () {
         window.location.href = '/FPS/BulkRates/DownloadStagingData/' + requestId;
     }
 
-    // ── US-UI-05: Bulk Rates queue grid ──────────────────────────────────────
+    // ── Bulk Rates queue grid ───────────────────────────────────────────────
     // getBulkRatesExtraFilters / viewBulkRatesRequest are looked up by _DataGrid.cshtml's
     // JS via window[functionName] (ExtraFilterMethod / ViewFunction) — they must be true
     // globals, not members of the BulkRates module object like the rest of this file.
@@ -272,7 +270,57 @@ var BulkRates = (function () {
         if (gm) { gm.reloadGrid({ page: 1 }); }
     }
 
-    // ── US-UI-04: Release for Approval ─────────────────────────────────────
+    // ── Active-request grid polling ─────────────────────────────────────────
+    // Approved/Running requests change status in the background (worker
+    // pickup, completion) with no user action to trigger a refresh. Poll the
+    // grid so the row catches up on its own. Bounded so an abandoned tab
+    // doesn't poll forever; stops itself once nothing is left to watch for.
+    //
+    // The grid reload alone only replaces the grid's own HTML — it does not
+    // touch the "request already in progress" banner or the disabled "New
+    // Request" button above it, both server-rendered once from a separate
+    // GetActiveRequestAsync call at page load. So once the watched row
+    // reaches a terminal status, do a single full page reload instead of
+    // another grid-only refresh, so the banner/button catch up too.
+    var _pollTimer = null;
+    var _pollJobExecutionId = null;
+
+    function onPollGridReloaded(e) {
+        if (!e.detail || e.detail.gridId !== 'bulkRatesGrid') { return; }
+        var $statusCell = $('tr[data-id="' + _pollJobExecutionId + '"] td[data-property="Status"]');
+        if ($statusCell.length === 0) { return; }
+        var currentStatus = $.trim($statusCell.text());
+        if (currentStatus !== 'Approved' && currentStatus !== 'Running') {
+            stopActiveRequestPolling();
+            window.location.reload();
+        }
+    }
+
+    function stopActiveRequestPolling() {
+        if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
+        document.removeEventListener('gridReloaded', onPollGridReloaded);
+    }
+
+    function startActiveRequestPolling(jobExecutionId, status) {
+        if (status !== 'Approved' && status !== 'Running') { return; }
+        if (_pollTimer) { return; }
+
+        _pollJobExecutionId = jobExecutionId;
+        document.addEventListener('gridReloaded', onPollGridReloaded);
+
+        var pollsRemaining = 40; // ~2 minutes at 3s intervals
+        _pollTimer = setInterval(function () {
+            pollsRemaining--;
+            if (pollsRemaining <= 0) {
+                stopActiveRequestPolling();
+                return;
+            }
+            var gm = window['gridManager_bulkRatesGrid'];
+            if (gm) { gm.reloadGrid({ page: 1 }); }
+        }, 3000);
+    }
+
+    // ── Release for Approval ────────────────────────────────────────────────
 
     function release(requestId) {
         showGovukConfirm('Release this request for approval? This action cannot be undone.').then(function (confirmed) {
@@ -293,7 +341,7 @@ var BulkRates = (function () {
         });
     }
 
-    // ── US-UI-05: Approve ───────────────────────────────────────────────────
+    // ── Approve ──────────────────────────────────────────────────────────────
 
     function approve(requestId) {
         showGovukConfirm('Approve this request? The batch job will be triggered.').then(function (confirmed) {
@@ -301,7 +349,6 @@ var BulkRates = (function () {
             hideActionError();
             var btn = document.getElementById('btnApprove');
             if (btn) { btn.disabled = true; }
-            showLoader();
 
             var returnUrl = btn ? (btn.getAttribute('data-return-url') || '/FPS/BulkRates') : '/FPS/BulkRates';
             ajaxPost(
@@ -309,7 +356,6 @@ var BulkRates = (function () {
                 { id: requestId },
                 function () { window.fpsNavigateTo(returnUrl); },
                 function (msg) {
-                    hideLoader();
                     showActionError(msg);
                     if (btn) { btn.disabled = false; }
                 }
@@ -317,12 +363,15 @@ var BulkRates = (function () {
         });
     }
 
-    // ── US-UI-06: Reject modal ──────────────────────────────────────────────
+    // ── Reject modal ─────────────────────────────────────────────────────────
 
     var _pendingRejectId = null;
+    var _pendingRejectReturnUrl = '/FPS/BulkRates';
 
     function showRejectModal(requestId) {
         _pendingRejectId = requestId;
+        var triggerBtn = document.getElementById('btnReject');
+        _pendingRejectReturnUrl = triggerBtn ? (triggerBtn.getAttribute('data-return-url') || '/FPS/BulkRates') : '/FPS/BulkRates';
         var overlay = document.getElementById('rejectModalOverlay');
         var reason  = document.getElementById('rejectReason');
         var errEl   = document.getElementById('rejectReasonError');
@@ -359,23 +408,22 @@ var BulkRates = (function () {
         var btn = document.getElementById('btnConfirmReject');
         if (btn) { btn.disabled = true; }
 
-        var returnBtn = document.getElementById('btnReject');
-        var returnUrl = returnBtn ? (returnBtn.getAttribute('data-return-url') || '/FPS/BulkRates') : '/FPS/BulkRates';
         ajaxPost(
             '/FPS/BulkRates/Reject',
             { id: _pendingRejectId, reason: reasonVal },
             function () {
+                var returnUrl = _pendingRejectReturnUrl;
                 closeRejectModal();
                 window.fpsNavigateTo(returnUrl);
             },
             function (msg) {
                 if (btn) { btn.disabled = false; }
-                showActionError(msg);
+                alert(msg);
             }
         );
     }
 
-    // ── US-UI-08: Cancel modal ──────────────────────────────────────────────
+    // ── Cancel modal ─────────────────────────────────────────────────────────
 
     var _pendingCancelId = null;
 
@@ -447,6 +495,7 @@ var BulkRates = (function () {
         closeCancelModal:       closeCancelModal,
         confirmCancel:          confirmCancel,
         filterGrid:             filterGrid,
+        startActiveRequestPolling: startActiveRequestPolling,
         downloadTestData:       downloadTestData,
         downloadStagingData:    downloadStagingData,
         showUploadTrackerModal: showUploadTrackerModal,

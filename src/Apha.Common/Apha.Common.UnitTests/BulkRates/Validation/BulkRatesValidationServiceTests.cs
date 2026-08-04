@@ -47,7 +47,7 @@ namespace Apha.Common.UnitTests.BulkRates.Validation
                 Comments = comments,
             };
 
-        // ── FEC: existing-row blank/zero → Zero-Rate Withdrawal (DR-API-01, reconciliation §2.1) ──
+        // ── FEC: existing-row blank/zero → Zero-Rate Withdrawal (reconciliation §2.1) ──────────
 
         [Fact]
         public void ExistingFecRow_BlankRate_ClassifiesAsZeroRateWithdrawal_NotError()
@@ -185,7 +185,7 @@ namespace Apha.Common.UnitTests.BulkRates.Validation
             findings.Should().ContainSingle(f => f.ValidationCode == "IGNORED_ON_UPDATE" && f.Severity == ValidationSeverity.Warning);
         }
 
-        // ── AGRUP: existing-row blank/zero → Zero-Rate Withdrawal (DR-API-02, reconciliation §2.2) ──
+        // ── AGRUP: existing-row blank/zero → Zero-Rate Withdrawal (reconciliation §2.2) ──────────
 
         [Fact]
         public void ExistingAgrupRow_BlankRate_ClassifiesAsZeroRateWithdrawal_NotUnchanged()
@@ -253,7 +253,7 @@ namespace Apha.Common.UnitTests.BulkRates.Validation
             findings.Should().NotContain(f => f.ValidationCode == "TEST_CODE_NOT_FOUND");
         }
 
-        // ── AGRUP routing fields (DR-API-04/DR-VAL-02) ──────────────────────────
+        // ── AGRUP routing fields ────────────────────────────────────────────────
 
         [Fact]
         public void NewAgrupRow_NoRoutingFieldSupplied_RaisesMissingRoutingField()
@@ -320,7 +320,7 @@ namespace Apha.Common.UnitTests.BulkRates.Validation
             findings.Should().NotContain(f => f.Severity == ValidationSeverity.Error);
         }
 
-        // ── AGRUP existing-row routing immutability (DR-API-05, reconciliation §2.5) ──
+        // ── AGRUP existing-row routing immutability (reconciliation §2.5) ──────────────
 
         [Fact]
         public void ExistingAgrupRow_ChangedProjectBuyerCode_RaisesRoutingFieldChanged()
@@ -360,7 +360,7 @@ namespace Apha.Common.UnitTests.BulkRates.Validation
         public void ExistingAgrupRow_UnchangedRoutingFields_NoRoutingCapabilityRevalidation()
         {
             // Existing rows aren't re-checked against ProjectLookup/CapabilityLookup at all —
-            // only new rows are (immutability, not re-validation, per DR-API-05).
+            // only new rows are (immutability, not re-validation).
             var ctx = Context(
                 fec: [Fec("TC001", 10)],
                 agrup: [Agrup("TC001", "B001", 5, projectBuyerCode: "PRJ001")],
@@ -376,7 +376,7 @@ namespace Apha.Common.UnitTests.BulkRates.Validation
             findings.Should().NotContain(f => f.ValidationCode == "INVALID_PROJECT_BUYER_CODE" || f.ValidationCode == "MISSING_ROUTING_FIELD");
         }
 
-        // ── FEC-withdrawal / AGRUP conflict (DR-API-09 interim BC-05 safety net) ──
+        // ── FEC-withdrawal / AGRUP conflict (interim BC-05 safety net) ──────────────
 
         [Fact]
         public void WithdrawnFecTestCode_StagedPositiveAgrupRow_RaisesConflictError()
@@ -409,7 +409,7 @@ namespace Apha.Common.UnitTests.BulkRates.Validation
         [Fact]
         public void WithdrawnFecTestCode_LiveAgrupRowNotInSnapshot_RaisesWorkerInterimRuleFinding_WhenWorkerOnlyChecksIncluded()
         {
-            // §5.2: a live AGRUP row created/linked after download, so DR-API-09 (staged-vs-snapshot)
+            // §5.2: a live AGRUP row created/linked after download, so the staged-vs-snapshot check
             // could never have caught it — this is the worker-side interim check, opted into via
             // IncludeWorkerOnlyChecks (only the worker's revalidation pass should set this).
             var ctx = Context(
@@ -428,8 +428,8 @@ namespace Apha.Common.UnitTests.BulkRates.Validation
         [Fact]
         public void WithdrawnFecTestCode_LiveAgrupRowNotInSnapshot_NotRaised_WhenWorkerOnlyChecksExcluded()
         {
-            // DR-API-09's own text: a live row created after download "cannot be caught here —
-            // that gap is DR-WK-04's job." At API/release time (IncludeWorkerOnlyChecks=false,
+            // A live row created after download "cannot be caught here —
+            // that gap is the worker's job." At API/release time (IncludeWorkerOnlyChecks=false,
             // the default), this must never surface — otherwise release would be blocked on a
             // row nobody reviewing the release could possibly have seen.
             var ctx = Context(
@@ -467,7 +467,7 @@ namespace Apha.Common.UnitTests.BulkRates.Validation
             findings.Should().ContainSingle(f => f.ValidationCode == "AGRUP_POSITIVE_FOR_WITHDRAWN_FEC");
         }
 
-        // ── Downloaded-snapshot preservation ──
+        // ── Downloaded-snapshot preservation (reconciliation §2.6) ──────────────────────
 
         [Fact]
         public void MissingDownloadedFecKey_RaisesRequestLevelError()

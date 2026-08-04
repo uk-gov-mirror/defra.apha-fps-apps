@@ -317,7 +317,7 @@ namespace Apha.FPS.Application.Services
         }
 
         /// <summary>
-        /// DR-VAL-03: reads the VeryHidden protected-metadata sheet written by
+        /// Reads the VeryHidden protected-metadata sheet written by
         /// <c>ExcelExportService.ExportToExcelMultiSheet</c> (overload with
         /// <c>protectedMetadata</c>). Returns an empty dictionary if the sheet is absent —
         /// absence is not itself an error here; the upload flow decides what to do when

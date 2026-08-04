@@ -940,7 +940,7 @@ namespace Apha.FPS.DataAccess.Repositories
             var conn = await OpenAsync(ct);
             await using var cmd = conn.CreateCommand();
 
-            // Two real columns (testcode, workgroup) — DR-VAL-02, never a concatenated string.
+            // Two real columns (testcode, workgroup) — never a concatenated string.
             cmd.CommandText = @"
                 SELECT c.testcode, c.workgroup
                 FROM fps.tlkptestcapability c
@@ -965,7 +965,7 @@ namespace Apha.FPS.DataAccess.Repositories
             return result;
         }
 
-        // ── Download snapshot ─────────────────────────────
+        // ── Download snapshot ─────────────────────────────────────────────────────
 
         public async Task<int> GetNextDownloadVersionAsync(Guid jobQueueId, CancellationToken ct = default)
         {
@@ -999,9 +999,9 @@ namespace Apha.FPS.DataAccess.Repositories
             }
 
             // source_rate carries defraunitprice for FEC rows, unitprice for AGRUP rows —
-            // the single "current rate" value DR-VAL-01's ValidationContext.FrozenSnapshot
-            // reads (plan §2.1, reconciliation §2.6). unitpricevla/norequired/datecreated/
-            // active/itemdescription/shortdescription/owner (CR060) exist only to let the
+            // the single "current rate" value ValidationContext.FrozenSnapshot
+            // reads (reconciliation §2.6). unitpricevla/norequired/datecreated/
+            // active/itemdescription/shortdescription/owner exist only to let the
             // workbook be regenerated from the snapshot without a second live query.
             foreach (var row in fecRows)
             {
@@ -1073,13 +1073,21 @@ namespace Apha.FPS.DataAccess.Repositories
                 await upd.ExecuteNonQueryAsync(ct);
             }
 
+            // Guard against an older Generating download
+            // finishing after a newer one has already activated — the WHERE clause is the
+            // concurrency-safety mechanism ensuring active_download_version can never be
+            // overwritten back to itself. A late-finishing older
+            // version still marks its own header row Ready above (an accurate historical
+            // record of that version), it just never regresses the active pointer. Shared by
+            // FEC/AGRUP and Staff/Animal alike — all three call this same method.
             await using (var upd = conn.CreateCommand())
             {
                 upd.Transaction = tx;
                 upd.CommandText = @"
                     UPDATE fps.job_queue
                     SET active_download_version = @downloadversion
-                    WHERE jobqueueid = @jobqueueid;";
+                    WHERE jobqueueid = @jobqueueid
+                      AND (active_download_version IS NULL OR active_download_version < @downloadversion);";
                 upd.Parameters.AddWithValue("jobqueueid", jobQueueId);
                 upd.Parameters.AddWithValue("downloadversion", downloadVersion);
                 await upd.ExecuteNonQueryAsync(ct);
@@ -1161,6 +1169,161 @@ namespace Apha.FPS.DataAccess.Repositories
                     Active = reader.IsDBNull(5) ? null : reader.GetInt16(5),
                     ProjectBuyerCode = reader.IsDBNull(6) ? null : reader.GetString(6),
                     TestBuyerCode = reader.IsDBNull(7) ? null : reader.GetString(7)
+                });
+            }
+            return result;
+        }
+
+        // ── Download snapshot — Staff/Animal ──────────────────────────────────────
+
+        public async Task CreateStaffDownloadSnapshotAsync(
+            Guid jobQueueId, int downloadVersion,
+            IReadOnlyList<StaffStagingRow> rows,
+            CancellationToken ct = default)
+        {
+            var conn = await OpenAsync(ct);
+            await using var tx = await conn.BeginTransactionAsync(ct);
+
+            await using (var ins = conn.CreateCommand())
+            {
+                ins.Transaction = tx;
+                ins.CommandText = @"
+                    INSERT INTO fps.bulk_rates_download (jobqueueid, download_version, status)
+                    VALUES (@jobqueueid, @downloadversion, 'Generating');";
+                ins.Parameters.AddWithValue("jobqueueid", jobQueueId);
+                ins.Parameters.AddWithValue("downloadversion", downloadVersion);
+                await ins.ExecuteNonQueryAsync(ct);
+            }
+
+            foreach (var row in rows)
+            {
+                await using var ins = conn.CreateCommand();
+                ins.Transaction = tx;
+                ins.CommandText = @"
+                    INSERT INTO fps.bulk_rates_staff_downloaded_key
+                        (jobqueueid, download_version, pcgrade, source_payrate, source_npr, source_ohr)
+                    VALUES
+                        (@jobqueueid, @downloadversion, @pcgrade, @sourcepayrate, @sourcenpr, @sourceohr);";
+                ins.Parameters.AddWithValue("jobqueueid", jobQueueId);
+                ins.Parameters.AddWithValue("downloadversion", downloadVersion);
+                ins.Parameters.AddWithValue("pcgrade", row.PcGrade);
+                ins.Parameters.AddWithValue("sourcepayrate", (object?)row.PayRate ?? DBNull.Value);
+                ins.Parameters.AddWithValue("sourcenpr", (object?)row.Npr ?? DBNull.Value);
+                ins.Parameters.AddWithValue("sourceohr", (object?)row.Ohr ?? DBNull.Value);
+                await ins.ExecuteNonQueryAsync(ct);
+            }
+
+            await tx.CommitAsync(ct);
+
+            _logger.LogInformation(
+                "CreateStaffDownloadSnapshot | JobQueueId={JobQueueId} | DownloadVersion={DownloadVersion} | StaffRows={StaffRows}",
+                jobQueueId, downloadVersion, rows.Count);
+        }
+
+        public async Task<IReadOnlyList<StaffStagingRow>> GetStaffSnapshotRowsAsync(
+            Guid jobQueueId, int downloadVersion, CancellationToken ct = default)
+        {
+            var conn = await OpenAsync(ct);
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+                SELECT pcgrade, source_payrate, source_npr, source_ohr
+                FROM fps.bulk_rates_staff_downloaded_key
+                WHERE jobqueueid = @jobqueueid AND download_version = @downloadversion
+                ORDER BY id;";
+            cmd.Parameters.AddWithValue("jobqueueid", jobQueueId);
+            cmd.Parameters.AddWithValue("downloadversion", downloadVersion);
+
+            var result = new List<StaffStagingRow>();
+            await using var reader = await cmd.ExecuteReaderAsync(ct);
+            while (await reader.ReadAsync(ct))
+            {
+                result.Add(new StaffStagingRow
+                {
+                    JobQueueId = jobQueueId,
+                    PcGrade    = reader.GetString(0),
+                    PayRate    = reader.IsDBNull(1) ? null : reader.GetDecimal(1),
+                    Npr        = reader.IsDBNull(2) ? null : reader.GetDecimal(2),
+                    Ohr        = reader.IsDBNull(3) ? null : reader.GetDecimal(3)
+                });
+            }
+            return result;
+        }
+
+        public async Task CreateAnimalDownloadSnapshotAsync(
+            Guid jobQueueId, int downloadVersion,
+            IReadOnlyList<AnimalStagingRow> rows,
+            CancellationToken ct = default)
+        {
+            var conn = await OpenAsync(ct);
+            await using var tx = await conn.BeginTransactionAsync(ct);
+
+            await using (var ins = conn.CreateCommand())
+            {
+                ins.Transaction = tx;
+                ins.CommandText = @"
+                    INSERT INTO fps.bulk_rates_download (jobqueueid, download_version, status)
+                    VALUES (@jobqueueid, @downloadversion, 'Generating');";
+                ins.Parameters.AddWithValue("jobqueueid", jobQueueId);
+                ins.Parameters.AddWithValue("downloadversion", downloadVersion);
+                await ins.ExecuteNonQueryAsync(ct);
+            }
+
+            foreach (var row in rows)
+            {
+                await using var ins = conn.CreateCommand();
+                ins.Transaction = tx;
+                ins.CommandText = @"
+                    INSERT INTO fps.bulk_rates_animal_downloaded_key
+                        (jobqueueid, download_version, animaltype, source_dailyrate,
+                         source_defradailyrate, source_planbyweek, source_species, source_securitylevel)
+                    VALUES
+                        (@jobqueueid, @downloadversion, @animaltype, @sourcedailyrate,
+                         @sourcedefradailyrate, @sourceplanbyweek, @sourcespecies, @sourcesecuritylevel);";
+                ins.Parameters.AddWithValue("jobqueueid", jobQueueId);
+                ins.Parameters.AddWithValue("downloadversion", downloadVersion);
+                ins.Parameters.AddWithValue("animaltype", row.AnimalType);
+                ins.Parameters.AddWithValue("sourcedailyrate", (object?)row.DailyRate ?? DBNull.Value);
+                ins.Parameters.AddWithValue("sourcedefradailyrate", (object?)row.DefraDailyRate ?? DBNull.Value);
+                ins.Parameters.AddWithValue("sourceplanbyweek", (object?)row.PlanByWeek ?? DBNull.Value);
+                ins.Parameters.AddWithValue("sourcespecies", (object?)row.Species ?? DBNull.Value);
+                ins.Parameters.AddWithValue("sourcesecuritylevel", (object?)row.SecurityLevel ?? DBNull.Value);
+                await ins.ExecuteNonQueryAsync(ct);
+            }
+
+            await tx.CommitAsync(ct);
+
+            _logger.LogInformation(
+                "CreateAnimalDownloadSnapshot | JobQueueId={JobQueueId} | DownloadVersion={DownloadVersion} | AnimalRows={AnimalRows}",
+                jobQueueId, downloadVersion, rows.Count);
+        }
+
+        public async Task<IReadOnlyList<AnimalStagingRow>> GetAnimalSnapshotRowsAsync(
+            Guid jobQueueId, int downloadVersion, CancellationToken ct = default)
+        {
+            var conn = await OpenAsync(ct);
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+                SELECT animaltype, source_species, source_securitylevel, source_dailyrate,
+                       source_defradailyrate, source_planbyweek
+                FROM fps.bulk_rates_animal_downloaded_key
+                WHERE jobqueueid = @jobqueueid AND download_version = @downloadversion
+                ORDER BY id;";
+            cmd.Parameters.AddWithValue("jobqueueid", jobQueueId);
+            cmd.Parameters.AddWithValue("downloadversion", downloadVersion);
+
+            var result = new List<AnimalStagingRow>();
+            await using var reader = await cmd.ExecuteReaderAsync(ct);
+            while (await reader.ReadAsync(ct))
+            {
+                result.Add(new AnimalStagingRow
+                {
+                    JobQueueId     = jobQueueId,
+                    AnimalType     = reader.GetString(0),
+                    Species        = reader.IsDBNull(1) ? null : reader.GetString(1),
+                    SecurityLevel  = reader.IsDBNull(2) ? null : reader.GetString(2),
+                    DailyRate      = reader.IsDBNull(3) ? null : reader.GetDecimal(3),
+                    DefraDailyRate = reader.IsDBNull(4) ? null : reader.GetDecimal(4),
+                    PlanByWeek     = reader.IsDBNull(5) ? null : reader.GetBoolean(5)
                 });
             }
             return result;
@@ -1307,7 +1470,7 @@ namespace Apha.FPS.DataAccess.Repositories
             return rows;
         }
 
-        // ── DR-API-07: freeze reviewed classification onto staging (CR056) ───────
+        // ── Freeze reviewed classification onto staging ───────────────────────────
 
         public async Task FreezeStagingCalculatedActionsAsync(
             Guid jobQueueId, int validationVersion,
@@ -1366,47 +1529,98 @@ namespace Apha.FPS.DataAccess.Repositories
                 jobQueueId, validationVersion, fecFreezes.Count, agrupFreezes.Count);
         }
 
-        public async Task FreezeStaffStagingCalculatedActionsAsync(
-            Guid jobQueueId,
-            IReadOnlyList<StaffFreezeEntry> staffFreezes,
+        public async Task FreezeStaffStagingAsync(
+            Guid jobQueueId, int validationVersion,
+            IReadOnlyList<StaffFreezeEntry> freezes,
             CancellationToken ct = default)
         {
             var conn = await OpenAsync(ct);
             await using var tx = await conn.BeginTransactionAsync(ct);
 
-            foreach (var entry in staffFreezes)
+            foreach (var entry in freezes)
             {
                 await using var upd = conn.CreateCommand();
                 upd.Transaction = tx;
                 upd.CommandText = @"
                     UPDATE fps.tblstagingprofitcentregrade
-                    SET calculated_action  = @calculated_action,
-                        validation_version = @validation_version,
-                        source_payrate     = @source_payrate,
+                    SET source_payrate     = @source_payrate,
                         source_npr         = @source_npr,
                         source_ohr         = @source_ohr,
                         effective_payrate  = @effective_payrate,
                         effective_npr      = @effective_npr,
-                        effective_ohr      = @effective_ohr
+                        effective_ohr      = @effective_ohr,
+                        calculated_action  = @calculated_action,
+                        validation_version = @validation_version
                     WHERE jobqueueid = @jobqueueid AND pcgrade = @pcgrade;";
-                upd.Parameters.AddWithValue("jobqueueid",         jobQueueId);
-                upd.Parameters.AddWithValue("pcgrade",            entry.PcGrade);
-                upd.Parameters.AddWithValue("calculated_action",  entry.CalculatedAction);
-                upd.Parameters.AddWithValue("validation_version", entry.ValidationVersion);
-                upd.Parameters.AddWithValue("source_payrate",     (object?)entry.SourcePayRate    ?? DBNull.Value);
-                upd.Parameters.AddWithValue("source_npr",         (object?)entry.SourceNpr        ?? DBNull.Value);
-                upd.Parameters.AddWithValue("source_ohr",         (object?)entry.SourceOhr        ?? DBNull.Value);
-                upd.Parameters.AddWithValue("effective_payrate",  (object?)entry.EffectivePayRate ?? DBNull.Value);
-                upd.Parameters.AddWithValue("effective_npr",      (object?)entry.EffectiveNpr     ?? DBNull.Value);
-                upd.Parameters.AddWithValue("effective_ohr",      (object?)entry.EffectiveOhr     ?? DBNull.Value);
+                upd.Parameters.AddWithValue("jobqueueid", jobQueueId);
+                upd.Parameters.AddWithValue("pcgrade", entry.PcGrade);
+                upd.Parameters.AddWithValue("source_payrate", (object?)entry.SourcePayRate ?? DBNull.Value);
+                upd.Parameters.AddWithValue("source_npr", (object?)entry.SourceNpr ?? DBNull.Value);
+                upd.Parameters.AddWithValue("source_ohr", (object?)entry.SourceOhr ?? DBNull.Value);
+                upd.Parameters.AddWithValue("effective_payrate", (object?)entry.EffectivePayRate ?? DBNull.Value);
+                upd.Parameters.AddWithValue("effective_npr", (object?)entry.EffectiveNpr ?? DBNull.Value);
+                upd.Parameters.AddWithValue("effective_ohr", (object?)entry.EffectiveOhr ?? DBNull.Value);
+                upd.Parameters.AddWithValue("calculated_action", entry.CalculatedAction);
+                upd.Parameters.AddWithValue("validation_version", validationVersion);
                 await upd.ExecuteNonQueryAsync(ct);
             }
 
             await tx.CommitAsync(ct);
 
             _logger.LogInformation(
-                "FreezeStaffStagingCalculatedActions | JobQueueId={JobQueueId} | StaffRows={StaffRows}",
-                jobQueueId, staffFreezes.Count);
+                "FreezeStaffStaging | JobQueueId={JobQueueId} | ValidationVersion={ValidationVersion} | StaffRows={StaffRows}",
+                jobQueueId, validationVersion, freezes.Count);
+        }
+
+        public async Task FreezeAnimalStagingAsync(
+            Guid jobQueueId, int validationVersion,
+            IReadOnlyList<AnimalFreezeEntry> freezes,
+            CancellationToken ct = default)
+        {
+            var conn = await OpenAsync(ct);
+            await using var tx = await conn.BeginTransactionAsync(ct);
+
+            foreach (var entry in freezes)
+            {
+                await using var upd = conn.CreateCommand();
+                upd.Transaction = tx;
+                upd.CommandText = @"
+                    UPDATE fps.tblstaginganimals
+                    SET source_dailyrate         = @source_dailyrate,
+                        source_defradailyrate    = @source_defradailyrate,
+                        source_planbyweek        = @source_planbyweek,
+                        source_species           = @source_species,
+                        source_securitylevel     = @source_securitylevel,
+                        effective_dailyrate      = @effective_dailyrate,
+                        effective_defradailyrate = @effective_defradailyrate,
+                        effective_planbyweek     = @effective_planbyweek,
+                        effective_species        = @effective_species,
+                        effective_securitylevel  = @effective_securitylevel,
+                        calculated_action        = @calculated_action,
+                        validation_version       = @validation_version
+                    WHERE jobqueueid = @jobqueueid AND animaltype = @animaltype;";
+                upd.Parameters.AddWithValue("jobqueueid", jobQueueId);
+                upd.Parameters.AddWithValue("animaltype", entry.AnimalType);
+                upd.Parameters.AddWithValue("source_dailyrate", (object?)entry.SourceDailyRate ?? DBNull.Value);
+                upd.Parameters.AddWithValue("source_defradailyrate", (object?)entry.SourceDefraDailyRate ?? DBNull.Value);
+                upd.Parameters.AddWithValue("source_planbyweek", (object?)entry.SourcePlanByWeek ?? DBNull.Value);
+                upd.Parameters.AddWithValue("source_species", (object?)entry.SourceSpecies ?? DBNull.Value);
+                upd.Parameters.AddWithValue("source_securitylevel", (object?)entry.SourceSecurityLevel ?? DBNull.Value);
+                upd.Parameters.AddWithValue("effective_dailyrate", (object?)entry.EffectiveDailyRate ?? DBNull.Value);
+                upd.Parameters.AddWithValue("effective_defradailyrate", (object?)entry.EffectiveDefraDailyRate ?? DBNull.Value);
+                upd.Parameters.AddWithValue("effective_planbyweek", (object?)entry.EffectivePlanByWeek ?? DBNull.Value);
+                upd.Parameters.AddWithValue("effective_species", (object?)entry.EffectiveSpecies ?? DBNull.Value);
+                upd.Parameters.AddWithValue("effective_securitylevel", (object?)entry.EffectiveSecurityLevel ?? DBNull.Value);
+                upd.Parameters.AddWithValue("calculated_action", entry.CalculatedAction);
+                upd.Parameters.AddWithValue("validation_version", validationVersion);
+                await upd.ExecuteNonQueryAsync(ct);
+            }
+
+            await tx.CommitAsync(ct);
+
+            _logger.LogInformation(
+                "FreezeAnimalStaging | JobQueueId={JobQueueId} | ValidationVersion={ValidationVersion} | AnimalRows={AnimalRows}",
+                jobQueueId, validationVersion, freezes.Count);
         }
 
         // ── Private helpers ──────────────────────────────────────────────────────

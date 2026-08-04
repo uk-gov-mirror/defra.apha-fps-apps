@@ -1,4 +1,6 @@
 using Apha.Common.BulkRates.Validation;
+using Apha.Common.BulkRates.Validation.StaffAnimal;
+using Apha.Common.Constants;
 using Apha.Common.Utilities.ExcelExport;
 using Apha.FPS.Application.Dtos.BulkRates;
 using Apha.FPS.Application.Services;
@@ -78,7 +80,7 @@ public class BulkRatesRequestServiceTests
         return new BulkRatesRequestService(
             r,
             new BulkRatesExcelParser(),
-            new BulkRatesValidator(r, new BulkRatesValidationService()),
+            new BulkRatesValidator(r, new BulkRatesValidationService(), new StaffAnimalValidationService()),
             e, n,
             Substitute.For<IExcelExportService>(),
             NullLogger<BulkRatesRequestService>.Instance);
@@ -96,7 +98,7 @@ public class BulkRatesRequestServiceTests
         repo.GetValidationErrorsAsync(QueueId, Arg.Any<CancellationToken>()).Returns(Array.Empty<StagingValidationError>() as IReadOnlyList<StagingValidationError>);
         repo.GetJobQueueLogsAsync(QueueId, Arg.Any<CancellationToken>()).Returns(Array.Empty<BulkRatesQueueLog>() as IReadOnlyList<BulkRatesQueueLog>);
 
-        // DR-VAL-01 wiring (BulkRatesValidator.BuildContextAsync / BuildFreezeAsync) — default
+        // wiring (BulkRatesValidator.BuildContextAsync / BuildFreezeAsync) — default
         // to empty so Upload/Release exercise the real BulkRatesValidationService without any
         // live/staged data unless a test overrides one of these.
         repo.GetFecRowsForExportAsync(FpsYear, Arg.Any<CancellationToken>()).Returns(Array.Empty<FecStagingRow>() as IReadOnlyList<FecStagingRow>);
@@ -107,6 +109,13 @@ public class BulkRatesRequestServiceTests
         repo.GetAgrupSnapshotRowsAsync(QueueId, Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(Array.Empty<AgrupStagingRow>() as IReadOnlyList<AgrupStagingRow>);
         repo.GetFecStagingRowsAsync(QueueId, Arg.Any<CancellationToken>()).Returns(Array.Empty<FecStagingRow>() as IReadOnlyList<FecStagingRow>);
         repo.GetAgrupStagingRowsAsync(QueueId, Arg.Any<CancellationToken>()).Returns(Array.Empty<AgrupStagingRow>() as IReadOnlyList<AgrupStagingRow>);
+
+        // (BulkRatesValidator.BuildStaffAnimalContextAsync) — same
+        // "default empty" reasoning as the FEC/AGRUP stubs above.
+        repo.GetStaffRowsForExportAsync(FpsYear, Arg.Any<CancellationToken>()).Returns(Array.Empty<StaffStagingRow>() as IReadOnlyList<StaffStagingRow>);
+        repo.GetAnimalRowsForExportAsync(FpsYear, Arg.Any<CancellationToken>()).Returns(Array.Empty<AnimalStagingRow>() as IReadOnlyList<AnimalStagingRow>);
+        repo.GetStaffStagingRowsAsync(QueueId, Arg.Any<CancellationToken>()).Returns(Array.Empty<StaffStagingRow>() as IReadOnlyList<StaffStagingRow>);
+        repo.GetAnimalStagingRowsAsync(QueueId, Arg.Any<CancellationToken>()).Returns(Array.Empty<AnimalStagingRow>() as IReadOnlyList<AnimalStagingRow>);
         return repo;
     }
 
@@ -187,7 +196,7 @@ public class BulkRatesRequestServiceTests
             .WithMessage("*blocking*");
     }
 
-    // ── Release: DR-API-07 re-validation + freeze ────────────────────────────
+    // ── Release: re-validation + freeze ───────────────────────────────────────
 
     [Fact]
     public async Task Release_WhenFecJobValidationClean_FreezesCalculatedActionsAndTransitions()
@@ -232,7 +241,7 @@ public class BulkRatesRequestServiceTests
     }
 
     // §7.4: release must be blocked by a request-level missing-downloaded-key error, distinct
-    // from an ordinary per-row error — proves DR-API-06/DR-VAL-01's MISSING_DOWNLOADED_KEY finding
+    // from an ordinary per-row error — proves the MISSING_DOWNLOADED_KEY finding
     // (already asserted IsRequestLevel==true at the shared-service unit level) also gates release,
     // not just display.
     [Fact]
@@ -254,6 +263,89 @@ public class BulkRatesRequestServiceTests
             Arg.Any<Guid>(), Arg.Any<int>(),
             Arg.Any<IReadOnlyList<BulkRatesFreezeEntry>>(), Arg.Any<IReadOnlyList<BulkRatesFreezeEntry>>(),
             Arg.Any<CancellationToken>());
+    }
+
+    // ── Release: Staff/Animal freeze ──────────────────────────────────────────
+
+    [Fact]
+    public async Task Release_WhenStaffJobValidationClean_FreezesStaffStagingAndTransitions()
+    {
+        var entry = Entry(status: "Initiated", uploadChecksum: "abc");
+        entry.JobName = Apha.Common.Constants.BulkRatesJobNames.Staff;
+        var repo = RepoReturning(entry);
+        repo.GetStaffStagingRowsAsync(QueueId, Arg.Any<CancellationToken>())
+            .Returns(new[] { new StaffStagingRow { PcGrade = "G1", PayRate = 150m } } as IReadOnlyList<StaffStagingRow>);
+        repo.GetStaffRowsForExportAsync(FpsYear, Arg.Any<CancellationToken>())
+            .Returns(new[] { new StaffStagingRow { PcGrade = "G1", PayRate = 100m } } as IReadOnlyList<StaffStagingRow>);
+        var svc = CreateService(repo);
+
+        await svc.ReleaseForApprovalAsync(QueueId, Initiator);
+
+        await repo.Received(1).FreezeStaffStagingAsync(
+            QueueId, StaffAnimalValidationVersion.Current,
+            Arg.Is<IReadOnlyList<StaffFreezeEntry>>(list =>
+                list.Count == 1 && list[0].PcGrade == "G1" && list[0].CalculatedAction == StaffAnimalCalculatedAction.Update),
+            Arg.Any<CancellationToken>());
+        await repo.Received(1).TransitionStatusAsync(QueueId, 1, 42, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Release_WhenStaffGradeDeletedSinceUpload_ThrowsAndDoesNotTransitionOrFreeze()
+    {
+        var entry = Entry(status: "Initiated", uploadChecksum: "abc");
+        entry.JobName = Apha.Common.Constants.BulkRatesJobNames.Staff;
+        var repo = RepoReturning(entry);
+        repo.GetStaffStagingRowsAsync(QueueId, Arg.Any<CancellationToken>())
+            .Returns(new[] { new StaffStagingRow { PcGrade = "GONE", PayRate = 100m } } as IReadOnlyList<StaffStagingRow>);
+        // GetStaffRowsForExportAsync default (empty) — the grade no longer exists live.
+        var svc = CreateService(repo);
+
+        await svc.Invoking(s => s.ReleaseForApprovalAsync(QueueId, Initiator))
+            .Should().ThrowAsync<BusinessValidationErrorException>();
+
+        await repo.DidNotReceive().TransitionStatusAsync(Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
+        await repo.DidNotReceive().FreezeStaffStagingAsync(
+            Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<IReadOnlyList<StaffFreezeEntry>>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Release_WhenAnimalJobValidationClean_FreezesAnimalStagingAndTransitions()
+    {
+        var entry = Entry(status: "Initiated", uploadChecksum: "abc");
+        entry.JobName = Apha.Common.Constants.BulkRatesJobNames.Animal;
+        var repo = RepoReturning(entry);
+        repo.GetAnimalStagingRowsAsync(QueueId, Arg.Any<CancellationToken>())
+            .Returns(new[] { new AnimalStagingRow { AnimalType = "Cattle", DailyRate = 9m } } as IReadOnlyList<AnimalStagingRow>);
+        repo.GetAnimalRowsForExportAsync(FpsYear, Arg.Any<CancellationToken>())
+            .Returns(new[] { new AnimalStagingRow { AnimalType = "Cattle", DailyRate = 8m } } as IReadOnlyList<AnimalStagingRow>);
+        var svc = CreateService(repo);
+
+        await svc.ReleaseForApprovalAsync(QueueId, Initiator);
+
+        await repo.Received(1).FreezeAnimalStagingAsync(
+            QueueId, StaffAnimalValidationVersion.Current,
+            Arg.Is<IReadOnlyList<AnimalFreezeEntry>>(list =>
+                list.Count == 1 && list[0].AnimalType == "Cattle" && list[0].CalculatedAction == StaffAnimalCalculatedAction.Update),
+            Arg.Any<CancellationToken>());
+        await repo.Received(1).TransitionStatusAsync(QueueId, 1, 42, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Release_WhenAnimalTypeDeletedSinceUpload_ThrowsAndDoesNotTransitionOrFreeze()
+    {
+        var entry = Entry(status: "Initiated", uploadChecksum: "abc");
+        entry.JobName = Apha.Common.Constants.BulkRatesJobNames.Animal;
+        var repo = RepoReturning(entry);
+        repo.GetAnimalStagingRowsAsync(QueueId, Arg.Any<CancellationToken>())
+            .Returns(new[] { new AnimalStagingRow { AnimalType = "GONE", DailyRate = 5m } } as IReadOnlyList<AnimalStagingRow>);
+        var svc = CreateService(repo);
+
+        await svc.Invoking(s => s.ReleaseForApprovalAsync(QueueId, Initiator))
+            .Should().ThrowAsync<BusinessValidationErrorException>();
+
+        await repo.DidNotReceive().TransitionStatusAsync(Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
+        await repo.DidNotReceive().FreezeAnimalStagingAsync(
+            Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<IReadOnlyList<AnimalFreezeEntry>>(), Arg.Any<CancellationToken>());
     }
 
     // ── ApproveAsync maker-checker ───────────────────────────────────────────
@@ -395,7 +487,7 @@ public class BulkRatesRequestServiceTests
     public async Task Upload_WhenStatusIsRejected_AutoTransitionsToInitiated()
     {
         // Fec upload must carry a download-version that matches the request's active
-        // download (DR-VAL-03) — give the entry an active version and embed the same
+        // download — give the entry an active version and embed the same
         // version in the workbook's protected metadata sheet.
         var repo = RepoReturning(Entry(status: "Rejected", activeDownloadVersion: 1));
         repo.GetStatusIdByNameAsync(Arg.Any<int>(), "Initiated", Arg.Any<CancellationToken>()).Returns((int?)5);
@@ -422,7 +514,7 @@ public class BulkRatesRequestServiceTests
             .WithMessage("*initiator*");
     }
 
-    // ── Upload active-download-version contract (DR-VAL-03) ─────────────────
+    // ── Upload active-download-version contract ─────────────────────────────
 
     [Fact]
     public async Task Upload_WhenWorkbookVersionMatchesActive_Succeeds()
@@ -483,30 +575,38 @@ public class BulkRatesRequestServiceTests
     }
 
     [Fact]
-    public async Task Upload_WhenJobIsNotFec_SkipsDownloadVersionCheck()
+    public async Task Upload_WhenStaffWorkbookVersionMatchesActive_Succeeds()
     {
-        // Staff/Animal workbooks are never generated with the protected metadata sheet
-        // (only DownloadFecTestDataAsync writes it), so the contract must not apply to them.
-        var staffEntry = Entry(status: "Initiated", activeDownloadVersion: null);
+        // At rollout, Staff/Animal joined FEC in
+        // RequiresDownloadVersion once DownloadStaffTestDataAsync/
+        // DownloadAnimalTestDataAsync shipped, which embed the same protected metadata sheet as FEC.
+        var staffEntry = Entry(status: "Initiated", activeDownloadVersion: 1);
         staffEntry.JobName = Apha.Common.Constants.BulkRatesJobNames.Staff;
         var repo = RepoReturning(staffEntry);
         var svc  = CreateService(repo);
 
-        using var wb = new ClosedXML.Excel.XLWorkbook();
-        var staff = wb.Worksheets.Add("Staff");
-        staff.Cell(1, 1).Value = "PcGrade";
-        staff.Cell(1, 2).Value = "Pay Rate";
-        staff.Cell(1, 3).Value = "NPR";
-        staff.Cell(1, 4).Value = "OHR";
-        using var ms = new MemoryStream();
-        wb.SaveAs(ms);
-
-        var result = await svc.UploadFileAsync(QueueId, ms.ToArray(), "staff.xlsx", Initiator);
+        var result = await svc.UploadFileAsync(QueueId, BuildMinimalStaffXlsx(downloadVersion: 1), "staff.xlsx", Initiator);
 
         result.JobQueueId.Should().Be(QueueId);
     }
 
-    // ── GetStagingDataAsync classification (DR-VAL-01 calculated action vs "Deleted") ──
+    [Fact]
+    public async Task Upload_WhenStaffWorkbookHasNoDownloadVersionMetadata_ThrowsStaleDownloadVersion()
+    {
+        // A Staff workbook generated via the old, unversioned year-based export route
+        // (ExportStaffTestDataAsync) carries no protected metadata sheet at all — rejected the
+        // same way an unversioned FEC workbook already is.
+        var staffEntry = Entry(status: "Initiated", activeDownloadVersion: 1);
+        staffEntry.JobName = Apha.Common.Constants.BulkRatesJobNames.Staff;
+        var repo = RepoReturning(staffEntry);
+        var svc  = CreateService(repo);
+
+        var ex = await svc.Invoking(s => s.UploadFileAsync(QueueId, BuildMinimalStaffXlsx(), "staff.xlsx", Initiator))
+            .Should().ThrowAsync<BusinessValidationErrorException>();
+        ex.Which.Errors.Should().Contain(e => e.Code == "STALE_DOWNLOAD_VERSION");
+    }
+
+    // ── GetStagingDataAsync classification (calculated action vs "Deleted") ──
 
     [Fact]
     public async Task GetStagingData_WhenJobNameIsUnrecognised_ReturnsEmpty()
@@ -563,7 +663,8 @@ public class BulkRatesRequestServiceTests
     [Fact]
     public async Task GetStagingData_ClassifiesUnchangedRateAsNoChange()
     {
-        // No Change rows are shown too (not hidden), labelled from the same classification as Insert/Update/Zero-Rate Withdrawal.
+        // No Change rows are shown too (not hidden), labelled from the same
+        // classification as Insert/Update/Zero-Rate Withdrawal.
         var repo = RepoReturning(Entry(status: "Initiated", uploadChecksum: "abc"));
         repo.GetFecStagingRowsAsync(QueueId, Arg.Any<CancellationToken>())
             .Returns(new[] { new FecStagingRow { TestCode = "T003", FecNewRate = 30.0m } } as IReadOnlyList<FecStagingRow>);
@@ -616,9 +717,160 @@ public class BulkRatesRequestServiceTests
         await repo.DidNotReceive().GetAgrupRowsForExportAsync(Arg.Any<int>(), Arg.Any<CancellationToken>());
     }
 
-    // ── DownloadFecTestDataAsync ──────────────────────────────────
+    // ── GetStagingDataAsync classification — Staff/Animal (No Change/Updated/Not Found) ──
     //
-    // Verification checklist per fec-bulk-rates-plan-05-differential-remediation.md §tracker:
+    // Staff/Animal are update-only (no Insert/Deleted concept — see BulkRatesStagingStaffRowDto/
+    // BulkRatesStagingAnimalRowDto), and parity means every staged row is now shown,
+    // including rows where nothing changed ("No Change"), not just Updated/Not Found.
+
+    [Fact]
+    public async Task GetStaffStagingData_ClassifiesUnchangedRowAsNoChange()
+    {
+        var entry = Entry(status: "Initiated", uploadChecksum: "abc");
+        entry.JobName = Apha.Common.Constants.BulkRatesJobNames.Staff;
+        var repo = RepoReturning(entry);
+        repo.GetStaffStagingRowsAsync(QueueId, Arg.Any<CancellationToken>())
+            .Returns(new[] { new StaffStagingRow { PcGrade = "G1", PayRate = 100.00m, Npr = 5m, Ohr = 2m } } as IReadOnlyList<StaffStagingRow>);
+        repo.GetStaffRowsForExportAsync(FpsYear, Arg.Any<CancellationToken>())
+            .Returns(new[] { new StaffStagingRow { PcGrade = "G1", PayRate = 100.00m, Npr = 5m, Ohr = 2m } } as IReadOnlyList<StaffStagingRow>);
+        var svc = CreateService(repo);
+
+        var result = await svc.GetStagingDataAsync(QueueId);
+
+        result.StaffRows.Should().ContainSingle();
+        var row = result.StaffRows.Single();
+        row.Status.Should().Be("No Change");
+        // Populated exactly like the "Updated" branch — Current from live, New from staged —
+        // not collapsed to a single value even though they're numerically equal.
+        row.PayRate.Should().Be(100.00m);
+        row.PayRateNew.Should().Be(100.00m);
+    }
+
+    [Fact]
+    public async Task GetStaffStagingData_ClassifiesChangedRateAsUpdated()
+    {
+        var entry = Entry(status: "Initiated", uploadChecksum: "abc");
+        entry.JobName = Apha.Common.Constants.BulkRatesJobNames.Staff;
+        var repo = RepoReturning(entry);
+        repo.GetStaffStagingRowsAsync(QueueId, Arg.Any<CancellationToken>())
+            .Returns(new[] { new StaffStagingRow { PcGrade = "G2", PayRate = 150.00m } } as IReadOnlyList<StaffStagingRow>);
+        repo.GetStaffRowsForExportAsync(FpsYear, Arg.Any<CancellationToken>())
+            .Returns(new[] { new StaffStagingRow { PcGrade = "G2", PayRate = 100.00m } } as IReadOnlyList<StaffStagingRow>);
+        var svc = CreateService(repo);
+
+        var result = await svc.GetStagingDataAsync(QueueId);
+
+        result.StaffRows.Should().ContainSingle(r => r.PcGrade == "G2" && r.Status == "Updated");
+    }
+
+    [Fact]
+    public async Task GetStaffStagingData_ClassifiesMissingLiveGradeAsNotFound()
+    {
+        var entry = Entry(status: "Initiated", uploadChecksum: "abc");
+        entry.JobName = Apha.Common.Constants.BulkRatesJobNames.Staff;
+        var repo = RepoReturning(entry);
+        repo.GetStaffStagingRowsAsync(QueueId, Arg.Any<CancellationToken>())
+            .Returns(new[] { new StaffStagingRow { PcGrade = "G9", PayRate = 100.00m } } as IReadOnlyList<StaffStagingRow>);
+        repo.GetStaffRowsForExportAsync(FpsYear, Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<StaffStagingRow>() as IReadOnlyList<StaffStagingRow>);
+        var svc = CreateService(repo);
+
+        var result = await svc.GetStagingDataAsync(QueueId);
+
+        result.StaffRows.Should().ContainSingle(r => r.PcGrade == "G9" && r.Status == "Not Found");
+    }
+
+    [Fact]
+    public async Task GetStaffStagingData_WhenCompleted_ReturnsEmpty()
+    {
+        // Staging is purged post-commit (BulkStaffRatesService step 4), so an empty staged list
+        // here is the normal Completed state, not a bug — the loop is staged-row-driven (unlike
+        // FEC's live-row "Deleted" scan), so it naturally produces zero rows either way.
+        var entry = Entry(status: "Completed", uploadChecksum: "abc");
+        entry.JobName = Apha.Common.Constants.BulkRatesJobNames.Staff;
+        var repo = RepoReturning(entry);
+        repo.GetStaffStagingRowsAsync(QueueId, Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<StaffStagingRow>() as IReadOnlyList<StaffStagingRow>);
+        var svc = CreateService(repo);
+
+        var result = await svc.GetStagingDataAsync(QueueId);
+
+        result.StaffRows.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetAnimalStagingData_ClassifiesUnchangedRowAsNoChange()
+    {
+        var entry = Entry(status: "Initiated", uploadChecksum: "abc");
+        entry.JobName = Apha.Common.Constants.BulkRatesJobNames.Animal;
+        var repo = RepoReturning(entry);
+        repo.GetAnimalStagingRowsAsync(QueueId, Arg.Any<CancellationToken>())
+            .Returns(new[] { new AnimalStagingRow { AnimalType = "Cattle", DailyRate = 10.00m, DefraDailyRate = 5.00m } } as IReadOnlyList<AnimalStagingRow>);
+        repo.GetAnimalRowsForExportAsync(FpsYear, Arg.Any<CancellationToken>())
+            .Returns(new[] { new AnimalStagingRow { AnimalType = "Cattle", DailyRate = 10.00m, DefraDailyRate = 5.00m } } as IReadOnlyList<AnimalStagingRow>);
+        var svc = CreateService(repo);
+
+        var result = await svc.GetStagingDataAsync(QueueId);
+
+        result.AnimalRows.Should().ContainSingle();
+        var row = result.AnimalRows.Single();
+        row.Status.Should().Be("No Change");
+        row.DailyRate.Should().Be(10.00m);
+        row.DailyRateNew.Should().Be(10.00m);
+    }
+
+    [Fact]
+    public async Task GetAnimalStagingData_ClassifiesChangedRateAsUpdated()
+    {
+        var entry = Entry(status: "Initiated", uploadChecksum: "abc");
+        entry.JobName = Apha.Common.Constants.BulkRatesJobNames.Animal;
+        var repo = RepoReturning(entry);
+        repo.GetAnimalStagingRowsAsync(QueueId, Arg.Any<CancellationToken>())
+            .Returns(new[] { new AnimalStagingRow { AnimalType = "Sheep", DailyRate = 20.00m } } as IReadOnlyList<AnimalStagingRow>);
+        repo.GetAnimalRowsForExportAsync(FpsYear, Arg.Any<CancellationToken>())
+            .Returns(new[] { new AnimalStagingRow { AnimalType = "Sheep", DailyRate = 15.00m } } as IReadOnlyList<AnimalStagingRow>);
+        var svc = CreateService(repo);
+
+        var result = await svc.GetStagingDataAsync(QueueId);
+
+        result.AnimalRows.Should().ContainSingle(r => r.AnimalType == "Sheep" && r.Status == "Updated");
+    }
+
+    [Fact]
+    public async Task GetAnimalStagingData_ClassifiesMissingLiveAnimalTypeAsNotFound()
+    {
+        var entry = Entry(status: "Initiated", uploadChecksum: "abc");
+        entry.JobName = Apha.Common.Constants.BulkRatesJobNames.Animal;
+        var repo = RepoReturning(entry);
+        repo.GetAnimalStagingRowsAsync(QueueId, Arg.Any<CancellationToken>())
+            .Returns(new[] { new AnimalStagingRow { AnimalType = "Unknown", DailyRate = 20.00m } } as IReadOnlyList<AnimalStagingRow>);
+        repo.GetAnimalRowsForExportAsync(FpsYear, Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<AnimalStagingRow>() as IReadOnlyList<AnimalStagingRow>);
+        var svc = CreateService(repo);
+
+        var result = await svc.GetStagingDataAsync(QueueId);
+
+        result.AnimalRows.Should().ContainSingle(r => r.AnimalType == "Unknown" && r.Status == "Not Found");
+    }
+
+    [Fact]
+    public async Task GetAnimalStagingData_WhenCompleted_ReturnsEmpty()
+    {
+        var entry = Entry(status: "Completed", uploadChecksum: "abc");
+        entry.JobName = Apha.Common.Constants.BulkRatesJobNames.Animal;
+        var repo = RepoReturning(entry);
+        repo.GetAnimalStagingRowsAsync(QueueId, Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<AnimalStagingRow>() as IReadOnlyList<AnimalStagingRow>);
+        var svc = CreateService(repo);
+
+        var result = await svc.GetStagingDataAsync(QueueId);
+
+        result.AnimalRows.Should().BeEmpty();
+    }
+
+    // ── DownloadFecTestDataAsync ──────────────────────────────────────────────
+    //
+    // Verification checklist:
     //  (1) snapshot header created with status Generating
     //  (2) snapshot rows persisted from authoritative live data
     //  (3) workbook generated from persisted snapshot, not a second live query
@@ -663,7 +915,7 @@ public class BulkRatesRequestServiceTests
         return new BulkRatesRequestService(
             r,
             new BulkRatesExcelParser(),
-            new BulkRatesValidator(r, new BulkRatesValidationService()),
+            new BulkRatesValidator(r, new BulkRatesValidationService(), new StaffAnimalValidationService()),
             e, n, ex,
             NullLogger<BulkRatesRequestService>.Instance);
     }
@@ -860,11 +1112,412 @@ public class BulkRatesRequestServiceTests
         await repoV2.Received(1).CreateDownloadSnapshotAsync(entry.JobQueueId, 2, Arg.Any<IReadOnlyList<FecStagingRow>>(), Arg.Any<IReadOnlyList<AgrupStagingRow>>(), Arg.Any<CancellationToken>());
     }
 
+    // ── DownloadStaffTestDataAsync / DownloadAnimalTestDataAsync ──────────────
+    //
+    // Parity checklist with DownloadFecTestDataAsync above, plus a job-type guard that FEC
+    // doesn't need (FEC is the only job on its own route today; Staff/Animal share this
+    // service's download machinery keyed only by FpsYear, so a wrong-job-type call must be
+    // rejected explicitly — see RequireJobName).
+
+    private static IBulkRatesRepository RepoForStaffDownload(
+        BulkRatesQueueEntry entry,
+        int nextVersion = 1,
+        IReadOnlyList<StaffStagingRow>? liveRows = null,
+        IReadOnlyList<StaffStagingRow>? snapshotRows = null)
+    {
+        var repo = Substitute.For<IBulkRatesRepository>();
+        repo.GetRequestAsync(entry.JobExecutionId, Arg.Any<CancellationToken>()).Returns(entry);
+        repo.GetNextDownloadVersionAsync(entry.JobQueueId, Arg.Any<CancellationToken>()).Returns(nextVersion);
+        repo.GetStaffRowsForExportAsync(entry.FpsYear, Arg.Any<CancellationToken>())
+            .Returns(liveRows ?? Array.Empty<StaffStagingRow>() as IReadOnlyList<StaffStagingRow>);
+        repo.GetStaffSnapshotRowsAsync(entry.JobQueueId, nextVersion, Arg.Any<CancellationToken>())
+            .Returns(snapshotRows ?? liveRows ?? Array.Empty<StaffStagingRow>() as IReadOnlyList<StaffStagingRow>);
+        return repo;
+    }
+
+    private static IBulkRatesRepository RepoForAnimalDownload(
+        BulkRatesQueueEntry entry,
+        int nextVersion = 1,
+        IReadOnlyList<AnimalStagingRow>? liveRows = null,
+        IReadOnlyList<AnimalStagingRow>? snapshotRows = null)
+    {
+        var repo = Substitute.For<IBulkRatesRepository>();
+        repo.GetRequestAsync(entry.JobExecutionId, Arg.Any<CancellationToken>()).Returns(entry);
+        repo.GetNextDownloadVersionAsync(entry.JobQueueId, Arg.Any<CancellationToken>()).Returns(nextVersion);
+        repo.GetAnimalRowsForExportAsync(entry.FpsYear, Arg.Any<CancellationToken>())
+            .Returns(liveRows ?? Array.Empty<AnimalStagingRow>() as IReadOnlyList<AnimalStagingRow>);
+        repo.GetAnimalSnapshotRowsAsync(entry.JobQueueId, nextVersion, Arg.Any<CancellationToken>())
+            .Returns(snapshotRows ?? liveRows ?? Array.Empty<AnimalStagingRow>() as IReadOnlyList<AnimalStagingRow>);
+        return repo;
+    }
+
+    private static BulkRatesQueueEntry StaffEntry(string status = "Initiated")
+    {
+        var entry = Entry(status: status);
+        entry.JobName = Apha.Common.Constants.BulkRatesJobNames.Staff;
+        return entry;
+    }
+
+    private static BulkRatesQueueEntry AnimalEntry(string status = "Initiated")
+    {
+        var entry = Entry(status: status);
+        entry.JobName = Apha.Common.Constants.BulkRatesJobNames.Animal;
+        return entry;
+    }
+
+    // ── Job-type guard ──
+
+    [Fact]
+    public async Task DownloadStaff_WhenRequestIsAnimalJob_ThrowsBusinessValidation()
+    {
+        var entry = AnimalEntry();
+        var repo  = RepoForStaffDownload(entry);
+        var svc   = CreateServiceWithExcel(repo);
+
+        await svc.Invoking(s => s.DownloadStaffTestDataAsync(entry.JobExecutionId))
+            .Should().ThrowAsync<BusinessValidationErrorException>()
+            .WithMessage("*expected*");
+    }
+
+    [Fact]
+    public async Task DownloadAnimal_WhenRequestIsStaffJob_ThrowsBusinessValidation()
+    {
+        var entry = StaffEntry();
+        var repo  = RepoForAnimalDownload(entry);
+        var svc   = CreateServiceWithExcel(repo);
+
+        await svc.Invoking(s => s.DownloadAnimalTestDataAsync(entry.JobExecutionId))
+            .Should().ThrowAsync<BusinessValidationErrorException>()
+            .WithMessage("*expected*");
+    }
+
+    // ── Status guard ──
+
+    [Theory]
+    [InlineData("ReleasedForApproval")]
+    [InlineData("Approved")]
+    [InlineData("Cancelled")]
+    [InlineData("Failed")]
+    public async Task DownloadStaff_WhenStatusIsNotDownloadable_ThrowsBusinessValidation(string status)
+    {
+        var entry = StaffEntry(status: status);
+        var repo  = RepoForStaffDownload(entry);
+        var svc   = CreateServiceWithExcel(repo);
+
+        await svc.Invoking(s => s.DownloadStaffTestDataAsync(entry.JobExecutionId))
+            .Should().ThrowAsync<BusinessValidationErrorException>()
+            .WithMessage("*Initiated*");
+    }
+
+    [Theory]
+    [InlineData("ReleasedForApproval")]
+    [InlineData("Approved")]
+    [InlineData("Cancelled")]
+    [InlineData("Failed")]
+    public async Task DownloadAnimal_WhenStatusIsNotDownloadable_ThrowsBusinessValidation(string status)
+    {
+        var entry = AnimalEntry(status: status);
+        var repo  = RepoForAnimalDownload(entry);
+        var svc   = CreateServiceWithExcel(repo);
+
+        await svc.Invoking(s => s.DownloadAnimalTestDataAsync(entry.JobExecutionId))
+            .Should().ThrowAsync<BusinessValidationErrorException>()
+            .WithMessage("*Initiated*");
+    }
+
+    // ── Snapshot header + live data persisted ──
+
+    [Fact]
+    public async Task DownloadStaff_CreatesSnapshotFromLiveData()
+    {
+        var liveRows = new[] { new StaffStagingRow { PcGrade = "G1", PayRate = 42m } } as IReadOnlyList<StaffStagingRow>;
+        var entry = StaffEntry();
+        var repo  = RepoForStaffDownload(entry, liveRows: liveRows);
+        var svc   = CreateServiceWithExcel(repo);
+
+        await svc.DownloadStaffTestDataAsync(entry.JobExecutionId);
+
+        await repo.Received(1).CreateStaffDownloadSnapshotAsync(
+            entry.JobQueueId, 1,
+            Arg.Is<IReadOnlyList<StaffStagingRow>>(rows => rows.Count == 1 && rows[0].PcGrade == "G1"),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task DownloadAnimal_CreatesSnapshotFromLiveData()
+    {
+        var liveRows = new[] { new AnimalStagingRow { AnimalType = "Cattle", DailyRate = 7m } } as IReadOnlyList<AnimalStagingRow>;
+        var entry = AnimalEntry();
+        var repo  = RepoForAnimalDownload(entry, liveRows: liveRows);
+        var svc   = CreateServiceWithExcel(repo);
+
+        await svc.DownloadAnimalTestDataAsync(entry.JobExecutionId);
+
+        await repo.Received(1).CreateAnimalDownloadSnapshotAsync(
+            entry.JobQueueId, 1,
+            Arg.Is<IReadOnlyList<AnimalStagingRow>>(rows => rows.Count == 1 && rows[0].AnimalType == "Cattle"),
+            Arg.Any<CancellationToken>());
+    }
+
+    // ── Workbook generated from snapshot, not a second live query ──
+
+    [Fact]
+    public async Task DownloadStaff_GeneratesWorkbookFromSnapshot_NotSecondLiveQuery()
+    {
+        var entry = StaffEntry();
+        var repo  = RepoForStaffDownload(entry);
+        var svc   = CreateServiceWithExcel(repo);
+
+        await svc.DownloadStaffTestDataAsync(entry.JobExecutionId);
+
+        await repo.Received(1).GetStaffRowsForExportAsync(FpsYear, Arg.Any<CancellationToken>());
+        await repo.Received(1).GetStaffSnapshotRowsAsync(entry.JobQueueId, 1, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task DownloadAnimal_GeneratesWorkbookFromSnapshot_NotSecondLiveQuery()
+    {
+        var entry = AnimalEntry();
+        var repo  = RepoForAnimalDownload(entry);
+        var svc   = CreateServiceWithExcel(repo);
+
+        await svc.DownloadAnimalTestDataAsync(entry.JobExecutionId);
+
+        await repo.Received(1).GetAnimalRowsForExportAsync(FpsYear, Arg.Any<CancellationToken>());
+        await repo.Received(1).GetAnimalSnapshotRowsAsync(entry.JobQueueId, 1, Arg.Any<CancellationToken>());
+    }
+
+    // ── Ready/Failed transitions ──
+
+    [Fact]
+    public async Task DownloadStaff_OnSuccess_MarksHeaderReady()
+    {
+        var entry = StaffEntry();
+        var repo  = RepoForStaffDownload(entry);
+        var svc   = CreateServiceWithExcel(repo);
+
+        await svc.DownloadStaffTestDataAsync(entry.JobExecutionId);
+
+        await repo.Received(1).MarkDownloadReadyAsync(entry.JobQueueId, 1, Arg.Any<CancellationToken>());
+        await repo.DidNotReceive().MarkDownloadFailedAsync(Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task DownloadAnimal_OnSuccess_MarksHeaderReady()
+    {
+        var entry = AnimalEntry();
+        var repo  = RepoForAnimalDownload(entry);
+        var svc   = CreateServiceWithExcel(repo);
+
+        await svc.DownloadAnimalTestDataAsync(entry.JobExecutionId);
+
+        await repo.Received(1).MarkDownloadReadyAsync(entry.JobQueueId, 1, Arg.Any<CancellationToken>());
+        await repo.DidNotReceive().MarkDownloadFailedAsync(Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task DownloadStaff_WhenWorkbookGenerationFails_MarksHeaderFailed_NotReady()
+    {
+        var entry    = StaffEntry();
+        var repo     = RepoForStaffDownload(entry, nextVersion: 2);
+        var faultyEx = Substitute.For<IExcelExportService>();
+        faultyEx.ExportToExcelMultiSheet(Arg.Any<IEnumerable<ExcelSheetDefinition>>(), Arg.Any<IReadOnlyDictionary<string, string>>())
+                .Throws(new InvalidOperationException("workbook generation exploded"));
+        var svc = CreateServiceWithExcel(repo, faultyEx);
+
+        await svc.Invoking(s => s.DownloadStaffTestDataAsync(entry.JobExecutionId))
+            .Should().ThrowAsync<InvalidOperationException>();
+
+        await repo.Received(1).MarkDownloadFailedAsync(entry.JobQueueId, 2, Arg.Any<CancellationToken>());
+        await repo.DidNotReceive().MarkDownloadReadyAsync(Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task DownloadAnimal_WhenWorkbookGenerationFails_MarksHeaderFailed_NotReady()
+    {
+        var entry    = AnimalEntry();
+        var repo     = RepoForAnimalDownload(entry, nextVersion: 2);
+        var faultyEx = Substitute.For<IExcelExportService>();
+        faultyEx.ExportToExcelMultiSheet(Arg.Any<IEnumerable<ExcelSheetDefinition>>(), Arg.Any<IReadOnlyDictionary<string, string>>())
+                .Throws(new InvalidOperationException("workbook generation exploded"));
+        var svc = CreateServiceWithExcel(repo, faultyEx);
+
+        await svc.Invoking(s => s.DownloadAnimalTestDataAsync(entry.JobExecutionId))
+            .Should().ThrowAsync<InvalidOperationException>();
+
+        await repo.Received(1).MarkDownloadFailedAsync(entry.JobQueueId, 2, Arg.Any<CancellationToken>());
+        await repo.DidNotReceive().MarkDownloadReadyAsync(Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
+    }
+
+    // ── Protected metadata embedded ──
+
+    [Fact]
+    public async Task DownloadStaff_EmbedsDownloadVersionInWorkbookMetadata()
+    {
+        var entry = StaffEntry();
+        var repo  = RepoForStaffDownload(entry, nextVersion: 3);
+        Dictionary<string, string>? capturedMetadata = null;
+        var excel = Substitute.For<IExcelExportService>();
+        excel.ExportToExcelMultiSheet(
+                Arg.Any<IEnumerable<ExcelSheetDefinition>>(),
+                Arg.Do<IReadOnlyDictionary<string, string>>(m => capturedMetadata = new Dictionary<string, string>(m)))
+             .Returns([0xFF, 0xFE]);
+        var svc = CreateServiceWithExcel(repo, excel);
+
+        await svc.DownloadStaffTestDataAsync(entry.JobExecutionId);
+
+        capturedMetadata.Should().NotBeNull();
+        capturedMetadata!["BulkRatesDownloadVersion"].Should().Be("3");
+        capturedMetadata!["BulkRatesJobQueueId"].Should().Be(entry.JobQueueId.ToString());
+    }
+
+    [Fact]
+    public async Task DownloadAnimal_EmbedsDownloadVersionInWorkbookMetadata()
+    {
+        var entry = AnimalEntry();
+        var repo  = RepoForAnimalDownload(entry, nextVersion: 3);
+        Dictionary<string, string>? capturedMetadata = null;
+        var excel = Substitute.For<IExcelExportService>();
+        excel.ExportToExcelMultiSheet(
+                Arg.Any<IEnumerable<ExcelSheetDefinition>>(),
+                Arg.Do<IReadOnlyDictionary<string, string>>(m => capturedMetadata = new Dictionary<string, string>(m)))
+             .Returns([0xFF, 0xFE]);
+        var svc = CreateServiceWithExcel(repo, excel);
+
+        await svc.DownloadAnimalTestDataAsync(entry.JobExecutionId);
+
+        capturedMetadata.Should().NotBeNull();
+        capturedMetadata!["BulkRatesDownloadVersion"].Should().Be("3");
+        capturedMetadata!["BulkRatesJobQueueId"].Should().Be(entry.JobQueueId.ToString());
+    }
+
+    // ── Workbook rows exactly match the persisted snapshot ──
+
+    [Fact]
+    public async Task DownloadStaff_WorkbookSheet_ContainsExactlySnapshotRows()
+    {
+        var snapshotRows = new[] { new StaffStagingRow { PcGrade = "G9", PayRate = 5m } } as IReadOnlyList<StaffStagingRow>;
+        var entry = StaffEntry();
+        var repo  = RepoForStaffDownload(entry, snapshotRows: snapshotRows);
+
+        IReadOnlyList<ExcelSheetDefinition>? capturedSheets = null;
+        var excel = Substitute.For<IExcelExportService>();
+        excel.ExportToExcelMultiSheet(
+                Arg.Do<IEnumerable<ExcelSheetDefinition>>(s => capturedSheets = s.ToList()),
+                Arg.Any<IReadOnlyDictionary<string, string>>())
+             .Returns([1]);
+        var svc = CreateServiceWithExcel(repo, excel);
+
+        await svc.DownloadStaffTestDataAsync(entry.JobExecutionId);
+
+        capturedSheets.Should().ContainSingle();
+        capturedSheets![0].Data.Cast<StaffExportRow>().Should().ContainSingle(r => r.PcGrade == "G9");
+    }
+
+    [Fact]
+    public async Task DownloadAnimal_WorkbookSheet_ContainsExactlySnapshotRows()
+    {
+        var snapshotRows = new[] { new AnimalStagingRow { AnimalType = "Sheep", DailyRate = 3m } } as IReadOnlyList<AnimalStagingRow>;
+        var entry = AnimalEntry();
+        var repo  = RepoForAnimalDownload(entry, snapshotRows: snapshotRows);
+
+        IReadOnlyList<ExcelSheetDefinition>? capturedSheets = null;
+        var excel = Substitute.For<IExcelExportService>();
+        excel.ExportToExcelMultiSheet(
+                Arg.Do<IEnumerable<ExcelSheetDefinition>>(s => capturedSheets = s.ToList()),
+                Arg.Any<IReadOnlyDictionary<string, string>>())
+             .Returns([1]);
+        var svc = CreateServiceWithExcel(repo, excel);
+
+        await svc.DownloadAnimalTestDataAsync(entry.JobExecutionId);
+
+        capturedSheets.Should().ContainSingle();
+        capturedSheets![0].Data.Cast<AnimalExportRow>().Should().ContainSingle(r => r.AnimalType == "Sheep");
+    }
+
+    // ── Repeat download uses a higher version ──
+
+    [Fact]
+    public async Task DownloadStaff_SecondCall_UsesHigherDownloadVersion()
+    {
+        var entry = StaffEntry();
+
+        var repoV1 = RepoForStaffDownload(entry, nextVersion: 1);
+        var svcV1  = CreateServiceWithExcel(repoV1);
+        await svcV1.DownloadStaffTestDataAsync(entry.JobExecutionId);
+        await repoV1.Received(1).CreateStaffDownloadSnapshotAsync(entry.JobQueueId, 1, Arg.Any<IReadOnlyList<StaffStagingRow>>(), Arg.Any<CancellationToken>());
+
+        var repoV2 = RepoForStaffDownload(entry, nextVersion: 2);
+        var svcV2  = CreateServiceWithExcel(repoV2);
+        await svcV2.DownloadStaffTestDataAsync(entry.JobExecutionId);
+        await repoV2.Received(1).CreateStaffDownloadSnapshotAsync(entry.JobQueueId, 2, Arg.Any<IReadOnlyList<StaffStagingRow>>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task DownloadAnimal_SecondCall_UsesHigherDownloadVersion()
+    {
+        var entry = AnimalEntry();
+
+        var repoV1 = RepoForAnimalDownload(entry, nextVersion: 1);
+        var svcV1  = CreateServiceWithExcel(repoV1);
+        await svcV1.DownloadAnimalTestDataAsync(entry.JobExecutionId);
+        await repoV1.Received(1).CreateAnimalDownloadSnapshotAsync(entry.JobQueueId, 1, Arg.Any<IReadOnlyList<AnimalStagingRow>>(), Arg.Any<CancellationToken>());
+
+        var repoV2 = RepoForAnimalDownload(entry, nextVersion: 2);
+        var svcV2  = CreateServiceWithExcel(repoV2);
+        await svcV2.DownloadAnimalTestDataAsync(entry.JobExecutionId);
+        await repoV2.Received(1).CreateAnimalDownloadSnapshotAsync(entry.JobQueueId, 2, Arg.Any<IReadOnlyList<AnimalStagingRow>>(), Arg.Any<CancellationToken>());
+    }
+
+    // ── Export template column protection (parity with FEC/AGRUP) ───────────
+    //
+    // PcGrade/AnimalType are the sole identity/business keys for these tables (fps.
+    // profitcentregrade/fps.tblanimals are keyed by that column + FpsYear, and FpsYear is fixed
+    // by the request, not the sheet) — protecting only that column stops a retyped key silently
+    // producing an unmatched "Not Found" row on re-upload, while leaving every other column
+    // (including Species/SecurityLevel, which BulkAnimalRatesService does apply) editable.
+
+    [Fact]
+    public async Task ExportStaffTestData_ProtectsOnlyPcGradeColumn()
+    {
+        var repo = Substitute.For<IBulkRatesRepository>();
+        repo.GetStaffRowsForExportAsync(FpsYear, Arg.Any<CancellationToken>())
+            .Returns(new[] { new StaffStagingRow { PcGrade = "G1", PayRate = 100m } } as IReadOnlyList<StaffStagingRow>);
+        IReadOnlyList<ExcelSheetDefinition>? capturedSheets = null;
+        var excel = Substitute.For<IExcelExportService>();
+        excel.ExportToExcelMultiSheet(Arg.Do<IEnumerable<ExcelSheetDefinition>>(s => capturedSheets = s.ToList()))
+             .Returns([1]);
+        var svc = CreateServiceWithExcel(repo, excel);
+
+        await svc.ExportStaffTestDataAsync(FpsYear);
+
+        capturedSheets.Should().ContainSingle();
+        capturedSheets![0].ProtectedColumnNames.Should().BeEquivalentTo(new[] { nameof(StaffExportRow.PcGrade) });
+    }
+
+    [Fact]
+    public async Task ExportAnimalTestData_ProtectsOnlyAnimalTypeColumn()
+    {
+        var repo = Substitute.For<IBulkRatesRepository>();
+        repo.GetAnimalRowsForExportAsync(FpsYear, Arg.Any<CancellationToken>())
+            .Returns(new[] { new AnimalStagingRow { AnimalType = "Cattle", DailyRate = 10m, Species = "Bovine", SecurityLevel = "Low" } } as IReadOnlyList<AnimalStagingRow>);
+        IReadOnlyList<ExcelSheetDefinition>? capturedSheets = null;
+        var excel = Substitute.For<IExcelExportService>();
+        excel.ExportToExcelMultiSheet(Arg.Do<IEnumerable<ExcelSheetDefinition>>(s => capturedSheets = s.ToList()))
+             .Returns([1]);
+        var svc = CreateServiceWithExcel(repo, excel);
+
+        await svc.ExportAnimalTestDataAsync(FpsYear);
+
+        capturedSheets.Should().ContainSingle();
+        capturedSheets![0].ProtectedColumnNames.Should().BeEquivalentTo(new[] { nameof(AnimalExportRow.AnimalType) });
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     /// <summary>
     /// Creates a minimal BulkTestRatesUpdate xlsx in memory. When <paramref name="downloadVersion"/>
-    /// is supplied, embeds the VeryHidden protected-metadata sheet (DR-VAL-03) carrying that
+    /// is supplied, embeds the VeryHidden protected-metadata sheet carrying that
     /// version, mirroring what DownloadFecTestDataAsync writes; omit it to simulate a workbook
     /// that never went through the download flow.
     /// </summary>
@@ -908,5 +1561,90 @@ public class BulkRatesRequestServiceTests
         using var ms = new MemoryStream();
         wb.SaveAs(ms);
         return ms.ToArray();
+    }
+
+    private static byte[] BuildMinimalStaffXlsx(int? downloadVersion = null)
+    {
+        using var wb = new ClosedXML.Excel.XLWorkbook();
+        var staff = wb.Worksheets.Add("Staff");
+        staff.Cell(1, 1).Value = "PcGrade";
+        staff.Cell(1, 2).Value = "Pay Rate";
+        staff.Cell(1, 3).Value = "NPR";
+        staff.Cell(1, 4).Value = "OHR";
+
+        if (downloadVersion is not null)
+        {
+            var meta = wb.Worksheets.Add(Apha.Common.Utilities.ExcelExport.ExcelExportService.ProtectedMetadataSheetName);
+            meta.Cell(1, 1).Value = "BulkRatesJobQueueId";
+            meta.Cell(1, 2).Value = QueueId.ToString();
+            meta.Cell(2, 1).Value = "BulkRatesDownloadVersion";
+            meta.Cell(2, 2).Value = downloadVersion.Value.ToString();
+            meta.Visibility = ClosedXML.Excel.XLWorksheetVisibility.VeryHidden;
+        }
+
+        using var ms = new MemoryStream();
+        wb.SaveAs(ms);
+        return ms.ToArray();
+    }
+
+    // ── ExportStagingDataAsync ("Download Staging Data") ─────────────────────
+    // Regression coverage: this method used to always query FEC/AGRUP staging regardless of
+    // entry.JobName, producing an empty workbook for every Staff/Animal request.
+
+    [Fact]
+    public async Task ExportStagingDataAsync_WhenJobIsStaff_ExportsStaffStagingRowsOnly()
+    {
+        var entry = Entry(status: "Completed", uploadChecksum: "hash");
+        entry.JobName = BulkRatesJobNames.Staff;
+        var repo = RepoReturning(entry);
+        var staffRows = new List<StaffStagingRow> { new() { PcGrade = "A-ASU", PayRate = 10m } };
+        repo.GetStaffStagingRowsAsync(QueueId, Arg.Any<CancellationToken>())
+            .Returns(staffRows as IReadOnlyList<StaffStagingRow>);
+
+        var svc = CreateService(repo);
+
+        await svc.ExportStagingDataAsync(QueueId);
+
+        await repo.Received(1).GetStaffStagingRowsAsync(QueueId, Arg.Any<CancellationToken>());
+        await repo.DidNotReceive().GetFecStagingRowsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await repo.DidNotReceive().GetAgrupStagingRowsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await repo.DidNotReceive().GetAnimalStagingRowsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ExportStagingDataAsync_WhenJobIsAnimal_ExportsAnimalStagingRowsOnly()
+    {
+        var entry = Entry(status: "Completed", uploadChecksum: "hash");
+        entry.JobName = BulkRatesJobNames.Animal;
+        var repo = RepoReturning(entry);
+        var animalRows = new List<AnimalStagingRow> { new() { AnimalType = "Bovine", DailyRate = 5m } };
+        repo.GetAnimalStagingRowsAsync(QueueId, Arg.Any<CancellationToken>())
+            .Returns(animalRows as IReadOnlyList<AnimalStagingRow>);
+
+        var svc = CreateService(repo);
+
+        await svc.ExportStagingDataAsync(QueueId);
+
+        await repo.Received(1).GetAnimalStagingRowsAsync(QueueId, Arg.Any<CancellationToken>());
+        await repo.DidNotReceive().GetFecStagingRowsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await repo.DidNotReceive().GetAgrupStagingRowsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await repo.DidNotReceive().GetStaffStagingRowsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ExportStagingDataAsync_WhenJobIsFec_ExportsFecAndAgrupStagingRowsOnly()
+    {
+        // JobName defaults to the class-level JobName const ("BulkTestRatesUpdate" == Fec).
+        var entry = Entry(status: "Completed", uploadChecksum: "hash");
+        var repo = RepoReturning(entry);
+
+        var svc = CreateService(repo);
+
+        await svc.ExportStagingDataAsync(QueueId);
+
+        await repo.Received(1).GetFecStagingRowsAsync(QueueId, Arg.Any<CancellationToken>());
+        await repo.Received(1).GetAgrupStagingRowsAsync(QueueId, Arg.Any<CancellationToken>());
+        await repo.DidNotReceive().GetStaffStagingRowsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await repo.DidNotReceive().GetAnimalStagingRowsAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 }

@@ -1,8 +1,8 @@
 namespace Apha.Common.BulkRates.Validation
 {
     /// <summary>
-    /// DR-VAL-01 implementation. See IBulkRatesValidationService for the contract this
-    /// fulfils and plan §3/§3.1/§3.2 for the rules below.
+    /// Implementation. See IBulkRatesValidationService for the contract this
+    /// fulfils.
     /// </summary>
     public sealed class BulkRatesValidationService : IBulkRatesValidationService
     {
@@ -152,10 +152,10 @@ namespace Apha.Common.BulkRates.Validation
                     }
                 }
 
-                // DR-API-09 interim BC-05 safety net, staged-vs-withdrawal (release-time,
+                // Interim BC-05 safety net, staged-vs-withdrawal (release-time,
                 // snapshot-independent — this is about what THIS upload contains, not what
                 // was previously downloaded). The snapshot-scoped/live-data counterpart is
-                // ValidateLiveWithdrawalConflicts below (plan §5.2).
+                // ValidateLiveWithdrawalConflicts below.
                 if (withdrawnFecTestCodes.Contains(testCodeKey) && row.AgrupNew is > 0)
                 {
                     findings.Add(Error("AGRUP_POSITIVE_FOR_WITHDRAWN_FEC", "AGRUP", businessKey, row.SourceRow,
@@ -174,7 +174,7 @@ namespace Apha.Common.BulkRates.Validation
             }
             else if (row.AgrupNew.Value == 0)
             {
-                // BC-01 temporary rule (DR-API-03): block a new AGRUP row at zero until
+                // BC-01 temporary rule: block a new AGRUP row at zero until
                 // business confirms permanent behaviour.
                 findings.Add(Error("NEW_AGRUP_ZERO_RATE_BLOCKED", "AGRUP", businessKey, row.SourceRow,
                     "New AGRUP rows with a zero rate are not currently permitted, pending business confirmation (BC-01).", "agrupnew"));
@@ -206,11 +206,11 @@ namespace Apha.Common.BulkRates.Validation
         private static void ValidateExistingAgrupRow(
             ValidationAgrupRow row, LiveAgrupRow live, string businessKey, ICollection<ValidationFinding> findings)
         {
-            // Existing-key routing-field immutability, Bulk-Rates-scoped (DR-API-05,
-            // reconciliation §2.5) — not a system-wide tlkptestreqmt rule; other writers
+            // Existing-key routing-field immutability, Bulk-Rates-scoped
+            // (reconciliation §2.5) — not a system-wide tlkptestreqmt rule; other writers
             // (e.g. the PACT maintenance path) may still permit controlled changes.
             // Comparison matches the citext columns' own case-insensitivity and adds no
-            // extra trimming (DR-API-05 comparison note) — Excel-introduced whitespace on an
+            // extra trimming (comparison note) — Excel-introduced whitespace on an
             // otherwise-unedited protected cell is a known, accepted risk, not silently
             // "fixed" here without business confirmation.
             if (RoutingFieldChanged(row.ProjectBuyerCode, live.ProjectBuyerCode))
@@ -244,16 +244,16 @@ namespace Apha.Common.BulkRates.Validation
         private static bool RoutingFieldChanged(string? staged, string? live)
             => !string.Equals(staged ?? string.Empty, live ?? string.Empty, StringComparison.OrdinalIgnoreCase);
 
-        // ── Worker-side BC-05 interim rule (plan §5.2) ──────────────────────────
+        // ── Worker-side BC-05 interim rule ──────────────────────────
 
         /// <summary>
         /// Only called when ValidationContext.IncludeWorkerOnlyChecks is true — see that
         /// property for why this must not run at API release time. A live positive AGRUP row
         /// related to a withdrawn FEC TestCode that was NOT present in the frozen download
-        /// snapshot cannot have been caught by the staged-row check above (DR-API-09) — it
+        /// snapshot cannot have been caught by the staged-row check above — it
         /// didn't exist, or wasn't yet linked to that TestCode, at download time. The worker
         /// re-builds ValidationContext.LiveAgrupLookup under the row lock immediately before
-        /// calling here (§5.1), which is what makes this catch the race the rule exists to close.
+        /// calling here, which is what makes this catch the race the rule exists to close.
         /// </summary>
         private static void ValidateLiveWithdrawalConflicts(
             ValidationContext ctx, ICollection<ValidationFinding> findings, IReadOnlySet<string> withdrawnFecTestCodes)
@@ -285,7 +285,7 @@ namespace Apha.Common.BulkRates.Validation
             }
         }
 
-        // ── Downloaded-snapshot preservation ──
+        // ── Downloaded-snapshot preservation (reconciliation §2.6) ──────────────────────
 
         private static void ValidateSnapshotPreservation(ValidationContext ctx, ICollection<ValidationFinding> findings)
         {

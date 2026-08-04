@@ -7,7 +7,7 @@ namespace Apha.Common.BulkRates.Validation
     /// mirroring §3.1's "exactly one rule, not two" principle for key comparison instead of
     /// just rate classification. Case-insensitive to match the citext columns these values
     /// come from (fps.tblstagingtestorproduct/tblstagingtlkptestreqmt); not trimmed, since
-    /// the underlying citext columns are not trimmed either (plan DR-API-05 comparison note).
+    /// the underlying citext columns are not trimmed either (plan comparison note).
     /// </summary>
     public static class BulkRatesValidationKeys
     {

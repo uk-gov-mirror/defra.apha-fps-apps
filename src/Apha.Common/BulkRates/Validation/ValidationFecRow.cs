@@ -4,7 +4,7 @@ namespace Apha.Common.BulkRates.Validation
     /// A staged FEC row, in a shape neither Apha.FPS.Core.Entities.BulkRates.FecStagingRow
     /// nor Apha.BatchJobs.Domain.Entities.BulkRates.FecStagingRow can express directly —
     /// Apha.Common cannot see either project's own staging types, so each caller maps its
-    /// native row into this before calling DR-VAL-01, and maps ValidationFinding back out.
+    /// native row into this before calling the shared validator, and maps ValidationFinding back out.
     /// </summary>
     public sealed record ValidationFecRow
     {

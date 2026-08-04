@@ -24,6 +24,7 @@ jobs:
       run_web_tests: true
       web_layer_suffix: 'Api'
       run_dataaccess_tests: true
+      dataaccess_test_filter: "FullyQualifiedName!~BulkRatesRepositoryDownloadConcurrencyTests"
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     permissions:

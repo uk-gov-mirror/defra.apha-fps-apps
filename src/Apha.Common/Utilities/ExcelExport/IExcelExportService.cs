@@ -22,8 +22,8 @@ namespace Apha.Common.Utilities.ExcelExport
         /// <summary>
         /// Same as <see cref="ExportToExcelMultiSheet(IEnumerable{ExcelSheetDefinition})"/>, plus a
         /// key/value block written to a VeryHidden worksheet — not a normal data cell a user could
-        /// edit or discover via Excel's own "Unhide Sheet" dialog (DR-UI-01/DR-VAL-03: the
-        /// bulk-rates download_version protected-metadata carrier, plan §2.1).
+        /// edit or discover via Excel's own "Unhide Sheet" dialog (the
+        /// bulk-rates download_version protected-metadata carrier).
         /// </summary>
         byte[] ExportToExcelMultiSheet(IEnumerable<ExcelSheetDefinition> sheets, IReadOnlyDictionary<string, string> protectedMetadata);
 

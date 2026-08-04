@@ -14,7 +14,7 @@ namespace Apha.Common.Utilities.ExcelExport
 
         /// <summary>
         /// Property names (not display names) whose cells should be locked against user edits,
-        /// for every data row, once this sheet is protected (DR-UI-02: existing-row routing
+        /// for every data row, once this sheet is protected (existing-row routing
         /// cells are reference-only — the API rejects any change regardless, this just makes the
         /// restriction visible at the point of entry). Every other cell in the sheet remains
         /// editable. Null/empty means no protection is applied to this sheet — existing exports

@@ -148,7 +148,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Models
     }
 
     /// <summary>DataGrid row model for the "Staff Data (Staging)" grid. Property names must match BulkRatesStagingStaffRowDto.</summary>
-    public class StaffStagingGridItem
+    public class StaffStagingGridItem : IHasValidationSummary
     {
         [Display(Name = "Status")]
         [GridColumn(Order = 1, Width = 110, Type = GridColumnType.Text, IsFilterable = true)]
@@ -181,10 +181,14 @@ namespace Apha.FPSApps.Web.Areas.FPS.Models
         [Display(Name = "OHR New")]
         [GridColumn(Order = 8, Width = 100, Type = GridColumnType.DecimalNumber, IsFilterable = false)]
         public decimal? OhrNew { get; set; }
+
+        [Display(Name = "Validation")]
+        [GridColumn(Order = 9, Width = 260, Type = GridColumnType.Text, IsFilterable = true)]
+        public string? ValidationSummary { get; set; }
     }
 
     /// <summary>DataGrid row model for the "Animal Data (Staging)" grid. Property names must match BulkRatesStagingAnimalRowDto.</summary>
-    public class AnimalStagingGridItem
+    public class AnimalStagingGridItem : IHasValidationSummary
     {
         [Display(Name = "Status")]
         [GridColumn(Order = 1, Width = 110, Type = GridColumnType.Text, IsFilterable = true)]
@@ -221,5 +225,9 @@ namespace Apha.FPSApps.Web.Areas.FPS.Models
         [Display(Name = "Plan By Week")]
         [GridColumn(Order = 9, Width = 110, Type = GridColumnType.Checkbox, IsFilterable = false)]
         public bool? PlanByWeek { get; set; }
+
+        [Display(Name = "Validation")]
+        [GridColumn(Order = 10, Width = 260, Type = GridColumnType.Text, IsFilterable = true)]
+        public string? ValidationSummary { get; set; }
     }
 }

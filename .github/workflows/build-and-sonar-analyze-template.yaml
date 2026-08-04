@@ -43,6 +43,11 @@ on:
          required: false
          type: boolean
          default: false
+       dataaccess_test_filter:
+         description: "Optional dotnet test filter expression for the DataAccess test project (for example to skip Postgres-dependent integration tests in CI, which has no Postgres service)"
+         required: false
+         type: string
+         default: ''
        run_infrastructure_tests:
          description: "Run Infrastructure layer unit tests for FrontEnd Only (requires <SolutionName>.Infrastructure.UnitTests project)"
          required: false
@@ -197,9 +202,16 @@ jobs:
         shell: bash
         env:
           APP_SOLUTION_NAME: ${{ inputs.dotnet_application_solution_name }}
+          DATAACCESS_TEST_FILTER: ${{ inputs.dataaccess_test_filter }}
         run: |
+          FILTER_ARGS=()
+          if [ -n "$DATAACCESS_TEST_FILTER" ]; then
+            FILTER_ARGS+=(--filter "$DATAACCESS_TEST_FILTER")
+          fi
+
           dotnet test src/$APP_SOLUTION_NAME/$APP_SOLUTION_NAME.DataAccess.UnitTests/$APP_SOLUTION_NAME.DataAccess.UnitTests.csproj \
             --no-build --configuration Release \
+            "${FILTER_ARGS[@]}" \
             -p:CollectCoverage=true \
             -p:CoverletOutput=$(pwd)/src/TestResults/$APP_SOLUTION_NAME.DataAccess.coverage.opencover.xml \
             -p:CoverletOutputFormat=opencover \

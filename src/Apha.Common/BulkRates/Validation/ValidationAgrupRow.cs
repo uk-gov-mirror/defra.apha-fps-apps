@@ -3,15 +3,15 @@ namespace Apha.Common.BulkRates.Validation
     /// <summary>
     /// A staged AGRUP row. See ValidationFecRow for why this neutral shape exists.
     ///
-    /// TestBuyerCode vs TestBuyerWorkGroup (DR-DB-04/CR059, plan §3 addendum): the live
+    /// TestBuyerCode vs TestBuyerWorkGroup: the live
     /// fps.tlkptestreqmt.testbuyercode column stores a single string whose exact
-    /// TestCode+WorkGroup concatenation rule is unconfirmed (reconciliation §2.4) — DR-VAL-01
-    /// never derives or produces that value. Instead:
+    /// TestCode+WorkGroup concatenation rule is unconfirmed (reconciliation §2.4) — the shared
+    /// validator never derives or produces that value. Instead:
     ///   - TestBuyerCode carries the raw existing value, used only to detect whether an
-    ///     existing row's protected routing cell was changed (DR-API-05 immutability).
+    ///     existing row's protected routing cell was changed (immutability).
     ///   - TestBuyerWorkGroup carries the real, separately-captured WorkGroup value used for
     ///     new-row "at least one routing field populated" and capability-existence validation
-    ///     (DR-VAL-02) — never a concatenation the caller had to construct.
+    ///     — never a concatenation the caller had to construct.
     /// </summary>
     public sealed record ValidationAgrupRow
     {

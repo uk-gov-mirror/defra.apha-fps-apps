@@ -125,29 +125,29 @@ namespace Apha.FPS.Core.Interfaces
         Task<bool> FpsYearExistsAsync(int fpsYear, CancellationToken ct = default);
 
         /// <summary>
-        /// Bulk check for DR-VAL-01's ValidationContext.ProjectLookup: returns the subset of
+        /// Bulk check for ValidationContext.ProjectLookup: returns the subset of
         /// fps.tlkpproject.parentproject codes that exist for the given year.
         /// </summary>
         Task<IReadOnlySet<string>> GetExistingProjectCodesAsync(
             IEnumerable<string> parentProjectCodes, int fpsYear, CancellationToken ct = default);
 
         /// <summary>
-        /// Bulk check for DR-VAL-01's ValidationContext.CapabilityLookup (DR-VAL-02): returns
+        /// Bulk check for ValidationContext.CapabilityLookup: returns
         /// the subset of (testCode, workGroup) pairs that exist in fps.tlkptestcapability for
         /// the given year.
         /// </summary>
         Task<IReadOnlySet<(string TestCode, string WorkGroup)>> GetExistingCapabilityPairsAsync(
             IEnumerable<(string TestCode, string WorkGroup)> pairs, int fpsYear, CancellationToken ct = default);
 
-        // ── Download snapshot (DR-UI-01, CR057/CR060) ────────────────────────────
+        // ── Download snapshot ─────────────────────────────────────────────────────
 
         /// <summary>Next monotonic download_version for this request (1 if none exist yet).</summary>
         Task<int> GetNextDownloadVersionAsync(Guid jobQueueId, CancellationToken ct = default);
 
         /// <summary>
-        /// DR-UI-01 steps 1-2: creates the download_version header as 'Generating' and persists
+        /// Steps 1-2: creates the download_version header as 'Generating' and persists
         /// the immutable snapshot rows (keys, source rates, and the descriptive fields the
-        /// workbook needs to render — CR060) in one transaction.
+        /// workbook needs to render) in one transaction.
         /// </summary>
         Task CreateDownloadSnapshotAsync(
             Guid jobQueueId, int downloadVersion,
@@ -155,7 +155,7 @@ namespace Apha.FPS.Core.Interfaces
             CancellationToken ct = default);
 
         /// <summary>
-        /// DR-UI-01 step 4: marks the header 'Ready' and sets job_queue.active_download_version,
+        /// Step 4: marks the header 'Ready' and sets job_queue.active_download_version,
         /// in one transaction — only called after the workbook has been generated successfully.
         /// </summary>
         Task MarkDownloadReadyAsync(Guid jobQueueId, int downloadVersion, CancellationToken ct = default);
@@ -163,14 +163,14 @@ namespace Apha.FPS.Core.Interfaces
         /// <summary>
         /// Best-effort: marks the header 'Failed' if workbook generation throws after the
         /// snapshot already committed. active_download_version is deliberately left untouched
-        /// (plan §3, DR-UI-01) so the previous, still-valid version remains the one an upload is
+        /// so the previous, still-valid version remains the one an upload is
         /// checked against.
         /// </summary>
         Task MarkDownloadFailedAsync(Guid jobQueueId, int downloadVersion, CancellationToken ct = default);
 
         /// <summary>
-        /// DR-UI-01 step 3: reads back the just-persisted snapshot rows for a download version —
-        /// never a live requery of fps.testorproduct (plan §3).
+        /// Step 3: reads back the just-persisted snapshot rows for a download version —
+        /// never a live requery of fps.testorproduct.
         /// </summary>
         Task<IReadOnlyList<FecStagingRow>> GetFecSnapshotRowsAsync(
             Guid jobQueueId, int downloadVersion, CancellationToken ct = default);
@@ -179,21 +179,48 @@ namespace Apha.FPS.Core.Interfaces
         Task<IReadOnlyList<AgrupStagingRow>> GetAgrupSnapshotRowsAsync(
             Guid jobQueueId, int downloadVersion, CancellationToken ct = default);
 
+        /// <summary>
+        /// Staff equivalent of CreateDownloadSnapshotAsync. Persists
+        /// to fps.bulk_rates_staff_downloaded_key — a dedicated table, not a widened
+        /// fps.bulk_rates_downloaded_key, since that table is hard-restricted to FEC/AGRUP by
+        /// chk_bulk_rates_downloaded_key_sheetname (confirmed live). Both this and
+        /// CreateAnimalDownloadSnapshotAsync reuse the shared fps.bulk_rates_download header via
+        /// the same composite-FK pattern CreateDownloadSnapshotAsync already uses.
+        /// </summary>
+        Task CreateStaffDownloadSnapshotAsync(
+            Guid jobQueueId, int downloadVersion,
+            IReadOnlyList<StaffStagingRow> rows,
+            CancellationToken ct = default);
+
+        /// <summary>Staff equivalent of GetFecSnapshotRowsAsync — reads back fps.bulk_rates_staff_downloaded_key.</summary>
+        Task<IReadOnlyList<StaffStagingRow>> GetStaffSnapshotRowsAsync(
+            Guid jobQueueId, int downloadVersion, CancellationToken ct = default);
+
+        /// <summary>Animal equivalent of CreateDownloadSnapshotAsync. Persists to fps.bulk_rates_animal_downloaded_key.</summary>
+        Task CreateAnimalDownloadSnapshotAsync(
+            Guid jobQueueId, int downloadVersion,
+            IReadOnlyList<AnimalStagingRow> rows,
+            CancellationToken ct = default);
+
+        /// <summary>Animal equivalent of GetFecSnapshotRowsAsync — reads back fps.bulk_rates_animal_downloaded_key.</summary>
+        Task<IReadOnlyList<AnimalStagingRow>> GetAnimalSnapshotRowsAsync(
+            Guid jobQueueId, int downloadVersion, CancellationToken ct = default);
+
         // ── Export (live table reads for Excel download) ──────────────────────────
         Task<IReadOnlyList<FecStagingRow>> GetFecRowsForExportAsync(int fpsYear, CancellationToken ct = default);
         Task<IReadOnlyList<AgrupStagingRow>> GetAgrupRowsForExportAsync(int fpsYear, CancellationToken ct = default);
         Task<IReadOnlyList<StaffStagingRow>> GetStaffRowsForExportAsync(int fpsYear, CancellationToken ct = default);
         Task<IReadOnlyList<AnimalStagingRow>> GetAnimalRowsForExportAsync(int fpsYear, CancellationToken ct = default);
 
-        // ── DR-API-07: freeze reviewed classification onto staging (CR056) ────────
+        // ── Freeze reviewed classification onto staging ──────────────────────────
 
         /// <summary>
-        /// Writes the DR-VAL-01 classification computed at release time onto the matching
+        /// Writes the classification computed at release time onto the matching
         /// FEC/AGRUP staging rows' calculated_action/effective_new_rate/source_current_rate/
-        /// validation_version columns (CR056), keyed by business key (TestCode for FEC,
+        /// validation_version columns, keyed by business key (TestCode for FEC,
         /// TestCode+Buyer for AGRUP) — never by source row number, which is not stable across
-        /// a DB read-back. Called once, at release (DR-API-07), so DR-WK-04's worker
-        /// revalidation has a frozen baseline to detect drift against (plan §5.2).
+        /// a DB read-back. Called once, at release, so the worker's
+        /// revalidation has a frozen baseline to detect drift against.
         /// </summary>
         Task FreezeStagingCalculatedActionsAsync(
             Guid jobQueueId, int validationVersion,
@@ -201,9 +228,21 @@ namespace Apha.FPS.Core.Interfaces
             IReadOnlyList<BulkRatesFreezeEntry> agrupFreezes,
             CancellationToken ct = default);
 
-        Task FreezeStaffStagingCalculatedActionsAsync(
-            Guid jobQueueId,
-            IReadOnlyList<StaffFreezeEntry> staffFreezes,
+        /// <summary>
+        /// Staff equivalent of FreezeStagingCalculatedActionsAsync —
+        /// writes the release-time reviewed classification onto fps.tblstagingprofitcentregrade's
+        /// source_*/effective_*/calculated_action/validation_version columns, keyed by
+        /// PcGrade.
+        /// </summary>
+        Task FreezeStaffStagingAsync(
+            Guid jobQueueId, int validationVersion,
+            IReadOnlyList<StaffFreezeEntry> freezes,
+            CancellationToken ct = default);
+
+        /// <summary>As FreezeStaffStagingAsync, for Animal — fps.tblstaginganimals, keyed by AnimalType.</summary>
+        Task FreezeAnimalStagingAsync(
+            Guid jobQueueId, int validationVersion,
+            IReadOnlyList<AnimalFreezeEntry> freezes,
             CancellationToken ct = default);
     }
 }

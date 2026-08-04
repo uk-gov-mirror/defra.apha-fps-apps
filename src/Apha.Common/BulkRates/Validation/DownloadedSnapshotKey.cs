@@ -1,9 +1,9 @@
 namespace Apha.Common.BulkRates.Validation
 {
     /// <summary>
-    /// One row from fps.bulk_rates_downloaded_key (CR057/DR-DB-02) for the request's active
+    /// One row from fps.bulk_rates_downloaded_key for the request's active
     /// download version — the immutable record of what was actually downloaded, never a live
-    /// requery (plan §2.1, reconciliation §2.6).
+    /// requery (reconciliation §2.6).
     /// </summary>
     public sealed record DownloadedSnapshotKey
     {

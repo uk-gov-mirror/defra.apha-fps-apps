@@ -776,11 +776,6 @@ a {
     min-width: 3.75em !important;
 }
 
-.sup_width_55px {
-    width: 55px !important;
-    min-width: 55px !important;
-}
-
 
 .govuk-checkboxes__input {
     width: 34px;
@@ -1736,4 +1731,13 @@ table#tblMonthPeriod > tbody > tr > td {
 }
 .sup_whitespace_nowrap {
     white-space: nowrap !important;
+}
+
+/* GOV.UK's .govuk-tag caps at max-width:160px with overflow-wrap:break-word, sized for short
+   words like "Active"/"Completed". Bulk Rates status values (e.g. "ReleasedForApproval") are
+   longer and wrap onto a second line inside that width, leaving the background pill too narrow
+   for its own text. Widen the cap and force single-line so the pill grows to fit instead. */
+.govuk-tag {
+    max-width: none;
+    white-space: nowrap;
 }

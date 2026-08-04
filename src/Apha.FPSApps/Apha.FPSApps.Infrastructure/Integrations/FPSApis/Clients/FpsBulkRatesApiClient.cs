@@ -10,7 +10,7 @@ namespace Apha.FPSApps.Infrastructure.Integrations.FPSApis.Clients
 {
     /// <summary>
     /// Infrastructure implementation of <see cref="IFpsBulkRatesApiClient"/>.
-    /// Calls the FPS API Bulk Rates endpoints (Phase 3, US-API-01–US-API-14).
+    /// Calls the FPS API Bulk Rates endpoints (Phase 3).
     /// </summary>
     public class FpsBulkRatesApiClient : IFpsBulkRatesApiClient
     {
@@ -183,6 +183,20 @@ namespace Apha.FPSApps.Infrastructure.Integrations.FPSApis.Clients
         public Task<byte[]> DownloadFecTestDataForRequestAsync(Guid jobExecutionId)
         {
             var url = string.Format(FpsApiEndpoints.DownloadBulkRatesFecTestDataForRequest, jobExecutionId);
+            return _http.GetFileAsync(url);
+        }
+
+        /// <inheritdoc/>
+        public Task<byte[]> DownloadStaffTestDataForRequestAsync(Guid jobExecutionId)
+        {
+            var url = string.Format(FpsApiEndpoints.DownloadBulkRatesStaffTestDataForRequest, jobExecutionId);
+            return _http.GetFileAsync(url);
+        }
+
+        /// <inheritdoc/>
+        public Task<byte[]> DownloadAnimalTestDataForRequestAsync(Guid jobExecutionId)
+        {
+            var url = string.Format(FpsApiEndpoints.DownloadBulkRatesAnimalTestDataForRequest, jobExecutionId);
             return _http.GetFileAsync(url);
         }
 

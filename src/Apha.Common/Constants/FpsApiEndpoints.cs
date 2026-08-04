@@ -1,4 +1,4 @@
-﻿namespace Apha.Common.Constants
+namespace Apha.Common.Constants
 {
     public static class FpsApiEndpoints
     {
@@ -196,6 +196,7 @@
 
         // Resource Set-Up — WG Grades
         public const string GetWgGrades = "api/v1/wggrades?pcGrade={0}";
+        public const string GetWgGradesByWorkGroup = "api/v1/wggrades/byworkgroup?workGroup={0}";
 
         // Resource Set-Up — WG Staff
         public const string GetWgStaff = "api/v1/wgstaff?wgGrade={0}";
@@ -220,7 +221,6 @@
         public const string UpdateWorkgroupGrade = "api/v1/wggrades/{0}";
         public const string DeleteWorkgroupGrade = "api/v1/wggrades/maintain/{0}";
         public const string GetAllGradeCodes = "api/v1/wggrades/gradecodes";
-        public const string GetWgGradesByWorkGroup = "api/v1/wggrades/byworkgroup?workGroup={0}";
 
         // Generic Bid — Budget Bids
         public const string GetBids = "api/v1/budgetbids?workgroup={0}";
@@ -261,18 +261,27 @@
         public const string SaveUserPermissions = "api/v1/user/{0}/permissions";
         public const string GetPermissionOptions = "api/v1/user/options";
 
-        // TRANSFORMENGINE: WorkgroupMaintenance (frmMaintWorkGroup2 — fps.workgroup) — added Phase 6
-        // CRUD endpoints
-        public const string GetPagedWorkgroups = "api/v1/workgroup/paged";
-        public const string GetWorkgroupByName = "api/v1/workgroup/{0}";
-        public const string CreateWorkgroup = "api/v1/workgroup";
-        public const string UpdateWorkgroup = "api/v1/workgroup/{0}";
-        public const string DeleteWorkgroup = "api/v1/workgroup/{0}";
-        // Lookup endpoints (separate from CRUD resource family)
-        public const string GetWorkgroupProfitCentres = "api/v1/workgroup/profitcentres";
-        public const string GetWorkgroupOwners = "api/v1/workgroup/owners";
-        public const string GetWorkgroupCostCentres = "api/v1/workgroup/costcentres?profitCentre={0}";
-        // Cost Centre Maintenance (frmMaintCostCentres → api/v1/costcentre) — added Phase 7
+        // Bulk Rates Update (FEC Phase 3)
+        public const string CreateBulkRatesRequest = "api/v1/bulk-rates/requests";
+        public const string GetBulkRatesRequests = "api/v1/bulk-rates/requests";
+        public const string GetActiveBulkRatesRequest = "api/v1/bulk-rates/requests/active?jobName={0}";
+        public const string GetBulkRatesRequest = "api/v1/bulk-rates/requests/{0}";
+        public const string UploadBulkRatesFile = "api/v1/bulk-rates/requests/{0}/upload";
+        public const string GetBulkRatesValidation = "api/v1/bulk-rates/requests/{0}/validation";
+        public const string ReleaseBulkRatesRequest = "api/v1/bulk-rates/requests/{0}/release";
+        public const string ApproveBulkRatesRequest = "api/v1/bulk-rates/requests/{0}/approve";
+        public const string RejectBulkRatesRequest = "api/v1/bulk-rates/requests/{0}/reject";
+        public const string CancelBulkRatesRequest = "api/v1/bulk-rates/requests/{0}/cancel";
+        public const string DownloadBulkRatesFecTestDataForRequest = "api/v1/bulk-rates/requests/{0}/download";
+        public const string DownloadBulkRatesStaffTestDataForRequest = "api/v1/bulk-rates/requests/{0}/download/staff";
+        public const string DownloadBulkRatesAnimalTestDataForRequest = "api/v1/bulk-rates/requests/{0}/download/animal";
+        public const string ExportBulkRatesFecTestData = "api/v1/bulk-rates/export?fpsYear={0}";
+        public const string ExportBulkRatesStaffTestData = "api/v1/bulk-rates/export/staff?fpsYear={0}";
+        public const string ExportBulkRatesAnimalTestData = "api/v1/bulk-rates/export/animal?fpsYear={0}";
+        public const string GetBulkRatesStagingData = "api/v1/bulk-rates/requests/{0}/staging";
+        public const string ExportBulkRatesStagingData = "api/v1/bulk-rates/requests/{0}/staging/export";
+
+        // Cost Centre Maintenance (frmMaintCostCentres → api/v1/costcentre)
         public const string GetAllCostCentres = "api/v1/costcentre";
         public const string GetPagedCostCentres = "api/v1/costcentre/paged";
         public const string GetCostCentreById = "api/v1/costcentre/{0}";
@@ -289,23 +298,5 @@
         public const string GetResourceMgmtReplanStaffJobs = "api/v1/resourcemgmtreplan/staffjobs";
         public const string GetResourceMgmtReplanStaged = "api/v1/resourcemgmtreplan/staged";
         public const string CommitResourceMgmtReplan = "api/v1/resourcemgmtreplan/commit";
-
-        // Bulk Rates
-        public const string CreateBulkRatesRequest = "api/v1/bulk-rates/requests";
-        public const string UploadBulkRatesFile = "api/v1/bulk-rates/requests/{0}/upload";
-        public const string GetBulkRatesValidation = "api/v1/bulk-rates/requests/{0}/validation";
-        public const string ReleaseBulkRatesRequest = "api/v1/bulk-rates/requests/{0}/release";
-        public const string ApproveBulkRatesRequest = "api/v1/bulk-rates/requests/{0}/approve";
-        public const string RejectBulkRatesRequest = "api/v1/bulk-rates/requests/{0}/reject";
-        public const string CancelBulkRatesRequest = "api/v1/bulk-rates/requests/{0}/cancel";
-        public const string GetBulkRatesRequest = "api/v1/bulk-rates/requests/{0}";
-        public const string GetBulkRatesRequests = "api/v1/bulk-rates/requests";
-        public const string GetActiveBulkRatesRequest = "api/v1/bulk-rates/requests/active?jobName={0}";
-        public const string GetBulkRatesStagingData = "api/v1/bulk-rates/requests/{0}/staging";
-        public const string DownloadBulkRatesFecTestDataForRequest = "api/v1/bulk-rates/requests/{0}/download";
-        public const string ExportBulkRatesFecTestData = "api/v1/bulk-rates/export?fpsYear={0}";
-        public const string ExportBulkRatesStaffTestData = "api/v1/bulk-rates/export/staff?fpsYear={0}";
-        public const string ExportBulkRatesAnimalTestData = "api/v1/bulk-rates/export/animal?fpsYear={0}";
-        public const string ExportBulkRatesStagingData = "api/v1/bulk-rates/requests/{0}/staging/export";
     }
 }

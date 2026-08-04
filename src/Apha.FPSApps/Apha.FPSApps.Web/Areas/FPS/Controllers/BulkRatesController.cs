@@ -9,7 +9,9 @@ using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Identity.Web;
+using Newtonsoft.Json;
 using System.Collections;
+using System.Reflection;
 using System.Security.Claims;
 
 namespace Apha.FPSApps.Web.Areas.FPS.Controllers
@@ -38,6 +40,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             _mapper = mapper;
         }
 
+        // Queue list — all requests, filterable
         public Task<IActionResult> Index(string? jobName = JobNameFec, string? status = null)
             => BuildIndexViewAsync(jobName, status, isLocked: false);
 
@@ -81,6 +84,9 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             return View("Index", vm);
         }
 
+        // Queue grid AJAX reload — paging, sorting, and job/status filtering. FPS year is
+        // not client-controllable — it always comes from the app-wide year context (header selector),
+        // matching every other year-scoped screen, not a separately overridable grid filter.
         [HttpPost]
         public async Task<IActionResult> LoadBulkRatesGrid(
             PaginationFilter<string> request, string? jobName, string? status)
@@ -134,6 +140,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             };
         }
 
+        // Create request — GET form
         [HttpGet]
         public async Task<IActionResult> Create(string jobName = JobNameFec)
         {
@@ -153,6 +160,9 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             });
         }
 
+        // Create request — POST (AJAX)
+        // FPS year is not user-selectable: the posted fpsYear is ignored and the header
+        // year-context value is used instead, enforced server-side regardless of client input.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(string jobName, int fpsYear)
@@ -166,6 +176,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             return Json(new { success = false, message = msg });
         }
 
+        // Request detail page — GET
         [HttpGet]
         public async Task<IActionResult> Detail(Guid id)
         {
@@ -176,7 +187,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
                 if (!requestResponse.Success || requestResponse.Data == null)
                 {
                     TempData["ErrorMessage"] = "The requested bulk rates entry could not be found.";
-                    return RedirectToAction(nameof(Index), new { year = _fpsYearContext.Year });
+                    return RedirectToAction(nameof(Index));
                 }
                 requestData = requestResponse.Data;
             }
@@ -184,7 +195,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             {
                 _logger.LogError(ex, "BulkRates Detail failed for {Id}", id);
                 TempData["ErrorMessage"] = "Unable to load the request details. Please try again.";
-                return RedirectToAction(nameof(Index), new { year = _fpsYearContext.Year });
+                return RedirectToAction(nameof(Index));
             }
 
             var validationResponse = await _bulkRatesService.GetValidationResultsAsync(id);
@@ -207,10 +218,12 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
                     BuildAgrupValidationLookup(uploadResult), AgrupValidationKey),
                 StaffStagingGrid = BuildStagingGridConfig<BulkRatesStagingStaffRowDto, StaffStagingGridItem>(
                     staging.StaffRows, defaultRequest, "staffStagingGrid", "PcGrade",
-                    StaffStagingGridUrl(id), StaffSortSelector),
+                    StaffStagingGridUrl(id), StaffSortSelector,
+                    BuildStaffValidationLookup(uploadResult), r => r.PcGrade),
                 AnimalStagingGrid = BuildStagingGridConfig<BulkRatesStagingAnimalRowDto, AnimalStagingGridItem>(
                     staging.AnimalRows, defaultRequest, "animalStagingGrid", "AnimalType",
-                    AnimalStagingGridUrl(id), AnimalSortSelector)
+                    AnimalStagingGridUrl(id), AnimalSortSelector,
+                    BuildAnimalValidationLookup(uploadResult), r => r.AnimalType)
             };
             return View(vm);
         }
@@ -258,9 +271,11 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
                 return Json(new { success = false, message = "Invalid request data" });
 
             var staging = await GetStagingDataOrEmptyAsync(jobExecutionId);
+            var validationResponse = await _bulkRatesService.GetValidationResultsAsync(jobExecutionId);
             var gridConfig = BuildStagingGridConfig<BulkRatesStagingStaffRowDto, StaffStagingGridItem>(
                 staging.StaffRows, request, "staffStagingGrid", "PcGrade",
-                StaffStagingGridUrl(jobExecutionId), StaffSortSelector);
+                StaffStagingGridUrl(jobExecutionId), StaffSortSelector,
+                BuildStaffValidationLookup(validationResponse.Success ? validationResponse.Data : null), r => r.PcGrade);
             return PartialView("_DataGrid", gridConfig);
         }
 
@@ -271,9 +286,11 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
                 return Json(new { success = false, message = "Invalid request data" });
 
             var staging = await GetStagingDataOrEmptyAsync(jobExecutionId);
+            var validationResponse = await _bulkRatesService.GetValidationResultsAsync(jobExecutionId);
             var gridConfig = BuildStagingGridConfig<BulkRatesStagingAnimalRowDto, AnimalStagingGridItem>(
                 staging.AnimalRows, request, "animalStagingGrid", "AnimalType",
-                AnimalStagingGridUrl(jobExecutionId), AnimalSortSelector);
+                AnimalStagingGridUrl(jobExecutionId), AnimalSortSelector,
+                BuildAnimalValidationLookup(validationResponse.Success ? validationResponse.Data : null), r => r.AnimalType);
             return PartialView("_DataGrid", gridConfig);
         }
 
@@ -292,7 +309,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
 
         // Row-level findings are matched onto a staged row by business key (TestCode for FEC,
         // TestCode+Buyer for AGRUP) so they can render inline in the grid instead of a separate
-        // Findings with no TestCode (file-parse errors, request-level findings)
+        // modal. Findings with no TestCode (file-parse errors, request-level findings)
         // aren't in either lookup and are listed on the page instead — see Detail.cshtml.
         private static Dictionary<string, string> BuildFecValidationLookup(BulkRatesUploadResultDto? uploadResult)
         {
@@ -312,6 +329,33 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             return uploadResult.ValidationErrors
                 .Where(e => !string.IsNullOrEmpty(e.TestCode) && !string.IsNullOrEmpty(e.Buyer))
                 .GroupBy(e => $"{e.TestCode}|{e.Buyer}", StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(
+                    g => g.Key,
+                    g => string.Join("; ", g.Select(e => $"{e.Severity}: {e.ValidationMessage}")),
+                    StringComparer.OrdinalIgnoreCase);
+        }
+
+        // Staff/Animal findings key TestCode by PcGrade/AnimalType respectively (set in
+        // BulkRatesValidator.ValidateStaff/ValidateAnimal) — same generic business-key mechanism
+        // FEC/AGRUP use with their own TestCode, not a literal test code for these two job types.
+        private static Dictionary<string, string> BuildStaffValidationLookup(BulkRatesUploadResultDto? uploadResult)
+        {
+            if (uploadResult == null) return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            return uploadResult.ValidationErrors
+                .Where(e => !string.IsNullOrEmpty(e.TestCode))
+                .GroupBy(e => e.TestCode!, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(
+                    g => g.Key,
+                    g => string.Join("; ", g.Select(e => $"{e.Severity}: {e.ValidationMessage}")),
+                    StringComparer.OrdinalIgnoreCase);
+        }
+
+        private static Dictionary<string, string> BuildAnimalValidationLookup(BulkRatesUploadResultDto? uploadResult)
+        {
+            if (uploadResult == null) return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            return uploadResult.ValidationErrors
+                .Where(e => !string.IsNullOrEmpty(e.TestCode))
+                .GroupBy(e => e.TestCode!, StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(
                     g => g.Key,
                     g => string.Join("; ", g.Select(e => $"{e.Severity}: {e.ValidationMessage}")),
@@ -381,9 +425,18 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             var pageSize = request.PageSize < 1 ? 10 : request.PageSize;
             var keySelector = sortKeySelector(request.SortBy);
 
+            var filterDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(request.Filter ?? "{}")
+                ?? new Dictionary<string, string>();
+
+            // In-memory filter, same case-insensitive "contains" semantics as
+            // ProfitCentreGradeRepository.ApplyFilter's EF.Functions.ILike — proportionate here
+            // because staging rows for a single request are already fully fetched in memory
+            // (see BuildStagingGridConfig's original paging/sorting comment).
+            var filteredRows = ApplyFilters(rows, filterDict);
+
             var ordered = request.Descending
-                ? rows.OrderByDescending(keySelector, NullSafeComparer.Instance)
-                : rows.OrderBy(keySelector, NullSafeComparer.Instance);
+                ? filteredRows.OrderByDescending(keySelector, NullSafeComparer.Instance)
+                : filteredRows.OrderBy(keySelector, NullSafeComparer.Instance);
 
             var pageRows = ordered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
             var items = _mapper.Map<List<TItem>>(pageRows);
@@ -417,13 +470,43 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
                 Columns = GridDataProvider.GetColumnsDefination<TItem>(null),
                 Pagination = new PaginationModel
                 {
-                    TotalRecords = rows.Count,
+                    TotalRecords = filteredRows.Count,
                     PageNumber = page,
                     PageSize = pageSize,
                     SortColumn = request.SortBy,
                     SortDirection = request.Descending
-                }
+                },
+                CurrentFilters = filterDict
             };
+        }
+
+        // Reflection-based, case-insensitive "contains" match per filter key (matching
+        // ProfitCentreGradeRepository.ApplyFilter's ILike semantics). Filter dict keys come from
+        // the grid item's column PropertyName (_DataGrid.cshtml's data-filter attribute), and
+        // TRow/TItem property names are required to match 1:1 by convention (see the "Property
+        // names must match ...Dto" comments on each staging grid item class), so looking the
+        // property up on TRow directly is safe.
+        private static List<TRow> ApplyFilters<TRow>(IReadOnlyList<TRow> rows, Dictionary<string, string> filterDict)
+        {
+            if (filterDict.Count == 0)
+                return rows.ToList();
+
+            IEnumerable<TRow> filtered = rows;
+            foreach (var (propertyName, value) in filterDict)
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                    continue;
+
+                var property = typeof(TRow).GetProperty(
+                    propertyName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                if (property == null)
+                    continue;
+
+                filtered = filtered.Where(r =>
+                    (property.GetValue(r)?.ToString() ?? string.Empty)
+                        .Contains(value, StringComparison.OrdinalIgnoreCase));
+            }
+            return filtered.ToList();
         }
 
         // OrderBy/OrderByDescending need an IComparer<object?> since staging columns span
@@ -461,6 +544,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             }
         }
 
+        // Upload (or re-upload) Excel file — POST (AJAX)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Upload(Guid id, IFormFile file)
@@ -481,6 +565,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             return Json(new { success = false, message = msg });
         }
 
+        // Release for approval — POST (AJAX)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Release(Guid id)
@@ -494,6 +579,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             return Json(new { success = false, message = msg });
         }
 
+        // Approve — POST (AJAX)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Approve(Guid id)
@@ -507,6 +593,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             return Json(new { success = false, message = msg });
         }
 
+        // Reject with mandatory reason — POST (AJAX)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Reject(Guid id, string reason)
@@ -523,6 +610,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             return Json(new { success = false, message = msg });
         }
 
+        // Cancel — POST (AJAX)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Cancel(Guid id, string? reason)
@@ -552,10 +640,11 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             {
                 _logger.LogError(ex, "BulkRates DownloadTestData failed for year {Year}", fpsYear);
                 TempData["ErrorMessage"] = "The FEC test data could not be downloaded. Please try again.";
-                return RedirectToAction(nameof(Index), new { year = fpsYear });
+                return RedirectToAction(nameof(Index));
             }
         }
 
+        // Download FEC test data snapshot atomically tied to a specific request.
         [HttpGet]
         public async Task<IActionResult> DownloadTestDataForRequest(Guid id)
         {
@@ -575,16 +664,54 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             }
         }
 
+        // Download Staff test data snapshot atomically tied to a specific request.
+        [HttpGet]
+        public async Task<IActionResult> DownloadStaffTestDataForRequest(Guid id)
+        {
+            try
+            {
+                var bytes = await _bulkRatesService.DownloadStaffTestDataForRequestAsync(id);
+                var fileName = $"Staff_TestRates_{id}.xlsx";
+                return File(bytes,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    fileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "BulkRates DownloadStaffTestDataForRequest failed for request {Id}", id);
+                TempData["ErrorMessage"] = "The Staff test data could not be downloaded. Please try again.";
+                return RedirectToAction(nameof(Detail), new { id });
+            }
+        }
+
+        // As DownloadStaffTestDataForRequest, for Animal.
+        [HttpGet]
+        public async Task<IActionResult> DownloadAnimalTestDataForRequest(Guid id)
+        {
+            try
+            {
+                var bytes = await _bulkRatesService.DownloadAnimalTestDataForRequestAsync(id);
+                var fileName = $"Animal_TestRates_{id}.xlsx";
+                return File(bytes,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    fileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "BulkRates DownloadAnimalTestDataForRequest failed for request {Id}", id);
+                TempData["ErrorMessage"] = "The Animal test data could not be downloaded. Please try again.";
+                return RedirectToAction(nameof(Detail), new { id });
+            }
+        }
+
         // Download current year Staff test data as Excel
         [HttpGet]
-        public async Task<IActionResult> DownloadStaffTestData(int fpsYear, Guid? id = null)
+        public async Task<IActionResult> DownloadStaffTestData(int fpsYear)
         {
             try
             {
                 var bytes = await _bulkRatesService.DownloadStaffTestDataAsync(fpsYear);
-                var fileName = id.HasValue
-                    ? $"Staff_Rates_{id}.xlsx"
-                    : $"Staff_Rates_{fpsYear}.xlsx";
+                var fileName = $"Staff_TestRates_{fpsYear}.xlsx";
                 return File(bytes,
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     fileName);
@@ -593,20 +720,18 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             {
                 _logger.LogError(ex, "BulkRates DownloadStaffTestData failed for year {Year}", fpsYear);
                 TempData["ErrorMessage"] = "The Staff test data could not be downloaded. Please try again.";
-                return RedirectToAction(nameof(Index), new { year = fpsYear });
+                return RedirectToAction(nameof(Index));
             }
         }
 
         // Download current year Animal test data as Excel
         [HttpGet]
-        public async Task<IActionResult> DownloadAnimalTestData(int fpsYear, Guid? id = null)
+        public async Task<IActionResult> DownloadAnimalTestData(int fpsYear)
         {
             try
             {
                 var bytes = await _bulkRatesService.DownloadAnimalTestDataAsync(fpsYear);
-                var fileName = id.HasValue
-                    ? $"Animal_Rates_{id}.xlsx"
-                    : $"Animal_Rates_{fpsYear}.xlsx";
+                var fileName = $"Animal_TestRates_{fpsYear}.xlsx";
                 return File(bytes,
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     fileName);
@@ -615,7 +740,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             {
                 _logger.LogError(ex, "BulkRates DownloadAnimalTestData failed for year {Year}", fpsYear);
                 TempData["ErrorMessage"] = "The Animal test data could not be downloaded. Please try again.";
-                return RedirectToAction(nameof(Index), new { year = fpsYear });
+                return RedirectToAction(nameof(Index));
             }
         }
 

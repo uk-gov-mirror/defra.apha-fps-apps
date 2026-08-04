@@ -122,7 +122,7 @@ namespace Apha.FPSApps.Web.Middleware
         private static int GetCurrentFPSYear()
         {
             var today = DateTime.Today;
-            return today.Month >= 4 ? 2025 : today.Year - 1;
+            return today.Month >= 4 ? today.Year : today.Year - 1;
         }
     }
 }

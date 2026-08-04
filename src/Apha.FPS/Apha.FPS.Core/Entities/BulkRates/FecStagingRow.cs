@@ -19,8 +19,8 @@ namespace Apha.FPS.Core.Entities.BulkRates
         public string? Comments { get; set; }
         public string? ValidationComments { get; set; }
 
-        // ── CR056/DR-API-07: frozen at release time, compared against the worker's
-        // re-derived result (DR-WK-04 §5.2 drift check). Null until release. ──────────
+        // ── Frozen at release time, compared against the worker's
+        // re-derived result for drift detection. Null until release. ──────────
         public string? CalculatedAction { get; set; }
         public decimal? EffectiveNewRate { get; set; }
         public decimal? SourceCurrentRate { get; set; }

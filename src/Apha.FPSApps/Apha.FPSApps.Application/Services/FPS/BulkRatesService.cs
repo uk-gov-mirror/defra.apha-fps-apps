@@ -46,6 +46,12 @@ namespace Apha.FPSApps.Application.Services.FPS
         public Task<byte[]> DownloadFecTestDataForRequestAsync(Guid jobExecutionId)
             => _fpsClient.FpsBulkRates.DownloadFecTestDataForRequestAsync(jobExecutionId);
 
+        public Task<byte[]> DownloadStaffTestDataForRequestAsync(Guid jobExecutionId)
+            => _fpsClient.FpsBulkRates.DownloadStaffTestDataForRequestAsync(jobExecutionId);
+
+        public Task<byte[]> DownloadAnimalTestDataForRequestAsync(Guid jobExecutionId)
+            => _fpsClient.FpsBulkRates.DownloadAnimalTestDataForRequestAsync(jobExecutionId);
+
         public Task<byte[]> DownloadFecTestDataAsync(int fpsYear)
             => _fpsClient.FpsBulkRates.DownloadFecTestDataAsync(fpsYear);
 
