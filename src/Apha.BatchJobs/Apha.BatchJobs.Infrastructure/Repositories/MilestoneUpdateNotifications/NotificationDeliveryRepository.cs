@@ -18,7 +18,7 @@ namespace Apha.BatchJobs.Infrastructure.Repositories.MilestoneUpdateNotification
 ///
 /// All write methods that touch <c>fps.notification_delivery</c> are expected to be called
 /// while <c>fps.job_lock</c> is held by <c>JobOrchestrator</c> — the lock is the primary
-/// protection against cross-execution races (plan §11, §12).
+/// protection against cross-execution races.
 /// </summary>
 public sealed class NotificationDeliveryRepository : INotificationDeliveryRepository
 {
@@ -176,7 +176,7 @@ public sealed class NotificationDeliveryRepository : INotificationDeliveryReposi
     }
 
     // -----------------------------------------------------------------------
-    // Three-outcome business-key check (plan §11.2, §12)
+    // Three-outcome business-key check
     // -----------------------------------------------------------------------
 
     /// <inheritdoc />
@@ -254,7 +254,7 @@ public sealed class NotificationDeliveryRepository : INotificationDeliveryReposi
     }
 
     // -----------------------------------------------------------------------
-    // Delivery row lifecycle (plan §11, write order)
+    // Delivery row lifecycle (write order)
     // -----------------------------------------------------------------------
 
     /// <inheritdoc />

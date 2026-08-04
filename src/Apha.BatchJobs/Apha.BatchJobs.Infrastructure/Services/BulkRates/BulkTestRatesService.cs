@@ -20,14 +20,14 @@ namespace Apha.BatchJobs.Infrastructure.Services.BulkRates;
 /// inside a single database transaction, then writes permanent history and
 /// clears request-scoped staging rows on success.
 ///
-/// DR-WK-01/02/03/04 (plan §5): revalidates against the shared
-/// <see cref="IBulkRatesValidationService"/> (DR-VAL-01) inside the same transaction that
-/// applies the changes, against rows locked with SELECT ... FOR UPDATE (plan §5.1) — not
+/// Revalidates against the shared
+/// <see cref="IBulkRatesValidationService"/> inside the same transaction that
+/// applies the changes, against rows locked with SELECT ... FOR UPDATE — not
 /// before the transaction opens, and not against an unlocked read. The re-derived
-/// per-row classification is compared against the calculated_action frozen at release time
-/// (DR-API-07, CR056); a disagreement means live reference data changed since release in a
+/// per-row classification is compared against the calculated_action frozen at release time;
+/// a disagreement means live reference data changed since release in a
 /// way that would alter what the approver reviewed, so the request fails rather than
-/// silently applying a different outcome (plan §5.2).
+/// silently applying a different outcome.
 /// </summary>
 public sealed class BulkTestRatesService : IBulkTestRatesService
 {
@@ -58,7 +58,7 @@ public sealed class BulkTestRatesService : IBulkTestRatesService
         // is safe: this request's own status/staging identity cannot change concurrently —
         // JobOrchestrator's job-name lock guarantees only one worker execution of this
         // JobQueueId runs at a time, and staging rows are frozen (no re-upload permitted)
-        // once a request reaches Approved. The race plan §5.1 actually closes is on the
+        // once a request reaches Approved. The remaining race is on the
         // *live* fps.testorproduct/fps.tlkptestreqmt rows, which is why those specifically
         // move inside the transaction under FOR UPDATE below.
         var entry = await _repository.GetRunningRequestAsync(context.JobExecutionId, cancellationToken)
@@ -106,8 +106,8 @@ public sealed class BulkTestRatesService : IBulkTestRatesService
         var conn = (NpgsqlConnection)dbContext.Database.GetDbConnection();
         await using (var tx = await conn.BeginTransactionAsync(cancellationToken))
         {
-            // ── Plan §5.1 steps 4-5: lock the specific live rows this upload targets,
-            // then revalidate against them under that lock. ──────────────────────────
+            // ── Lock the specific live rows this upload targets, then revalidate against
+            // them under that lock. ──────────────────────────
             var testCodes = fecRows.Select(r => r.TestCode)
                 .Concat(agrupRows.Select(r => r.TestCode))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -173,8 +173,8 @@ public sealed class BulkTestRatesService : IBulkTestRatesService
                 StagedAgrupRows = stagedAgrup,
                 FrozenSnapshot = frozenSnapshot,
                 // Worker-only: BC-05 interim check for a live positive AGRUP row under a
-                // withdrawn FEC TestCode that was never part of the download snapshot
-                // (plan §5.2) — must never run at API release time (ValidationContext docs).
+                // withdrawn FEC TestCode that was never part of the download snapshot —
+                // must never run at API release time (ValidationContext docs).
                 IncludeWorkerOnlyChecks = true
             };
 
@@ -197,7 +197,7 @@ public sealed class BulkTestRatesService : IBulkTestRatesService
                 .Where(f => f.ValidationCode == "ROW_CLASSIFIED" && string.Equals(f.Sheet, "AGRUP", StringComparison.OrdinalIgnoreCase))
                 .ToDictionary(f => SplitAgrupBusinessKey(f.BusinessKey!));
 
-            // Plan §5.2 drift check — the frozen calculated_action (DR-API-07) must still
+            // Drift check — the frozen calculated_action must still
             // match what re-derivation just computed against the locked live rows, AND the
             // live source rate itself must still match what was frozen at release. The approver
             // approved a specific decision against a specific source state (source_current_rate);
@@ -377,7 +377,7 @@ public sealed class BulkTestRatesService : IBulkTestRatesService
         }
     }
 
-    // ── Plan §5.2 drift check ────────────────────────────────────────────────
+    // ── Drift check ────────────────────────────────────────────────
 
     private static void AssertNoDrift(
         string businessKey, string? frozenAction, decimal? frozenEffectiveRate,
@@ -388,10 +388,10 @@ public sealed class BulkTestRatesService : IBulkTestRatesService
         {
             throw new InvalidOperationException(
                 $"BulkTestRatesUpdate: staging row '{businessKey}' for JobQueueId={jobQueueId:D} has no frozen " +
-                "calculated_action — release-time freeze (DR-API-07) did not run for this row.");
+                "calculated_action — release-time freeze did not run for this row.");
         }
 
-        // Plan §5.2 source-drift check: the approver approved a specific decision against a
+        // Source-drift check: the approver approved a specific decision against a
         // specific source state — CalculatedAction/EffectiveNewRate alone can't detect the live
         // rate moving to a third value, since EffectiveNewRate is deterministic from the staged
         // rate (not the live baseline) and the action label doesn't change just because the
@@ -425,9 +425,9 @@ public sealed class BulkTestRatesService : IBulkTestRatesService
                 "Live reference data changed since release; failing rather than applying an unreviewed outcome.");
         }
 
-        // Plan §7.5 audit-completeness guarantee: the value about to be written to
-        // rate_change_history.newvalue must be provably identical to the value DR-API-07 froze
-        // as "approved," not merely an action that happens to share a name. EffectiveNewRate is
+        // Audit-completeness guarantee: the value about to be written to
+        // rate_change_history.newvalue must be provably identical to the value frozen at release
+        // time as "approved," not merely an action that happens to share a name. EffectiveNewRate is
         // deterministic from the staged rate for a given CalculatedAction (see
         // BulkRatesValidationService's classification branches), so this should never actually
         // fire — it turns that implicit invariant into an enforced one rather than an inferred one.
@@ -450,7 +450,7 @@ public sealed class BulkTestRatesService : IBulkTestRatesService
     // ── FEC helpers ─────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Locks and reads the live fps.testorproduct rows this upload targets (plan §5.1 step 4).
+    /// Locks and reads the live fps.testorproduct rows this upload targets.
     /// Scoped to only the TestCodes present in this request's staging, not the whole year.
     /// </summary>
     private static async Task<Dictionary<string, LiveFecRow>> GetFecRowsForUpdateAsync(
@@ -532,8 +532,8 @@ public sealed class BulkTestRatesService : IBulkTestRatesService
 
     /// <summary>
     /// Locks and reads every live fps.tlkptestreqmt row under any TestCode this upload
-    /// targets (plan §5.1 step 4) — by TestCode, not by the exact staged (TestCode,Buyer)
-    /// keys, so the BC-05 interim check (plan §5.2) can see AGRUP buyers never present in
+    /// targets — by TestCode, not by the exact staged (TestCode,Buyer)
+    /// keys, so the BC-05 interim check can see AGRUP buyers never present in
     /// the upload at all, not only the ones the staged rows happen to touch.
     /// </summary>
     private static async Task<Dictionary<(string TestCode, string Buyer), LiveAgrupRow>> GetAgrupRowsForUpdateAsync(
@@ -585,7 +585,7 @@ public sealed class BulkTestRatesService : IBulkTestRatesService
     {
         await using var cmd = conn.CreateCommand();
         cmd.Transaction = tx;
-        // DR-WK-03: use the staged routing fields (CR056) instead of the old hardcoded
+        // Use the staged routing fields instead of the old hardcoded
         // ProjectBuyerCode = Buyer / omitted TestBuyerCode — supersedes tracker A-14
         // (reconciliation §2.4, superseded-not-edited per that doc's own ground rule).
         cmd.CommandText = @"
@@ -612,7 +612,7 @@ public sealed class BulkTestRatesService : IBulkTestRatesService
         await using var cmd = conn.CreateCommand();
         cmd.Transaction = tx;
         // Spec §2.3: Update UnitPrice only; do not touch NoRequired, DateCreated, Active,
-        // ProjectBuyerCode/TestBuyerCode (existing-row routing immutability, DR-API-05).
+        // ProjectBuyerCode/TestBuyerCode (existing-row routing immutability).
         cmd.CommandText = @"
             UPDATE fps.tlkptestreqmt
             SET unitprice = @unitprice
@@ -624,7 +624,7 @@ public sealed class BulkTestRatesService : IBulkTestRatesService
         await cmd.ExecuteNonQueryAsync(ct);
     }
 
-    // ── Reference lookups (bulk, scoped to this upload only — plan §3.2/§7.6) ──────
+    // ── Reference lookups (bulk, scoped to this upload only) ──────
 
     private static async Task<IReadOnlySet<string>> GetExistingProjectCodesAsync(
         NpgsqlConnection conn, NpgsqlTransaction tx,
@@ -661,7 +661,7 @@ public sealed class BulkTestRatesService : IBulkTestRatesService
 
         await using var cmd = conn.CreateCommand();
         cmd.Transaction = tx;
-        // Two real columns (testcode, workgroup) — DR-VAL-02, never a concatenated string.
+        // Two real columns (testcode, workgroup) — never a concatenated string.
         cmd.CommandText = @"
             SELECT c.testcode, c.workgroup
             FROM fps.tlkptestcapability c
@@ -685,7 +685,7 @@ public sealed class BulkTestRatesService : IBulkTestRatesService
     }
 
     /// <summary>
-    /// Reads the immutable download snapshot (CR057) for the request's active download
+    /// Reads the immutable download snapshot for the request's active download
     /// version — never a live requery (reconciliation §2.6).
     /// </summary>
     private static async Task<List<DownloadedSnapshotKey>> GetSnapshotRowsAsync(
@@ -774,7 +774,7 @@ public sealed class BulkTestRatesService : IBulkTestRatesService
                oldValue, newValue, changeType,
                c.RequestedBy, c.ApprovedBy, c.AppliedAt);
 
-    // ── testreq_log write (DR-WK-testreq) ───────────────────────────────────
+    // ── testreq_log write ───────────────────────────────────
     // Restores the legacy trigger-equivalent row snapshot in fps.testreq_log.
     // Always insert_delete='I' for Insert, Update, and ZeroRateWithdrawal (the final
     // live row image after the change is applied). 'D' is reserved for physical Delete

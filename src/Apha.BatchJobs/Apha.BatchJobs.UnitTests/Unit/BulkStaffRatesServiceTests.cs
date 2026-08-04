@@ -4,6 +4,7 @@ using Apha.BatchJobs.Domain.Entities.BulkRates;
 using Apha.BatchJobs.Domain.Interfaces;
 using Apha.BatchJobs.Infrastructure.Data;
 using Apha.BatchJobs.Infrastructure.Services.BulkRates;
+using Apha.Common.BulkRates.Validation.StaffAnimal;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
@@ -33,10 +34,13 @@ public sealed class BulkStaffRatesServiceTests
             ApprovedBy:       approvedBy,
             ApprovedAtUtc:    DateTime.UtcNow);
 
-    private static BulkStaffRatesService CreateService(IBulkRatesRepository? repo = null)
+    private static BulkStaffRatesService CreateService(
+        IBulkRatesRepository? repo = null,
+        IStaffAnimalValidationService? validationService = null)
         => new(
             Substitute.For<IDbContextFactory<BatchJobsDbContext>>(),
             repo ?? Substitute.For<IBulkRatesRepository>(),
+            validationService ?? new StaffAnimalValidationService(),
             NullLogger<BulkStaffRatesService>.Instance);
 
     // ── GetRunningRequestAsync returns null ──────────────────────────────────

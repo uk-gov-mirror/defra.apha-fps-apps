@@ -9,4 +9,14 @@ public sealed record StaffStagingRow(
     string PcGrade,
     decimal? PayRate,
     decimal? Npr,
-    decimal? Ohr);
+    decimal? Ohr,
+    // Frozen at release time,
+    // compared against the worker's re-derived result (§6 drift check). Null until release.
+    string? CalculatedAction = null,
+    decimal? SourcePayRate = null,
+    decimal? SourceNpr = null,
+    decimal? SourceOhr = null,
+    decimal? EffectivePayRate = null,
+    decimal? EffectiveNpr = null,
+    decimal? EffectiveOhr = null,
+    int? ValidationVersion = null);

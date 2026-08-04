@@ -7,13 +7,13 @@ using Microsoft.Extensions.Options;
 namespace Apha.BatchJobs.Infrastructure.Repositories.MilestoneUpdateNotifications;
 
 /// <summary>
-/// Builds and sends the post-run CAPS completion email (plan §13, spec §15) and
+/// Builds and sends the post-run CAPS completion email (spec §15) and
 /// records the outcome in <c>fps.notification_run_summary</c> via
 /// <see cref="INotificationDeliveryRepository.FinalizeRunSummaryAsync"/>.
 ///
 /// Non-fatal by design: any exception (other than <see cref="OperationCanceledException"/>)
 /// is caught, logged as a warning, and the run summary is finalized as <c>Failed</c>.
-/// A CAPS send failure must never propagate as a job failure (plan §13, §16).
+/// A CAPS send failure must never propagate as a job failure.
 /// </summary>
 public sealed class CapsSummaryService : ICapsSummaryService
 {

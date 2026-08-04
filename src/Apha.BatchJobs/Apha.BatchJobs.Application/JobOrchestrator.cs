@@ -194,7 +194,7 @@ public sealed class JobOrchestrator : IJobOrchestrator
         var jobQueueId = existingExecution.JobQueueId;
         var lockName = ResolveLockName(jobName);
         _logger.LogInformation(
-            "[Worker → DB] ✓ Fetched Initiated record | JobName={JobName} | JobExecutionId={JobExecutionId} | JobQueueId={JobQueueId} | CurrentStatus={CurrentStatus}",
+            "[Worker → DB] ✓ Fetched pre-created execution record | JobName={JobName} | JobExecutionId={JobExecutionId} | JobQueueId={JobQueueId} | CurrentStatus={CurrentStatus}",
             jobName, jobExecutionId, jobQueueId, existingExecution.Status);
 
         _logger.LogInformation(
@@ -226,7 +226,9 @@ public sealed class JobOrchestrator : IJobOrchestrator
             ["UserId"] = userId
         });
 
-        _logger.LogInformation("[Worker → DB] Transitioning from Initiated → Running | JobQueueId={JobQueueId}", jobQueueId);
+        _logger.LogInformation(
+            "[Worker → DB] Transitioning from {CurrentStatus} → Running | JobQueueId={JobQueueId}",
+            existingExecution.Status, jobQueueId);
 
         // Step 2 — Create execution record (Started)
         var record = new JobExecutionRecord

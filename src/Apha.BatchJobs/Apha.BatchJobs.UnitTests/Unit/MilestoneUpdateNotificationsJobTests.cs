@@ -308,7 +308,7 @@ public sealed class MilestoneUpdateNotificationsJobTests
     }
 
     // -------------------------------------------------------------------------
-    // AC-31: Month-override production guard
+    // Month-override production guard
     // -------------------------------------------------------------------------
 
     [Fact]
@@ -408,7 +408,7 @@ public sealed class MilestoneUpdateNotificationsJobTests
     }
 
     // -------------------------------------------------------------------------
-    // AC-19: Successful send — one enabled group with valid links
+    // Successful send — one enabled group with valid links
     // -------------------------------------------------------------------------
 
     [Fact]
@@ -453,7 +453,7 @@ public sealed class MilestoneUpdateNotificationsJobTests
     }
 
     // -------------------------------------------------------------------------
-    // AC-24: Disabled recipients are skipped and written as Skipped audit rows
+    // Disabled recipients are skipped and written as Skipped audit rows
     // -------------------------------------------------------------------------
 
     [Fact]
@@ -486,7 +486,7 @@ public sealed class MilestoneUpdateNotificationsJobTests
     }
 
     // -------------------------------------------------------------------------
-    // AC-26: Recipients with no email address are skipped
+    // Recipients with no email address are skipped
     // -------------------------------------------------------------------------
 
     [Fact]
@@ -519,7 +519,7 @@ public sealed class MilestoneUpdateNotificationsJobTests
     }
 
     // -------------------------------------------------------------------------
-    // AC-27: One send failure does not stop the remaining sends
+    // One send failure does not stop the remaining sends
     // -------------------------------------------------------------------------
 
     [Fact]
@@ -597,7 +597,7 @@ public sealed class MilestoneUpdateNotificationsJobTests
     }
 
     // -------------------------------------------------------------------------
-    // Preflight failure fails the job (plan §8.1, AC-34 preparation)
+    // Preflight failure fails the job
     // -------------------------------------------------------------------------
 
     [Fact]
@@ -616,7 +616,7 @@ public sealed class MilestoneUpdateNotificationsJobTests
     }
 
     // -------------------------------------------------------------------------
-    // Multi-year invariant check (plan §6.1)
+    // Multi-year invariant check
     // -------------------------------------------------------------------------
 
     [Fact]
@@ -674,7 +674,7 @@ public sealed class MilestoneUpdateNotificationsJobTests
     }
 
     // -------------------------------------------------------------------------
-    // Diagnostic query failure is non-fatal (plan §7.2)
+    // Diagnostic query failure is non-fatal
     // -------------------------------------------------------------------------
 
     [Fact]
@@ -702,7 +702,7 @@ public sealed class MilestoneUpdateNotificationsJobTests
     }
 
     // -------------------------------------------------------------------------
-    // Duplicate delivery prevention — Sent row found, no forceResend (plan §12)
+    // Duplicate delivery prevention — Sent row found, no forceResend
     // -------------------------------------------------------------------------
 
     [Fact]
@@ -740,7 +740,7 @@ public sealed class MilestoneUpdateNotificationsJobTests
     }
 
     // -------------------------------------------------------------------------
-    // OutcomeUnknown: prior Sending row found (plan §11.2)
+    // OutcomeUnknown: prior Sending row found
     // -------------------------------------------------------------------------
 
     [Fact]

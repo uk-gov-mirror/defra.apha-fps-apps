@@ -27,7 +27,7 @@ namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotificat
 /// No transaction wraps the whole run: email sending cannot participate in one, and durability
 /// instead comes from per-recipient audit rows in fps.notification_delivery, written
 /// Pending -&gt; Sending -&gt; Sent/Failed around each send. A single recipient failure is recorded
-/// and the loop continues (AC-19, AC-27); only batch-level failures (configuration, candidate
+/// and the loop continues; only batch-level failures (configuration, candidate
 /// query, audit-record failures) propagate to JobOrchestrator for retry/failure handling.
 /// </summary>
 public sealed class MilestoneUpdateNotificationsJob : IBatchJob
@@ -128,18 +128,18 @@ public sealed class MilestoneUpdateNotificationsJob : IBatchJob
             effectiveMonth,
             monthOverride.HasValue ? " (override from parameters)" : " (wall-clock)");
 
-        // forceResend is only honoured in Manual run mode (plan §12).
+        // forceResend is only honoured in Manual run mode.
         var isManualMode = _executionContext.RunMode == RunMode.Manual;
         var isForceResend = isManualMode && TryExtractForceResend(parametersJson);
 
         if (isForceResend)
             _logger.LogInformation("forceResend=true (Manual mode) — duplicate-send gate bypassed for Sent rows.");
 
-        // Step 1: settings preflight (plan §8.1).
+        // Step 1: settings preflight.
         await _preflight.ValidateAsync(cancellationToken);
         _logger.LogInformation("Settings preflight passed.");
 
-        // Step 2: load all candidates unfiltered (plan §7.1).
+        // Step 2: load all candidates unfiltered.
         var candidates = await _readRepository.GetNotificationCandidatesAsync(cancellationToken);
         _logger.LogInformation("Loaded {CandidateCount} notification candidate row(s).", candidates.Count);
 
@@ -167,7 +167,7 @@ public sealed class MilestoneUpdateNotificationsJob : IBatchJob
                 fallback.Year, fallback.LatestMonthReleased);
         }
 
-        // Step 4: get-or-create the per-execution run summary row (plan §11.4). Idempotent by
+        // Step 4: get-or-create the per-execution run summary row. Idempotent by
         // jobQueueId so a whole-job retry resumes the same row instead of failing on insert.
         var runSummaryId = await _deliveryRepository.GetOrCreateRunSummaryAsync(
             jobQueueId, NotificationType, reportingYear, effectiveMonth, cancellationToken);
@@ -182,7 +182,7 @@ public sealed class MilestoneUpdateNotificationsJob : IBatchJob
             CandidateProjectCount = candidates.Select(c => c.ParentProject).Distinct().Count()
         };
 
-        // Step 5: diagnostic query — reporting only, non-fatal if it fails (plan §7.2).
+        // Step 5: diagnostic query — reporting only, non-fatal if it fails.
         await RunDiagnosticQueryAsync(reportingYear, counters, cancellationToken);
 
         // Step 6: zero-candidate early exit — a valid Completed outcome per spec §19.
@@ -202,12 +202,12 @@ public sealed class MilestoneUpdateNotificationsJob : IBatchJob
             return;
         }
 
-        // Step 7: group candidates into per-recipient notification groups (plan §9.1).
+        // Step 7: group candidates into per-recipient notification groups.
         var groups = _groupingService.GroupCandidates(candidates);
         counters.IdentifiedRecipientCount = groups.Count;
         _logger.LogInformation("Grouped candidates into {GroupCount} recipient group(s).", groups.Count);
 
-        // Step 8: send loop — one failure does not stop the remaining sends (AC-19, plan §10.3).
+        // Step 8: send loop — one failure does not stop the remaining sends.
         var includeConfirmationInstruction = _settings.MandatoryConfirmationMonths.Contains(effectiveMonth);
 
         foreach (var group in groups)
@@ -215,7 +215,7 @@ public sealed class MilestoneUpdateNotificationsJob : IBatchJob
             var deliveryKey = new NotificationDeliveryKey(
                 NotificationType, reportingYear, effectiveMonth, group.RecipientId);
 
-            // Disabled recipient — skip and audit (plan §7.1, AC-24).
+            // Disabled recipient — skip and audit.
             if (group.IsDisabled)
             {
                 _logger.LogInformation(
@@ -234,7 +234,7 @@ public sealed class MilestoneUpdateNotificationsJob : IBatchJob
                 continue;
             }
 
-            // Missing email — skip and audit (plan §7.1, AC-26).
+            // Missing email — skip and audit.
             if (string.IsNullOrWhiteSpace(group.Email))
             {
                 _logger.LogInformation(
@@ -253,7 +253,7 @@ public sealed class MilestoneUpdateNotificationsJob : IBatchJob
                 continue;
             }
 
-            // Three-outcome duplicate check (plan §11.2, §12).
+            // Three-outcome duplicate check.
             var existing = await _deliveryRepository.GetExistingAttemptAsync(deliveryKey, cancellationToken);
             if (existing != null)
             {
@@ -286,7 +286,7 @@ public sealed class MilestoneUpdateNotificationsJob : IBatchJob
                     group.RecipientId, group.ProjectManager, existing.NotificationDeliveryId);
             }
 
-            // Render template — excluded projects have invalid EditLink (plan §10.3).
+            // Render template — excluded projects have invalid EditLink.
             var renderResult = _templateRenderer.RenderManagerEmailBody(
                 group.ProjectManager,
                 group.Projects,
@@ -302,7 +302,7 @@ public sealed class MilestoneUpdateNotificationsJob : IBatchJob
                     string.Join(", ", renderResult.ExcludedProjects.Select(p => p.ParentProject)));
             }
 
-            // No valid project links remain — skip the send (plan §10.3).
+            // No valid project links remain — skip the send.
             if (renderResult.IncludedProjects.Count == 0)
             {
                 _logger.LogWarning(
@@ -319,7 +319,7 @@ public sealed class MilestoneUpdateNotificationsJob : IBatchJob
                 continue;
             }
 
-            // Audit: Pending -> Sending -> (send) -> Sent/Failed (plan §11, write order).
+            // Audit: Pending -> Sending -> (send) -> Sent/Failed (write order).
             var children = renderResult.IncludedProjects
                 .Select(p => (p.ParentProject, p.Year, "Pending", (string?)null))
                 .Concat(renderResult.ExcludedProjects
@@ -332,7 +332,7 @@ public sealed class MilestoneUpdateNotificationsJob : IBatchJob
 
             await _deliveryRepository.UpdateDeliveryToSendingAsync(deliveryId, cancellationToken);
 
-            // Send email (AC-27: a failure here does not stop subsequent sends).
+            // Send email (a failure here does not stop subsequent sends).
             var message = new EmailMessage(
                 To: [group.Email],
                 Subject: _templateRenderer.Subject,
@@ -414,7 +414,7 @@ public sealed class MilestoneUpdateNotificationsJob : IBatchJob
     }
 
     /// <summary>
-    /// Validates the month override production guard (plan §6.2, AC-31).
+    /// Validates the month override production guard.
     /// </summary>
     internal static void ValidateMonthOverride(int? monthOverride, bool isProduction, bool allowMonthOverrideInProduction)
     {
@@ -490,7 +490,7 @@ public sealed class MilestoneUpdateNotificationsJob : IBatchJob
     }
 
     /// <summary>
-    /// Runs the diagnostic query for unmatched recipient resolution issues (plan §7.2).
+    /// Runs the diagnostic query for unmatched recipient resolution issues.
     /// Populates counters with the unresolved counts, or marks DiagnosticAvailable=false on failure.
     /// </summary>
     private async Task RunDiagnosticQueryAsync(

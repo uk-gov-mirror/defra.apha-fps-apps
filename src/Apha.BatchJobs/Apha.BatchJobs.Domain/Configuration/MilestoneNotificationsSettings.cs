@@ -54,7 +54,7 @@ public class MilestoneNotificationsSettings
     /// When true, allows a <c>monthOverride</c> parameter to be supplied even when
     /// <c>ASPNETCORE_ENVIRONMENT</c> is "Production". Must be an explicit, deliberate
     /// opt-in — not set by default. Guards against accidental production reruns with
-    /// a misleading audit month (plan section 6.2, AC-31).
+    /// a misleading audit month (plan section 6.2).
     /// </summary>
     public bool AllowMonthOverrideInProduction { get; set; } = false;
 }

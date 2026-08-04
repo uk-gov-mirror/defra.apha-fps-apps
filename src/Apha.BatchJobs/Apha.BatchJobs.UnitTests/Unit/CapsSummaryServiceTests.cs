@@ -95,7 +95,7 @@ public sealed class CapsSummaryServiceTests
     }
 
     // -------------------------------------------------------------------------
-    // AC-23: Send attempted unconditionally; outcome recorded either way
+    // Send attempted unconditionally; outcome recorded either way
     // -------------------------------------------------------------------------
 
     [Fact]
@@ -133,7 +133,7 @@ public sealed class CapsSummaryServiceTests
         var service = CreateService(emailService, deliveryRepository);
         var runSummaryId = Guid.NewGuid();
 
-        // Must not throw — non-fatal (plan §13, §16).
+        // Must not throw — non-fatal.
         await service.SendAndRecordAsync(runSummaryId, Guid.NewGuid(), 2026, 7, DefaultCounters(), default);
 
         await deliveryRepository.Received(1).FinalizeRunSummaryAsync(

@@ -17,17 +17,16 @@ using Xunit.Abstractions;
 namespace Apha.BatchJobs.UnitTests;
 
 /// <summary>
-/// Plan §7.6 — full-volume (~700 FEC + ~3,200 AGRUP rows, the legacy annual-upload baseline
+/// Full-volume (~700 FEC + ~3,200 AGRUP rows, the legacy annual-upload baseline
 /// per baseline spec §2.1) diagnostics for the Bulk Rates worker pipeline.
 ///
 /// Assertions here are intentionally soft (timing/memory are recorded via
 /// <see cref="ITestOutputHelper"/>, not hard-gated) — shared/slow CI hardware makes strict
 /// wall-clock thresholds flaky. The one bound that IS hard-asserted is the total worker
 /// transaction duration: the SELECT ... FOR UPDATE lock window held during revalidation
-/// (plan §5.1) is a real correctness/availability risk if unbounded, not merely a nicety.
+/// is a real correctness/availability risk if unbounded, not merely a nicety.
 ///
-/// No-N+1 is verified by code inspection, not runtime instrumentation (see the finding written
-/// up in fec-bulk-rates-plan-05-differential-remediation.md §7.6): every bulk lookup helper in
+/// No-N+1 is verified by code inspection, not runtime instrumentation: every bulk lookup helper in
 /// <see cref="BulkTestRatesService"/> (live FEC/AGRUP row lock, project lookup, capability
 /// lookup, snapshot read) issues exactly one `= ANY(@array)`-parameterized query regardless of
 /// row count — confirmed by reading every one of them, not inferred. The genuinely interesting
@@ -104,7 +103,7 @@ public sealed class BulkTestRatesServicePerformanceTests : IAsyncLifetime
         new BulkRatesValidationService(),
         NullLogger<BulkTestRatesService>.Instance);
 
-    // ── §7.6, in-memory: DR-VAL-01 at full volume, no database involved ─────────────────────
+    // ── In-memory: the shared validator at full volume, no database involved ───────────────────────────
     // Runs unconditionally (no Postgres dependency) so it still catches a validation-side
     // regression even in environments without the local integration DB.
 
@@ -167,7 +166,7 @@ public sealed class BulkTestRatesServicePerformanceTests : IAsyncLifetime
         };
     }
 
-    // ── §7.6, real Postgres: full worker pipeline at volume ──────────────────────────────────
+    // ── Real Postgres: full worker pipeline at volume ─────────────────────────────────────────
 
     [SkippableFact]
     public async Task ExecuteAsync_FullVolume_CompletesWithinBoundedTransactionWindow()
@@ -203,7 +202,7 @@ public sealed class BulkTestRatesServicePerformanceTests : IAsyncLifetime
             // Hard-gated: this is the one number that's a genuine risk regardless of hardware —
             // the FOR UPDATE lock is held for (approximately) this whole duration, and an
             // unbounded hold at annual-upload volume would block concurrent work elsewhere in
-            // the schema (plan §7.6). 30s is generous for local/shared hardware while still
+            // the schema. 30s is generous for local/shared hardware while still
             // catching a real quadratic-ish regression (e.g. an accidental per-row lookup query).
             Assert.True(runSw.Elapsed < TimeSpan.FromSeconds(30),
                 $"Worker transaction took {runSw.Elapsed} for {FecRowCount + AgrupRowCount} rows — " +

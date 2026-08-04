@@ -176,7 +176,7 @@ public sealed class BulkTestRatesServiceTests
         Assert.Contains("approval metadata", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    // ── Precondition: UploadVersion (DR-WK-04 revalidation requires a known upload identity) ──
+    // ── Precondition: UploadVersion (revalidation requires a known upload identity) ──
 
     [Fact]
     public async Task ExecuteAsync_WhenUploadVersionMissing_ShouldThrow()

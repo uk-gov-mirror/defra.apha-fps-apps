@@ -9,7 +9,7 @@ namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotificat
 public interface IEmailTemplateRenderer
 {
     /// <summary>
-    /// Fixed subject constant (AC-12) — not configurable, for legacy logic parity.
+    /// Fixed subject constant — not configurable, for legacy logic parity.
     /// </summary>
     string Subject { get; }
 

@@ -172,9 +172,14 @@ public sealed class BulkRatesRepository : IBulkRatesRepository
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = @"
             SELECT jobqueueid, pcgrade,
-                   payrate::numeric, npr::numeric, ohr::numeric
+                   payrate::numeric, npr::numeric, ohr::numeric,
+                   calculated_action,
+                   source_payrate::numeric, source_npr::numeric, source_ohr::numeric,
+                   effective_payrate::numeric, effective_npr::numeric, effective_ohr::numeric,
+                   validation_version
             FROM fps.tblstagingprofitcentregrade
-            WHERE jobqueueid = @jobqueueid;";
+            WHERE jobqueueid = @jobqueueid
+            ORDER BY pcgrade;";
         cmd.Parameters.AddWithValue("jobqueueid", jobQueueId);
 
         var rows = new List<StaffStagingRow>();
@@ -186,7 +191,15 @@ public sealed class BulkRatesRepository : IBulkRatesRepository
                 PcGrade:    reader.GetString(1),
                 PayRate:    reader.IsDBNull(2) ? null : reader.GetDecimal(2),
                 Npr:        reader.IsDBNull(3) ? null : reader.GetDecimal(3),
-                Ohr:        reader.IsDBNull(4) ? null : reader.GetDecimal(4)));
+                Ohr:        reader.IsDBNull(4) ? null : reader.GetDecimal(4),
+                CalculatedAction: reader.IsDBNull(5) ? null : reader.GetString(5),
+                SourcePayRate:    reader.IsDBNull(6) ? null : reader.GetDecimal(6),
+                SourceNpr:        reader.IsDBNull(7) ? null : reader.GetDecimal(7),
+                SourceOhr:        reader.IsDBNull(8) ? null : reader.GetDecimal(8),
+                EffectivePayRate: reader.IsDBNull(9) ? null : reader.GetDecimal(9),
+                EffectiveNpr:     reader.IsDBNull(10) ? null : reader.GetDecimal(10),
+                EffectiveOhr:     reader.IsDBNull(11) ? null : reader.GetDecimal(11),
+                ValidationVersion: reader.IsDBNull(12) ? null : reader.GetInt32(12)));
         }
 
         return rows;
@@ -203,9 +216,16 @@ public sealed class BulkRatesRepository : IBulkRatesRepository
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = @"
             SELECT jobqueueid, animaltype, species, security_level,
-                   dailyrate::numeric, defradailyrate::numeric, planbyweek
+                   dailyrate::numeric, defradailyrate::numeric, planbyweek,
+                   calculated_action,
+                   source_dailyrate::numeric, source_defradailyrate::numeric, source_planbyweek,
+                   source_species, source_securitylevel,
+                   effective_dailyrate::numeric, effective_defradailyrate::numeric, effective_planbyweek,
+                   effective_species, effective_securitylevel,
+                   validation_version
             FROM fps.tblstaginganimals
-            WHERE jobqueueid = @jobqueueid;";
+            WHERE jobqueueid = @jobqueueid
+            ORDER BY animaltype;";
         cmd.Parameters.AddWithValue("jobqueueid", jobQueueId);
 
         var rows = new List<AnimalStagingRow>();
@@ -219,7 +239,19 @@ public sealed class BulkRatesRepository : IBulkRatesRepository
                 SecurityLevel: reader.IsDBNull(3) ? null : reader.GetString(3),
                 DailyRate:     reader.IsDBNull(4) ? null : reader.GetDecimal(4),
                 DefraDailyRate: reader.IsDBNull(5) ? null : reader.GetDecimal(5),
-                PlanByWeek:    reader.IsDBNull(6) ? null : reader.GetBoolean(6)));
+                PlanByWeek:    reader.IsDBNull(6) ? null : reader.GetBoolean(6),
+                CalculatedAction: reader.IsDBNull(7) ? null : reader.GetString(7),
+                SourceDailyRate:      reader.IsDBNull(8) ? null : reader.GetDecimal(8),
+                SourceDefraDailyRate: reader.IsDBNull(9) ? null : reader.GetDecimal(9),
+                SourcePlanByWeek:     reader.IsDBNull(10) ? null : reader.GetBoolean(10),
+                SourceSpecies:        reader.IsDBNull(11) ? null : reader.GetString(11),
+                SourceSecurityLevel:  reader.IsDBNull(12) ? null : reader.GetString(12),
+                EffectiveDailyRate:      reader.IsDBNull(13) ? null : reader.GetDecimal(13),
+                EffectiveDefraDailyRate: reader.IsDBNull(14) ? null : reader.GetDecimal(14),
+                EffectivePlanByWeek:     reader.IsDBNull(15) ? null : reader.GetBoolean(15),
+                EffectiveSpecies:        reader.IsDBNull(16) ? null : reader.GetString(16),
+                EffectiveSecurityLevel:  reader.IsDBNull(17) ? null : reader.GetString(17),
+                ValidationVersion: reader.IsDBNull(18) ? null : reader.GetInt32(18)));
         }
 
         return rows;

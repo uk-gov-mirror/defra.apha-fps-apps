@@ -8,12 +8,12 @@ namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotificat
 ///
 /// All methods that mutate delivery rows are expected to be called while <c>fps.job_lock</c>
 /// is held by <c>JobOrchestrator</c>. The three-outcome check and the subsequent insert must
-/// not be interleaved with other work — they are a single logical unit (plan §11, §12).
+/// not be interleaved with other work — they are a single logical unit.
 /// </summary>
 public interface INotificationDeliveryRepository
 {
     // -----------------------------------------------------------------------
-    // Run summary (fps.notification_run_summary — plan §11.4)
+    // Run summary (fps.notification_run_summary)
     // -----------------------------------------------------------------------
 
     /// <summary>
@@ -52,7 +52,7 @@ public interface INotificationDeliveryRepository
         CancellationToken cancellationToken);
 
     // -----------------------------------------------------------------------
-    // Three-outcome business-key check (plan §11.2, §12)
+    // Three-outcome business-key check
     // -----------------------------------------------------------------------
 
     /// <summary>
@@ -68,14 +68,14 @@ public interface INotificationDeliveryRepository
     /// <summary>
     /// Transitions a <c>Sending</c> parent row (and its <c>Pending</c> child rows) to
     /// <c>OutcomeUnknown</c> — evidence that a prior execution crashed after calling the
-    /// email provider but before confirming the outcome (plan §11.2).
+    /// email provider but before confirming the outcome.
     /// </summary>
     Task TransitionToOutcomeUnknownAsync(
         Guid notificationDeliveryId,
         CancellationToken cancellationToken);
 
     // -----------------------------------------------------------------------
-    // Delivery row lifecycle (plan §11, write order)
+    // Delivery row lifecycle (write order)
     // -----------------------------------------------------------------------
 
     /// <summary>
@@ -118,8 +118,7 @@ public interface INotificationDeliveryRepository
     /// <summary>
     /// Inserts a parent row directly as <c>Skipped</c> (with its child project rows all set to
     /// <c>Skipped</c> too). Used for disabled recipients, missing-email recipients, and
-    /// recipients with zero valid project links — groups that bypass the send attempt entirely
-    /// (plan §11.3).
+    /// recipients with zero valid project links — groups that bypass the send attempt entirely.
     /// </summary>
     Task InsertSkippedDeliveryAsync(
         Guid jobQueueId,

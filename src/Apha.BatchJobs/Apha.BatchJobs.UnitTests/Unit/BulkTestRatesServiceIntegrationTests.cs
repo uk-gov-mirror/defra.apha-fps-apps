@@ -14,7 +14,7 @@ using Xunit;
 namespace Apha.BatchJobs.UnitTests;
 
 /// <summary>
-/// PostgreSQL-backed integration tests for DR-WK-01/02/03/04 (plan §5, Phase D4):
+/// PostgreSQL-backed integration tests:
 /// <see cref="BulkTestRatesService"/> revalidates and applies changes inside a single
 /// transaction against SELECT ... FOR UPDATE-locked live rows, using the same shared
 /// <see cref="IBulkRatesValidationService"/> the API validator calls. Tests use explicit
@@ -156,7 +156,7 @@ public sealed class BulkTestRatesServiceIntegrationTests : IAsyncLifetime
         await Exec("DELETE FROM fps.tlkpprogram WHERE fpsyear = @fpsyear;", c => c.Parameters.AddWithValue("fpsyear", fpsYear));
     }
 
-    // â”€â”€ DR-WK-01: FEC existing row, null rate â†’ zero + retain â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // â”€â”€ FEC existing row, null rate â†’ zero + retain â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [SkippableFact]
     public async Task ExecuteAsync_FecExistingRowBlankRate_ZeroesAndRetains()
@@ -231,7 +231,7 @@ public sealed class BulkTestRatesServiceIntegrationTests : IAsyncLifetime
         }
     }
 
-    // â”€â”€ DR-WK-02: AGRUP existing row, null rate â†’ zero + retain â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // â”€â”€ AGRUP existing row, null rate â†’ zero + retain â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     [SkippableFact]
     public async Task ExecuteAsync_AgrupExistingRowBlankRate_ZeroesAndRetains()
@@ -316,7 +316,7 @@ public sealed class BulkTestRatesServiceIntegrationTests : IAsyncLifetime
         }
     }
 
-    // â”€â”€ DR-WK-03: new AGRUP insert uses staged routing fields, not hardcoded Buyer â”€â”€
+    // â”€â”€ New AGRUP insert uses staged routing fields, not hardcoded Buyer â”€â”€
 
     [SkippableFact]
     public async Task ExecuteAsync_NewAgrupRow_UsesStagedRoutingFields_NotHardcodedBuyer()
@@ -397,14 +397,14 @@ public sealed class BulkTestRatesServiceIntegrationTests : IAsyncLifetime
                 await using var r = await cmd.ExecuteReaderAsync();
                 Assert.True(await r.ReadAsync());
                 Assert.Equal(15.00m, r.GetDecimal(0));
-                // DR-WK-03: staged ProjectBuyerCode/TestBuyerCode are written verbatim â€” no
+                // Staged ProjectBuyerCode/TestBuyerCode are written verbatim â€” no
                 // longer the old hardcoded ProjectBuyerCode = Buyer / omitted TestBuyerCode.
                 Assert.Equal(projectBuyerCode, r.GetString(1));
                 Assert.NotEqual(buyer, r.GetString(1));
                 Assert.Equal(testBuyerCode, r.GetString(2));
             }
 
-            // §7.5 audit completeness: the applied value must match what was frozen as
+            // Audit completeness: the applied value must match what was frozen as
             // "approved" at release (effective_new_rate = 15.00 staged above), not merely
             // some independently re-derived number that happens to look right.
             await using (var cmd = conn.CreateCommand())
@@ -430,7 +430,7 @@ public sealed class BulkTestRatesServiceIntegrationTests : IAsyncLifetime
         }
     }
 
-    // ── DR-WK-04 §5.2: frozen calculated_action disagrees with re-derivation → throws ──
+    // ── Frozen calculated_action disagrees with re-derivation → throws ──────────────
 
     [SkippableFact]
     public async Task ExecuteAsync_WhenFrozenActionDriftsFromRederivation_ThrowsAndAppliesNothing()
@@ -501,7 +501,7 @@ public sealed class BulkTestRatesServiceIntegrationTests : IAsyncLifetime
         }
     }
 
-    // ── DR-WK-04 §5.2: live source rate drifts to a third value that doesn't change the
+    // ── Live source rate drifts to a third value that doesn't change the
     // frozen action/effective-rate → throws. CalculatedAction/EffectiveNewRate alone cannot
     // catch this (both stay 'Update'/120 whether the live baseline is £100 or £110) — only
     // comparing source_current_rate against the live rate locked just now can. ──
@@ -578,7 +578,7 @@ public sealed class BulkTestRatesServiceIntegrationTests : IAsyncLifetime
         }
     }
 
-    // ── DR-WK-04 §5.2: FEC's two live rate columns (UnitPriceVla, DefraUnitPrice) diverge from
+    // ── FEC's two live rate columns (UnitPriceVla, DefraUnitPrice) diverge from
     // each other → throws even though the column the freeze compares against (DefraUnitPrice)
     // still matches the frozen source. Comparing DefraUnitPrice alone would miss this. ──
 
@@ -653,7 +653,7 @@ public sealed class BulkTestRatesServiceIntegrationTests : IAsyncLifetime
         }
     }
 
-    // ── DR-WK-04 §5.2 BC-05 interim rule: live-only AGRUP row under a withdrawn FEC code ──
+    // ── BC-05 interim rule: live-only AGRUP row under a withdrawn FEC code ──────────
 
     [SkippableFact]
     public async Task ExecuteAsync_LiveAgrupRowNotInSnapshot_UnderWithdrawnFec_Throws()
@@ -680,7 +680,7 @@ public sealed class BulkTestRatesServiceIntegrationTests : IAsyncLifetime
         }
 
         // Live AGRUP row under this TestCode that was never staged and never part of any
-        // download snapshot â€” exactly the gap DR-API-09 cannot catch and DR-WK-04 must.
+        // download snapshot â€” exactly the gap the BC-05 check must catch.
         await using (var cmd = conn.CreateCommand())
         {
             cmd.CommandText = @"
@@ -751,7 +751,7 @@ public sealed class BulkTestRatesServiceIntegrationTests : IAsyncLifetime
         }
     }
 
-    // ── §7.3: a live reference removed after approval must fail the worker, not silently apply ──
+    // ── A live reference removed after approval must fail the worker, not silently apply ──
 
     [SkippableFact]
     public async Task ExecuteAsync_LiveProjectRemovedAfterFreeze_ThrowsAndAppliesNothing()
@@ -779,7 +779,7 @@ public sealed class BulkTestRatesServiceIntegrationTests : IAsyncLifetime
             await cmd.ExecuteNonQueryAsync();
         }
 
-        // Project valid at "release" time — this is what DR-API-07 would have frozen against.
+        // Project valid at "release" time — this is what the release-time freeze would have frozen against.
         await using (var cmd = conn.CreateCommand())
         {
             cmd.CommandText = "INSERT INTO fps.tlkpprogram (programno, sector_name, fpsyear) VALUES ('PRG-WK07', 'Wave-WK07', @year);";
@@ -817,7 +817,7 @@ public sealed class BulkTestRatesServiceIntegrationTests : IAsyncLifetime
         }
 
         // The project is removed AFTER release/freeze but BEFORE worker execution — the exact
-        // scenario §7.3 asks for: a live reference disappearing between approval and execution.
+        // scenario this test covers: a live reference disappearing between approval and execution.
         await using (var cmd = conn.CreateCommand())
         {
             cmd.CommandText = "DELETE FROM fps.tlkpproject WHERE parentproject = @code AND fpsyear = @year;";
@@ -855,7 +855,7 @@ public sealed class BulkTestRatesServiceIntegrationTests : IAsyncLifetime
         }
     }
 
-    // ── §7.3: FEC insert must precede a dependent new-AGRUP-in-the-same-upload insert ──
+    // ── FEC insert must precede a dependent new-AGRUP-in-the-same-upload insert ─────
 
     [SkippableFact]
     public async Task ExecuteAsync_NewFecAndDependentNewAgrup_SameUpload_BothApply()
@@ -963,7 +963,7 @@ public sealed class BulkTestRatesServiceIntegrationTests : IAsyncLifetime
         }
     }
 
-    // ── §7.3: a duplicate invocation must not reapply an already-committed change ──
+    // ── A duplicate invocation must not reapply an already-committed change ────────
 
     [SkippableFact]
     public async Task ExecuteAsync_CalledTwiceForSameRequest_SecondCallThrows_DoesNotReapply()
@@ -1048,7 +1048,7 @@ public sealed class BulkTestRatesServiceIntegrationTests : IAsyncLifetime
         }
     }
 
-    // ── testreq_log audit (DR-WK-testreq) ────────────────────────────────────
+    // ── testreq_log audit ────────────────────────────────────────────────────
 
     private static async Task<int> CountTestreqLogAsync(
         NpgsqlConnection conn, string testCode, string buyer, int fpsYear)
