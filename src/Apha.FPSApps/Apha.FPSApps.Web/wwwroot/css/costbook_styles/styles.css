@@ -2881,6 +2881,10 @@ main {
     .grid-scroll-container {
         max-height: 219px;
     }
+
+    .sup_border-bottom {
+        border-bottom: 1px solid #8eb8dc !important;
+    }
 }
 
 .isCustomInfo {
