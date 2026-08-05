@@ -93,17 +93,17 @@
                 <div id="portfolioSelectMultiDropdown" class="govuk-grid-column-two-thirds sup_p_0"></div>
             </div>
         </div>
-        <h1>
-             @if (!string.IsNullOrEmpty(ViewBag.SourceWorkGroup as string))
+        <div >
+             @if (!string.IsNullOrEmpty(ViewBag.SourceWorkGroup as string)) 
                 {
                     <a href="@Url.Action("Index", "WorkGroupTestCapability", new { area = "PACT", workgroup = ViewBag.SourceWorkGroup })" 
                        id="backLink" 
-                       class="govuk-back-link" 
+               class="govuk-back-link sup_font_weight_700 govuk-!-margin-right-2"
                        style="margin-left: 140px; align-self: center;">
                         Back
                     </a>
-                }
-        </h1>
+                 } 
+        </div>
     </div>
 </div>
 
@@ -175,7 +175,7 @@
                             <label class="govuk-label govuk-!-font-weight-bold" asp-for="CurrentPortfolio.ParentProject">
                                 Parent Project
                             </label>
-                            <input class="govuk-input govuk-!-font-size-16" asp-for="CurrentPortfolio.ParentProject"
+                            <input class="govuk-input govuk-!-font-size-16" aria-label="txtParentProject" asp-for="CurrentPortfolio.ParentProject"
                                    id="txtParentProject" disabled />
                             <span asp-validation-for="CurrentPortfolio.ParentProject" class="govuk-error-message"></span>
                         </div>
@@ -185,7 +185,7 @@
                                 Project Title <span class="sup_color_red">*</span>
                             </label>
                             <input class="govuk-input govuk-!-font-size-16" asp-for="CurrentPortfolio.ProjectTitle"
-                                   id="txtProjectTitle" />
+                                   aria-label="txtParentTitle" id="txtProjectTitle" />
                             <span asp-validation-for="CurrentPortfolio.ProjectTitle" class="govuk-error-message"></span>
                         </div>
 
@@ -193,7 +193,7 @@
                              data-module="govuk-checkboxes">
                             <div class="govuk-checkboxes__item">
                                 <input class="govuk-checkboxes__input" asp-for="CurrentPortfolio.Finished"
-                                       id="chkFinished" type="checkbox" value="true" />
+                                       id="chkFinished" type="checkbox" value="true" aria-label="chkFinished" />
                                 <label class="govuk-label govuk-checkboxes__label govuk-!-font-weight-bold"
                                        asp-for="CurrentPortfolio.Finished">
                                     Finished
@@ -231,7 +231,7 @@
                                     <div class="govuk-input__prefix" aria-hidden="true">£</div>
                                     <input class="govuk-input govuk-!-font-size-16" asp-for="CurrentPortfolio.BudgetCvl"
                                            id="txtBudgetCvl" type="number" spellcheck="false" placeholder="0.00"
-                                           step="0.01" min="0" max="92233720368547758.07"/>
+                                           step="0.01" min="0" max="92233720368547758.07" aria-label="txtBudgetCvl" />
                                 </div>
                                 <span asp-validation-for="CurrentPortfolio.BudgetCvl" class="govuk-error-message"></span>
                             </div>
@@ -243,7 +243,7 @@
                                     <div class="govuk-input__prefix" aria-hidden="true">£</div>
                                     <input class="govuk-input govuk-!-font-size-16" asp-for="CurrentPortfolio.TransferIncome"
                                            id="txtTransferIncome" type="number" spellcheck="false" placeholder="0.00"
-                                           step="0.01" min="0" max="92233720368547758.07"/>
+                                           step="0.01" min="0" max="92233720368547758.07" aria-label="txtTransferIncome" />
                                 </div>
                                 <span asp-validation-for="CurrentPortfolio.TransferIncome" class="govuk-error-message"></span>
                             </div>
@@ -254,7 +254,7 @@
                                 Comments
                             </label>
                             <textarea class="govuk-textarea govuk-!-font-size-16 sup_margin_bottom_10"
-                                      asp-for="CurrentPortfolio.Comments" id="txtComments" rows="2"></textarea>
+                                      asp-for="CurrentPortfolio.Comments" id="txtComments" rows="2" aria-label="txtComments"></textarea>
                             <span asp-validation-for="CurrentPortfolio.Comments" class="govuk-error-message"></span>
                         </div>
 

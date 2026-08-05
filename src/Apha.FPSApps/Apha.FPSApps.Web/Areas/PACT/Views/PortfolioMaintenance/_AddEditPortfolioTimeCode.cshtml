@@ -31,7 +31,7 @@
             <label class="govuk-label govuk-!-font-weight-bold" asp-for="WorkGroup">
                 Work Group <span class="sup_color_red">*</span>
             </label>
-            <select class="govuk-select govuk-!-font-size-16" asp-for="WorkGroup"
+            <select class="govuk-select govuk-!-font-size-16" asp-for="WorkGroup" asp-label=" WorkGroup"
                     id="txtmodal-workgrp" style="width:100%;" required
                     asp-items="@(ViewBag.WorkGroups as List<SelectListItem>)"
                     disabled="@(isEdit ? "disabled" : null)">
@@ -48,12 +48,12 @@
             @if (isEdit)
             {
                 <input class="govuk-input govuk-!-font-size-16" asp-for="TimeCode"
-                       id="txtmodal-wg-timecode" placeholder="Time Code" disabled />
+                       id="txtmodal-wg-timecode" aria-label="txtmodal-wg-timecode" placeholder="Time Code" disabled />
             }
             else
             {
                 <input class="govuk-input govuk-!-font-size-16" asp-for="TimeCode"
-                       id="txtmodal-wg-timecode" placeholder="Time Code" />
+                       id="txtmodal-wg-timecode" placeholder="Time Code" aria-label="txtmodal-wg-timecode" />
             }
             <span asp-validation-for="TimeCode" class="govuk-error-message"></span>
         </div>
@@ -78,7 +78,7 @@
                 Test Code <span class="sup_color_red">*</span>
             </label>
             <input class="govuk-input govuk-!-font-size-16" asp-for="TestCode"
-                   id="txtmodal-wg-testcode" placeholder="Test Code" disabled />
+                   id="txtmodal-wg-testcode" aria-label="txtmodal-wg-testcode"  placeholder="Test Code" disabled />
             <span asp-validation-for="TestCode" class="govuk-error-message"></span>
         </div>
 
