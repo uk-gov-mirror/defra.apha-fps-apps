@@ -156,172 +156,218 @@
                             </div>
                         }
 
-                        <div class="edit-form-container">
+                        <div class="">
+                            <div class="govuk-grid-row">
+                                <div class="govuk-grid-column-three-quarters govuk-!-margin-top-5">
+                                    <table class="govuk-table isProjectSeclectionGrid">
+                                        <tbody class="govuk-table__body">
+                                            <tr class="govuk-table__row">
+                                                <td scope="row" class="govuk-table__header">
+                                                    <label class="govuk-label govuk-label govuk-!-margin-bottom-4 sup_select_option_width_100">Costing Book Code:</label>
+                                                </td>
+                                                <td class="govuk-table__cell">
+                                                    <input type="text"
+                                                           id="CostingBookCode"
+                                                           class="govuk-input sup_select_option_width_100 read-only margin_left_5 govuk-!-margin-bottom-2"
+                                                           value="@Model.ProjectId"
+                                                           placeholder=""
+                                                           readonly
+                                                           tabindex="-1"
+                                                           aria-label="Costing Book Code">
+                                                </td>
 
-                            <!-- Costing Book Code (auto-generated on save, display-only) -->
-                            <div class="govuk-form-group d-flex align-items-start mb-2">
-                                <label for="CostingBookCode" class="govuk-label label_width mb-0 pt-1">Costing Book Code:</label>
-                                <div>
-                                    <input type="text"
-                                        id="CostingBookCode"
-                                           class="govuk-input width-200 read-only margin_left_5"
-                                           value="@Model.ProjectId"
-                                           placeholder=""
-                                           readonly
-                                           tabindex="-1"
-                                           aria-label="Costing Book Code">
-                                </div>
-                            </div>
+                                                <td class="govuk-table__cell">
+                                                    <label class="govuk-label govuk-label govuk-!-margin-bottom-4 govuk-!-text-align-right" asp-for="ContractNumber">Contract Number:</label>
+                                                </td>
+                                                <td class="govuk-table__cell">
+                                                    <input asp-for="ContractNumber" class="govuk-input sup_select_option_width_100 margin_left_5" />
+                                                    <span asp-validation-for="ContractNumber" class="govuk-error-message"></span>
+                                                </td>
+                                                <td class="govuk-table__cell">&nbsp;</td>
+                                            </tr>
 
-                            <!-- Contract Number -->
-                            <div class="govuk-form-group d-flex align-items-start mb-2 margin_left_5">
-                                <label asp-for="ContractNumber" class="govuk-label label_width mb-0 pt-1">Contract Number:</label>
-                                <div>
-                                    <input asp-for="ContractNumber" class="govuk-input width-200 margin_left_5">
-                                    <span asp-validation-for="ContractNumber" class="govuk-error-message"></span>
-                                </div>
-                            </div>
-
-                            <!-- Title -->
-                            <div class="govuk-form-group d-flex align-items-start mb-2">
-                                <label asp-for="ProjectTitle" class="govuk-label label_width mb-0 pt-1">
-                                    Title:<span class="sup_color_red">*</span>
-                                </label>
-                                <div style="width: 61%;" class="margin_left_5">
-                                    <textarea asp-for="ProjectTitle"
-                                              class="govuk-textarea w-100 sup_margin_0 margin_left_5"
-                                              required></textarea>
-                                    <span asp-validation-for="ProjectTitle" class="govuk-error-message"></span>
-                                </div>
-                            </div>
-
-                            <!-- Year Type + Programme -->
-                            <div class="govuk-form-group d-flex align-items-start mb-2">
-                                <label asp-for="FinancialYears" class="govuk-label label_width mb-0 pt-1">Year Type:</label>
-                                <div class="me-4 margin_left_5">
-                                    <select asp-for="FinancialYears" asp-items="Model.AvailableFinancialYears" class="govuk-select width-200 margin_left_5"></select>
-                                    <span asp-validation-for="FinancialYears" class="govuk-error-message"></span>
-                                </div>
-                                <label asp-for="Programme" class="govuk-label label_width mb-0 pt-1">Programme:</label>
-                                <div>
-                                    <select asp-for="Programme" asp-items="Model.AvailablePrograms" class="govuk-select width-200 margin_left_5"><option value="">Select Programme</option></select>
-                                    <span asp-validation-for="Programme" class="govuk-error-message"></span>
-                                </div>
-                            </div>
-
-                            <!-- Customer Name + Disease -->
-                            <div class="govuk-form-group d-flex align-items-start mb-2">
-                                <label asp-for="CustomerName" class="govuk-label label_width mb-0 pt-1">Customer Name:</label>
-                                <div class="me-4">
-                                    <select asp-for="CustomerName" asp-items="Model.AvailableCustomers" class="govuk-select width-200 margin_left_5"><option value="">Select Customer</option></select>
-                                    <span asp-validation-for="CustomerName" class="govuk-error-message"></span>
-                                </div>
-                                <label asp-for="Disease" class="govuk-label label_width mb-0 pt-1">Disease:</label>
-                                <div>
-                                    <select asp-for="Disease" asp-items="Model.AvailableDiseases" class="govuk-select width-200 margin_left_5"><option value="">Select Disease</option></select>
-                                    <span asp-validation-for="Disease" class="govuk-error-message"></span>
-                                </div>
-                            </div>
-
-                            <!-- Start Date + Is Defra Project -->
-                            <div class="govuk-form-group d-flex align-items-start mb-2">
-                                <label for="StartdateDisplay" class="govuk-label label_width mb-0 pt-1">
-                                    Start Date:<span class="sup_color_red">*</span>
-                                </label>
-                                <div>
-                                    <div style="position:relative; display:flex; align-items:center;" class="margin_left_5">
-                                        <input type="text"
-                                               id="StartdateDisplay"
-                                               class="govuk-input width-200"
-                                               value="@Model.StartDate?.ToString("dd/MM/yyyy")"
-                                               placeholder="dd/mm/yyyy"
-                                               maxlength="10"
-                                               autocomplete="off"
-                                               aria-describedby="StartdateError"
-                                               oninput="formatDateInput(this)"
-                                               onblur="validateAndSyncDate('StartdateDisplay', 'StartdateBinding', 'StartdateError'); calculateStartFYear();">
-                                        <button type="button"
-                                                onclick="openDatePicker('StartdatePicker')"
-                                                onkeydown="handleDatePickerKeydown(event, 'StartdatePicker')"
-                                                tabindex="0"
-                                                aria-label="Choose date from calendar for Start Date"
-                                                title="Choose date from calendar"
-                                                style="margin-left:4px; padding:6px 10px; cursor:pointer; background:#f3f2f1; border:2px solid #0b0c0c; font-size:1rem; line-height:1;">&#128197;</button>
-                                        <input type="hidden"
-                                               name="StartDate"
-                                               id="StartdateBinding"
-                                               value="@(Model.StartDate.HasValue ? Model.StartDate.Value.ToString("yyyy-MM-dd") : string.Empty)"
-                                               aria-hidden="true">
-                                        <input type="date"
-                                               id="StartdatePicker"
-                                               value="@(Model.StartDate.HasValue ? Model.StartDate.Value.ToString("yyyy-MM-dd") : string.Empty)"
-                                               tabindex="-1"
-                                               aria-hidden="true"
-                                               aria-label="Start date calendar picker"
-                                               style="position:absolute; top:0; left:0; opacity:0; width:1px; height:1px; pointer-events:auto;"
-                                               onchange="syncDateToText('StartdatePicker', 'StartdateDisplay', 'StartdateBinding', 'StartdateError')">
+                            <tr class="govuk-table__row">
+                                <td scope="row" class="govuk-table__header">
+                                    <label class="govuk-label govuk-label govuk-!-margin-bottom-4" asp-for="ProjectTitle">Title:<span class="sup_color_red">*</span></label>
+                                </td>
+                                <td class="govuk-table__cell" colspan="3">
+                                    <div id="ProjectTitleFormGroup" class="govuk-form-group govuk-!-margin-bottom-3">
+                                        <textarea asp-for="ProjectTitle" class="govuk-textarea w-100 sup_margin_0 margin_left_5" required></textarea>
+                                        <span asp-validation-for="ProjectTitle" class="govuk-error-message"></span>
                                     </div>
-                                    <span id="StartdateError" class="govuk-error-message" style="display:none;"></span>
-                                    <span asp-validation-for="StartDate" class="govuk-error-message"></span>
-                                </div>
-                                <label asp-for="IsDefraProject" class="govuk-label mb-0 pt-1" style="
-                                    min-width: 165px;
-                                    text-align: right;
-                                    ">
-                                    Is Defra Project?:<span class="sup_color_red">*</span>
-                                </label>
-                                <div class="d-flex align-items-center gap-2 margin_left_5">
-                                    <select asp-for="IsDefraProject"
-                                            asp-items="Model.AvailableDefraProjectOptions"
-                                            class="govuk-select">
-                                        <option value="">Select IsDefraProject </option>
+                                </td>
+                                <td class="govuk-table__cell">&nbsp;</td>
+                            </tr>
+
+                            <tr class="govuk-table__row">
+                                <td scope="row" class="govuk-table__header">
+                                    <label class="govuk-label govuk-label govuk-!-margin-bottom-4" asp-for="FinancialYears">Year Type:</label>
+                                </td>
+                                <td class="govuk-table__cell">
+                                    <select asp-for="FinancialYears" asp-items="Model.AvailableFinancialYears" class="govuk-select margin_left_5" style="width: 100%;"></select>
+                                    <span asp-validation-for="FinancialYears" class="govuk-error-message"></span>
+                                </td>
+
+                                <td scope="row" class="govuk-table__header">
+                                    <label class="govuk-label govuk-label govuk-!-margin-bottom-4" asp-for="Programme">Programme:</label>
+                                </td>
+                                <td class="govuk-table__cell">
+                                    <select asp-for="Programme" asp-items="Model.AvailablePrograms" class="govuk-select width-200 margin_left_5" style="width: 100%;">
+                                        <option value="">Select Programme</option>
                                     </select>
-                                    <span class="warning-text" style="font-size:13px; width:217px; color:#353535; border:1px dashed #0d6efd; border-radius:4px; padding:2px;">
+                                    <span asp-validation-for="Programme" class="govuk-error-message"></span>
+                                </td>
+                                <td class="govuk-table__cell">&nbsp;</td>
+                            </tr>
+
+                            <tr class="govuk-table__row">
+                                <td scope="row" class="govuk-table__header">
+                                    <label class="govuk-label govuk-label govuk-!-margin-bottom-4" asp-for="CustomerName">Customer Name:</label>
+                                </td>
+                                <td class="govuk-table__cell">
+                                    <select asp-for="CustomerName" asp-items="Model.AvailableCustomers" class="govuk-select sup_select_option_width_100 margin_left_5">
+                                        <option value="">Select Customer</option>
+                                    </select>
+                                    <span asp-validation-for="CustomerName" class="govuk-error-message"></span>
+                                </td>
+
+                                <td scope="row" class="govuk-table__header">
+                                    <label class="govuk-label govuk-label govuk-!-margin-bottom-4" asp-for="Disease">Disease:</label>
+                                </td>
+                                <td class="govuk-table__cell">
+                                    <select asp-for="Disease" asp-items="Model.AvailableDiseases" class="govuk-select sup_select_option_width_100 margin_left_5">
+                                        <option value="">Select Disease</option>
+                                    </select>
+                                    <span asp-validation-for="Disease" class="govuk-error-message"></span>
+                                </td>
+                                <td class="govuk-table__cell">&nbsp;</td>
+                            </tr>
+
+                            <tr class="govuk-table__row">
+                                <td for="StartdateDisplay" class="govuk-table__header">
+                                    <label class="govuk-label govuk-label govuk-!-margin-bottom-4">
+                                        Start Date: <span class="sup_color_red">*</span>
+                                    </label>
+                                </td>
+                                <td class="govuk-table__cell">
+                                    <div class="govuk-form-group govuk-!-margin-bottom-0">
+                                        <div style="position:relative; display:flex; align-items:center;">
+                                            <input type="text"
+                                                   id="StartdateDisplay"
+                                                   class="govuk-input sup_select_option_width_100"
+                                                   style="width: 86%"
+                                                   value="@Model.StartDate?.ToString("dd/MM/yyyy")"
+                                                   placeholder="dd/mm/yyyy"
+                                                   maxlength="10"
+                                                   autocomplete="off"
+                                                   aria-describedby="StartdateError"
+                                                   oninput="formatDateInput(this)"
+                                                   onblur="validateAndSyncDate('StartdateDisplay', 'StartdateBinding', 'StartdateError'); calculateStartFYear();" />
+                                            <button type="button"
+                                                    onclick="openDatePicker('StartdatePicker')"
+                                                    onkeydown="handleDatePickerKeydown(event, 'StartdatePicker')"
+                                                    tabindex="0"
+                                                    aria-label="Choose date from calendar for Start Date"
+                                                    title="Choose date from calendar"
+                                                    style="margin-left:4px; padding:6px 10px; cursor:pointer; background:#f3f2f1; border:2px solid #0b0c0c; font-size:1rem; line-height:1;">
+                                                &#128197;
+                                            </button>
+
+                                            <input type="hidden"
+                                                   name="StartDate"
+                                                   id="StartdateBinding"
+                                                   value="@(Model.StartDate.HasValue ? Model.StartDate.Value.ToString("yyyy-MM-dd") : string.Empty)"
+                                                   aria-hidden="true" />
+                                            <input type="date"
+                                                   id="StartdatePicker"
+                                                   value="@(Model.StartDate.HasValue ? Model.StartDate.Value.ToString("yyyy-MM-dd") : string.Empty)"
+                                                   tabindex="-1"
+                                                   aria-hidden="true"
+                                                   aria-label="Start date calendar picker"
+                                                   style="position:absolute; top:0; left:0; opacity:0; width:1px; height:1px; pointer-events:auto;"
+                                                   onchange="syncDateToText('StartdatePicker', 'StartdateDisplay', 'StartdateBinding', 'StartdateError')" />
+                                        </div>
+
+                                        <span id="StartdateError" class="govuk-error-message" style="display:none;"></span>
+                                        <span asp-validation-for="StartDate" class="govuk-error-message"></span>
+                                    </div>
+                                </td>
+
+                                <td scope="row" class="govuk-table__header">
+                                    <label class="govuk-label govuk-label govuk-!-margin-bottom-4" asp-for="IsDefraProject">Is Defra Project?:<span class="sup_color_red">*</span></label>
+                                </td>
+                                <td class="govuk-table__cell">
+                                    <div id="IsDefraProjectFormGroup" class="govuk-form-group govuk-!-margin-bottom-0">
+                                        <select asp-for="IsDefraProject" asp-items="Model.AvailableDefraProjectOptions" class="govuk-select sup_select_option_width_100" style="width: 100%">
+                                            <option value="">Select IsDefraProject </option>
+                                        </select>
+                                        <span asp-validation-for="IsDefraProject" class="govuk-error-message"></span>
+                                    </div>
+                                </td>
+                                <td class="govuk-table__cell">
+                                    <span class="warning-text" style="margin-left: -10px;font-weight:bold; margin-bottom: 20px;display:block; font-size:13px; width:217px; color:#353535; border:1px dashed #0d6efd; border-radius:4px; padding:2px;">
                                         Changing this option will recost existing projects with current rates.
                                     </span>
-                                    <span asp-validation-for="IsDefraProject" class="govuk-error-message"></span>
-                                </div>
-                            </div>
+                                </td>
+                            </tr>
 
-                            <!-- Start Financial Year (readonly, calculated) + Rate Used -->
-                            <div class="govuk-form-group d-flex align-items-start mb-2">
-                                <label asp-for="StartFYear" class="govuk-label label_width mb-0 pt-1">Start (Financial) Year:</label>
-                                <div class="me-4">
-                                    <input asp-for="StartFYear" asp-format="{0:0}" class="govuk-input width-200 margin_left_5 read-only" readonly tabindex="-1">
+                            <tr class="govuk-table__row">
+                                <td scope="row" class="govuk-table__header">
+                                    <label asp-for="StartFYear" class="govuk-label govuk-label govuk-!-margin-bottom-4">Start (Financial) Year:</label>
+                                </td>
+                                <td class="govuk-table__cell">
+                                    <input asp-for="StartFYear" asp-format="{0:0}" class="govuk-input sup_select_option_width_100 margin_left_5 read-only" readonly tabindex="-1">
                                     <span asp-validation-for="StartFYear" class="govuk-error-message"></span>
-                                </div>
-                                <label asp-for="Euroconvrate" class="govuk-label label_width mb-0 pt-1">Rate Used (£):</label>
-                                <div>
-                                    <input asp-for="Euroconvrate" class="govuk-input width-200 margin_left_5">
+                                </td>
+
+                                <td scope="row" class="govuk-table__header">
+                                    <label asp-for="Euroconvrate" class="govuk-label govuk-label govuk-!-margin-bottom-4">Rate Used (£):</label>
+                                </td>
+                                <td class="govuk-table__cell">
+                                    <input asp-for="Euroconvrate" class="govuk-input sup_select_option_width_100 margin_left_5">
                                     <span asp-validation-for="Euroconvrate" class="govuk-error-message"></span>
-                                </div>
-                            </div>
+                                </td>
+                                <td class="govuk-table__cell">&nbsp;</td>
+                            </tr>
 
-                            <!-- Submitted By Firstname + Prepared By -->
-                            <div class="govuk-form-group d-flex align-items-start mb-2">
-                                <label asp-for="SubmittedByFName" class="govuk-label label_width mb-0 pt-1" style="overflow-wrap: break-word; ">Submitted By - Firstname:</label>
-                                <div class="me-4">
-                                    <input asp-for="SubmittedByFName" class="govuk-input width-200 margin_left_5">
+                            <tr class="govuk-table__row">
+                                <td scope="row" class="govuk-table__header">
+                                    <label asp-for="SubmittedByFName" class="govuk-label govuk-label govuk-!-margin-bottom-4">Submitted By - Firstname:</label>
+                                </td>
+                                <td class="govuk-table__cell">
+                                    <input asp-for="SubmittedByFName" class="govuk-input sup_select_option_width_100 margin_left_5">
                                     <span asp-validation-for="SubmittedByFName" class="govuk-error-message"></span>
-                                </div>
-                                <label asp-for="PreparedBy" class="govuk-label label_width mb-0 pt-1">Prepared by:<span class="sup_color_red">*</span></label>
-                                <div>
-                                    <select asp-for="PreparedBy" asp-items="Model.AvailableStaff" class="govuk-select inline-select"><option value="">Select PreparedBy </option></select>
-                                    <span asp-validation-for="PreparedBy" class="govuk-error-message"></span>
-                                </div>
-                            </div>
+                                </td>
 
-                            <!-- Submitted By Lastname + Include Inflation -->
-                            <div class="govuk-form-group d-flex align-items-start mb-2">
-                                <label asp-for="SubmittedByLName" class="govuk-label label_width mb-0 pt-1">Lastname:</label>
-                                <div class="me-4">
-                                    <input asp-for="SubmittedByLName" class="govuk-input width-200 margin_left_5">
+                                <td scope="row" class="govuk-table__header">
+                                    <label asp-for="PreparedBy" class="govuk-label govuk-label govuk-!-margin-bottom-4">Prepared by:<span class="sup_color_red">*</span></label>
+                                </td>
+                                <td class="govuk-table__cell">
+                                    <div id="PreparedByFormGroup" class="govuk-form-group govuk-!-margin-bottom-0">
+                                        <select asp-for="PreparedBy" asp-items="Model.AvailableStaff" class="govuk-select inline-select" style="width: 100%">
+                                            <option value="">Select PreparedBy </option>
+                                        </select>
+                                        <span asp-validation-for="PreparedBy" class="govuk-error-message"></span>
+                                    </div>
+                                </td>
+                                <td class="govuk-table__cell">&nbsp;</td>
+                            </tr>
+
+                            <tr class="govuk-table__row">
+                                <td scope="row" class="govuk-table__header">
+                                    <label asp-for="SubmittedByLName" class="govuk-label govuk-label govuk-!-margin-bottom-4">Lastname:</label>
+                                </td>
+                                <td class="govuk-table__cell">
+                                    <input asp-for="SubmittedByLName" class="govuk-input width-200 margin_left_5" style="width: 100%">
                                     <span asp-validation-for="SubmittedByLName" class="govuk-error-message"></span>
-                                </div>
-                                <label class="govuk-label label_width mb-0 pt-1" >Include Inflation?:</label>
-                                <div class="d-flex align-items-center gap-2 margin_left_5">
-                                    <div class="govuk-checkboxes govuk-checkboxes--small">
-                                        <div class="govuk-checkboxes__item">
+                                </td>
+
+                                <td scope="row" class="govuk-table__header">
+                                    <label class="govuk-label label_width mb-0 pt-1 govuk-!-margin-top-2">Include Inflation?:</label>
+                                </td>
+                                <td class="govuk-table__cell">
+                                    <div class="govuk-checkboxes govuk-checkboxes--small" style="margin-top: 25px;">
+                                        <div class="govuk-checkboxes__item" style="float:left;width: 30px;">
                                             <input type="checkbox"
                                                    id="chkInflation"
                                                    name="Inflation"
@@ -333,72 +379,88 @@
                                                 <span class="govuk-visually-hidden">Include Inflation</span>
                                             </label>
                                         </div>
+                                        <span class="warning-text isCustomInfo">
+                                            Changing this option will recost existing projects with current rates as well as affecting inflation.
+                                        </span>
                                     </div>
-                                    <span class="warning-text" style="font-size:13px; width:286px; color:#353535; border:1px dashed #0d6efd; border-radius:4px; padding:2px;">
-                                        Changing this option will recost existing projects with current rates as well as affecting inflation.
-                                    </span>
-                                </div>
-                            </div>
+                                </td>
+                                <td class="govuk-table__cell">&nbsp;</td>
+                            </tr>
 
-                            <!-- Date of Submission -->
-                            <div class="govuk-form-group d-flex align-items-start mb-2">
-                                <label for="DateOfSubmissionDisplay" class="govuk-label label_width mb-0 pt-1">Date of Submission:</label>
-                                <div>
-                                    <div style="position:relative; display:flex; align-items:center;">
-                                        <input type="text"
-                                               id="DateOfSubmissionDisplay"
-                                               class="govuk-input width-200 margin_left_5"
-                                               value="@Model.DateOfSubmission?.ToString("dd/MM/yyyy")"
-                                               placeholder="dd/mm/yyyy"
-                                               maxlength="10"
-                                               autocomplete="off"
-                                               aria-describedby="DateOfSubmissionError"
-                                               oninput="formatDateInput(this)"
-                                               onblur="validateAndSyncDate('DateOfSubmissionDisplay', 'DateOfSubmissionBinding', 'DateOfSubmissionError')">
-                                        <button type="button"
-                                                onclick="openDatePicker('DateOfSubmissionPicker')"
-                                                onkeydown="handleDatePickerKeydown(event, 'DateOfSubmissionPicker')"
-                                                tabindex="0"
-                                                aria-label="Choose date from calendar for Date of Submission"
-                                                title="Choose date from calendar"
-                                                style="margin-left:4px; padding:6px 10px; cursor:pointer; background:#f3f2f1; border:2px solid #0b0c0c; font-size:1rem; line-height:1;">&#128197;</button>
-                                        <input type="hidden"
-                                               name="DateOfSubmission"
-                                               id="DateOfSubmissionBinding"
-                                               value="@Model.DateOfSubmission?.ToString("yyyy-MM-dd")"
-                                               aria-hidden="true">
-                                        <input type="date"
-                                               id="DateOfSubmissionPicker"
-                                               name="DateOfSubmissionPicker"
-                                               value="@Model.DateOfSubmission?.ToString("yyyy-MM-dd")"
-                                               tabindex="-1"
-                                               aria-hidden="true"
-                                               aria-label="Date of submission calendar picker"
-                                               style="position:absolute; top:0; left:0; opacity:0; width:1px; height:1px; pointer-events:auto;"
-                                               onchange="syncDateToText('DateOfSubmissionPicker', 'DateOfSubmissionDisplay', 'DateOfSubmissionBinding', 'DateOfSubmissionError')">
+                            <tr class="govuk-table__row">
+                                <td scope="row" class="govuk-table__header">
+                                    <label for="DateOfSubmissionDisplay" class="govuk-label govuk-label govuk-!-margin-bottom-4">Date of Submission:</label>
+                                </td>
+
+                                <td class="govuk-table__cell">
+                                    <div>
+                                        <div style="position:relative; display:flex; align-items:center;">
+                                            <input type="text"
+                                                   id="DateOfSubmissionDisplay"
+                                                   class="govuk-input width-200 margin_left_5"
+                                                   style="width: 86%"
+                                                   value="@Model.DateOfSubmission?.ToString("dd/MM/yyyy")"
+                                                   placeholder="dd/mm/yyyy"
+                                                   maxlength="10"
+                                                   autocomplete="off"
+                                                   aria-describedby="DateOfSubmissionError"
+                                                   oninput="formatDateInput(this)"
+                                                   onblur="validateAndSyncDate('DateOfSubmissionDisplay', 'DateOfSubmissionBinding', 'DateOfSubmissionError')">
+                                            <button type="button"
+                                                    onclick="openDatePicker('DateOfSubmissionPicker')"
+                                                    onkeydown="handleDatePickerKeydown(event, 'DateOfSubmissionPicker')"
+                                                    tabindex="0"
+                                                    aria-label="Choose date from calendar for Date of Submission"
+                                                    title="Choose date from calendar"
+                                                    style="margin-left:4px; padding:6px 10px; cursor:pointer; background:#f3f2f1; border:2px solid #0b0c0c; font-size:1rem; line-height:1;">
+                                                &#128197;
+                                            </button>
+                                            <input type="hidden"
+                                                   name="DateOfSubmission"
+                                                   id="DateOfSubmissionBinding"
+                                                   value="@Model.DateOfSubmission?.ToString("yyyy-MM-dd")"
+                                                   aria-hidden="true">
+                                            <input type="date"
+                                                   id="DateOfSubmissionPicker"
+                                                   name="DateOfSubmissionPicker"
+                                                   value="@Model.DateOfSubmission?.ToString("yyyy-MM-dd")"
+                                                   tabindex="-1"
+                                                   aria-hidden="true"
+                                                   aria-label="Date of submission calendar picker"
+                                                   style="position:absolute; top:0; left:0; opacity:0; width:1px; height:1px; pointer-events:auto;"
+                                                   onchange="syncDateToText('DateOfSubmissionPicker', 'DateOfSubmissionDisplay', 'DateOfSubmissionBinding', 'DateOfSubmissionError')">
+                                        </div>
+                                        <span id="DateOfSubmissionError" class="govuk-error-message" style="display:none;"></span>
+                                        <span asp-validation-for="DateOfSubmission" class="govuk-error-message"></span>
                                     </div>
-                                    <span id="DateOfSubmissionError" class="govuk-error-message" style="display:none;"></span>
-                                    <span asp-validation-for="DateOfSubmission" class="govuk-error-message"></span>
+                                </td>
+                                <td class="govuk-table__cell">&nbsp;</td>
+                                <td class="govuk-table__cell">&nbsp;</td>
+                            </tr>
+
+                                                    <tr class="govuk-table__row">
+                                                        <td scope="row" class="govuk-table__header">
+                                                            <label class="govuk-label govuk-label govuk-!-margin-bottom-4" asp-for="Notes">
+                                                                Notes:
+                                                            </label>
+                                                        </td>
+                                                        <td class="govuk-table__cell" colspan="3">
+                                                            <textarea asp-for="Notes" class="govuk-textarea" style="width: 99% !important;"></textarea>
+                                                            <span asp-validation-for="Notes" class="govuk-error-message"></span>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    <div class="edit-action-buttons govuk-!-text-align-right govuk-grid-column-two-thirds govuk-!-padding-right-9 govuk-!-margin-right-9">
+                                        <a asp-area="CostBook" asp-controller="Projects" asp-action="Index" class="govuk-button govuk-button--secondary govuk-!-margin-right-3">Cancel</a>
+                                        <button type="submit" class="govuk-button govuk-!-margin-right-2">Save</button>
+                                    </div>
+
                                 </div>
-                            </div>
-
-                            <!-- Notes -->
-                            <div class="govuk-form-group d-flex align-items-start mb-2">
-                                <label asp-for="Notes" class="govuk-label label_width mb-0 pt-1">Notes:</label>
-                                <div style="width: 61%;">
-                                    <textarea asp-for="Notes" class="govuk-textarea w-100 margin_left_5"></textarea>
-                                    <span asp-validation-for="Notes" class="govuk-error-message"></span>
-                                </div>
-                            </div>
-
-                            <!-- Save / Cancel -->
-                            <div class="action-buttons edit-action-buttons">
-                                <button type="submit" class="govuk-button">Save</button>
-                                <a asp-area="CostBook" asp-controller="Projects" asp-action="Index" class="govuk-button govuk-button--secondary">Cancel</a>
-                            </div>
-
-                        </div>
-                    </form>
+                            </form>
                 </div>
             </div>
         </div>
@@ -415,6 +477,32 @@
             @if (TempData["Error"] != null)
             {
                 <text>showAlertMessage('@Html.Raw(TempData["Error"])', AlertType.ERROR);</text>
+            }
+
+            function toggleGovukErrorState(groupSelector, inputSelector, messageForSelector, errorClass) {
+                var $group = $(groupSelector);
+                var $input = $(inputSelector);
+                var $message = $(messageForSelector);
+
+                if (!$group.length || !$input.length || !$message.length) {
+                    return;
+                }
+
+                var hasError = $message.hasClass('field-validation-error') && $.trim($message.text()).length > 0;
+
+                if (hasError) {
+                    $group.addClass('govuk-form-group--error');
+                    $input.addClass(errorClass);
+                } else {
+                    $group.removeClass('govuk-form-group--error');
+                    $input.removeClass(errorClass);
+                }
+            }
+
+            function syncCreateFormErrorStyling() {
+                toggleGovukErrorState('#ProjectTitleFormGroup', '#ProjectTitle', '[data-valmsg-for="ProjectTitle"]', 'govuk-textarea--error');
+                toggleGovukErrorState('#PreparedByFormGroup', '#PreparedBy', '[data-valmsg-for="PreparedBy"]', 'govuk-select--error');
+                toggleGovukErrorState('#IsDefraProjectFormGroup', '#IsDefraProject', '[data-valmsg-for="IsDefraProject"]', 'govuk-select--error');
             }
 
             // ── Client-side validation for StartDate (custom date picker) ─────
@@ -444,7 +532,13 @@
                              .addClass('field-validation-valid')
                              .hide();
                 });
+
+                setTimeout(syncCreateFormErrorStyling, 0);
             });
+
+            $('#ProjectTitle').on('input blur', syncCreateFormErrorStyling);
+            $('#PreparedBy, #IsDefraProject').on('change blur', syncCreateFormErrorStyling);
+            syncCreateFormErrorStyling();
         });
 
         function getAntiForgeryToken() {
