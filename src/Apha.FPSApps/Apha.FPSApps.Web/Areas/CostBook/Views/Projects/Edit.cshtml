@@ -168,7 +168,7 @@
                         <div class="costbook-edit-page">
 
                             <!-- Action buttons -->
-                            <div class="edit-action-buttons govuk-!-margin-top-3 govuk-grid-column-two-thirds govuk-!-padding-right-9 govuk-!-margin-right-9 govuk-!-text-align-right" style="margin-right: 16px; !important;">
+                            <div class="edit-action-buttons govuk-!-margin-top-3 govuk-grid-column-two-thirds govuk-!-text-align-right">
                                 <button type="button" class="govuk-button govuk-button--warning sup_margin_0" onclick="confirmDelete()">Delete</button>
                                 <button type="button" class="govuk-button sup_margin_0" onclick="copyProject()">Copy</button>
                                 <a class="govuk-button sup_margin_0 govuk-!-margin-right-5" asp-area="CostBook" asp-controller="YearlyDetails" asp-action="Index" asp-route-projectId="@Model.ProjectId" style="margin-right: 21px !important;">
@@ -464,7 +464,7 @@
 
 
                             <!-- Save / Cancel -->
-                            <div class="edit-action-buttons govuk-!-text-align-right govuk-grid-column-two-thirds govuk-!-padding-right-9 govuk-!-margin-right-9">
+                            <div class="edit-action-buttons govuk-!-margin-top-3 govuk-grid-column-two-thirds govuk-!-text-align-right">
                                 <a asp-area="CostBook" asp-controller="Projects" asp-action="Index" class="govuk-button govuk-button--secondary govuk-!-margin-right-3">Cancel</a>
                                 <button type="submit" class="govuk-button govuk-!-margin-right-2">Save</button>
                             </div>

@@ -1320,6 +1320,7 @@ main {
 .costbook-edit-page .edit-action-buttons {
     margin-bottom: 5px;
     overflow: hidden;
+    width: 62.3vw;
 }
 
 .costbook-edit-page .edit-action-buttons-alt {
@@ -2942,6 +2943,11 @@ main {
         border-bottom: none;
         padding-top: 0;
         padding-bottom: 0;
+
+/*        .govuk-select,
+        .govuk-input {
+            width: 312px !important;
+        }*/
     }
 
     .isCustomErrorMsg {
@@ -3021,5 +3027,39 @@ main {
 
     .isDislayBlock {
         display: block !important;
+    }
+}
+
+.warning-text_one {
+    margin-left: -10px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    display: block;
+    font-size: 13px;
+    width: 217px;
+    color: #353535;
+    border: 1px dashed #0d6efd;
+    border-radius: 4px;
+    padding: 2px;
+}
+/*Tablet Resolution: 1536*766*/
+@media screen and (min-width: 1536px) and (max-width: 1599px) {
+    .isProjectSeclectionGrid {
+        .govuk-select,
+        .govuk-input {
+            width: 20.3125vw !important;
+        }
+
+        .govuk-textarea {
+            width: 58vw !important;
+        }
+
+        .warning-text_one {
+            margin-left: -12px;
+        }
+    }
+    .costbook-edit-page .edit-action-buttons {
+        width: 71.5vw !important;
+        margin-right: 0 !important;
     }
 }
