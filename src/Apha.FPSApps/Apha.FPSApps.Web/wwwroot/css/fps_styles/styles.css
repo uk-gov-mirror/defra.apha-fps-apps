@@ -5279,3 +5279,27 @@ body,
     height: 340px;
     max-height: 340px;
 }
+.isFloatRight{
+    float: right;
+}
+.isFloatLeft{
+    float:left;
+}
+.isDisplayBlock{
+    display:block;
+}
+.isNoWrap{
+    white-space: nowrap;
+}
+.isNoBottomBorder{
+    border-bottom: 0;
+}
+.isProjectMgtGrid {
+    .custom-table thead th {
+        width: calc(95%/2);
+    }
+
+    .custom-table thead th:last-child {
+        width: 1vw !important;
+    }
+}

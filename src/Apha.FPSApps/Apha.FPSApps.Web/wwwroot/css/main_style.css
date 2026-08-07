@@ -1740,3 +1740,6 @@ textarea {
         opacity: .15;
     }
 }
+.isCustomPageHeadings {
+    line-height: 57px;
+}

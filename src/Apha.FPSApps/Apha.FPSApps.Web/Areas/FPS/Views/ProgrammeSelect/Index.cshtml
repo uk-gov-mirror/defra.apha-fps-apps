@@ -6,11 +6,57 @@
 
 <main id="main-content">
     <div class="container-fluid">
-        <div class="govuk-grid-row">
-            <div class="govuk-grid-column-full">
-                <h1 class="govuk-grid-row govuk-heading-s sup_border-bottom govuk-!-margin-top-2 govuk-!-padding-bottom-2 govuk-!-padding-left-4">
+        <div class="govuk-grid-row sup_border-bottom">
+            <div class="govuk-grid-column-one-half">
+                <h1 class="govuk-grid-row govuk-heading-s govuk-!-margin-bottom-0 govuk-!-margin-left-0 isCustomPageHeadings">
                     Programme Management
                 </h1>
+            </div>
+            <div class="govuk-grid-column-one-third isFloatRight">
+                <table class="govuk-table govuk-!-margin-bottom-0">
+                    <tbody class="govuk-table__body">
+                        <tr class="govuk-table__row">
+                            <th scope="row" class="govuk-table__header govuk-!-padding-bottom-0 govuk-!-padding-right-0 isNoBottomBorder">
+                                <label class="govuk-label govuk-!-margin-bottom-0 govuk-!-padding-right-0 govuk-!-font-weight-bold isNoWrap" for="programmeDropdown">Select a Programme:</label>
+                            </th>
+                            <td class="govuk-table__cell govuk-!-padding-bottom-0 govuk-!-padding-right-1 isNoBottomBorder">
+                                <select id="programmeDropdown"
+                                        asp-items="Model.ProgrammeList"
+                                        asp-for="SelectedProgramNo"
+                                        onchange="filterProgramme()"
+                                        class="govuk-select"
+                                        style="width:auto; min-width:160px;"
+                                        aria-label="Select a Programme">
+                                    <option value="">-- Select Programme --</option>
+                                </select>
+                            </td>
+
+                            <th scope="row" class="govuk-table__header  govuk-!-padding-right-1 govuk-!-padding-bottom-0 isNoBottomBorder">
+                                <label class="govuk-label govuk-!-margin-bottom-0 govuk-!-font-weight-bold isNoWrap" for="projectNameInput">Project:</label>
+                            </th>
+                            <td class="govuk-table__cell govuk-!-padding-bottom-0 isNoBottomBorder">
+                                <input type="text" id="projectNameInput" placeholder="Select Project" autocomplete="off"
+                                       class="govuk-input down-arrow-img isNoWrap"
+                                       value="@Model.ProjectName" aria-label="Filter project" readonly />
+                                <div id="ProjectDropdownPanel" style="display:none; position:absolute; top:100%; right: 26px; width:420px;
+                                    max-height:260px; overflow-y:auto; background:#fff; border:1px solid #b1b4b6;
+                                    box-shadow:0 4px 8px rgba(0,0,0,.2); z-index:2000; top: 168px;">
+                                    <input type="text" id="ProjectSearchBox" placeholder="Type to search project"
+                                           style="width:100%; padding:6px 8px; border:0; border-bottom:1px solid #b1b4b6; outline:none; box-sizing:border-box;" />
+                                    <table style="width:100%; border-collapse:collapse; font-size:14px;">
+                                        <thead style="background:#f3f2f1; position:sticky; top:0; z-index:10;">
+                                            <tr>
+                                                <th style="padding:6px 8px; text-align:left;">Project</th>
+                                                <th style="padding:6px 8px; text-align:left;">Program</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="ProjectDropdownBody"></tbody>
+                                    </table>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
@@ -19,42 +65,7 @@
                 <div class="col-lg-12">
                     <div class="main-content pmg-main-content">
                         <div class="align-items-start m-10" id="search-grid">
-                            <div id="divprojectcode" class="pmg-projectcode-wrap govuk-!-padding-bottom-5">
-
-                                <!-- Toolbar: programme dropdown + project search -->
-                                <div style="display:flex; align-items:center; gap:12px; padding:6px 8px; border:1px solid #b1b4b6; border-bottom:0; background:#f3f2f1;">
-                                    <label class="govuk-label govuk-!-margin-bottom-0" for="programmeDropdown" style="white-space:nowrap; font-weight:bold;">Select a Programme</label>
-                                    <select id="programmeDropdown"
-                                            asp-items="Model.ProgrammeList"
-                                            asp-for="SelectedProgramNo"
-                                            onchange="filterProgramme()"
-                                            class="govuk-select"
-                                            style="width:auto; min-width:160px;"
-                                            aria-label="Select a Programme">
-                                        <option value="">-- Select Programme --</option>
-                                    </select>
-                                    <label class="govuk-label govuk-!-margin-bottom-0" for="projectNameInput" style="white-space:nowrap; font-weight:bold;">Project</label>
-                                    <div style="position:relative;">
-                                        <input type="text" id="projectNameInput" placeholder="Select Project" autocomplete="off"
-                                               class="govuk-input down-arrow-img" style="width:220px; cursor:pointer;"
-                                               value="@Model.ProjectName" aria-label="Filter project" readonly />
-                                        <div id="ProjectDropdownPanel" style="display:none; position:absolute; top:100%; left:0; width:420px;
-                                                max-height:260px; overflow-y:auto; background:#fff; border:1px solid #b1b4b6;
-                                                box-shadow:0 4px 8px rgba(0,0,0,.2); z-index:2000;">
-                                            <input type="text" id="ProjectSearchBox" placeholder="Type to search project"
-                                                   style="width:100%; padding:6px 8px; border:0; border-bottom:1px solid #b1b4b6; outline:none; box-sizing:border-box;" />
-                                            <table style="width:100%; border-collapse:collapse; font-size:14px;">
-                                                <thead style="background:#f3f2f1; position:sticky; top:0; z-index:10;">
-                                                    <tr>
-                                                        <th style="padding:6px 8px; text-align:left;">Project</th>
-                                                        <th style="padding:6px 8px; text-align:left;">Program</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody id="ProjectDropdownBody"></tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div id="divprojectcode" class="pmg-projectcode-wrap govuk-!-padding-bottom-5 isProjectMgtGrid">
 
                                 <div id="@($"gridContainer_{Model.ProjectsGrid!.GridId}")">
                                     @await Html.PartialAsync("_DataGrid", Model.ProjectsGrid)
