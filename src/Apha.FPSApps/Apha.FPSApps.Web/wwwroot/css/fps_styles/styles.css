@@ -3563,7 +3563,7 @@ table.custom-table th {
 }
 
 main {
-    padding-bottom: 50px;
+    padding-bottom: 0;
 }
 
 html,
@@ -5301,5 +5301,19 @@ body,
 
     .custom-table thead th:last-child {
         width: 1vw !important;
+    }
+}
+.isHalfGrid{
+    width:51%;
+}
+.isCompareFPSPlan.isHalfGrid,
+.isAnimalBookedGrid.isHalfGrid {
+    width: 19.5vw;
+}
+#gridContainer_programProjectGrid {
+    .grid-scroll-container {
+        max-height: 400px;
+        height: 283px;
+        overflow-y: auto;
     }
 }

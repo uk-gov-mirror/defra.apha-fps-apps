@@ -5,7 +5,7 @@
 }
 
 <div class="container-fluid">
-    <div class="govuk-grid-row">
+    @* <div class="govuk-grid-row">
         <div class="govuk-grid-column-full">
             <div style="padding: 5px 5px; border-bottom: 1px solid #b4b4b4" class="row">
                 <div style="display: flex; font-size: 14px; align-items: center; justify-content: space-between;">
@@ -22,10 +22,10 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> *@
 
     <!-- Title section -->
-    <div class="govuk-grid-row">
+    @* <div class="govuk-grid-row">
          <div class="govuk-grid-column-full">
             <h1 class="govuk-grid-row govuk-heading-s sup_border-bottom govuk-!-margin-top-2 
                         govuk-!-padding-bottom-2 govuk-!-padding-left-4 ">
@@ -34,7 +34,35 @@
                         sup_align_right govuk-!-margin-bottom-0 ">Back</a>
             </h1>
         </div>        
-    </div>
+    </div> *@
+
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-one-full isClearFix sup_border-bottom">
+                <div class="govuk-grid-column-one-half isFloatLeft">
+                    <h1 class="govuk-grid-row govuk-heading-s govuk-!-margin-bottom-0 govuk-!-margin-left-0 isCustomPageHeadings">Compare FPS Plan with PACT Actuals</h1>
+                </div>
+
+                <div class="govuk-grid-column-one-half isFloatRight">
+                <table class="govuk-table govuk-!-margin-bottom-0 isFloatRight isHalfGrid isAnimalBookedGrid">
+                    <tbody class="govuk-table__body">
+                        <tr class="govuk-table__row">
+                            <th scope="row" class="govuk-table__header govuk-!-padding-bottom-0 govuk-!-padding-top-0 govuk-!-padding-right-0 isNoBottomBorder govuk-!-text-align-right">
+                                <label class="fw-bold mt-0 me-2" for="projectSelect">Select a Project:</label>
+                            </th>
+                            <td class="govuk-table__cell govuk-!-padding-bottom-0 govuk-!-padding-top-0 govuk-!-padding-right-1 isNoBottomBorder govuk-!-text-align-right">
+                                <select id="projectSelect" asp-items="Model.ProjectList" asp-for="SelectedProjectCode" class="govuk-select govuk-!-font-size-16 govuk-input--width-10">
+                                    <option value="">-- Select Project --</option>
+                                </select>
+                            </td>
+                            <td class="govuk-table__cell govuk-!-padding-bottom-0 govuk-!-padding-top-0 govuk-!-padding-right-1 isNoBottomBorder govuk-!-text-align-right">
+                                <a asp-area="FPS" asp-controller="ProgramProject" asp-action="Index" class="govuk-back-link">Back</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            </div>
+        </div>
 
     <!-- Summary card -->
     <div class="govuk-grid-row">

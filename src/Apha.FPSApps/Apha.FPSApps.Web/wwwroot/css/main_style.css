@@ -1743,3 +1743,9 @@ textarea {
 .isCustomPageHeadings {
     line-height: 57px;
 }
+
+.modal-content {
+    .govuk-label{
+        font-weight:bold;
+    }
+}
