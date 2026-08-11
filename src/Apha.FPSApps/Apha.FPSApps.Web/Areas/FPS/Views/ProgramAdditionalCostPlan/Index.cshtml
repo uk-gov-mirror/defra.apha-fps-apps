@@ -12,7 +12,7 @@
 </style>
 
 <div class="container-fluid">
-    <div class="govuk-grid-row">
+    @* <div class="govuk-grid-row">
         <div class="govuk-grid-column-full">
             <div style="padding: 5px 5px; border-bottom: 1px solid #b4b4b4" class="row">
                 <div style="display: flex; font-size: 14px; align-items: center; justify-content: space-between;">
@@ -29,11 +29,36 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> *@
 
-    <div class="govuk-grid-row">
+    @* <div class="govuk-grid-row">
         <div class="govuk-grid-column-full">
             <h1 class="govuk-heading-s sup_border-bottom govuk-!-margin-top-2 govuk-!-padding-bottom-2 govuk-!-padding-left-4">Plan All Additional Costs for Programme</h1>
+        </div>
+    </div> *@
+
+    <div class="govuk-grid-row">
+        <div class="govuk-grid-column-one-full isClearFix sup_border-bottom">
+            <div class="govuk-grid-column-one-half isFloatLeft">
+                <h1 class="govuk-grid-row govuk-heading-s govuk-!-margin-bottom-0 govuk-!-margin-left-0 isCustomPageHeadings">Plan All Additional Costs for Programme</h1>
+            </div>
+
+            <div class="govuk-grid-column-one-half isFloatRight">
+                <table class="govuk-table govuk-!-margin-bottom-0 govuk-!-margin-top-2 isFloatRight isHalfGrid isPlanAllAdditionalCosts">
+                    <tbody class="govuk-table__body">
+                        <tr class="govuk-table__row">
+                            <th scope="row" class="govuk-table__header govuk-!-padding-bottom-0 govuk-!-padding-top-0 govuk-!-padding-right-0 isNoBottomBorder govuk-!-text-align-right">
+                                <label class="fw-bold me-2" for="programmeSelect">Programme:</label>
+                            </th>
+                            <td class="govuk-table__cell govuk-!-padding-bottom-0 govuk-!-padding-top-0 govuk-!-padding-right-1 isNoBottomBorder govuk-!-text-align-right">
+                                <select id="programmeSelect" asp-items="Model.ProgrammeList" asp-for="SelectedProgramNo" class="govuk-select govuk-!-font-size-16 govuk-input--width-20">
+                                    <option value="">-- Select Project --</option>
+                                </select>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 

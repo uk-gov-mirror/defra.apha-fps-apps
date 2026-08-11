@@ -5312,11 +5312,14 @@ body,
 .isAnimalBookedGrid.isHalfGrid {
     width: 19.5vw;
 }
-.isPlanAllAnimalCosts.isHalfGrid {
-    width: 15vw;
-}
+
 .isPlanAllStaff.isHalfGrid {
     width: 14.5vw;
+}
+.isProjectProfitability.isHalfGrid,
+.isPlanAllAnimalCosts.isHalfGrid,
+.isPlanAllTestPurchases.isHalfGrid {
+    width: 26vw;
 }
 #gridContainer_programProjectGrid {
     .grid-scroll-container {
