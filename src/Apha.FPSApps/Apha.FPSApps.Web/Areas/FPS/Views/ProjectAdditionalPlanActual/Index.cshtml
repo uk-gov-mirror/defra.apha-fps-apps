@@ -37,7 +37,7 @@
     <div class="govuk-grid-row">
         <div class="govuk-grid-column-one-full isClearFix sup_border-bottom">
             <div class="govuk-grid-column-one-half isFloatLeft">
-                <h1 class="govuk-grid-row govuk-heading-s govuk-!-margin-bottom-0 govuk-!-margin-left-0 isCustomPageHeadings">Compare FPS Plan with PACT Actuals</h1>
+                <h1 class="govuk-grid-row govuk-heading-s govuk-!-margin-bottom-0 govuk-!-margin-left-0 isCustomPageHeadings">Plan All Staff Cost for Programme</h1>
             </div>
 
             <div class="govuk-grid-column-one-half isFloatRight">
@@ -45,21 +45,18 @@
                     <tbody class="govuk-table__body">
                         <tr class="govuk-table__row">
                             <th scope="row" class="govuk-table__header govuk-!-padding-bottom-0 govuk-!-padding-top-0 govuk-!-padding-right-0 isNoBottomBorder govuk-!-text-align-right">
-                                <label class="fw-bold me-2" for="projectSelect">Select a Project:</label>
+                                <label class="fw-bold me-2" for="programmeSelect">Programme: </label>
                             </th>
                             <td class="govuk-table__cell govuk-!-padding-bottom-0 govuk-!-padding-top-0 govuk-!-padding-right-1 isNoBottomBorder govuk-!-text-align-right">
                                 <select id="projectSelect" asp-items="Model.ProjectList" asp-for="SelectedProjectCode" class="govuk-select govuk-!-font-size-16 govuk-input--width-10">
                                     <option value="">-- Select Project --</option>
                                 </select>
                             </td>
-                            <td class="govuk-table__cell govuk-!-padding-bottom-0 govuk-!-padding-top-0 govuk-!-padding-right-1 isNoBottomBorder govuk-!-text-align-right">
-                                <a asp-area="FPS" asp-controller="ProgramProject" asp-action="Index" class="govuk-back-link">Back</a>
-                            </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-        </div>       
+        </div>
     </div>
 
     <!-- Summary card -->

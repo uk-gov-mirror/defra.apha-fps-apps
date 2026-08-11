@@ -5306,9 +5306,17 @@ body,
 .isHalfGrid{
     width:51%;
 }
+
+.isPlanAllStaff.isHalfGrid,
 .isCompareFPSPlan.isHalfGrid,
 .isAnimalBookedGrid.isHalfGrid {
     width: 19.5vw;
+}
+.isPlanAllAnimalCosts.isHalfGrid {
+    width: 15vw;
+}
+.isPlanAllStaff.isHalfGrid {
+    width: 14.5vw;
 }
 #gridContainer_programProjectGrid {
     .grid-scroll-container {
@@ -5317,3 +5325,11 @@ body,
         overflow-y: auto;
     }
 }
+#gridContainer_staffBookedGrid .grid-scroll-container {
+    height: 255px;
+    max-height: 255px;
+}
+#gridContainer_animalBookedGrid .grid-scroll-container {
+    height: 255px;
+    max-height: 255px;
+}   
