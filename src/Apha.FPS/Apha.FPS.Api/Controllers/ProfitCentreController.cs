@@ -149,5 +149,23 @@ namespace Apha.FPS.Api.Controllers
             return Ok(_mapper.Map<PaginationRes<ProfitCentreCostRes>>(result));
         }
 
+        /// <summary>
+        /// Returns a paginated list of workgroup staff plan records from fps.vpvtworkgroupstaffplan,
+        /// filtered by the specified workgroup.
+        /// </summary>
+        /// <param name="query">Pagination and sorting parameters.</param>
+        /// <param name="workGroup">Workgroup name to filter by (required).</param>
+        [HttpGet("wgstaffplan")]
+        public async Task<IActionResult> GetPagedWgStaffPlan(
+            [FromQuery] QueryParameters<string> query,
+            [FromQuery] string workGroup)
+        {
+            if (string.IsNullOrWhiteSpace(workGroup))
+                return BadRequest("workGroup is required.");
+
+            var result = await _profitCentreService.GetPagedWgStaffPlanAsync(query, workGroup);
+            return Ok(_mapper.Map<PaginationRes<WgStaffPlanViewRes>>(result));
+        }
+
     }
 }

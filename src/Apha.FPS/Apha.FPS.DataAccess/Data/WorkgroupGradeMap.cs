@@ -18,15 +18,15 @@ namespace Apha.FPS.DataAccess.Data
                 .HasMaxLength(50)
                 .HasColumnName("wggrade");
             entity.Property(e => e.AvSalary)
-                .HasDefaultValueSql("0")
-                .HasColumnType("money")
+                .HasDefaultValue(0m)
+                .HasPrecision(19, 4)
                 .HasColumnName("avsalary");
             entity.Property(e => e.ChargeRateWg)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("chargeratewg");
             entity.Property(e => e.DirectRateWg)
-                .HasDefaultValueSql("0")
-                .HasColumnType("money")
+                .HasDefaultValue(0m)
+                .HasPrecision(19, 4)
                 .HasColumnName("directratewg");
             entity.Property(e => e.FpsYear).HasColumnName("fpsyear");
             entity.Property(e => e.GradeCode)
@@ -36,16 +36,16 @@ namespace Apha.FPS.DataAccess.Data
                 .HasMaxLength(50)
                 .HasColumnName("hrschangedby");
             entity.Property(e => e.NprWg)
-                .HasDefaultValueSql("0")
-                .HasColumnType("money")
+                .HasDefaultValue(0m)
+                .HasPrecision(19, 4)
                 .HasColumnName("nprwg");
             entity.Property(e => e.OhrWg)
-                .HasDefaultValueSql("0")
-                .HasColumnType("money")
+                .HasDefaultValue(0m)
+                .HasPrecision(19, 4)
                 .HasColumnName("ohrwg");
             entity.Property(e => e.PayRateWg)
-                .HasDefaultValueSql("0")
-                .HasColumnType("money")
+                .HasDefaultValue(0m)
+                .HasPrecision(19, 4)
                 .HasColumnName("payratewg");
             entity.Property(e => e.ProfitCentreGrade)
                 .HasMaxLength(20)

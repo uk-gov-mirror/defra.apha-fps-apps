@@ -1,4 +1,4 @@
-ï»¿using Apha.Common.Helpers.Repository;
+using Apha.Common.Helpers.Repository;
 using Apha.FPS.Core.Entities;
 using Apha.FPS.Core.Interfaces;
 using Apha.FPS.DataAccess.Data;
@@ -24,7 +24,7 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.ProgramRepositoryTest
             IEnumerable<UserProgram> userPrograms,
             IEnumerable<User> users,
             int fpsYear = DefaultTestFpsYear,
-            string userEmailId = "test@example.com", // always lowercase â€” matches middleware ToLowerInvariant()
+            string userEmailId = "test@example.com", // always lowercase — matches middleware ToLowerInvariant()
             IEnumerable<ProgramView>? programViews = null)
         {
             var requestContext = Substitute.For<IFpsRequestContext>();
@@ -89,7 +89,7 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.ProgramRepositoryTest
         [Fact]
         public async Task GetAllProgramsAsync_ReturnsPrograms_WhenUserEmailMatchesExactly()
         {
-            // Arrange â€” DB email already lowercase, matches the normalised UserEmailId
+            // Arrange — DB email already lowercase, matches the normalised UserEmailId
             var views = new List<ProgramView>
             {
                 new() { ProgramNo = "P001", ProgramName = "Alpha", UserEmail = "test@example.com" },
@@ -110,20 +110,20 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.ProgramRepositoryTest
         [InlineData("Test@example.com")]
         public async Task GetAllProgramsAsync_ReturnsPrograms_WhenDbEmailIsMixedCase(string dbEmail)
         {
-            // Arrange â€” DB stores mixed-case email; middleware normalises incoming to lowercase.
+            // Arrange — DB stores mixed-case email; middleware normalises incoming to lowercase.
             // The query must use LOWER(UserEmail) so the comparison still matches.
             var views = new List<ProgramView>
             {
                 new() { ProgramNo = "P001", ProgramName = "Alpha", UserEmail = dbEmail }
             };
             var repo = CreateRepository([], [], [],
-                userEmailId: "test@example.com", // lowercase â€” as set by middleware
+                userEmailId: "test@example.com", // lowercase — as set by middleware
                 programViews: views);
 
             // Act
             var result = (await repo.GetAllProgramsAsync()).ToList();
 
-            // Assert â€” must find the record despite casing mismatch in DB
+            // Assert — must find the record despite casing mismatch in DB
             Assert.Single(result);
             Assert.Equal("P001", result[0].ProgramNo);
         }
@@ -131,7 +131,7 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.ProgramRepositoryTest
         [Fact]
         public async Task GetAllProgramsAsync_ExcludesPrograms_WhenEmailBelongsToDifferentUser()
         {
-            // Arrange â€” two records with different emails; only the matching one should be returned
+            // Arrange — two records with different emails; only the matching one should be returned
             var views = new List<ProgramView>
             {
                 new() { ProgramNo = "P001", UserEmail = "test@example.com" },
@@ -152,7 +152,7 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.ProgramRepositoryTest
         [Fact]
         public async Task GetAllProgramsAsync_ExcludesPrograms_WhenDbEmailIsNull()
         {
-            // Arrange â€” null UserEmail in DB must not match any user
+            // Arrange — null UserEmail in DB must not match any user
             var views = new List<ProgramView>
             {
                 new() { ProgramNo = "P001", UserEmail = null }
@@ -173,7 +173,7 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.ProgramRepositoryTest
         [Fact]
         public async Task GetAllProgramsForAllUsers_ReturnsAllPrograms_WithoutEmailFilter()
         {
-            // Arrange â€” Programs table has records; no user email filtering expected
+            // Arrange — Programs table has records; no user email filtering expected
             var programs = new List<Core.Entities.Program>
             {
                 new() { ProgramNo = "P001", ProgramName = "Alpha" },
@@ -206,7 +206,7 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.ProgramRepositoryTest
         [Fact]
         public async Task GetAllProgramsForAllUsers_ReturnsAllPrograms_RegardlessOfUserEmail()
         {
-            // Arrange â€” programs exist but current user email does not matter for unfiltered
+            // Arrange — programs exist but current user email does not matter for unfiltered
             var programs = new List<Core.Entities.Program>
             {
                 new() { ProgramNo = "P001", ProgramName = "Alpha" },
@@ -218,7 +218,7 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.ProgramRepositoryTest
             // Act
             var result = (await repo.GetAllProgramsForAllUsers()).ToList();
 
-            // Assert â€” all programs returned regardless of the user context
+            // Assert — all programs returned regardless of the user context
             Assert.Equal(3, result.Count);
         }
 
@@ -351,7 +351,7 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.ProgramRepositoryTest
         [Fact]
         public async Task AddProgramAsync_AddsProgramOnly_WhenRequestingUserNotFound()
         {
-            // Arrange â€” no user found by email means UserProgram should NOT be added
+            // Arrange — no user found by email means UserProgram should NOT be added
             var (repo, programsMockSet, userProgramsMockSet, mockContext) =
                 CreateRepositoryWithMocks([], [], []);
 
@@ -399,7 +399,7 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.ProgramRepositoryTest
         [Fact]
         public async Task UpdateProgramAsync_UpdatesProgram_AndAddsUserProgram_WhenRequestingUserExistsAndLinkIsMissing()
         {
-            // Arrange â€” requesting user exists but no UserProgram link yet â†’ link should be created
+            // Arrange — requesting user exists but no UserProgram link yet ? link should be created
             var requestingUser = new User { UserId = 1, UserEmail = "test@example.com" };
             var (repo, programsMockSet, userProgramsMockSet, mockContext) =
                 CreateRepositoryWithMocks([], [], [requestingUser]);
@@ -420,7 +420,7 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.ProgramRepositoryTest
         [Fact]
         public async Task UpdateProgramAsync_UpdatesProgram_AndSkipsUserProgram_WhenLinkAlreadyExists()
         {
-            // Arrange â€” UserProgram link already exists â†’ should NOT add a duplicate
+            // Arrange — UserProgram link already exists ? should NOT add a duplicate
             var requestingUser = new User { UserId = 1, UserEmail = "test@example.com" };
             var existingLink = new UserProgram { ProgramNo = "P001", UserID = 1, FpsYear = DefaultTestFpsYear };
             var (repo, programsMockSet, userProgramsMockSet, mockContext) =
@@ -441,7 +441,7 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.ProgramRepositoryTest
         [Fact]
         public async Task UpdateProgramAsync_UpdatesProgramOnly_WhenRequestingUserNotFound()
         {
-            // Arrange â€” no user found by email means UserProgram should NOT be touched
+            // Arrange — no user found by email means UserProgram should NOT be touched
             var (repo, programsMockSet, userProgramsMockSet, mockContext) =
                 CreateRepositoryWithMocks([], [], []);
 
@@ -472,6 +472,292 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.ProgramRepositoryTest
             // Act & Assert
             // ExecuteDeleteAsync() is not mockable with Moq; full delete logic is covered by integration tests.
             await Assert.ThrowsAsync<ArgumentException>(() => repo.DeleteProgramAsync(id));
+        }
+
+        #endregion
+
+        #region GetProgramTimeSnapshotAsync
+
+        /// <summary>
+        /// Creates a ProgramRepository with in-memory data for all six join sources used by
+        /// GetProgramTimeSnapshotAsync. Filtering uses EF.Functions.ILike which is not translatable
+        /// in-memory, so filter-based scenarios are covered by integration tests.
+        /// </summary>
+        private static ProgramRepository CreatePlanCostRepository(
+            IEnumerable<Core.Entities.Program> programs,
+            IEnumerable<Project> projects,
+            IEnumerable<StaffJob> staffJobs,
+            IEnumerable<StaffGeneralView> staff,
+            IEnumerable<WorkgroupGradeGeneralView> workgroupGrades,
+            IEnumerable<ProfitCentreGradeView> profitCentreGrades,
+            int fpsYear = DefaultTestFpsYear,
+            string userEmailId = "test@example.com")
+        {
+            var requestContext = Substitute.For<IFpsRequestContext>();
+            requestContext.FpsYear.Returns(fpsYear);
+            requestContext.UserEmailId.Returns(userEmailId);
+
+            var mockContext = RepositoryTestHelper.CreateMockDbContext<FpsDbContext>(requestContext);
+
+            var programsMockSet = RepositoryTestHelper.CreateMockDbSet(programs);
+            var projectsMockSet = RepositoryTestHelper.CreateMockDbSet(projects);
+            var staffJobsMockSet = RepositoryTestHelper.CreateMockDbSet(staffJobs);
+            var staffMockSet = RepositoryTestHelper.CreateMockDbSet(staff);
+            var workgroupGradesMockSet = RepositoryTestHelper.CreateMockDbSet(workgroupGrades);
+            var profitCentreGradesMockSet = RepositoryTestHelper.CreateMockDbSet(profitCentreGrades);
+
+            mockContext.Setup(x => x.Programs).Returns(programsMockSet.Object);
+            mockContext.Setup(x => x.Projects).Returns(projectsMockSet.Object);
+            mockContext.Setup(x => x.StaffJobs).Returns(staffJobsMockSet.Object);
+            mockContext.Setup(x => x.StaffGeneralViews).Returns(staffMockSet.Object);
+            mockContext.Setup(x => x.WorkgroupGradeGeneralViews).Returns(workgroupGradesMockSet.Object);
+            mockContext.Setup(x => x.ProfitCentreGradeViews).Returns(profitCentreGradesMockSet.Object);
+
+            return new ProgramRepository(mockContext.Object, requestContext);
+        }
+
+        private static (
+            IEnumerable<Core.Entities.Program> Programs,
+            IEnumerable<Project> Projects,
+            IEnumerable<StaffJob> StaffJobs,
+            IEnumerable<StaffGeneralView> Staff,
+            IEnumerable<WorkgroupGradeGeneralView> WorkgroupGrades,
+            IEnumerable<ProfitCentreGradeView> ProfitCentreGrades)
+            BuildPlanCostSeedData()
+        {
+            var programs = new List<Core.Entities.Program>
+            {
+                new() { ProgramNo = "P001", Directorate = "Dir A" },
+                new() { ProgramNo = "ZT_prog", Directorate = "Dir B" }
+            };
+
+            var projects = new List<Project>
+            {
+                new() { ParentProject = "J001", Program = "P001", Customer = "Cust A", Contract = "C1", ProjectStatus = "Open" },
+                new() { ParentProject = "J002", Program = "ZT_prog", Customer = "Cust B", Contract = "C2", ProjectStatus = "Open" }
+            };
+
+            var staffJobs = new List<StaffJob>
+            {
+                new() { JobCode = "J001", StaffId = "1", PlannedHours = 10 },
+                new() { JobCode = "J002", StaffId = "2", PlannedHours = 5 }
+            };
+
+            var staff = new List<StaffGeneralView>
+            {
+                new() { StaffId = "1", Name = "Alice", WorkGroupGrade = "WG1" },
+                new() { StaffId = "2", Name = "Bob", WorkGroupGrade = "WG2" }
+            };
+
+            var workgroupGrades = new List<WorkgroupGradeGeneralView>
+            {
+                new() { WgGrade = "WG1", ProfitCentreGrade = "PC1", GradeCode = "G1", WorkGroup = "Group1" },
+                new() { WgGrade = "WG2", ProfitCentreGrade = "PC2", GradeCode = "G2", WorkGroup = "Group2" }
+            };
+
+            var profitCentreGrades = new List<ProfitCentreGradeView>
+            {
+                new() { PcGrade = "PC1", ProfitCentre = "RC1", ChargeRate = 100 },
+                new() { PcGrade = "PC2", ProfitCentre = "RC2", ChargeRate = 200 }
+            };
+
+            return (programs, projects, staffJobs, staff, workgroupGrades, profitCentreGrades);
+        }
+
+        [Fact]
+        public async Task GetProgramTimeSnapshotAsync_ReturnsProjectedRows_ForMatchingJoins()
+        {
+            // Arrange
+            var seed = BuildPlanCostSeedData();
+            var repo = CreatePlanCostRepository(
+                seed.Programs, seed.Projects, seed.StaffJobs, seed.Staff, seed.WorkgroupGrades, seed.ProfitCentreGrades);
+            var query = new Core.Pagination.PaginationParameters<string> { Page = 1, PageSize = 10 };
+
+            // Act
+            var result = await repo.GetProgramTimeSnapshotAsync(query);
+
+            // Assert
+            Assert.Equal(2, result.Data.Count());
+            Assert.All(result.Data, i => Assert.StartsWith("Plan - ", i.Version));
+        }
+
+        [Fact]
+        public async Task GetProgramTimeSnapshotAsync_ComputesHoursCost_UsingChargeRate()
+        {
+            // Arrange
+            var seed = BuildPlanCostSeedData();
+            var repo = CreatePlanCostRepository(
+                seed.Programs, seed.Projects, seed.StaffJobs, seed.Staff, seed.WorkgroupGrades, seed.ProfitCentreGrades);
+            var query = new Core.Pagination.PaginationParameters<string> { Page = 1, PageSize = 10 };
+
+            // Act
+            var result = await repo.GetProgramTimeSnapshotAsync(query);
+
+            // Assert — P001 row: 10 hours * 100 rate = 1000
+            var normalRow = result.Data.Single(i => i.Program == "P001");
+            Assert.Equal(1000m, normalRow.HoursCost);
+        }
+
+        [Fact]
+        public async Task GetProgramTimeSnapshotAsync_ReturnsZeroHoursCost_ForExcludedPrograms()
+        {
+            // Arrange
+            var seed = BuildPlanCostSeedData();
+            var repo = CreatePlanCostRepository(
+                seed.Programs, seed.Projects, seed.StaffJobs, seed.Staff, seed.WorkgroupGrades, seed.ProfitCentreGrades);
+            var query = new Core.Pagination.PaginationParameters<string> { Page = 1, PageSize = 10 };
+
+            // Act
+            var result = await repo.GetProgramTimeSnapshotAsync(query);
+
+            // Assert — ZT_prog is an excluded program; cost must be zero regardless of charge rate
+            var excludedRow = result.Data.Single(i => i.Program == "ZT_prog");
+            Assert.Equal(0m, excludedRow.HoursCost);
+        }
+
+        [Fact]
+        public async Task GetProgramTimeSnapshotAsync_OrdersByHoursCostDescending_ByDefault()
+        {
+            // Arrange
+            var seed = BuildPlanCostSeedData();
+            var repo = CreatePlanCostRepository(
+                seed.Programs, seed.Projects, seed.StaffJobs, seed.Staff, seed.WorkgroupGrades, seed.ProfitCentreGrades);
+            var query = new Core.Pagination.PaginationParameters<string> { Page = 1, PageSize = 10, Descending = true };
+
+            // Act
+            var result = await repo.GetProgramTimeSnapshotAsync(query);
+
+            // Assert
+            var costs = result.Data.Select(i => i.HoursCost).ToList();
+            Assert.Equal(costs.OrderByDescending(c => c).ToList(), costs);
+        }
+
+        [Fact]
+        public async Task GetProgramTimeSnapshotAsync_AppliesPaging()
+        {
+            // Arrange
+            var seed = BuildPlanCostSeedData();
+            var repo = CreatePlanCostRepository(
+                seed.Programs, seed.Projects, seed.StaffJobs, seed.Staff, seed.WorkgroupGrades, seed.ProfitCentreGrades);
+            var query = new Core.Pagination.PaginationParameters<string> { Page = 1, PageSize = 1 };
+
+            // Act
+            var result = await repo.GetProgramTimeSnapshotAsync(query);
+
+            // Assert
+            Assert.Single(result.Data);
+            Assert.Equal(2, result.PaginationData.TotalRecords);
+        }
+
+        [Theory]
+        [InlineData("directorate", "P001")]
+        [InlineData("program", "P001")]
+        [InlineData("customer", "P001")]
+        [InlineData("contract", "P001")]
+        [InlineData("project", "P001")]
+        [InlineData("resourcecentre", "P001")]
+        [InlineData("workgroup", "P001")]
+        [InlineData("gradecode", "P001")]
+        [InlineData("name", "P001")]
+        [InlineData("hours", "ZT_prog")]
+        [InlineData("hourscost", "ZT_prog")]
+        public async Task GetProgramTimeSnapshotAsync_SortsAscending_ByProperty(string sortBy, string expectedFirstProgram)
+        {
+            // Arrange
+            var seed = BuildPlanCostSeedData();
+            var repo = CreatePlanCostRepository(
+                seed.Programs, seed.Projects, seed.StaffJobs, seed.Staff, seed.WorkgroupGrades, seed.ProfitCentreGrades);
+            var query = new Core.Pagination.PaginationParameters<string>
+            {
+                Page = 1,
+                PageSize = 10,
+                SortBy = sortBy,
+                Descending = false
+            };
+
+            // Act
+            var result = await repo.GetProgramTimeSnapshotAsync(query);
+
+            // Assert
+            Assert.Equal(expectedFirstProgram, result.Data.First().Program);
+        }
+
+        [Theory]
+        [InlineData("directorate", "ZT_prog")]
+        [InlineData("program", "ZT_prog")]
+        [InlineData("customer", "ZT_prog")]
+        [InlineData("contract", "ZT_prog")]
+        [InlineData("project", "ZT_prog")]
+        [InlineData("resourcecentre", "ZT_prog")]
+        [InlineData("workgroup", "ZT_prog")]
+        [InlineData("gradecode", "ZT_prog")]
+        [InlineData("name", "ZT_prog")]
+        [InlineData("hours", "P001")]
+        [InlineData("hourscost", "P001")]
+        public async Task GetProgramTimeSnapshotAsync_SortsDescending_ByProperty(string sortBy, string expectedFirstProgram)
+        {
+            // Arrange
+            var seed = BuildPlanCostSeedData();
+            var repo = CreatePlanCostRepository(
+                seed.Programs, seed.Projects, seed.StaffJobs, seed.Staff, seed.WorkgroupGrades, seed.ProfitCentreGrades);
+            var query = new Core.Pagination.PaginationParameters<string>
+            {
+                Page = 1,
+                PageSize = 10,
+                SortBy = sortBy,
+                Descending = true
+            };
+
+            // Act
+            var result = await repo.GetProgramTimeSnapshotAsync(query);
+
+            // Assert
+            Assert.Equal(expectedFirstProgram, result.Data.First().Program);
+        }
+
+        [Theory]
+        [InlineData("version")]
+        [InlineData("status")]
+        public async Task GetProgramTimeSnapshotAsync_SortsByTiedColumn_ReturnsAllRows(string sortBy)
+        {
+            // Arrange ? Version and Status are identical across the seed rows (tie); the sort branch
+            // is still exercised and all rows must be returned.
+            var seed = BuildPlanCostSeedData();
+            var repo = CreatePlanCostRepository(
+                seed.Programs, seed.Projects, seed.StaffJobs, seed.Staff, seed.WorkgroupGrades, seed.ProfitCentreGrades);
+            var query = new Core.Pagination.PaginationParameters<string>
+            {
+                Page = 1,
+                PageSize = 10,
+                SortBy = sortBy
+            };
+
+            // Act
+            var result = await repo.GetProgramTimeSnapshotAsync(query);
+
+            // Assert
+            Assert.Equal(2, result.Data.Count());
+        }
+
+        [Fact]
+        public async Task GetProgramTimeSnapshotAsync_WithUnknownSortColumn_ReturnsUnsortedRows()
+        {
+            // Arrange ? an unrecognised SortBy hits the default switch arm (no ordering applied).
+            var seed = BuildPlanCostSeedData();
+            var repo = CreatePlanCostRepository(
+                seed.Programs, seed.Projects, seed.StaffJobs, seed.Staff, seed.WorkgroupGrades, seed.ProfitCentreGrades);
+            var query = new Core.Pagination.PaginationParameters<string>
+            {
+                Page = 1,
+                PageSize = 10,
+                SortBy = "nonexistentcolumn"
+            };
+
+            // Act
+            var result = await repo.GetProgramTimeSnapshotAsync(query);
+
+            // Assert
+            Assert.Equal(2, result.Data.Count());
         }
 
         #endregion

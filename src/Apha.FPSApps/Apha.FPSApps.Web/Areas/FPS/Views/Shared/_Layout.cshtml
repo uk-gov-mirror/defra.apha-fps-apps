@@ -11,14 +11,14 @@
         ViewData["Title"] = $"{fpsYearCode} : {pageTitle}";
     }
     <title>@ViewData["Title"]</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/>
-    <link rel="stylesheet" href="~/css/govuk-frontend-6.0.0.min.css"/>
-    <link rel="stylesheet" href="~/css/supplement_style_for_gov.uk_style.css"/>
-    <link rel="stylesheet" href="~/css/fps_styles/styles.css"/>
-    <link rel="stylesheet" href="~/DataGrid/datagrid.css"/>
-    <link rel="stylesheet" href="~/css/main_style.css"/>
-    <link rel="stylesheet" href="~/DataGrid/editable-grid.css"/>
-    <link rel="stylesheet" href="~/css/common/headernav/navstyle.css"/>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/govuk-frontend-6.0.0.min.css" />
+    <link rel="stylesheet" href="~/css/supplement_style_for_gov.uk_style.css" />
+    <link rel="stylesheet" href="~/css/fps_styles/styles.css" />
+    <link rel="stylesheet" href="~/DataGrid/datagrid.css" />
+    <link rel="stylesheet" href="~/css/main_style.css" />
+    <link rel="stylesheet" href="~/DataGrid/editable-grid.css" />
+    <link rel="stylesheet" href="~/css/common/headernav/navstyle.css" />
     <script src="~/lib/jquery/dist/jquery.js"></script>
     @await RenderSectionAsync("Styles", required: false)
 </head>
@@ -40,7 +40,7 @@
     <!-- ── Shared modal popup (for add/edit forms) ───────────────────── -->
     <div id="modalPopup" tabindex="-1" aria-label="Modal dialog"
          style="display:none; position:fixed; inset:0; z-index:1050;
-                background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
+        background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
         <div class="modal-dialog modal-lg" style="margin:auto; width:100%; max-width:700px;">
             <div id="modaPopupBody" class="modal-content" style="border-radius:4px;">
             </div>
@@ -55,46 +55,50 @@
     <fps-year-script></fps-year-script>
 
     <script>
+        $(document).ready(function () {
+            $(document).ajaxStart(showLoader).ajaxStop(hideLoader);
+                });
         // ── Modal open / close helpers ────────────────────────────────────
         (function () {
             var modal = document.getElementById('modalPopup');
             if (!modal) return;
 
-            var observer = new MutationObserver(function () {
-                if (modal.classList.contains('show')) {
-                    modal.style.display = 'flex';
-                    document.body.style.overflow = 'hidden';
-                } else {
-                    modal.style.display = 'none';
-                    document.body.style.overflow = '';
-                }
-            });
-            observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
+                var observer = new MutationObserver(function() {
+                    if (modal.classList.contains('show')) {
+                        modal.style.display = 'flex';
+                        document.body.style.overflow = 'hidden';
+                    } else {
+                        modal.style.display = 'none';
+                        document.body.style.overflow = '';
+                    }
+                });
+                observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
 
-            modal.addEventListener('click', function (e) {
-                if (e.target === modal) {
-                    return false;
-                }
-            });
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        return false;
+                    }
+                });
 
-            document.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape' && modal.classList.contains('show')) {
-                    modal.classList.remove('show');
-                }
-            });
-        })();
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape' && modal.classList.contains('show')) {
+                        modal.classList.remove('show');
+                    }
+                });
+            })();
 
-        // ── jQuery.fn.serializeObject helper ─────────────────────────────
-        $.fn.serializeObject = function () {
-            var obj = {};
-            this.serializeArray().forEach(function (item) {
-                obj[item.name] = item.value;
-            });
-            return obj;
-        };
+            // ── jQuery.fn.serializeObject helper ─────────────────────────────
+            $.fn.serializeObject = function() {
+                var obj = {};
+                this.serializeArray().forEach(function(item) {
+                    obj[item.name] = item.value;
+                });
+                return obj;
+            };
     </script>
 
     <script src="~/js/common/headernav/navmenu.js"></script>
+    <script src="~/js/common/numeric-decimal-input.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -849,6 +849,64 @@ namespace Apha.FPSApps.Application.UnitTests.Services.FPS.EmployeeServiceTest
 
         #endregion
 
+        #region GetPactWorkGroupStaffAsync Tests
+
+        [Fact]
+        public async Task GetPactWorkGroupStaffAsync_WithWorkGroup_ReturnsSuccessResponse()
+        {
+            // Arrange
+            const string workGroup = "WG1";
+            var expectedResponse = ApiResponseDto<List<PactStaffDto>>.SuccessResponse(
+                new List<PactStaffDto>
+                {
+                    new PactStaffDto { PactId = "P001", Name = "Alice", WorkGroupGrade = "WG1" }
+                });
+
+            _fpsEmployeeApiClient.GetPactWorkGroupStaffAsync(workGroup).Returns(expectedResponse);
+
+            // Act
+            var result = await _employeeService.GetPactWorkGroupStaffAsync(workGroup);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Single(result.Data!);
+            await _fpsEmployeeApiClient.Received(1).GetPactWorkGroupStaffAsync(workGroup);
+        }
+
+        [Fact]
+        public async Task GetPactWorkGroupStaffAsync_WithNullWorkGroup_ReturnsSuccessResponse()
+        {
+            // Arrange
+            var expectedResponse = ApiResponseDto<List<PactStaffDto>>.SuccessResponse([]);
+
+            _fpsEmployeeApiClient.GetPactWorkGroupStaffAsync(null).Returns(expectedResponse);
+
+            // Act
+            var result = await _employeeService.GetPactWorkGroupStaffAsync(null);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Empty(result.Data!);
+            await _fpsEmployeeApiClient.Received(1).GetPactWorkGroupStaffAsync(null);
+        }
+
+        [Fact]
+        public async Task GetPactWorkGroupStaffAsync_WhenClientThrows_PropagatesException()
+        {
+            // Arrange
+            _fpsEmployeeApiClient.GetPactWorkGroupStaffAsync(Arg.Any<string?>())
+                .ThrowsAsync(new Exception("API unavailable"));
+
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<Exception>(
+                async () => await _employeeService.GetPactWorkGroupStaffAsync("WG1"));
+            Assert.Equal("API unavailable", ex.Message);
+        }
+
+        #endregion
+
         #region GetPactStaffAsync Tests
 
         [Fact]

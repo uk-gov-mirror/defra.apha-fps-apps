@@ -98,10 +98,13 @@ namespace Apha.PACT.DataAccess.Repository
             return entity;
         }
 
-        public async Task<TestCapability> UpdateAsync(TestCapability entity)
+        public async Task<TestCapability> UpdateAsync(TestCapability entity, string? originalWorkGroup = null)
         {
             entity.FpsYear = _fpsRequestContext.FpsYear;
+
             _context.Entry(entity).State = EntityState.Modified;
+            // Unit Cost is master data owned by testorproduct.unitpricevla and must not be persisted here.
+            _context.Entry(entity).Property(e => e.UnitCost).IsModified = false;
             await _context.SaveChangesAsync();
             return entity;
         }
@@ -130,8 +133,14 @@ namespace Apha.PACT.DataAccess.Repository
                     t.PlanPortfolio.ToLower() == portfolio.Trim().ToLower());
         }
 
-        public async Task<PagedData<WgTestCapabilitiesWithDescription>> GetPagedWgTestCapabilitiesWithDescriptionAsync(
-            PaginationParameters<string> query, string workGroup)
+        public async Task<List<TestCapability>> GetAllAsync()
+        {
+            return await _context.TestCapabilities
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public async Task<PagedData<WgTestCapabilitiesWithDescription>> GetPagedWgTestCapabilitiesWithDescriptionAsync(PaginationParameters<string> query, string workGroup)
         {
             var baseQuery = _context.TestCapabilities.AsNoTracking()
                 .Where(testCapability => testCapability.WorkGroup == workGroup)
@@ -246,11 +255,9 @@ namespace Apha.PACT.DataAccess.Repository
                 .GroupBy(capability => capability.TestCode)
                 .ToDictionary(
                     group => group.Key,
-                    group => new
-                    {
-                        HighestLevel   = group.Max(c => ResolveWorkgroupLevel(c.WorkGroup)),
-                        WorkgroupCount = group.Count()
-                    });
+                    group => new WorkgroupLevelInfo(
+                        HighestLevel: group.Max(c => ResolveWorkgroupLevel(c.WorkGroup)),
+                        WorkgroupCount: group.Count()));
 
             // ── Step 3: Resolve default (representative) workgroup per test code
             // Mirrors fps.vw_test_default_workgroup:
@@ -261,18 +268,10 @@ namespace Apha.PACT.DataAccess.Repository
                 .GroupBy(capability => capability.TestCode)
                 .ToDictionary(
                     group => group.Key,
-                    group =>
-                    {
-                        var levelInfo = workgroupLevelByTestCode[group.Key];
-                        return group.Min(capability =>
-                            levelInfo.WorkgroupCount == 1
-                                ? capability.WorkGroup
-                                : capability.WorkGroup.StartsWith("lt", StringComparison.OrdinalIgnoreCase)
-                                    ? "LTM"
-                                    : capability.WorkGroup.StartsWith("sv", StringComparison.OrdinalIgnoreCase)
-                                        ? "SVXX"
-                                        : capability.WorkGroup)!;
-                    });
+                    group => group.Min(capability =>
+                        ResolveDefaultWorkgroupName(
+                            capability.WorkGroup,
+                            workgroupLevelByTestCode[group.Key].WorkgroupCount))!);
 
             // ── Step 4: Build plan-cost pivot source ──────────────────────────
             // Mirrors fps.vw_test_plan_cost_pivot_src:
@@ -360,11 +359,9 @@ namespace Apha.PACT.DataAccess.Repository
                 .GroupBy(r => r.TestCode, StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(
                     g => g.Key,
-                    g => new
-                    {
-                        ShortDescription = g.First().ShortDescription,
-                        TotalReqCost     = g.Sum(r => r.TotalCost ?? 0m)
-                    },
+                    g => new ReqSummary(
+                        ShortDescription: g.First().ShortDescription,
+                        TotalReqCost: g.Sum(r => r.TotalCost ?? 0m)),
                     StringComparer.OrdinalIgnoreCase);
 
             // Req cost lookup: testcode → (profitCentre → cost)
@@ -397,52 +394,19 @@ namespace Apha.PACT.DataAccess.Repository
                 .OrderBy(tc => tc)
                 .ToList();
 
-            var pivotedRows = allTestCodes.Select(testCode =>
-            {
-                var row = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
-
-                row["testcode"]         = testCode;
-                row["shortdescription"] = reqSummaryByTestCode.GetValueOrDefault(testCode)?.ShortDescription;
-                row["plan_total"]       = planTotalByTestCode.GetValueOrDefault(testCode).ToString();
-
-                foreach (var programmeNo in allProgrammeNumbers)
-                    row[programmeNo] = planCostByTestCodeAndProgramme
-                        .GetValueOrDefault(testCode)
-                        ?.GetValueOrDefault(programmeNo)
-                        .ToString() ?? null;
-
-                row["req_totalcost"] = reqSummaryByTestCode
-                    .GetValueOrDefault(testCode)?.TotalReqCost.ToString() ?? null;
-
-                foreach (var profitCentre in allProfitCentres)
-                    row["pc_" + profitCentre] = reqCostByTestCodeAndProfitCentre
-                        .GetValueOrDefault(testCode)
-                        ?.GetValueOrDefault(profitCentre)
-                        .ToString() ?? null;
-
-                return row;
-            }).ToList();
+            var pivotedRows = allTestCodes.Select(testCode => BuildPivotRow(
+                testCode,
+                reqSummaryByTestCode,
+                planTotalByTestCode,
+                planCostByTestCodeAndProgramme,
+                reqCostByTestCodeAndProfitCentre,
+                allProgrammeNumbers,
+                allProfitCentres)).ToList();
 
             // ── Step 8: Apply text filters in-memory ──────────────────────────
             if (!string.IsNullOrWhiteSpace(query.Filter))
             {
-                var activeFilters = JsonConvert.DeserializeObject<Dictionary<string, string>>(query.Filter);
-                if (activeFilters != null)
-                {
-                    if (activeFilters.TryGetValue("testcode", out var testCodeFilter)
-                        && !string.IsNullOrWhiteSpace(testCodeFilter))
-                        pivotedRows = pivotedRows
-                            .Where(r => r["testcode"]?
-                                .Contains(testCodeFilter, StringComparison.OrdinalIgnoreCase) == true)
-                            .ToList();
-
-                    if (activeFilters.TryGetValue("shortdescription", out var shortDescFilter)
-                        && !string.IsNullOrWhiteSpace(shortDescFilter))
-                        pivotedRows = pivotedRows
-                            .Where(r => r["shortdescription"]?
-                                .Contains(shortDescFilter, StringComparison.OrdinalIgnoreCase) == true)
-                            .ToList();
-                }
+                pivotedRows = ApplyCrossTabFilters(pivotedRows, query.Filter);
             }
 
            
@@ -451,10 +415,7 @@ namespace Apha.PACT.DataAccess.Repository
             // ── Apply sorting ─────────────────────────────────────────────────
             if (!string.IsNullOrWhiteSpace(query.SortBy))
             {
-                var sortKey = query.SortBy.ToLowerInvariant();
-                pivotedRows = query.Descending
-                    ? pivotedRows.OrderByDescending(r => GetSortValue(r, sortKey)).ToList()
-                    : pivotedRows.OrderBy(r => GetSortValue(r, sortKey)).ToList();
+                pivotedRows = ApplyCrossTabSorting(pivotedRows, query);
             }
 
             var pagedRows = pivotedRows
@@ -473,9 +434,14 @@ namespace Apha.PACT.DataAccess.Repository
         }
 
    
-        private static int ResolveWorkgroupLevel(string workGroup) =>
-            workGroup.StartsWith("lt", StringComparison.OrdinalIgnoreCase) ? 3 :
-            workGroup.StartsWith("sv", StringComparison.OrdinalIgnoreCase) ? 2 : 1;
+        private static int ResolveWorkgroupLevel(string workGroup)
+        {
+            if (workGroup.StartsWith("lt", StringComparison.OrdinalIgnoreCase))
+                return 3;
+            if (workGroup.StartsWith("sv", StringComparison.OrdinalIgnoreCase))
+                return 2;
+            return 1;
+        }
 
         /// <summary>
         /// Returns a sort-comparable value for a pivot row column.
@@ -489,5 +455,96 @@ namespace Apha.PACT.DataAccess.Repository
                 return number;
             return raw ?? string.Empty;
         }
+
+        private static string ResolveDefaultWorkgroupName(string workGroup, int workgroupCount)
+        {
+            if (workgroupCount == 1)
+                return workGroup;
+            if (workGroup.StartsWith("lt", StringComparison.OrdinalIgnoreCase))
+                return "LTM";
+            if (workGroup.StartsWith("sv", StringComparison.OrdinalIgnoreCase))
+                return "SVXX";
+            return workGroup;
+        }
+
+        private static Dictionary<string, string?> BuildPivotRow(
+            string testCode,
+            Dictionary<string, ReqSummary> reqSummaryByTestCode,
+            Dictionary<string, decimal> planTotalByTestCode,
+            Dictionary<string, Dictionary<string, decimal>> planCostByTestCodeAndProgramme,
+            Dictionary<string, Dictionary<string, decimal>> reqCostByTestCodeAndProfitCentre,
+            List<string> allProgrammeNumbers,
+            List<string> allProfitCentres)
+        {
+            var row = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["testcode"] = testCode,
+                ["shortdescription"] = reqSummaryByTestCode.GetValueOrDefault(testCode)?.ShortDescription,
+                ["plan_total"] = planTotalByTestCode.GetValueOrDefault(testCode).ToString()
+            };
+
+            foreach (var programmeNo in allProgrammeNumbers)
+                row[programmeNo] = planCostByTestCodeAndProgramme
+                    .GetValueOrDefault(testCode)
+                    ?.GetValueOrDefault(programmeNo)
+                    .ToString() ?? null;
+
+            row["req_totalcost"] = reqSummaryByTestCode
+                .GetValueOrDefault(testCode)?.TotalReqCost.ToString() ?? null;
+
+            foreach (var profitCentre in allProfitCentres)
+                row["pc_" + profitCentre] = reqCostByTestCodeAndProfitCentre
+                    .GetValueOrDefault(testCode)
+                    ?.GetValueOrDefault(profitCentre)
+                    .ToString() ?? null;
+
+            return row;
+        }
+
+        private static List<Dictionary<string, string?>> ApplyCrossTabFilters(
+            List<Dictionary<string, string?>> pivotedRows, string? filter)
+        {
+            if (string.IsNullOrWhiteSpace(filter))
+                return pivotedRows;
+
+            var activeFilters = JsonConvert.DeserializeObject<Dictionary<string, string>>(filter);
+            if (activeFilters == null)
+                return pivotedRows;
+
+            pivotedRows = ApplyColumnContainsFilter(pivotedRows, activeFilters, "testcode");
+            pivotedRows = ApplyColumnContainsFilter(pivotedRows, activeFilters, "shortdescription");
+            return pivotedRows;
+        }
+
+        private static List<Dictionary<string, string?>> ApplyColumnContainsFilter(
+            List<Dictionary<string, string?>> pivotedRows,
+            Dictionary<string, string> activeFilters,
+            string column)
+        {
+            if (activeFilters.TryGetValue(column, out var filterValue)
+                && !string.IsNullOrWhiteSpace(filterValue))
+                pivotedRows = pivotedRows
+                    .Where(r => r[column]?
+                        .Contains(filterValue, StringComparison.OrdinalIgnoreCase) == true)
+                    .ToList();
+
+            return pivotedRows;
+        }
+
+        private static List<Dictionary<string, string?>> ApplyCrossTabSorting(
+            List<Dictionary<string, string?>> pivotedRows, PaginationParameters<string> query)
+        {
+            if (string.IsNullOrWhiteSpace(query.SortBy))
+                return pivotedRows;
+
+            var sortKey = query.SortBy.ToLowerInvariant();
+            return query.Descending
+                ? pivotedRows.OrderByDescending(r => GetSortValue(r, sortKey)).ToList()
+                : pivotedRows.OrderBy(r => GetSortValue(r, sortKey)).ToList();
+        }
+
+        private sealed record WorkgroupLevelInfo(int HighestLevel, int WorkgroupCount);
+
+        private sealed record ReqSummary(string? ShortDescription, decimal TotalReqCost);
     }
 }

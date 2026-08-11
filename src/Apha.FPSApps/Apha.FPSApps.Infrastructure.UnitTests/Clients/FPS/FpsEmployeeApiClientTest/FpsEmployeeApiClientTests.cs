@@ -664,6 +664,95 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.FPS.FpsEmployeeApiClient
 
         #endregion
 
+        #region GetPactWorkGroupStaffAsync Tests
+
+        [Fact]
+        public async Task GetPactWorkGroupStaffAsync_WithSuccessResponse_ReturnsMappedPactStaffList()
+        {
+            // Arrange
+            const string workGroup = "WG1";
+            var apiResponse = new ApiResponse<List<PactStaffRes>>
+            {
+                Success = true,
+                Data = new List<PactStaffRes>
+                {
+                    new PactStaffRes { PactId = "P001", Name = "Alice", WorkGroupGrade = "WG1" }
+                }
+            };
+            var expectedDto = ApiResponseDto<List<PactStaffDto>>.SuccessResponse(
+                new List<PactStaffDto>
+                {
+                    new PactStaffDto { PactId = "P001", Name = "Alice", WorkGroupGrade = "WG1" }
+                });
+
+            _httpExecutor.GetAsync<List<PactStaffRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<PactStaffDto>>>(apiResponse).Returns(expectedDto);
+
+            // Act
+            var result = await _client.GetPactWorkGroupStaffAsync(workGroup);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Single(result.Data!);
+            await _httpExecutor.Received(1).GetAsync<List<PactStaffRes>>(Arg.Is<string>(x => x.Contains("PactWorkGroupStaff") && x.Contains(workGroup)));
+            _mapper.Received(1).Map<ApiResponseDto<List<PactStaffDto>>>(apiResponse);
+        }
+
+        [Fact]
+        public async Task GetPactWorkGroupStaffAsync_WithNullWorkGroup_ReturnsMappedResponse()
+        {
+            // Arrange
+            var apiResponse = new ApiResponse<List<PactStaffRes>>
+            {
+                Success = true,
+                Data = new List<PactStaffRes>()
+            };
+            var expectedDto = ApiResponseDto<List<PactStaffDto>>.SuccessResponse([]);
+
+            _httpExecutor.GetAsync<List<PactStaffRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<PactStaffDto>>>(apiResponse).Returns(expectedDto);
+
+            // Act
+            var result = await _client.GetPactWorkGroupStaffAsync(null);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Empty(result.Data!);
+        }
+
+        [Fact]
+        public async Task GetPactWorkGroupStaffAsync_WhenApiReturnsFailure_ReturnsFailureResponse()
+        {
+            // Arrange
+            var apiResponse = new ApiResponse<List<PactStaffRes>>
+            {
+                Success = false,
+                Errors = new List<ApiError> { new ApiError { Message = "API Error", Code = "ERROR" } }
+            };
+            var mappedResponse = new ApiResponseDto<List<PactStaffDto>>
+            {
+                Success = false,
+                Errors = new List<ApiErrorDto> { new ApiErrorDto { Message = "API Error", Code = "ERROR" } },
+                Meta = new ApiMetaDto()
+            };
+
+            _httpExecutor.GetAsync<List<PactStaffRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<PactStaffDto>>>(apiResponse).Returns(mappedResponse);
+
+            // Act
+            var result = await _client.GetPactWorkGroupStaffAsync("WG1");
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.NotNull(result.Errors);
+            Assert.Single(result.Errors!);
+        }
+
+        #endregion
+
         #region GetPactStaffAsync Tests
 
         [Fact]

@@ -81,9 +81,8 @@
             <label class="govuk-label govuk-!-font-weight-bold" asp-for="NoRequired">
                 No Required <span class="sup_color_red">*</span>
             </label>
-            <input class="govuk-input govuk-!-font-size-16" asp-for="NoRequired"
-                   type="number" step="0.01" min="0"
-                   placeholder="e.g., 0" required />
+            <input class="govuk-input govuk-!-font-size-16 decfmt-input" asp-for="NoRequired"
+                   type="text" placeholder="e.g., 0" required />
             <span data-valmsg-for="NoRequired"
                   class="govuk-error-message field-validation-valid" style="display:none;"></span>
         </div>
@@ -95,12 +94,11 @@
             </label>
             <div class="govuk-input__wrapper">
                 <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                <input class="govuk-input govuk-!-font-size-16" asp-for="UnitPrice"
-                       type="number" step="0.01" min="0" max="92233720368547758.07"
-                       placeholder="e.g., 23.80" required  onkeydown="if(['e', 'E', '+', '-'].includes(event.key)) event.preventDefault();"/>
+                <input class="govuk-input govuk-!-font-size-16 decfmt-input" asp-for="UnitPrice"
+                     type="text" placeholder="e.g., 23.8000" required  />
             </div>     
-            <span data-valmsg-for="UnitPrice"
-                  class="govuk-error-message field-validation-valid" style="display:none;"></span>
+            <span asp-validation-for="UnitPrice"
+                  class="govuk-error-message"></span>
         </div>
     </form>
 </div>

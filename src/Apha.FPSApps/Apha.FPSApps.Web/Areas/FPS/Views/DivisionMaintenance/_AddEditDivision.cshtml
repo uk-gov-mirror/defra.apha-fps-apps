@@ -54,7 +54,7 @@
                         <label class="govuk-label" asp-for="CentOverhead">Central Overhead</label>
                         <div class="govuk-input__wrapper">
                             <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                            <input type="number" step="0.01" asp-for="CentOverhead" class="govuk-input" min="0">
+                            <input type="text" asp-for="CentOverhead" class="govuk-input js-numeric-decimal" maxlength="20">
                         </div>
                         <span asp-validation-for="CentOverhead" class="govuk-error-message" style="display:none;"></span>
                     </div>

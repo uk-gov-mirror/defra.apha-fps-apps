@@ -13,7 +13,7 @@ namespace Apha.FPS.DataAccess.Data
                 .ToView("vqryfrmtimesellerpc", "fps");
 
             entity.Property(e => e.ContTarget)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("conttarget");
 
             entity.Property(e => e.SellingPc)
@@ -21,15 +21,15 @@ namespace Apha.FPS.DataAccess.Data
                 .HasColumnName("sellingpc");
 
             entity.Property(e => e.ChargeRate)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("chargerate");
 
             entity.Property(e => e.Ohr)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("ohr");
 
             entity.Property(e => e.SumOfGenBid)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("sumofgenbid");
 
             entity.Property(e => e.WorkGroup)

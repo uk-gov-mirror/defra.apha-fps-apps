@@ -16,7 +16,7 @@ namespace Apha.FPSApps.Web.Areas.CostBook.Controllers
 {
     
     [Area("CostBook")]
-    [Authorize(Roles = "CostbookAdmin,CostbookUser")]
+    [Authorize(Roles = "CostbookAdmin")]
     [AuthorizeForScopes(ScopeKeySection = "CostBookApiSettings:Scope")]
     public class MaintenanceController : Controller
     {

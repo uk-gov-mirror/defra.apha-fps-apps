@@ -102,25 +102,21 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.FPS.ProgramProjectControllerTes
         }
 
         [Fact]
-        public async Task LoadProjectGrid_WithNullProgramNo_UsesEmptyString()
+        public async Task LoadProjectGrid_WithNullProgramNo_ReturnsEmptyGridWithoutCallingService()
         {
             // Arrange
             var request = new PaginationFilter<string> { Page = 1, PageSize = 10 };
             var queryParameters = new QueryParameters<string> { Page = 1, PageSize = 10 };
-            var serviceResponse = ApiResponseDto<List<ProjectDto>>.SuccessResponse(
-                new List<ProjectDto>(), new PaginationDto());
 
             _mapper.Map<QueryParameters<string>>(request).Returns(queryParameters);
-            _projectService.GetProjectsByProgramAsync(queryParameters, string.Empty).Returns(serviceResponse);
-            _mapper.Map<List<ProjectViewModel>>(Arg.Any<List<ProjectDto>>()).Returns(new List<ProjectViewModel>());
-            _mapper.Map<PaginationModel>(Arg.Any<PaginationDto>()).Returns(new PaginationModel());
 
             // Act
             var result = await _controller.LoadProjectGrid(request, null);
 
             // Assert
             Assert.IsType<PartialViewResult>(result);
-            await _projectService.Received(1).GetProjectsByProgramAsync(queryParameters, string.Empty);
+            await _projectService.DidNotReceive().GetProjectsByProgramAsync(
+                Arg.Any<QueryParameters<string>>(), Arg.Any<string>());
         }
 
         [Fact]
@@ -451,25 +447,21 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.FPS.ProgramProjectControllerTes
         }
 
         [Fact]
-        public async Task LoadProgramProjectGrid_WithNullProgramNo_UsesEmptyString()
+        public async Task LoadProgramProjectGrid_WithNullProgramNo_ReturnsEmptyGridWithoutCallingService()
         {
             // Arrange
             var request = new PaginationFilter<string> { Page = 1, PageSize = 10 };
             var queryParameters = new QueryParameters<string> { Page = 1, PageSize = 10 };
-            var serviceResponse = ApiResponseDto<List<ProjectDto>>.SuccessResponse(
-                new List<ProjectDto>(), new PaginationDto());
 
             _mapper.Map<QueryParameters<string>>(request).Returns(queryParameters);
-            _projectService.GetProjectsByProgramAsync(queryParameters, string.Empty).Returns(serviceResponse);
-            _mapper.Map<List<ProgramProjectItem>>(Arg.Any<List<ProjectDto>>()).Returns(new List<ProgramProjectItem>());
-            _mapper.Map<PaginationModel>(Arg.Any<PaginationDto>()).Returns(new PaginationModel());
 
             // Act
             var result = await _controller.LoadProgramProjectGrid(request, null);
 
             // Assert
             Assert.IsType<PartialViewResult>(result);
-            await _projectService.Received(1).GetProjectsByProgramAsync(queryParameters, string.Empty);
+            await _projectService.DidNotReceive().GetProjectsByProgramAsync(
+                Arg.Any<QueryParameters<string>>(), Arg.Any<string>());
         }
 
         [Fact]

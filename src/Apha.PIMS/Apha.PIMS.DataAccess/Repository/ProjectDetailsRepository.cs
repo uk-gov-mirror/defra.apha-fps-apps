@@ -2,7 +2,6 @@
 using Apha.PIMS.Core.Interfaces;
 using Apha.PIMS.DataAccess.Data;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Apha.PIMS.DataAccess.Repository
 {
@@ -15,13 +14,12 @@ namespace Apha.PIMS.DataAccess.Repository
             _dbContext = dbContext;
         }
 
-        // READ: g_tlkpproject_radtrackdata LEFT JOIN tlkprisk (to resolve RiskRating string)
         public async Task<ProjectDetail?> GetPimsDetailAsync(string parentproject)
         {
             return await (
                 from rd in _dbContext.ProjectRadTrackData
                 join risk in _dbContext.Risks
-                    on rd.Riskid equals risk.Riskid into riskGroup
+                    on rd.Riskid equals risk.RiskId into riskGroup
                 from risk in riskGroup.DefaultIfEmpty()     // LEFT JOIN — Riskid is nullable
                 where rd.Parentproject == parentproject
                 select new ProjectDetail

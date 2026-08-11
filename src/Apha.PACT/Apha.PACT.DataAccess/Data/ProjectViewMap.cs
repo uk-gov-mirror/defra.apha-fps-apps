@@ -17,18 +17,18 @@ namespace Apha.PACT.DataAccess.Data
 
         private static void ConfigureMoneyColumns(EntityTypeBuilder<ProjectView> entity)
         {
-            entity.Property(e => e.BudgetCvl).HasColumnType("money").HasColumnName("budget_cvl");
-            entity.Property(e => e.CarryOver).HasColumnType("money").HasColumnName("carryover");
-            entity.Property(e => e.CarryOverSeed).HasColumnType("money").HasColumnName("carryoverseed");
-            entity.Property(e => e.CustIncome).HasColumnType("money").HasColumnName("custincome");
-            entity.Property(e => e.FecCost).HasColumnType("money").HasColumnName("feccost");
-            entity.Property(e => e.PlanCaseWorkDebit).HasColumnType("money").HasColumnName("plancaseworkdebit");
-            entity.Property(e => e.Profit).HasColumnType("money").HasColumnName("profit");
-            entity.Property(e => e.PvsIncome).HasColumnType("money").HasColumnName("pvsincome");
-            entity.Property(e => e.TransferIncome).HasColumnType("money").HasColumnName("transferincome");
-            entity.Property(e => e.WipCurrent).HasColumnType("money").HasColumnName("wip_current");
-            entity.Property(e => e.WipEoy).HasColumnType("money").HasColumnName("wip_eoy");
-            entity.Property(e => e.WipLimit).HasColumnType("money").HasColumnName("wip_limit");
+            entity.Property(e => e.BudgetCvl).HasPrecision(19, 4).HasColumnName("budget_cvl");
+            entity.Property(e => e.CarryOver).HasPrecision(19, 4).HasColumnName("carryover");
+            entity.Property(e => e.CarryOverSeed).HasPrecision(19, 4).HasColumnName("carryoverseed");
+            entity.Property(e => e.CustIncome).HasPrecision(19, 4).HasColumnName("custincome");
+            entity.Property(e => e.FecCost).HasPrecision(19, 4).HasColumnName("feccost");
+            entity.Property(e => e.PlanCaseWorkDebit).HasPrecision(19, 4).HasColumnName("plancaseworkdebit");
+            entity.Property(e => e.Profit).HasPrecision(19, 4).HasColumnName("profit");
+            entity.Property(e => e.PvsIncome).HasPrecision(19, 4).HasColumnName("pvsincome");
+            entity.Property(e => e.TransferIncome).HasPrecision(19, 4).HasColumnName("transferincome");
+            entity.Property(e => e.WipCurrent).HasPrecision(19, 4).HasColumnName("wip_current");
+            entity.Property(e => e.WipEoy).HasPrecision(19, 4).HasColumnName("wip_eoy");
+            entity.Property(e => e.WipLimit).HasPrecision(19, 4).HasColumnName("wip_limit");
         }
 
         private static void ConfigureStringColumns(EntityTypeBuilder<ProjectView> entity)

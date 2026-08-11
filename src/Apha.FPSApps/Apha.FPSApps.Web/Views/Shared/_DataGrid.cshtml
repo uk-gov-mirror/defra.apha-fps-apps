@@ -9,7 +9,7 @@
         || Model.AllowBulkDelete;
 }
 
-<div class="editable-grid-container sup_border">
+<div class="editable-grid-container sup_border" data-grid-total="@Model.Total">
 
     <div class="sup_border_bottom_0">
         @if (hasHeaderContent)
@@ -110,8 +110,7 @@
 
                                 <div class="govuk-checkboxes govuk-checkboxes--small sup_margin_0" data-module="govuk-checkboxes">
                                     <div class="govuk-checkboxes__item">
-                                    <input type="checkbox" id="@($"{Model.GridId}_selectAll")" class="govuk-checkboxes__input govuk-!-font-size-16" aria-label="Select all rows" />
-                                    @*        <input class="govuk-checkboxes__input govuk-!-font-size-16" id="chkfinished" name="chkfinished" type="checkbox" value="finished"> *@
+                                    <input type="checkbox" id="@($"{Model.GridId}_selectAll")" class="govuk-checkboxes__input govuk-!-font-size-16" aria-label="Select all rows" />                                    
                                         <label id="@($"{Model.GridId}_selectAll")"  class="govuk-label govuk-checkboxes__label sup_label_auto_width sup_p_0 sup_w_h_0" for="@($"{Model.GridId}_selectAll")">
                                         <span class="govuk-visually-hidden">Select all rows</span>
                                     </label>
@@ -129,11 +128,11 @@
                                 if (isSorted)
                                     sortIcon = Model.Pagination.SortDirection ? "▲" : "▼";
                                 <th scope="col" style="width: @column.Width px; cursor:pointer;"
-                                            class="sortable-header @GridHelpers.GetHeaderAlignmentCssClass(column)"
+                                            class="sortable-header @GridHelpers.GetHeaderAlignmentCssClass(column) @column.CssClass"
                                             data-column="@column.PropertyName"
                                             data-sortdir="@(!Model.Pagination.SortDirection)">
                                             @column.DisplayName <span class="sort-icon">@sortIcon</span>
-                                            <div class="column-resizer"></div>
+                                    <div class="column-resizer "></div>
                                         </th>
                                     }
                                 }
@@ -320,6 +319,15 @@
                                                 data-id="@GridHelpers.GetPropertyValue(row, Model.KeyProperty)"
                                                 data-delete-function="@Model.ViewFunction" allow-edit="true">
                                             <img src="~/images/view_icon.png" alt="View icon" width="20" height="20" title="View">
+                                        </button>
+                                    }
+                                    @if (Model.AllowConfirm)
+                                    {
+                                        <button type="button"
+                                                class="btn btn-sm delete-row-btn"
+                                                data-id="@GridHelpers.GetPropertyValue(row, Model.KeyProperty)"
+                                                data-delete-function="@Model.ConfirmFunction" allow-edit="true">
+                                            <img src="~/images/circle-check-regular-full.svg"  class="isCustomSvg" alt="Confirm icon" width="20" height="20" title="Confirm">
                                         </button>
                                     }
                                 </td>

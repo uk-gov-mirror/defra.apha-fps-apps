@@ -18,7 +18,7 @@ namespace Apha.PACT.DataAccess.Data
             entity.Property(e => e.MonthNo).HasColumnName("monthno");
             entity.Property(e => e.FpsYear).HasColumnName("fpsyear");
             entity.Property(e => e.CostProfile)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("costprofile");
         }
     }

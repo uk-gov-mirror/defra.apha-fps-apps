@@ -39,7 +39,7 @@ namespace Apha.FPSApps.Web.Middleware
 
         private async Task HandleExceptionAsync(HttpContext context, Exception ex, int statusCode)
         {
-            // Unwrap: UnauthorizedAccessException may wrap MicrosoftIdentityWebChallengeUserException
+            // Unwrap: UnauthorizedAccessException may wrap MicrosoftIdentityWebChallengeUserException 
             var oidcChallenge = ex as MicrosoftIdentityWebChallengeUserException
                 ?? ex.InnerException as MicrosoftIdentityWebChallengeUserException;
 

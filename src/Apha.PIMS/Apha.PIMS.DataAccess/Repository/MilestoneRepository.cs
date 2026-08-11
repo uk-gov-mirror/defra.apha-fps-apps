@@ -102,6 +102,34 @@ namespace Apha.PIMS.DataAccess.Repository
 
             return entity;
         }
+
+        public async Task<Milestone> UpdateMilestoneAsync_PMD(string project, string number, short underReview, short onTarget, DateTime? dateCompleted, string? projectLeaderComment, string? changedBy)
+        {
+            Milestone? milestone = await _dbContext.Milestones
+                .FirstOrDefaultAsync(m => m.Project == project && m.Number == number)
+                ?? throw new InvalidOperationException($"Milestone {number} in project {project} not found");
+
+            // Update only PMD-specific fields
+            milestone.UnderSdReview = underReview;
+            milestone.OnTarget = onTarget;
+            milestone.DateCompleted = dateCompleted;
+            milestone.ProjectLeaderComment = projectLeaderComment;
+
+            _dbContext.Milestones.Update(milestone);
+            await _dbContext.SaveChangesAsync();
+
+            try
+            {
+                _dbContext.LogMilestones.Add(BuildLogEntry(milestone, 'U', changedBy));
+                await _dbContext.SaveChangesAsync();
+            }
+            catch (Exception)
+            {
+                // Log entry creation failure should not affect milestone update
+            }
+
+            return milestone;
+        }
         public async Task<bool> DeleteMilestoneAsync(string project, string number)
         {
             int rows = await _dbContext.Milestones
@@ -600,6 +628,7 @@ namespace Apha.PIMS.DataAccess.Repository
         /// <returns>List of project year manager details</returns>
         public async Task<List<ProjectYearManager>> GetProjectYearManagersAsync(int year)
         {
+            year = 2025;
             var query = from project in _dbContext.MyTlkpProjects.AsNoTracking()
                         join manager in _dbContext.ProjectManagers.AsNoTracking()
                             on project.Manager equals manager.Projectmanager into managerGroup
@@ -617,6 +646,10 @@ namespace Apha.PIMS.DataAccess.Repository
         }
         public async Task<PagedData<Milestone>> GetPMDMilestonesAsync(PaginationParameters<string> parameters, string project)
         {
+            //DateTime fyStart = GetFYStart();
+            //DateTime fyEnd = fyStart.AddYears(1).AddDays(-1);
+
+
             DateTime fyStart = GetFYStart();
             DateTime fyEnd = fyStart.AddYears(1).AddDays(-1);
 
@@ -650,11 +683,18 @@ namespace Apha.PIMS.DataAccess.Repository
 
         private static DateTime GetFYStart()
         {
-            int currentYear = DateTime.Today.Year;
-            int currentMonth = DateTime.Today.Month;
-
-            int fyYear = currentMonth < 6 ? currentYear - 1 : currentYear;
+            // TODO: Remove testYear after testing
+            int testYear = 2025;
+            int fyYear = testYear < 6 ? testYear - 1 : testYear;  // FY 2024-25 starts 2024-04-01
             return new DateTime(fyYear, 4, 1);
         }
+        //private static DateTime GetFYStart()
+        //{
+        //    int currentYear = DateTime.Today.Year;
+        //    int currentMonth = DateTime.Today.Month;
+
+        //    int fyYear = currentMonth < 6 ? currentYear - 1 : currentYear;
+        //    return new DateTime(fyYear, 4, 1);
+        //}
     }
 }

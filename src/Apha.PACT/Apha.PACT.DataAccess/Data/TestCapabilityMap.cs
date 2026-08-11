@@ -35,8 +35,8 @@ namespace Apha.PACT.DataAccess.Data
                 .HasMaxLength(50)
                 .HasColumnName("sop");
             entity.Property(e => e.UnitCost)
-                .HasDefaultValueSql("0")
-                .HasColumnType("money")
+                .HasDefaultValue(0m)
+                .HasPrecision(19, 4)
                 .HasColumnName("unitcost");
         }
     }

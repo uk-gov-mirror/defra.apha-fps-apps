@@ -32,7 +32,7 @@
                                     name="profitCentre"
                                     asp-items="Model.ProfitCentreList"
                                     class="govuk-select govuk-!-font-size-16"
-                                    onchange="this.form.submit()">
+                                    onchange="showLoader(); this.form.submit()">
                                 <option value="">-- Select Resource Centre --</option>
                             </select>
                         </form>

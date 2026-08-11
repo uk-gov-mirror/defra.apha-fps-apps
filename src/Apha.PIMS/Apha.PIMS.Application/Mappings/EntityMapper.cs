@@ -42,6 +42,27 @@ namespace Apha.PIMS.Application.Mappings
             CreateMap<LogMilestone, LogMilestoneDto>().ReverseMap();
             CreateMap<RadTrackInvoice, RadTrackInvoiceDto>().ReverseMap();
             CreateMap<RadTrackInvoiceTotals, RadTrackInvoiceTotalsDto>().ReverseMap();
+
+            
+            CreateMap<Report, ReportDto>().ReverseMap();
+            CreateMap<ReportGroup, ReportGroupDto>().ReverseMap();
+            CreateMap<ReportGroupLink, ReportGroupLinkDto>().ReverseMap();
+            CreateMap<ProjectManager, ProjectManagerDto>().ReverseMap();
+            CreateMap<ProgramManagerLink, ProgramManagerLinkDto>().ReverseMap();
+            CreateMap<ProgramLookup, ProgramLookupDto>().ReverseMap();
+            CreateMap<ProfitCentreLookup, ProfitCentreLookupDto>().ReverseMap();
+            CreateMap<ProfitCentreManagerLink, ProfitCentreManagerLinkDto>().ReverseMap();
+            CreateMap<Settings, SettingDto>().ReverseMap();
+            CreateMap<AccessUser, AccessUserDto>().ReverseMap();
+            CreateMap<AccessLevel, AccessLevelDto>().ReverseMap();
+            CreateMap<AccessUserLevel, AccessUserLevelDto>().ReverseMap();
+            CreateMap<AccessSystem, AccessSystemDto>().ReverseMap();
+            CreateMap<Frequency, FrequencyDto>().ReverseMap();
+            CreateMap<ReviewItem, ReviewItemDto>().ReverseMap();
+            CreateMap<PublicationType, PublicationTypeDto>().ReverseMap();
+
+            
+            CreateMap<RadtrackProg, RadTrackProgDto>().ReverseMap();
             CreateMap<StagingMilestone, StagingMilestoneDto>().ReverseMap();
             CreateMap<YearlyFinancialData, YearlyFinancialDataDto>().ReverseMap();
             CreateMap<PactProjectYearCosts, PactProjectYearCostsDto>().ReverseMap();

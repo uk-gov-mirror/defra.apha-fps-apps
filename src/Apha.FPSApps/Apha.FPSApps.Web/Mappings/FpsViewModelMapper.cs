@@ -39,6 +39,9 @@ namespace Apha.FPSApps.Web.Mappings
             CreateMap<AnimalPlanItem, AnimalRequestDto>().ReverseMap();
             CreateMap<AnimalCostsItem, AnimalCostViewDto>().ReverseMap();
             CreateMap<AnimalSnapshotItem, AnimalSnapshotViewDto>().ReverseMap();
+            CreateMap<TimeSnapshotItem, ProgramPlanCostViewDto>().ReverseMap();
+            CreateMap<ProjectSnapshotItem, ProjectSnapshotViewDto>().ReverseMap();
+            CreateMap<TestSnapshotItem, TestFeePlanViewDto>().ReverseMap();
             CreateMap<GenericBidItem, GenericBidViewDto>().ReverseMap();
             CreateMap<ExceptionalCostSnapshotItem, ProjectExceptionalCostViewDto>().ReverseMap();
             CreateMap<CompareStaff2Item, TimeCostCalcsViewDto>().ReverseMap();
@@ -105,6 +108,9 @@ namespace Apha.FPSApps.Web.Mappings
 
             // Project Group Staff Plan view
             CreateMap<ProjectGroupStaffPlanViewItem, ProjectGroupStaffPlanViewDto>().ReverseMap();
+
+            // Workgroup Staff Plan view
+            CreateMap<WgStaffPlanViewItem, WgStaffPlanViewDto>().ReverseMap();
 
             // Test Supplier
             CreateMap<TestSupplierItem, Apha.FPSApps.Application.Dtos.PACT.TestSupplierViewDto>().ReverseMap();
@@ -209,6 +215,8 @@ namespace Apha.FPSApps.Web.Mappings
             CreateMap<StaffJobViewDto, ResourceMgmtReplanAllTimeItem>()
                 .ForMember(d => d.StaffId, o => o.MapFrom(s => s.StaffID));
             CreateMap<ResourceMgmtReplanStaffJobDto, ResourceMgmtReplanStagedItem>().ReverseMap();
+
+            CreateMap<Apha.FPSApps.Application.Dtos.FPS.BatchJobHistoryDto, YearEndHistoryItem>();
         }
     }
 }

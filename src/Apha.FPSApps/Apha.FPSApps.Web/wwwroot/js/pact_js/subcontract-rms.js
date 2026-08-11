@@ -53,6 +53,8 @@ function addSubContractRms() {
         success: function (html) {
             $('#modaPopupBody').html(html);
             $('#modalPopup').addClass('show');
+            // Initialize form validation (unobtrusive + numeric)
+            initializeFormValidation('#formAddProjectCost');
         },
         error: function () {
             showAlertMessage('Error loading form.', AlertType.ERROR);
@@ -70,6 +72,8 @@ function editSubContractRms(btn) {
         success: function (html) {
             $('#modaPopupBody').html(html);
             $('#modalPopup').addClass('show');
+            // Initialize form validation (unobtrusive + numeric)
+            initializeFormValidation('#formAddProjectCost');
         },
         error: function () {
             showAlertMessage('Error loading form.', AlertType.ERROR);
@@ -112,9 +116,23 @@ function saveProjectCost() {
 
     const data = form.serializeObject ? form.serializeObject() : Object.fromEntries(new FormData(form[0]));
 
-    ['Month', 'Amount', 'SupplierNumber', 'DailyRate', 'AnimalDays'].forEach(function (field) {
+    // Convert empty strings to null for decimal fields, but parse valid numbers
+    ['Amount', 'DailyRate'].forEach(function (field) {
         if (data[field] === '' || data[field] === undefined) {
             data[field] = null;
+        } else if (typeof data[field] === 'string') {
+            var parsed = parseFloat(data[field]);
+            data[field] = isNaN(parsed) ? null : parsed;
+        }
+    });
+
+    // Convert empty strings to null for integer fields, but parse valid integers
+    ['Month', 'SupplierNumber', 'AnimalDays'].forEach(function (field) {
+        if (data[field] === '' || data[field] === undefined) {
+            data[field] = null;
+        } else if (typeof data[field] === 'string') {
+            var parsed = parseInt(data[field], 10);
+            data[field] = isNaN(parsed) ? null : parsed;
         }
     });
 
@@ -232,6 +250,10 @@ function editFailedSubContractRms(btn) {
         success: function (html) {
             $('#modaPopupBody').html(html);
             $('#modalPopup').addClass('show');
+            // Initialize form validation after modal is shown
+            setTimeout(function() {
+                initializeFormValidation('#formAddProjectCost');
+            }, 50);
         },
         error: function () {
             showAlertMessage('Error loading form.', AlertType.ERROR);

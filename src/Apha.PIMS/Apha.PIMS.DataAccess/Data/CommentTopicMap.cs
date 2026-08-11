@@ -13,6 +13,7 @@ namespace Apha.PIMS.DataAccess.Data
         {
             entity.HasKey(e => e.Topic).HasName("pk_tlkpcommenttopics");
 
+            
             entity.ToTable("tlkpcommenttopics", "mabarchive");
 
             entity.Property(e => e.Topic)

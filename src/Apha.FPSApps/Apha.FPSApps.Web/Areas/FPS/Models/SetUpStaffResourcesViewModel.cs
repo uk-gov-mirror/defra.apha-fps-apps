@@ -10,6 +10,9 @@ namespace Apha.FPSApps.Web.Areas.FPS.Models
         /// <summary>Currently selected Resource Centre (profit centre ID).</summary>
         public string SelectedResourceCentre { get; set; } = string.Empty;
 
+        /// <summary>List of work groups for the selected resource centre.</summary>
+        public List<SelectListItem> WorkGroupList { get; set; } = new List<SelectListItem>();
+
         //   Each entry is a WgGrade code shown in the left-panel listbox (ssrGradeList)
         public List<string> GradeList { get; set; } = new List<string>();
 

@@ -40,8 +40,8 @@ namespace Apha.FPS.DataAccess.Data
                 .HasDefaultValueSql("'Charge'::character varying")
                 .HasColumnName("sector_name");
             entity.Property(e => e.Target)
-                .HasDefaultValueSql("0")
-                .HasColumnType("money")
+                .HasDefaultValue(0m)
+                .HasPrecision(19, 4)
                 .HasColumnName("target");
         }
     }

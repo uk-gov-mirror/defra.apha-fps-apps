@@ -237,7 +237,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             return new DataGridConfig<TestSupplierItem>
             {
                 GridId = "testSupplierGrid",
-                Title = "Test Supplier Entries",
+                Title = "Test Supplier View (Who is Buying TestX)",
                 ShowCheckboxColumn = false,
                 ShowPagination = true,
                 AllowRowSelection = false,

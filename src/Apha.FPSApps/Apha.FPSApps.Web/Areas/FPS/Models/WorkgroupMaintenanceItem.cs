@@ -1,3 +1,4 @@
+using Apha.FPSApps.Web.Validation;
 using Apha.FPSApps.Web.Models.Components.DataGrid;
 using System.ComponentModel.DataAnnotations;
 
@@ -46,6 +47,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Models
         // JS prototype formats this as '£N.NN'; GBP value column
         [Display(Name = "CentralOverhead")]
         [GridColumn(Width = 170, Type = GridColumnType.GbpValue, IsFilterable = false)]
+        [CurrencyRange]
         public decimal? CentralOverhead { get; set; }
 
         // ── Audit / non-grid fields — carried for modal round-trip, not displayed in main grid ─────

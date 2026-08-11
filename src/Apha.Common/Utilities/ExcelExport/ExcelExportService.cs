@@ -4,6 +4,11 @@ using System.Reflection;
 
 namespace Apha.Common.Utilities.ExcelExport
 {
+    [AttributeUsage(AttributeTargets.Property)]
+    public sealed class ExcelHiddenColumnAttribute : Attribute
+    {
+    }
+
     public partial class ExcelExportService : IExcelExportService
     {
         public byte[] ExportToExcel<T>(
@@ -18,6 +23,10 @@ namespace Apha.Common.Utilities.ExcelExport
             for (int i = 0; i < properties.Length; i++)
             {
                 worksheet.Cell(1, i + 1).Value = GetColumnHeader(properties[i]);
+                if (IsHiddenColumn(properties[i]))
+                {
+                    worksheet.Column(i + 1).Hide();
+                }
             }
 
             int row = 2;
@@ -67,6 +76,10 @@ namespace Apha.Common.Utilities.ExcelExport
                 for (int i = 0; i < properties.Length; i++)
                 {
                     worksheet.Cell(1, i + 1).Value = GetColumnHeader(properties[i]);
+                    if (IsHiddenColumn(properties[i]))
+                    {
+                        worksheet.Column(i + 1).Hide();
+                    }
                 }
 
                 int row = 2;
@@ -90,6 +103,11 @@ namespace Apha.Common.Utilities.ExcelExport
         {
             var display = property.GetCustomAttribute<DisplayAttribute>();
             return display?.Name ?? property.Name;
+        }
+
+        private static bool IsHiddenColumn(PropertyInfo property)
+        {
+            return property.GetCustomAttribute<ExcelHiddenColumnAttribute>() != null;
         }
 
         private object? ConvertExcelValue(object? value)

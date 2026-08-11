@@ -88,8 +88,7 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
                     TestCode = string.Empty,
                     Buyer = buyer ?? string.Empty,
                     ProjectBuyerCode = parentProject,
-                    Active = 1,
-                    NoRequired = 0
+                    Active = 1
                 };               
 
                 return PartialView("_AddEditTestPurchaseRequirement", model);

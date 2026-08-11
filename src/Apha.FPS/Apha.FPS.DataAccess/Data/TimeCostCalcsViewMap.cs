@@ -13,7 +13,7 @@ namespace Apha.FPS.DataAccess.Data
             entity.HasNoKey().ToView("vtimecostcalcs", "fps");
 
             entity.Property(e => e.ChargeRate)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("chargerate");
             entity.Property(e => e.Class)
                 .HasMaxLength(255)

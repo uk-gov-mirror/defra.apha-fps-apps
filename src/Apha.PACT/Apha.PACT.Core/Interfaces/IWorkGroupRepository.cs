@@ -7,6 +7,7 @@ namespace Apha.PACT.Core.Interfaces
     {
         Task<IEnumerable<WorkGroup>> GetAllWorkGroupsAsync();
         Task<List<string>> GetAllWorkGroupNamesAsync();
+        Task<List<WorkGroupStaffItem>> GetStaffByWorkGroupAsync();
         Task<IEnumerable<SummarisedWgTimeView>> GetSummarisedWorkgroupTimeAsync(string workGroup);
         Task<PactProfitCentreView?> GetProfitCentreAsync(string profitCentre);
         Task<IEnumerable<WorkGroup>> GetWorkGroupsForEmailAsync(string profitCentre);

@@ -634,5 +634,253 @@ namespace Apha.FPSApps.Application.UnitTests.Services.FPS.ProfitCentreServiceTes
 
         #endregion
 
+        #region GetPagedWgStaffPlanAsync Tests
+
+        private static WgStaffPlanViewDto BuildWgStaffPlanDto(string workGroup = "WG001", string name = "Staff One") =>
+            new()
+            {
+                WorkGroup = workGroup,
+                GradeCode = "G1",
+                Name = name,
+                Manager = "Manager01",
+                Program = "PROG01",
+                JobCode = "JOB001",
+                ProjectStatus = "Active",
+                PlannedHours = 40.0,
+                Fee = 1000m
+            };
+
+        [Fact]
+        public async Task GetPagedWgStaffPlanAsync_WithSuccessResponse_ReturnsStaffPlanList()
+        {
+            // Arrange
+            const string workGroup = "WG001";
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var staffPlanData = new List<WgStaffPlanViewDto>
+            {
+                BuildWgStaffPlanDto(workGroup, "Staff One"),
+                BuildWgStaffPlanDto(workGroup, "Staff Two")
+            };
+            var pagination = new PaginationDto { PageNumber = 1, PageSize = 10, TotalRecords = 2 };
+            var expectedResponse = ApiResponseDto<List<WgStaffPlanViewDto>>.SuccessResponse(staffPlanData, pagination);
+
+            _fpsProfitCentreApiClient.GetPagedWgStaffPlanAsync(query, workGroup).Returns(expectedResponse);
+
+            // Act
+            var result = await _sut.GetPagedWgStaffPlanAsync(query, workGroup);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Equal(2, result.Data?.Count);
+            Assert.NotNull(result.Pagination);
+            Assert.Equal(2, result.Pagination.TotalRecords);
+            await _fpsProfitCentreApiClient.Received(1).GetPagedWgStaffPlanAsync(query, workGroup);
+        }
+
+        [Fact]
+        public async Task GetPagedWgStaffPlanAsync_WithEmptyResult_ReturnsSuccessWithEmptyList()
+        {
+            // Arrange
+            const string workGroup = "WG001";
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var expectedResponse = ApiResponseDto<List<WgStaffPlanViewDto>>.SuccessResponse(new List<WgStaffPlanViewDto>());
+
+            _fpsProfitCentreApiClient.GetPagedWgStaffPlanAsync(query, workGroup).Returns(expectedResponse);
+
+            // Act
+            var result = await _sut.GetPagedWgStaffPlanAsync(query, workGroup);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Empty(result.Data!);
+        }
+
+        [Fact]
+        public async Task GetPagedWgStaffPlanAsync_WhenApiFails_ReturnsFailureResponse()
+        {
+            // Arrange
+            const string workGroup = "WG001";
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var errors = new List<ApiErrorDto>
+            {
+                new() { Message = "Failed to retrieve staff plan", Code = "API_ERROR" }
+            };
+            var expectedResponse = ApiResponseDto<List<WgStaffPlanViewDto>>.FailureResponse(errors, new ApiMetaDto());
+
+            _fpsProfitCentreApiClient.GetPagedWgStaffPlanAsync(query, workGroup).Returns(expectedResponse);
+
+            // Act
+            var result = await _sut.GetPagedWgStaffPlanAsync(query, workGroup);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.NotNull(result.Errors);
+            Assert.Single(result.Errors);
+            Assert.Equal("Failed to retrieve staff plan", result.Errors[0].Message);
+        }
+
+        [Fact]
+        public async Task GetPagedWgStaffPlanAsync_PassesCorrectWorkGroupParameter()
+        {
+            // Arrange
+            const string workGroup = "WG-SPECIAL-001";
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var expectedResponse = ApiResponseDto<List<WgStaffPlanViewDto>>.SuccessResponse(new List<WgStaffPlanViewDto>());
+
+            _fpsProfitCentreApiClient.GetPagedWgStaffPlanAsync(query, workGroup).Returns(expectedResponse);
+
+            // Act
+            await _sut.GetPagedWgStaffPlanAsync(query, workGroup);
+
+            // Assert
+            await _fpsProfitCentreApiClient.Received(1).GetPagedWgStaffPlanAsync(
+                Arg.Any<QueryParameters<string>>(),
+                Arg.Is<string>(wg => wg == workGroup));
+        }
+
+        [Fact]
+        public async Task GetPagedWgStaffPlanAsync_PassesCorrectQueryParameters()
+        {
+            // Arrange
+            const string workGroup = "WG001";
+            var query = new QueryParameters<string>
+            {
+                Page = 2,
+                PageSize = 20,
+                SortBy = "Name",
+                Descending = true
+            };
+            var expectedResponse = ApiResponseDto<List<WgStaffPlanViewDto>>.SuccessResponse(new List<WgStaffPlanViewDto>());
+
+            _fpsProfitCentreApiClient.GetPagedWgStaffPlanAsync(query, workGroup).Returns(expectedResponse);
+
+            // Act
+            await _sut.GetPagedWgStaffPlanAsync(query, workGroup);
+
+            // Assert
+            await _fpsProfitCentreApiClient.Received(1).GetPagedWgStaffPlanAsync(
+                Arg.Is<QueryParameters<string>>(q =>
+                    q.Page == 2 &&
+                    q.PageSize == 20 &&
+                    q.SortBy == "Name" &&
+                    q.Descending == true),
+                Arg.Any<string>());
+        }
+
+        [Fact]
+        public async Task GetPagedWgStaffPlanAsync_ReturnsDataWithCorrectStaffDetails()
+        {
+            // Arrange
+            const string workGroup = "WG001";
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var staffPlanData = new List<WgStaffPlanViewDto>
+            {
+                new()
+                {
+                    WorkGroup = workGroup,
+                    GradeCode = "G1",
+                    Name = "John Doe",
+                    Manager = "Manager01",
+                    Program = "PROG01",
+                    JobCode = "JOB001",
+                    ProjectStatus = "Active",
+                    PlannedHours = 40.0,
+                    Fee = 1500.00m
+                },
+                new()
+                {
+                    WorkGroup = workGroup,
+                    GradeCode = "G2",
+                    Name = "Jane Smith",
+                    Manager = "Manager02",
+                    Program = "PROG02",
+                    JobCode = "JOB002",
+                    ProjectStatus = "Pending",
+                    PlannedHours = 35.5,
+                    Fee = 1250.50m
+                }
+            };
+            var expectedResponse = ApiResponseDto<List<WgStaffPlanViewDto>>.SuccessResponse(staffPlanData);
+
+            _fpsProfitCentreApiClient.GetPagedWgStaffPlanAsync(query, workGroup).Returns(expectedResponse);
+
+            // Act
+            var result = await _sut.GetPagedWgStaffPlanAsync(query, workGroup);
+
+            // Assert
+            Assert.True(result.Success);
+            var dataList = result.Data!.ToList();
+            Assert.Equal(2, dataList.Count);
+            Assert.Equal("John Doe", dataList[0].Name);
+            Assert.Equal("G1", dataList[0].GradeCode);
+            Assert.Equal(40.0, dataList[0].PlannedHours);
+            Assert.Equal(1500.00m, dataList[0].Fee);
+            Assert.Equal("Jane Smith", dataList[1].Name);
+            Assert.Equal("G2", dataList[1].GradeCode);
+            Assert.Equal(35.5, dataList[1].PlannedHours);
+            Assert.Equal(1250.50m, dataList[1].Fee);
+        }
+
+        [Fact]
+        public async Task GetPagedWgStaffPlanAsync_WithPaginationData_ReturnsPaginationDetails()
+        {
+            // Arrange
+            const string workGroup = "WG001";
+            var query = new QueryParameters<string> { Page = 2, PageSize = 5 };
+            var staffPlanData = new List<WgStaffPlanViewDto> { BuildWgStaffPlanDto(workGroup) };
+            var pagination = new PaginationDto
+            {
+                PageNumber = 2,
+                PageSize = 5,
+                TotalRecords = 42,
+                TotalPages = 9
+            };
+            var expectedResponse = ApiResponseDto<List<WgStaffPlanViewDto>>.SuccessResponse(staffPlanData, pagination);
+
+            _fpsProfitCentreApiClient.GetPagedWgStaffPlanAsync(query, workGroup).Returns(expectedResponse);
+
+            // Act
+            var result = await _sut.GetPagedWgStaffPlanAsync(query, workGroup);
+
+            // Assert
+            Assert.True(result.Success);
+            Assert.NotNull(result.Pagination);
+            Assert.Equal(2, result.Pagination.PageNumber);
+            Assert.Equal(5, result.Pagination.PageSize);
+            Assert.Equal(42, result.Pagination.TotalRecords);
+            Assert.Equal(9, result.Pagination.TotalPages);
+        }
+
+        [Fact]
+        public async Task GetPagedWgStaffPlanAsync_PropagatesMultipleApiErrors()
+        {
+            // Arrange
+            const string workGroup = "WG001";
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var errors = new List<ApiErrorDto>
+            {
+                new() { Message = "Error 1", Code = "ERROR_1" },
+                new() { Message = "Error 2", Code = "ERROR_2" }
+            };
+            var expectedResponse = ApiResponseDto<List<WgStaffPlanViewDto>>.FailureResponse(errors, new ApiMetaDto());
+
+            _fpsProfitCentreApiClient.GetPagedWgStaffPlanAsync(query, workGroup).Returns(expectedResponse);
+
+            // Act
+            var result = await _sut.GetPagedWgStaffPlanAsync(query, workGroup);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.NotNull(result.Errors);
+            Assert.Equal(2, result.Errors.Count);
+            Assert.Equal("Error 1", result.Errors[0].Message);
+            Assert.Equal("Error 2", result.Errors[1].Message);
+        }
+
+        #endregion
+
     }
 }

@@ -143,6 +143,89 @@ namespace Apha.PACT.Application.UnitTests.Services.TimeCodeValidServiceTest
 
         #endregion
 
+        #region GetTimeCodeValidsByWorkGroupAsync
+
+        [Fact]
+        public async Task GetTimeCodeValidsByWorkGroupAsync_ValidInput_ReturnsMappedDtos()
+        {
+            var entities = new List<TimeCodeValid>
+            {
+                new TimeCodeValid { TimeCode = "TC1", WorkGroup = "WG1", ParentProject = "PRJ1" }
+            };
+            var dtos = new List<TimeCodeValidDto>
+            {
+                new TimeCodeValidDto { TimeCode = "TC1", WorkGroup = "WG1", ParentProject = "PRJ1" }
+            };
+
+            _mockRepository.GetTimeCodeValidsByWorkGroupAsync("WG1").Returns(entities);
+            _mockMapper.Map<IEnumerable<TimeCodeValidDto>>(entities).Returns(dtos);
+
+            var result = await _sut.GetTimeCodeValidsByWorkGroupAsync("WG1");
+
+            result.Should().BeEquivalentTo(dtos);
+            await _mockRepository.Received(1).GetTimeCodeValidsByWorkGroupAsync("WG1");
+        }
+
+        #endregion
+
+        #region GetTimeCodeValidProjectsByWorkGroupAndTimeCodeAsync
+
+        [Fact]
+        public async Task GetTimeCodeValidProjectsByWorkGroupAndTimeCodeAsync_ValidInput_ReturnsRepositoryResult()
+        {
+            var projects = new List<string> { "PRJ1", "PRJ2" };
+            _mockRepository.GetTimeCodeValidProjectsByWorkGroupAndTimeCodeAsync("WG1", "TC1").Returns(projects);
+
+            var result = await _sut.GetTimeCodeValidProjectsByWorkGroupAndTimeCodeAsync("WG1", "TC1");
+
+            result.Should().BeEquivalentTo(projects);
+            await _mockRepository.Received(1).GetTimeCodeValidProjectsByWorkGroupAndTimeCodeAsync("WG1", "TC1");
+        }
+
+        #endregion
+
+        #region GetAllDistinctTimeCodesAsync
+
+        [Fact]
+        public async Task GetAllDistinctTimeCodesAsync_WithDuplicates_ReturnsDistinctOrderedValues()
+        {
+            var entities = new List<TimeCodeValid>
+            {
+                new TimeCodeValid { TimeCode = "TC2" },
+                new TimeCodeValid { TimeCode = "TC1" },
+                new TimeCodeValid { TimeCode = "TC2" }
+            };
+            _mockRepository.GetTimeCodeValidsAsync().Returns(entities);
+
+            var result = (await _sut.GetAllDistinctTimeCodesAsync()).ToList();
+
+            result.Should().Equal("TC1", "TC2");
+            await _mockRepository.Received(1).GetTimeCodeValidsAsync();
+        }
+
+        #endregion
+
+        #region GetAllDistinctProjectsAsync
+
+        [Fact]
+        public async Task GetAllDistinctProjectsAsync_WithDuplicates_ReturnsDistinctOrderedValues()
+        {
+            var entities = new List<TimeCodeValid>
+            {
+                new TimeCodeValid { ParentProject = "PRJ2" },
+                new TimeCodeValid { ParentProject = "PRJ1" },
+                new TimeCodeValid { ParentProject = "PRJ2" }
+            };
+            _mockRepository.GetTimeCodeValidsAsync().Returns(entities);
+
+            var result = (await _sut.GetAllDistinctProjectsAsync()).ToList();
+
+            result.Should().Equal("PRJ1", "PRJ2");
+            await _mockRepository.Received(1).GetTimeCodeValidsAsync();
+        }
+
+        #endregion
+
         #region GetPagedTimeCodesAsync
 
         [Fact]

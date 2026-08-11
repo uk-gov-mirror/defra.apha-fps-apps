@@ -130,8 +130,8 @@
                 <input type="hidden" id="GenBid" name="GenBid" value="@bid.GenBid" required />
                 <div class="govuk-input__wrapper">
                     <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                    <input type="number" step="0.01" id="GenBidDisplay"
-                           value="@bid.GenBid" class="govuk-input govuk-!-font-size-16"
+                    <input type="text" maxlength="20" id="GenBidDisplay"
+                           value="@bid.GenBid" class="govuk-input govuk-!-font-size-16 js-numeric-decimal"
                            oninput="syncGenBid(this.value)" />
                 </div>
                 <span class="govuk-error-message" style="display:none;"></span>
@@ -225,8 +225,8 @@
                 <label for="Amount" class="govuk-label govuk-!-font-weight-bold">Amount <span class="sup_error_text_color">*</span></label>
                 <div class="govuk-input__wrapper">
                     <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                    <input type="number" step="0.01" name="Amount" id="Amount"
-                           value="@purchase.Amount" class="govuk-input govuk-!-font-size-16" required />
+                    <input type="text" maxlength="20" name="Amount" id="Amount"
+                           value="@purchase.Amount" class="govuk-input govuk-!-font-size-16 js-numeric-decimal" required />
                 </div>
                 <span class="govuk-error-message" style="display:none;"></span>
             </div>

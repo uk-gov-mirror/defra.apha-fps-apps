@@ -52,8 +52,8 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PIMS.Controllers.PMDMilestoneCo
                 .Returns(new QueryParameters<string> { Page = 1, PageSize = 50 });
             _mockMilestoneService.GetPMDMilestonesAsync(Arg.Any<QueryParameters<string>>(), Arg.Any<string>())
                 .Returns(milestonesResponse);
-            _mockMapper.Map<List<MilestoneItem>>(Arg.Any<List<MilestoneDto>>())
-                .Returns(new List<MilestoneItem>());
+            _mockMapper.Map<List<PMDMilestoneItem>>(Arg.Any<List<MilestoneDto>>())
+                .Returns(new List<PMDMilestoneItem>());
             _mockMapper.Map<PaginationModel>(Arg.Any<PaginationDto>())
                 .Returns(new PaginationModel());
 
@@ -87,8 +87,8 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PIMS.Controllers.PMDMilestoneCo
                 .Returns(new QueryParameters<string>());
             _mockMilestoneService.GetPMDMilestonesAsync(Arg.Any<QueryParameters<string>>(), selectedProject)
                 .Returns(milestonesResponse);
-            _mockMapper.Map<List<MilestoneItem>>(Arg.Any<List<MilestoneDto>>())
-                .Returns(new List<MilestoneItem>());
+            _mockMapper.Map<List<PMDMilestoneItem>>(Arg.Any<List<MilestoneDto>>())
+                .Returns(new List<PMDMilestoneItem>());
             _mockMapper.Map<PaginationModel>(Arg.Any<PaginationDto>())
                 .Returns(new PaginationModel());
 
@@ -113,8 +113,8 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PIMS.Controllers.PMDMilestoneCo
                 .Returns(new QueryParameters<string>());
             _mockMilestoneService.GetPMDMilestonesAsync(Arg.Any<QueryParameters<string>>(), Arg.Any<string>())
                 .Returns(milestonesResponse);
-            _mockMapper.Map<List<MilestoneItem>>(Arg.Any<List<MilestoneDto>>())
-                .Returns(new List<MilestoneItem>());
+            _mockMapper.Map<List<PMDMilestoneItem>>(Arg.Any<List<MilestoneDto>>())
+                .Returns(new List<PMDMilestoneItem>());
             _mockMapper.Map<PaginationModel>(Arg.Any<PaginationDto>())
                 .Returns(new PaginationModel());
 
@@ -143,8 +143,8 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PIMS.Controllers.PMDMilestoneCo
                 .Returns(new QueryParameters<string>());
             _mockMilestoneService.GetPMDMilestonesAsync(Arg.Any<QueryParameters<string>>(), Arg.Any<string>())
                 .Returns(milestonesResponse);
-            _mockMapper.Map<List<MilestoneItem>>(Arg.Any<List<MilestoneDto>>())
-                .Returns(new List<MilestoneItem>());
+            _mockMapper.Map<List<PMDMilestoneItem>>(Arg.Any<List<MilestoneDto>>())
+                .Returns(new List<PMDMilestoneItem>());
             _mockMapper.Map<PaginationModel>(Arg.Any<PaginationDto>())
                 .Returns(new PaginationModel());
 
@@ -172,7 +172,7 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PIMS.Controllers.PMDMilestoneCo
                 new() { Project = project, Number = "M1" }
             };
             var milestonesResponse = ApiResponseDto<List<MilestoneDto>>.SuccessResponse(milestoneDtos);
-            var milestoneItems = new List<MilestoneItem>
+            var pmdMilestoneItems = new List<PMDMilestoneItem>
             {
                 new() { Project = project, Number = "M1" }
             };
@@ -180,7 +180,7 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PIMS.Controllers.PMDMilestoneCo
             _mockMapper.Map<QueryParameters<string>>(request).Returns(new QueryParameters<string> { Page = 1, PageSize = 10 });
             _mockMilestoneService.GetPMDMilestonesAsync(Arg.Any<QueryParameters<string>>(), project)
                 .Returns(milestonesResponse);
-            _mockMapper.Map<List<MilestoneItem>>(milestoneDtos).Returns(milestoneItems);
+            _mockMapper.Map<List<PMDMilestoneItem>>(milestoneDtos).Returns(pmdMilestoneItems);
             _mockMapper.Map<PaginationModel>(Arg.Any<PaginationDto>())
                 .Returns(new PaginationModel { TotalRecords = 1 });
 

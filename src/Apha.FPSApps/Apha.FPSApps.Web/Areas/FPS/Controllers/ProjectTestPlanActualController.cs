@@ -266,6 +266,18 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             return Json(new { success = false, message = result.Errors?.FirstOrDefault()?.Message ?? "Delete failed.", errors = (result.Errors ?? new List<ApiErrorDto>()).Select(e => new { field = e.Code ?? string.Empty, message = e.Message ?? "An unexpected error occurred." }) });
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetProjectLookup()
+        {
+            var response = await _projectService.GetAllProjectsAsync();
+            if (!response.Success || response.Data == null)
+                return Json(new List<object>());
+            var data = response.Data
+                .Select(p => new { parentProject = p.ParentProject, projectTitle = p.ProjectTitle ?? string.Empty })
+                .ToList();
+            return Json(data);
+        }
+
         private async Task<List<SelectListItem>> GetProjectListAsync()
         {
             var result = await _projectService.GetAllProjectsAsync();

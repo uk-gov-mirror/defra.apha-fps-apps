@@ -10,6 +10,7 @@ namespace Apha.FPSApps.Application.Interfaces.PimsApiClients
         Task<ApiResponseDto<MilestoneDto>> GetMilestoneAsync(string project, string number);
         Task<ApiResponseDto<MilestoneDto>> SaveMilestoneAsync(string project, MilestoneDto dto);
         Task<ApiResponseDto<MilestoneDto>> UpdateMilestoneAsync(string project, string number, MilestoneDto dto);
+        Task<ApiResponseDto<MilestoneDto>> UpdateMilestoneAsync_PMD(string project, string number, MilestoneDto dto);
         Task<ApiResponseDto<object>> DeleteMilestoneAsync(string project, string number);
         Task<ApiResponseDto<object>> UpdateFormRequiredAsync(string parentProject, bool formRequired);
 

@@ -137,8 +137,10 @@ namespace Apha.FPSApps.Web.Areas.PIMS.Controllers
                 JsonConvert.DeserializeObject<Dictionary<string, string>>(request.Filter ?? "{}") ?? new();
 
             QueryParameters<string> queryParameters = _mapper.Map<QueryParameters<string>>(request);
+            
+            //   topic filtering is used only on the standalone Comments page
             ApiResponseDto<List<CommentDto>> pagedData =
-                await _commentService.GetCommentsByProjectAsync(parentproject, year, queryParameters);
+                await _commentService.GetCommentsByProjectAsync(parentproject, year, null, queryParameters);
 
             List<ProjectCommentItem> items = pagedData.Data is not null
                 ? _mapper.Map<List<ProjectCommentItem>>(pagedData.Data)

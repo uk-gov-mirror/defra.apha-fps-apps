@@ -74,6 +74,17 @@ namespace Apha.FPSApps.Infrastructure.Integrations.FPSApis.Clients
             return ApiResponseDto<List<ProjectSpecificQueryDto>>.FailureResponse(dto.Errors, dto.Meta);
         }
 
+        public async Task<ApiResponseDto<List<ProjectSnapshotViewDto>>> GetPagedProjectSnapshotDataAsync(QueryParameters<string> query)
+        {
+            var url = QueryStringHelper.AddQueryString(FpsApiEndpoints.GetPagedProjectSnapshotData, query);
+            var response = await _http.GetAsync<List<ProjectSnapshotViewDto>>(url);
+            if (response.Success)
+                return _mapper.Map<ApiResponseDto<List<ProjectSnapshotViewDto>>>(response);
+
+            var dto = _mapper.Map<ApiResponseDto<List<ProjectSnapshotViewDto>>>(response);
+            return ApiResponseDto<List<ProjectSnapshotViewDto>>.FailureResponse(dto.Errors, dto.Meta);
+        }
+
         public async Task<ApiResponseDto<List<ProjectDto>>> GetPagedProjectsByUserAsync(QueryParameters<string> query)
         {
             var url = QueryStringHelper.AddQueryString(FpsApiEndpoints.GetPagedProjectsByUser, query);

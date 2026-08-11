@@ -13,6 +13,7 @@ namespace Apha.PIMS.Application.Interfaces
         Task<MilestoneDto?> GetMilestoneAsync(string project, string number);
         Task<MilestoneDto> SaveMilestoneAsync(MilestoneDto dto, string? changedBy = null);
         Task<MilestoneDto> UpdateMilestoneAsync(MilestoneDto dto, string? changedBy = null);
+        Task<MilestoneDto> UpdateMilestoneAsync_PMD(string project, string number, short underReview, short onTarget, DateTime? dateCompleted, string? projectLeaderComment, string? changedBy = null);
         Task<bool> DeleteMilestoneAsync(string project, string number);
         Task<bool> UpdateFormRequiredAsync(string parentproject, bool formRequired);
 

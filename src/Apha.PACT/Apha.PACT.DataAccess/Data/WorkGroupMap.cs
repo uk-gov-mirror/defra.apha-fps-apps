@@ -20,8 +20,8 @@ namespace Apha.PACT.DataAccess.Data
                 .HasColumnName("workgroup");
             entity.Property(e => e.FpsYear).HasColumnName("fpsyear");
             entity.Property(e => e.CentralOverhead)
-                .HasDefaultValueSql("0")
-                .HasColumnType("money")
+                .HasDefaultValue(0m)
+                .HasPrecision(19, 4)
                 .HasColumnName("centraloverhead");
             entity.Property(e => e.Cos90).HasColumnName("cos90");
             entity.Property(e => e.CostCentre).HasColumnName("costcentre");

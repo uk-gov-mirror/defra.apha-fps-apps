@@ -184,7 +184,12 @@
 
         var formData = {};
         form.serializeArray().forEach(function (item) {
-            formData[item.name] = item.value;
+            // Convert empty strings to null for nullable decimal fields
+            if (item.name === 'UnitPrice' && item.value === '') {
+                formData[item.name] = null;
+            } else {
+                formData[item.name] = item.value;
+            }
         });
 
         $.ajax({

@@ -131,6 +131,97 @@ namespace Apha.PACT.Api.UnitTests.Controller.TimeCodeValidControllerTest
 
         #endregion
 
+        #region GetTimeCodeValidsByWorkGroupAsync
+
+        [Fact]
+        public async Task GetTimeCodeValidsByWorkGroupAsync_WithValidWorkGroup_ReturnsOk()
+        {
+            var dtos = new List<TimeCodeValidDto>
+            {
+                new TimeCodeValidDto { TimeCode = "TC1", WorkGroup = "WG1", ParentProject = "PRJ1" }
+            };
+            var mapped = new List<TimeCodeValidRes>
+            {
+                new TimeCodeValidRes { TimeCode = "TC1", WorkGroup = "WG1", ParentProject = "PRJ1" }
+            };
+
+            _serviceMock.GetTimeCodeValidsByWorkGroupAsync("WG1").Returns(dtos);
+            _mapperMock.Map<IEnumerable<TimeCodeValidRes>>(dtos).Returns(mapped);
+
+            var result = await _controller.GetTimeCodeValidsByWorkGroupAsync("WG1");
+
+            var ok = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(mapped, ok.Value);
+        }
+
+        [Fact]
+        public async Task GetTimeCodeValidsByWorkGroupAsync_WhenServiceThrows_PropagatesException()
+        {
+            _serviceMock.GetTimeCodeValidsByWorkGroupAsync("WG1").ThrowsAsync(new Exception("Service error"));
+
+            await Assert.ThrowsAsync<Exception>(() => _controller.GetTimeCodeValidsByWorkGroupAsync("WG1"));
+        }
+
+        #endregion
+
+        #region GetTimeCodeValidProjectsByWorkGroupAndTimeCodeAsync
+
+        [Fact]
+        public async Task GetTimeCodeValidProjectsByWorkGroupAndTimeCodeAsync_WithValidInput_ReturnsOk()
+        {
+            var projects = new List<string> { "PRJ1", "PRJ2" };
+            _serviceMock.GetTimeCodeValidProjectsByWorkGroupAndTimeCodeAsync("WG1", "TC1").Returns(projects);
+
+            var result = await _controller.GetTimeCodeValidProjectsByWorkGroupAndTimeCodeAsync("WG1", "TC1");
+
+            var ok = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(projects, ok.Value);
+        }
+
+        [Fact]
+        public async Task GetTimeCodeValidProjectsByWorkGroupAndTimeCodeAsync_WhenServiceThrows_PropagatesException()
+        {
+            _serviceMock.GetTimeCodeValidProjectsByWorkGroupAndTimeCodeAsync("WG1", "TC1")
+                .ThrowsAsync(new Exception("Service error"));
+
+            await Assert.ThrowsAsync<Exception>(() =>
+                _controller.GetTimeCodeValidProjectsByWorkGroupAndTimeCodeAsync("WG1", "TC1"));
+        }
+
+        #endregion
+
+        #region GetAllDistinctTimeCodesAsync
+
+        [Fact]
+        public async Task GetAllDistinctTimeCodesAsync_WithData_ReturnsOk()
+        {
+            var timeCodes = new List<string> { "TC1", "TC2" };
+            _serviceMock.GetAllDistinctTimeCodesAsync().Returns(timeCodes);
+
+            var result = await _controller.GetAllDistinctTimeCodesAsync();
+
+            var ok = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(timeCodes, ok.Value);
+        }
+
+        #endregion
+
+        #region GetAllDistinctProjectsAsync
+
+        [Fact]
+        public async Task GetAllDistinctProjectsAsync_WithData_ReturnsOk()
+        {
+            var projects = new List<string> { "PRJ1", "PRJ2" };
+            _serviceMock.GetAllDistinctProjectsAsync().Returns(projects);
+
+            var result = await _controller.GetAllDistinctProjectsAsync();
+
+            var ok = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(projects, ok.Value);
+        }
+
+        #endregion
+
         #region GetById
 
         [Fact]

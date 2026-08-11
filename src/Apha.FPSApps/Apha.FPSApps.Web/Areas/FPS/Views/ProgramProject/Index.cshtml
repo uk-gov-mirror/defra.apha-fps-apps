@@ -187,7 +187,6 @@
 
         $('#programmeSelect').on('change', function () {
             const val = $(this).val();
-            if (!val) return;
             currentProgramNo = val;
             showLoader();
             // Persist selection to session for other pages
@@ -196,27 +195,50 @@
                 type: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify(val),
-                complete: function () { hideLoader(); }
+                success: function () {
+                    try {
+                        updateNavLinks(val);
+                        resetSelectedProject();
+                        window['gridManager_@Model.ProjectsGrid.GridId'].reloadGrid({ page: 1 });
+                        if (val) loadProjectTotals();
+                    } catch (e) {
+                        showAlertMessage('An error occurred while loading the projects.', AlertType.ERROR);
+                    } finally {
+                        hideLoader();
+                    }
+                },
+                error: function () {
+                    hideLoader();
+                    showAlertMessage('An error occurred while saving the programme selection.', AlertType.ERROR);
+                }
             });
-            updateNavLinks(val);
-            resetSelectedProject();
-            window['gridManager_@Model.ProjectsGrid.GridId'].reloadGrid({ page: 1 });
-            loadProjectTotals();
         });
 
         $('#projectGroupSelect').on('change', function () {
             const val = $(this).val();
-            if (!val) return;
             currentProjectGroup = val;
+            showLoader();
             $.ajax({
                 url: '@Url.Action("SaveProjectGroupSession", "ProgramProject", new { area = "FPS" })',
                 type: 'POST',
                 contentType: 'application/json',
-                data: JSON.stringify(val)
+                data: JSON.stringify(val),
+                success: function () {
+                    try {
+                        resetSelectedProject();
+                        window['gridManager_@Model.ProjectsGrid.GridId'].reloadGrid({ page: 1 });
+                        if (val) loadProjectTotals();
+                    } catch (e) {
+                        showAlertMessage('An error occurred while loading the projects.', AlertType.ERROR);
+                    } finally {
+                        hideLoader();
+                    }
+                },
+                error: function () {
+                    hideLoader();
+                    showAlertMessage('An error occurred while saving the project group selection.', AlertType.ERROR);
+                }
             });
-            resetSelectedProject();
-            window['gridManager_@Model.ProjectsGrid.GridId'].reloadGrid({ page: 1 });
-            loadProjectTotals();
         });
 
         function getProgramProjectExtraFilters() {
@@ -311,10 +333,10 @@
                 Contract:          form.find('[name="Contract"]').val(),
                 Disease:           form.find('[name="Disease"]').val(),
                 ProjectStatus:     form.find('[name="ProjectStatus"]').val(),
-                BudgetCvl:         parseDecimal(form.find('[name="BudgetCvl"]').val()),
-                BudgetExt:         parseDecimal(form.find('[name="BudgetExt"]').val()),
-                TransferIncome:    parseDecimal(form.find('[name="TransferIncome"]').val()),
-                PlanCaseWorkDebit: parseDecimal(form.find('[name="PlanCaseWorkDebit"]').val()),
+                BudgetCvl:         emptyToNull(form.find('[name="BudgetCvl"]').val()),
+                BudgetExt:         emptyToNull(form.find('[name="BudgetExt"]').val()),
+                TransferIncome:    emptyToNull(form.find('[name="TransferIncome"]').val()),
+                PlanCaseWorkDebit: emptyToNull(form.find('[name="PlanCaseWorkDebit"]').val()),
                 IsDefraProject:    form.find('[name="IsDefraProject"]').val()
             };
 
@@ -375,9 +397,9 @@
             $('#modalPopup').removeClass("show");
         }
 
-        function parseDecimal(val) {
-            if (!val) return 0;
-            return parseFloat(val.replace(/[£,]/g, '').trim()) || 0;
+        function emptyToNull(val) {
+            var trimmed = (val || '').toString().trim();
+            return trimmed === '' ? null : trimmed;
         }
 
         function formatGbp(value) {
@@ -399,7 +421,7 @@
                     document.getElementById('summary-total-cw-debit').value  = formatGbp(data.planCaseWorkDebit);
                 })
                 .fail(function () {
-                    console.error('Failed to load project totals.');
+                    showAlertMessage('An error occurred while loading project totals.', AlertType.ERROR);
                 });
         }
 

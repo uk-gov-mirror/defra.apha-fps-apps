@@ -460,6 +460,129 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PIMS.PimsMilestoneApiCli
 
         #endregion
 
+        #region UpdateMilestoneAsync_PMD
+
+        [Fact]
+        public async Task UpdateMilestoneAsync_PMD_WithSuccessResponse_ReturnsMappedDto()
+        {
+            // Arrange
+            const string project = "PP001";
+            const string number  = "M1";
+            var dto       = new MilestoneDto 
+            { 
+                Project = project, 
+                Number = number, 
+                UnderSdReview = 1,
+                OnTarget = 0,
+                DateCompleted = DateTime.Now.AddDays(-5),
+                ProjectLeaderComment = "Completed on time"
+            };
+            var request   = new MilestoneReq  
+            { 
+                Project = project, 
+                Number = number,
+                UnderSdReview = 1,
+                OnTarget = 0,
+                DateCompleted = DateTime.Now.AddDays(-5),
+                ProjectLeaderComment = "Completed on time"
+            };
+            var url = $"{PimsApiEndpoints.UpdateMilestoneAsync_PMD}?project={Uri.EscapeDataString(project)}&number={HttpUtility.UrlEncode(number)}";
+            var res = new MilestoneRes  
+            { 
+                Project = project, 
+                Number = number,
+                UnderSdReview = 1,
+                OnTarget = 0,
+                DateCompleted = DateTime.Now.AddDays(-5),
+                ProjectLeaderComment = "Completed on time"
+            };
+            var apiResponse = new ApiResponse<MilestoneRes> { Success = true, Data = res };
+            var mappedDto   = ApiResponseDto<MilestoneDto>.SuccessResponse(new MilestoneDto 
+            { 
+                Project = project, 
+                Number = number,
+                UnderSdReview = 1,
+                OnTarget = 0,
+                DateCompleted = DateTime.Now.AddDays(-5),
+                ProjectLeaderComment = "Completed on time"
+            });
+
+            _mapper.Map<MilestoneReq>(dto).Returns(request);
+            _http.PutAsync<MilestoneReq, MilestoneRes>(url, request).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<MilestoneDto>>(apiResponse).Returns(mappedDto);
+
+            // Act
+            var result = await _client.UpdateMilestoneAsync_PMD(project, number, dto);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.NotNull(result.Data);
+            Assert.Equal("Completed on time", result.Data.ProjectLeaderComment);
+            Assert.Equal((short)1, result.Data.UnderSdReview);
+            _mapper.Received(1).Map<MilestoneReq>(dto);
+            await _http.Received(1).PutAsync<MilestoneReq, MilestoneRes>(url, request);
+            _mapper.Received(1).Map<ApiResponseDto<MilestoneDto>>(apiResponse);
+        }
+
+        [Fact]
+        public async Task UpdateMilestoneAsync_PMD_WhenApiReturnsFailure_ReturnsFailureResponse()
+        {
+            // Arrange
+            const string project = "PP001";
+            const string number  = "M1";
+            var dto       = new MilestoneDto { Project = project, Number = number };
+            var request   = new MilestoneReq  { Project = project, Number = number };
+            var url = $"{PimsApiEndpoints.UpdateMilestoneAsync_PMD}?project={Uri.EscapeDataString(project)}&number={HttpUtility.UrlEncode(number)}";
+            var errors     = new List<ApiError> { new() { Message = "Validation error", Code = "VALIDATION_ERROR" } };
+            var apiResponse = new ApiResponse<MilestoneRes> { Success = false, Data = null, Errors = errors };
+            var mappedDto   = new ApiResponseDto<MilestoneDto>
+            {
+                Success = false,
+                Errors  = new List<ApiErrorDto> { new() { Message = "Validation error", Code = "VALIDATION_ERROR" } },
+                Meta    = new ApiMetaDto()
+            };
+
+            _mapper.Map<MilestoneReq>(dto).Returns(request);
+            _http.PutAsync<MilestoneReq, MilestoneRes>(url, request).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<MilestoneDto>>(apiResponse).Returns(mappedDto);
+
+            // Act
+            var result = await _client.UpdateMilestoneAsync_PMD(project, number, dto);
+
+            // Assert
+            Assert.False(result.Success);
+            Assert.NotNull(result.Errors);
+            Assert.Equal("VALIDATION_ERROR", result.Errors[0].Code);
+        }
+
+        [Fact]
+        public async Task UpdateMilestoneAsync_PMD_UrlEncodesProjectAndNumberAsQueryParams()
+        {
+            // Arrange
+            const string project = "PP/001";
+            const string number  = "M-1";
+            var dto       = new MilestoneDto { Project = project, Number = number };
+            var request   = new MilestoneReq  { Project = project, Number = number };
+            var expectedUrl = $"{PimsApiEndpoints.UpdateMilestoneAsync_PMD}?project={Uri.EscapeDataString(project)}&number={HttpUtility.UrlEncode(number)}";
+            var res = new MilestoneRes  { Project = project, Number = number };
+            var apiResponse = new ApiResponse<MilestoneRes> { Success = true, Data = res };
+            var mappedDto   = ApiResponseDto<MilestoneDto>.SuccessResponse(new MilestoneDto { Project = project, Number = number });
+
+            _mapper.Map<MilestoneReq>(dto).Returns(request);
+            _http.PutAsync<MilestoneReq, MilestoneRes>(expectedUrl, request).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<MilestoneDto>>(apiResponse).Returns(mappedDto);
+
+            // Act
+            await _client.UpdateMilestoneAsync_PMD(project, number, dto);
+
+            // Assert
+            await _http.Received(1).PutAsync<MilestoneReq, MilestoneRes>(
+                Arg.Is<string>(u => u == expectedUrl), Arg.Any<MilestoneReq>());
+        }
+
+        #endregion
+
         #region DeleteMilestoneAsync
 
         [Fact]

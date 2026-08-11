@@ -268,6 +268,23 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             });
         }
 
+        /// <summary>
+        /// Returns a lightweight list of all projects (ParentProject + ProjectTitle) for the multi-column dropdown.
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetProjectLookup()
+        {
+            var response = await _projectService.GetAllProjectsAsync();
+            if (!response.Success || response.Data == null)
+                return Json(new List<object>());
+
+            var data = response.Data
+                .Select(p => new { parentProject = p.ParentProject, projectTitle = p.ProjectTitle ?? string.Empty })
+                .ToList();
+
+            return Json(data);
+        }
+
         private async Task<List<SelectListItem>> GetProjectListAsync()
         {
             var result = await _projectService.GetAllProjectsAsync();

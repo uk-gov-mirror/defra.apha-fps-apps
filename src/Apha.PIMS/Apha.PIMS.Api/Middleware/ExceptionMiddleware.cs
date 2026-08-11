@@ -75,7 +75,8 @@ namespace Apha.PIMS.Api.Middleware
                             Message = err.Message,
                             Details = err.Details
                         });
-                    }                    
+                    }
+                    errorType = _configuration["ExceptionTypes:BusinessValidation"];
                     break;
                 case ArgumentException:
                     context.Response.StatusCode = StatusCodes.Status400BadRequest;
@@ -90,6 +91,14 @@ namespace Apha.PIMS.Api.Middleware
                     apiResponse.Errors.Add(new ApiError
                     {
                         Code = "RESOURCE_NOT_FOUND",
+                        Message = ex.Message
+                    });
+                    break;
+                case InvalidOperationException:
+                    context.Response.StatusCode = StatusCodes.Status409Conflict;
+                    apiResponse.Errors.Add(new ApiError
+                    {
+                        Code = "BUSINESS_RULE_VIOLATION",
                         Message = ex.Message
                     });
                     break;

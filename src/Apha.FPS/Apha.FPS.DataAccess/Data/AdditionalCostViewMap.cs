@@ -26,7 +26,7 @@ namespace Apha.FPS.DataAccess.Data
                 .HasMaxLength(5)
                 .HasColumnName("freq");
             entity.Property(e => e.ItemCost)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("itemcost");
             entity.Property(e => e.JobCode)
                 .HasMaxLength(20)

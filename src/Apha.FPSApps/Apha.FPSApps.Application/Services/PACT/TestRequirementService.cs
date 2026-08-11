@@ -23,6 +23,9 @@ namespace Apha.FPSApps.Application.Services.PACT
         public async Task<ApiResponseDto<List<TestRequirementDto>>> GetAllTestReqmtForExportAsync(string testCode, string? filter)
             => await _pactClient.PactTestRequirement.GetAllTestReqmtForExportAsync(testCode, filter);
 
+        public async Task<ApiResponseDto<List<TestRequirementDto>>> GetAllActiveAsync()
+            => await _pactClient.PactTestRequirement.GetAllActiveAsync();
+
         public async Task<ApiResponseDto<TestRequirementDto>> GetTestReqmtByIdAsync(string testCode, string buyer)
             => await _pactClient.PactTestRequirement.GetTestReqmtByIdAsync(testCode, buyer);
 

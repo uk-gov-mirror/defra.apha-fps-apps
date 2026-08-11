@@ -35,5 +35,7 @@ namespace Apha.Common.Contracts.FPS
         public string? ProjectGroup { get; set; }
         public decimal? PlanCaseWorkDebit { get; set; }
         public string? IncomeAccountCode { get; set; }
+        public decimal? CaseWorkSub { get; set; }
+
     }
 }

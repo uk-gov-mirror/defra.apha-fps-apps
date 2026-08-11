@@ -6,153 +6,175 @@
 
 
 <div class="content-wrapper">
-    <div class="govuk-grid-row sup_margin_left_right_0 sup_margin_top_10 time-recordings-layout">
+    <div class="govuk-grid-row sup_margin_left_right_0 sup_margin_top_10 time-recordings-layout" style="margin-bottom: 11vh;">
         <div class="govuk-grid-column-full sup_flex_center_start sup_border-bottom sup_margin_bottom_10">
             <h1 class="govuk-heading-m sup_margin_bottom_10">Bosworth Interface</h1>
         </div>
 
-        <div class="govuk-grid-row sup_margin_left_right_0 sup_margin_top_10 time-recordings-layout">
-            <div class="govuk-!-padding-2 isCenterAligned">
-                <h2 class="govuk-heading-s isSubHeading">Service Management</h2>
-                <div class="govuk-grid-column-one-full govuk-!-padding-2 tr-section-panel">
-                    <h2 class="govuk-heading-s">TimePurchase PivotWizards</h2>
+        <table class="govuk-table">
+            <tbody class="govuk-table__body">
+                <tr class="govuk-table__row">
+                    <td class="govuk-table__cell">
+                        <div class="time-recordings-layout isResourceManagementSection">
+                            <div class="govuk-!-padding-2 govuk-!-padding-bottom-0 govuk-!-padding-left-0 isOverflowHidden tr-section-box">
+                                <h2 class="govuk-heading-s isSubHeading">Resource Management</h2>
+                                <div class="govuk-grid-column-one-full govuk-!-padding-2 btnSec isClearfix">
+                                    <a class="govuk-button isFloatRight" data-module="govuk-button" asp-area="PACT" asp-controller="WorkGroupPeople" asp-action="Index">Show Workgroups &amp; Staffs</a>
+                                </div>
 
-                    <div class="govuk-grid-column-three-quarters govuk-!-padding-2">
-                        <table class="govuk-table govuk-!-margin-bottom-0 isCustomPivotGrid">
-                            <thead style="visibility: hidden;"><tr><th></th><th></th></tr></thead>
-                            <tbody class="govuk-table__body">
-                                <tr class="govuk-table__row">
-                                    <td class="govuk-table__cell sup_border_0">
-                                        <label for="selectProjectDropdown_input" class="govuk-label govuk-!-margin-bottom-1">
-                                            Select Project:
-                                        </label>
-                                        <div id="selectProjectMultiDropdown"></div>
-                                        <p class="govuk-!-font-weight-regular govuk-label govuk-label--l">
-                                            TimePurchase_Project_[option].xlsx
-                                        </p>
-                                    </td>
+                                <div class="govuk-grid-column-one-half govuk-!-padding-2 govuk-!-padding-bottom-0 tr-section-panel isTimeSaleSection">
+                                    <h2 class="govuk-!-margin-bottom-0 isCustomHeading">TimeSale PivWiz</h2>
+                                    <div class="govuk-grid-column-one-full govuk-!-padding-2">
+                                        <table class="govuk-table govuk-!-margin-bottom-0 isCustomPivotGrid">
+                                            <tbody class="govuk-table__body">
+                                                <tr class="govuk-table__row">
+                                                    <td class="govuk-table__cell sup_border_0" style="width: 37vw;padding-right: 0;">
+                                                        <div class="period-dropdown resource-dropdown" id="time-sale-profit-dropdown">
+                                                            <label for="selectProfitCentreDropdown_input" class="govuk-label govuk-!-margin-bottom-1">
+                                                                Select a ProfitCentre
+                                                            </label>
+                                                            <div id="selectProfitCentreMultiDropdown"></div>
+                                                            <p class="govuk-!-font-weight-regular govuk-label govuk-label--l">
+                                                                TimeSale_ProfitCentre_[option].xlsx
+                                                            </p>
+                                                        </div>
+                                                    </td>
+                                                    <td class="govuk-table__cell sup_border_0 govuk-!-text-align-centre">
+                                                        <a class="govuk-link" href="#" aria-label="Export selected profit centre" id="export-profit-centre-link">
+                                                            <img class="excel-icon" src="../images/excel-export-icon.png" alt=""
+                                                                 aria-hidden="true">
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                                <tr class="govuk-table__row">
+                                                    <td class="govuk-table__cell sup_border_0" style="width: 37vw;padding-right: 0;">
+                                                        <div class="period-dropdown resource-dropdown" id="time-sale-workgroup-dropdown">
+                                                            <label for="selectWorkGroupDropdown_input" class="govuk-label govuk-!-margin-bottom-1">
+                                                                Select a WorkGroup
+                                                            </label>
+                                                            <div id="selectWorkGroupMultiDropdown"></div>
+                                                            <p class="govuk-!-font-weight-regular govuk-label govuk-label--l">
+                                                                TimeSale_Workgroup_[option].xlsx
+                                                            </p>
+                                                        </div>
+                                                    </td>
+                                                    <td class="govuk-table__cell sup_border_0 govuk-!-text-align-centre">
+                                                        <a class="govuk-link" href="#" aria-label="Export selected workgroup" id="export-workgroup-link">
+                                                            <img class="excel-icon" src="../images/excel-export-icon.png" alt=""
+                                                                 aria-hidden="true">
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
 
-                                    <td class="govuk-table__cell sup_border_0 govuk-!-text-align-centre">
-                                        <a class="govuk-link" href="#" aria-label="Export selected project" id="export-project-link">
-                                            <img class="excel-icon" src="../images/excel-export-icon.png" alt=""
-                                                 aria-hidden="true">
-                                        </a>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
+                                <div class="govuk-grid-column-one-half govuk-!-padding-0 isOverflowHidden tr-section-box tr-section-box--compact">
+                                    <div class="govuk-!-padding-2 tr-section-panel">
+                                        <h2 class="govuk-!-margin-bottom-0 isCustomHeading">TestSale PivWiz</h2>
+                                        <div class="govuk-grid-column-one-full govuk-!-padding-2" style="height: 359px;">
+                                            <table class="govuk-table isCustomPivotGrid">
+                                                <tbody class="govuk-table__body">
+                                                    <tr class="govuk-table__row">
+                                                        <td class="govuk-table__cell sup_border_0" style="width: 37vw;padding-right: 0;">
+                                                            <div class="period-dropdown resource-dropdown" id="test-sale-selling-dropdown">
+                                                                <label for="selectSellingWorkGroupDropdown_input" class="govuk-label govuk-!-margin-bottom-1">
+                                                                    Select a Selling Workgroup
+                                                                </label>
+                                                                <div id="selectSellingWorkGroupMultiDropdown"></div>
+                                                                <p class="govuk-!-font-weight-regular govuk-label govuk-label--l">
+                                                                    TestSale_SellingWorkgroup_[option].xlsx
+                                                                </p>
+                                                            </div>
+                                                        </td>
+                                                        <td class="govuk-table__cell sup_border_0 govuk-!-text-align-centre">
+                                                            <a class="govuk-link" href="#" aria-label="Export selected test sale workgroup" id="export-selling-workgroup-link">
+                                                                <img class="excel-icon" src="../images/excel-export-icon.png" alt=""
+                                                                     aria-hidden="true">
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                    <tr class="govuk-table__row">
+                                                        <td class="govuk-table__cell sup_border_0" style="width: 37vw;padding-right: 0;">
+                                                            <div class="period-dropdown resource-dropdown" id="test-sale-buying-dropdown">
+                                                                <label for="selectBuyingProjectDropdown_input" class="govuk-label govuk-!-margin-bottom-1">
+                                                                    Or a Buying Project
+                                                                </label>
+                                                                <div id="selectBuyingProjectMultiDropdown"></div>
+                                                                <p class="govuk-!-font-weight-regular govuk-label govuk-label--l">
+                                                                    TestSale_BuyingProject_[option].xlsx
+                                                                </p>
+                                                            </div>
+                                                        </td>
+                                                        <td class="govuk-table__cell sup_border_0 govuk-!-text-align-centre">
+                                                            <a class="govuk-link" href="#" aria-label="Export selected buying project" id="export-buying-project-link">
+                                                                <img class="excel-icon" src="../images/excel-export-icon.png" alt=""
+                                                                     aria-hidden="true">
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                    <tr class="govuk-table__row">
+                                                        <td class="govuk-table__cell sup_border_0">
+                                                            <button type="button" id="test-sale-capabilities-button"
+                                                                    class="govuk-button isFloatRight" data-module="govuk-button"
+                                                                    aria-label="List test capabilities for selected workgroup">
+                                                                List Test Capabilities for Selected WorkGroup
+                                                            </button>
+                                                        </td>
+                                                        <td class="govuk-table__cell sup_border_0">&nbsp;</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
 
-        <div class="govuk-grid-row sup_margin_left_right_0 sup_margin_top_10 time-recordings-layout">
-            <div class="govuk-!-padding-2 govuk-!-padding-bottom-0 isOverflowHidden tr-section-box isCenterAligned">
-                <h2 class="govuk-heading-s isSubHeading">Resource Management</h2>
-                <div class="govuk-grid-column-one-full govuk-!-padding-2">
-                    <a class="govuk-button" asp-area="PACT" asp-controller="WorkGroupPeople" asp-action="Index">Show Workgroups &amp; Staffs</a>
-                </div>
-                <div class="govuk-grid-column-one-full govuk-!-padding-2 govuk-!-padding-bottom-0 tr-section-panel">
-                    <h2 class="govuk-!-margin-bottom-0 isCustomHeading">TimeSale PivWiz</h2>
-                    <div class="govuk-grid-column-three-quarters govuk-!-padding-2">
-                        <table class="govuk-table govuk-!-margin-bottom-0 isCustomPivotGrid">
-                            <tbody class="govuk-table__body">
-                                <tr class="govuk-table__row">
-                                    <td class="govuk-table__cell sup_border_0">
-                                        <label for="selectProfitCentreDropdown_input" class="govuk-label govuk-!-margin-bottom-1">
-                                            Select a ProfitCentre
-                                        </label>
-                                        <div id="selectProfitCentreMultiDropdown"></div>
-                                        <p class="govuk-!-font-weight-regular govuk-label govuk-label--l">
-                                            TimeSale_ProfitCentre_[option].xlsx
-                                        </p>
-                                    </td>
+                <tr class="govuk-table__row">
+                    <td class="govuk-table__cell">
+                        <div class="govuk-grid-column-one-full time-recordings-layout isServiceManagementSection">
+                            <div class="govuk-!-padding-2 govuk-!-padding-top-0">
+                                <h2 class="govuk-heading-s isSubHeading">Service Management</h2>
+                                <div class="govuk-grid-column-one-full govuk-!-padding-2 tr-section-panel">
+                                    <h2 class="govuk-heading-s">TimePurchase PivotWizards</h2>
 
-                                    <td class="govuk-table__cell sup_border_0 govuk-!-text-align-centre">
-                                        <a class="govuk-link" href="#" aria-label="Export selected profit centre" id="export-profit-centre-link">
-                                            <img class="excel-icon" src="../images/excel-export-icon.png" alt=""
-                                                 aria-hidden="true">
-                                        </a>
-                                    </td>
-                                </tr>
-                                <tr class="govuk-table__row">
-                                    <td class="govuk-table__cell sup_border_0">
-                                        <label for="selectWorkGroupDropdown_input" class="govuk-label govuk-!-margin-bottom-1">
-                                            Select a WorkGroup
-                                        </label>
-                                        <div id="selectWorkGroupMultiDropdown"></div>
-                                        <p class="govuk-!-font-weight-regular govuk-label govuk-label--l">
-                                            TimeSale_Workgroup_[option].xlsx
-                                        </p>
-                                    </td>
+                                    <div class="govuk-grid-column-one-full govuk-!-padding-2">
+                                        <table class="govuk-table govuk-!-margin-bottom-0 isCustomPivotGrid">
+                                            <tbody class="govuk-table__body">
+                                                <tr class="govuk-table__row">
+                                                    <td class="govuk-table__cell sup_border_0" style="width: 37vw;padding-right: 0;">
+                                                        <div class="period-dropdown" id="select-project-dropdown">
+                                                            <label for="selectProjectDropdown_input" class="govuk-label govuk-!-margin-bottom-1">
+                                                                Select Project:
+                                                            </label>
+                                                            <div id="selectProjectMultiDropdown"></div>
+                                                            <p class="govuk-!-font-weight-regular govuk-label govuk-label--l">
+                                                                TimePurchase_Project_[option].xlsx
+                                                            </p>
+                                                        </div>
+                                                    </td>
 
-                                    <td class="govuk-table__cell sup_border_0 govuk-!-text-align-centre">
-                                        <a class="govuk-link" href="#" aria-label="Export selected workgroup" id="export-workgroup-link">
-                                            <img class="excel-icon" src="../images/excel-export-icon.png" alt=""
-                                                 aria-hidden="true">
-                                        </a>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div class="govuk-grid-column-one-full govuk-!-padding-2 isOverflowHidden tr-section-box tr-section-box--compact">
-                <div class="govuk-grid-column-one-quarter govuk-!-padding-0">&nbsp;</div>
-                <div class="govuk-grid-column-one-half govuk-!-padding-2 tr-section-panel">
-                    <h2 class="govuk-!-margin-bottom-0 isCustomHeading">TestSale PivWiz</h2>
-                    <div class="govuk-grid-column-three-quarters govuk-!-padding-2">
-                        <table class="govuk-table isCustomPivotGrid">
-                            <tbody class="govuk-table__body">
-                                <tr class="govuk-table__row">
-                                    <td class="govuk-table__cell sup_border_0">
-                                        <label for="selectSellingWorkGroupDropdown_input" class="govuk-label govuk-!-margin-bottom-1">
-                                            Select a Selling Workgroup
-                                        </label>
-                                        <div id="selectSellingWorkGroupMultiDropdown"></div>
-                                        <p class="govuk-!-font-weight-regular govuk-label govuk-label--l">
-                                            TestSale_SellingWorkgroup_[option].xlsx
-                                        </p>
-                                    </td>
-                                    <td class="govuk-table__cell sup_border_0 govuk-!-text-align-centre"
-                                        rowspan="2">
-                                        <a class="govuk-link" href="#" aria-label="Export selected test sale workgroup" id="export-selling-workgroup-link">
-                                            <img class="excel-icon" src="../images/excel-export-icon.png" alt=""
-                                                 aria-hidden="true">
-                                        </a>
-                                    </td>
-                                </tr>
-                                <tr class="govuk-table__row">
-                                    <td class="govuk-table__cell sup_border_0">
-                                        <label for="selectBuyingProjectDropdown_input" class="govuk-label govuk-!-margin-bottom-1">
-                                            Or a Buying Project
-                                        </label>
-                                        <div id="selectBuyingProjectMultiDropdown"></div>
-                                        <p class="govuk-!-font-weight-regular govuk-label govuk-label--l">
-                                            TestSale_BuyingProject_[option].xlsx
-                                        </p>
-                                    </td>
-                                </tr>
-                                <tr class="govuk-table__row">
-                                    <td class="govuk-table__cell sup_border_0">
-                                        <button type="button" id="test-sale-capabilities-button"
-                                                class="govuk-button isFloatLeft" data-module="govuk-button"
-                                                aria-label="List test capabilities for selected workgroup">
-                                            List Test Capabilities for Selected WorkGroup
-                                        </button>
-                                    </td>
-                                    <td class="govuk-table__cell sup_border_0">&nbsp;</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-
-            </div>
-        </div>
+                                                    <td class="govuk-table__cell sup_border_0 govuk-!-text-align-centre">
+                                                        <a class="govuk-link" href="#" aria-label="Export selected project" id="export-project-link">
+                                                            <img class="excel-icon" src="../images/excel-export-icon.png" alt=""
+                                                                 aria-hidden="true">
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </div>
 @section Styles {

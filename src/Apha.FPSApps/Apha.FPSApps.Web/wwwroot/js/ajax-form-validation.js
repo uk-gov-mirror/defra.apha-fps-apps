@@ -22,6 +22,29 @@
 (function ($) {
     'use strict';
 
+    // ── maxlength suppression for fields that also carry [Range] validation ──
+    //
+    // jQuery Validate reads the `maxlength` HTML attribute as a live validation
+    // rule at runtime (via attributeRules). When a field also has `data-val-range`
+    // (emitted by the ASP.NET [Range] data annotation), the maxlength rule fires
+    // first and shows a generic "no more than N characters" message, hiding the
+    // meaningful Range error message from the model.
+    //
+    // This patch wraps $.validator.methods.maxlength once, at script-load time,
+    // so it applies globally to every form on every page. For any field that has
+    // both a maxlength attribute AND a data-val-range attribute the maxlength
+    // check is skipped (returns true), allowing [Range] to be the sole validator.
+    // All other fields continue to use the original maxlength behaviour.
+    if (typeof $.validator !== 'undefined') {
+        var _origMaxlength = $.validator.methods.maxlength;
+        $.validator.methods.maxlength = function (value, element, param) {
+            if (element.maxLength > 0 && $(element).data('val-range') !== undefined) {
+                return true; // defer to [Range] — suppress the maxlength message
+            }
+            return _origMaxlength.call(this, value, element, param);
+        };
+    }
+
     // ── Private helpers ──────────────────────────────────────────────────────
 
     /** Resolve the optional container argument into a jQuery object. */
@@ -40,17 +63,17 @@
      */
     function clearFieldErrorOnInput($field, fieldName, $c) {
         $field.off('input.valclear change.valclear')
-              .on('input.valclear change.valclear', function () {
-                  var $fg = $field.closest('.govuk-form-group');
-                  $fg.removeClass('govuk-form-group--error');
-                  $field.removeClass('govuk-input--error');
-                  $fg.find('[data-valmsg-for="' + fieldName + '"]')
-                     .text('')
-                     .hide()
-                     .removeClass('field-validation-error')
-                     .addClass('field-validation-valid');
-                  $field.off('input.valclear change.valclear');
-              });
+            .on('input.valclear change.valclear', function () {
+                var $fg = $field.closest('.govuk-form-group');
+                $fg.removeClass('govuk-form-group--error');
+                $field.removeClass('govuk-input--error');
+                $fg.find('[data-valmsg-for="' + fieldName + '"]')
+                    .text('')
+                    .hide()
+                    .removeClass('field-validation-error')
+                    .addClass('field-validation-valid');
+                $field.off('input.valclear change.valclear');
+            });
     }
 
     /**
@@ -76,17 +99,17 @@
      */
     function clearFieldErrorOnInput($field, fieldName, $c) {
         $field.off('input.valclear change.valclear')
-              .on('input.valclear change.valclear', function () {
-                  if (!$(this).val() || $(this).val().trim() === '') return;
-                  var $fg = $(this).closest('.govuk-form-group');
-                  $fg.removeClass('govuk-form-group--error');
-                  $(this).removeClass('govuk-input--error');
-                  $fg.find('[data-valmsg-for="' + fieldName + '"]')
-                     .text('')
-                     .hide()
-                     .removeClass('field-validation-error')
-                     .addClass('field-validation-valid');
-              });
+            .on('input.valclear change.valclear', function () {
+                if (!$(this).val() || $(this).val().trim() === '') return;
+                var $fg = $(this).closest('.govuk-form-group');
+                $fg.removeClass('govuk-form-group--error');
+                $(this).removeClass('govuk-input--error');
+                $fg.find('[data-valmsg-for="' + fieldName + '"]')
+                    .text('')
+                    .hide()
+                    .removeClass('field-validation-error')
+                    .addClass('field-validation-valid');
+            });
     }
 
     // ── Public API ───────────────────────────────────────────────────────────
@@ -145,55 +168,77 @@
      */
     window.displayClientValidationErrors = function (form, container) {
         var $c = resolveContainer(container != null ? container : form);
+
+        // Collect [Range] and other jQuery Unobtrusive Validation errors BEFORE
+        // clearValidationErrors wipes the spans that $form.valid() just populated.
+        var jqueryValErrors = [];
+        form.find('[data-valmsg-for]').each(function () {
+            var $span = $(this);
+            if ($span.hasClass('field-validation-error') && $span.text().trim() !== '') {
+                jqueryValErrors.push({
+                    field: $span.attr('data-valmsg-for'),
+                    message: $span.text().trim()
+                });
+            }
+        });
+
         clearValidationErrors($c);
 
         var errors = [];
-        form.find('[required]').each(function () {            
+        form.find('[required]').each(function () {
             var $field = $(this);
             if (!$field.val() || $field.val().trim() === '') {
-                var name  = $field.attr('name') || '';
+                var name = $field.attr('name') || '';
                 var label = $('label[for="' + name + '"]', $c).clone().children().remove().end().text().trim().replace(/:\s*$/, '') || name;
                 var requiredMessage = $field.attr('data-val-required') || $field.attr('data-msg-required');
                 errors.push({ field: name, message: requiredMessage || (label + ' is required') });
             }
         });
 
+        // Merge jQuery Unobtrusive Validation errors (e.g. [Range]) — avoid duplicates
+        jqueryValErrors.forEach(function (jqErr) {
+            var alreadyAdded = errors.some(function (e) { return e.field === jqErr.field; });
+            if (!alreadyAdded) {
+                errors.push(jqErr);
+            }
+        });
+
         if (!errors.length) return;
 
-            var $summary = $c.find('.govuk-error-summary');
-            $summary.find('.govuk-error-summary__title').text('There is a problem');
-            var $list = $summary.find('.govuk-error-summary__list').empty();
+        var $summary = $c.find('.govuk-error-summary');
+        $summary.find('.govuk-error-summary__title').text('There is a problem');
+        var $list = $summary.find('.govuk-error-summary__list').empty();
 
-            var hasSummaryErrors = false;
+        var hasSummaryErrors = false;
 
-            errors.forEach(function (error) {
-                var $field = $('[name="' + error.field + '"]', $c);
+        errors.forEach(function (error) {
+            var $field = $('[name="' + error.field + '"]', $c);
 
-                if ($field.length) {
-                    // Field found in the form — highlight inline only
-                    var $fg = $field.closest('.govuk-form-group').addClass('govuk-form-group--error');
-                    $field.addClass('govuk-input--error');
-                    $fg.find('[data-valmsg-for="' + error.field + '"]')
-                          .text(error.message)
-                          .show()
-                          .removeClass('field-validation-valid')
-                          .addClass('field-validation-error');
-                    clearFieldErrorOnInput($field, error.field, $c);
-                } else {
-                    // No matching field — show in summary only
-                    $list.append(
-                        '<li><a href="#' + error.field + '">' + error.message + '</a></li>'
-                    );
-                    hasSummaryErrors = true;
-                }
-            });
-
-            if (hasSummaryErrors) {
-                $summary.show().focus();
-            } else if ($summary.length) {
-                $summary.hide();
+            if ($field.length) {
+                // Field found in the form — highlight inline only
+                var $fg = $field.closest('.govuk-form-group').addClass('govuk-form-group--error');
+                $field.addClass('govuk-input--error');
+                $fg.find('[data-valmsg-for="' + error.field + '"]')
+                    .text(error.message)
+                    .show()
+                    .removeClass('field-validation-valid')
+                    .addClass('field-validation-error');
+                clearFieldErrorOnInput($field, error.field, $c);
+            } else {
+                // No matching field — show in summary only
+                $list.append(
+                    '<li><a href="#' + error.field + '">' + error.message + '</a></li>'
+                );
+                hasSummaryErrors = true;
             }
-        };
+        });
+
+        if (hasSummaryErrors) {
+            $summary.show().focus();
+        } else if ($summary.length) {
+            $summary.hide();
+        }
+    };
 
     /**
      * Displays server-side validation errors.
@@ -208,28 +253,28 @@
      * @param {string|jQuery} [container]       - Scope element (defaults to document).
      */
     window.displayServerValidationErrors = function (errors, summaryMessage, container) {
-        var $c       = resolveContainer(container);
+        var $c = resolveContainer(container);
         var $summary = $c.find('.govuk-error-summary');
-        var $list    = $summary.find('.govuk-error-summary__list').empty();
+        var $list = $summary.find('.govuk-error-summary__list').empty();
         $summary.find('.govuk-error-summary__title').text('There is a problem');
 
-        var items            = normaliseErrors(errors);
+        var items = normaliseErrors(errors);
         var hasSummaryErrors = false;
 
         items.forEach(function (error) {
-            var fieldName = error.field   || '';
-            var message   = error.message || 'Validation error';
-            var $field    = $('[name="' + fieldName + '"]', $c);
+            var fieldName = error.field || '';
+            var message = error.message || 'Validation error';
+            var $field = $('[name="' + fieldName + '"]', $c);
 
             if ($field.length) {
                 // Field found in the form — highlight inline only
                 var $fg = $field.closest('.govuk-form-group').addClass('govuk-form-group--error');
                 $field.addClass('govuk-input--error');
                 $fg.find('[data-valmsg-for="' + fieldName + '"]')
-                      .text(message)
-                      .show()
-                      .removeClass('field-validation-valid')
-                      .addClass('field-validation-error');
+                    .text(message)
+                    .show()
+                    .removeClass('field-validation-valid')
+                    .addClass('field-validation-error');
                 clearFieldErrorOnInput($field, fieldName, $c);
             } else {
                 // No matching field — show in summary only

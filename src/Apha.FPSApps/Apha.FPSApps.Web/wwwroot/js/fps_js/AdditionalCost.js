@@ -12,15 +12,17 @@ function addAdditionalCost() {
         showAlertMessage('Please select a project first.', AlertType.INFO);
         return;
     }
-
+    showLoader();
     $.ajax({
         url: '/FPS/AdditionalCostJob/Create?jobCode=' + encodeURIComponent(jobCode),
         type: 'GET',
         success: function (html) {
             $('#modaPopupBody').html(html);
             $('#modalPopup').addClass('show');
+            hideLoader();
         },
         error: function () {
+            hideLoader();
             showAlertMessage('An error occurred while loading the form.', AlertType.ERROR);
         }
     });
@@ -36,13 +38,14 @@ function saveAdditionalCost() {
         Freq: $('#Freq').val(),
         Supplier: $('#Supplier').val()
     };
-
+    showLoader();
     $.ajax({
         url: '/FPS/AdditionalCostJob/Create',
         type: 'POST',
         data: JSON.stringify(data),
         contentType: 'application/json; charset=utf-8',
         success: function (result) {
+            hideLoader();
             if (result.success) {
                 showAlertMessage(result.message, AlertType.SUCCESS).then(function () {
                     closeModal();
@@ -53,6 +56,7 @@ function saveAdditionalCost() {
             }
         },
         error: function (xhr) {
+            hideLoader();
             if (xhr.status === 400 && xhr.responseJSON) {
                 displayServerValidationErrors(xhr.responseJSON.errors, xhr.responseJSON.message, '#modaPopupBody');
             } else {
@@ -63,6 +67,7 @@ function saveAdditionalCost() {
 }
 
 function editAdditionalCost(btn) {
+    showLoader();
     var description = $(btn).data('id');
     var row = $(btn).closest('tr');
     var jobCode = AdditionalCostConfig.getJobCode();
@@ -75,8 +80,10 @@ function editAdditionalCost(btn) {
         success: function (html) {
             $('#modaPopupBody').html(html);
             $('#modalPopup').addClass('show');
+            hideLoader();
         },
         error: function () {
+            hideLoader();
             showAlertMessage('An error occurred while loading the form.', AlertType.ERROR);
         }
     });
@@ -94,13 +101,14 @@ function updateAdditionalCost() {
         Freq: $('#Freq').val(),
         Supplier: $('#Supplier').val()
     };
-
+    showLoader();
     $.ajax({
         url: '/FPS/AdditionalCostJob/Edit',
         type: 'POST',
         data: JSON.stringify(data),
         contentType: 'application/json; charset=utf-8',
         success: function (result) {
+            hideLoader();
             if (result.success) {
                 showAlertMessage(result.message, AlertType.SUCCESS).then(function () {
                     closeModal();
@@ -111,6 +119,7 @@ function updateAdditionalCost() {
             }
         },
         error: function (xhr) {
+            hideLoader();
             if (xhr.status === 400 && xhr.responseJSON) {
                 displayServerValidationErrors(xhr.responseJSON.errors, xhr.responseJSON.message, '#modaPopupBody');
             } else {
@@ -128,11 +137,13 @@ function deleteAdditionalCost(btn) {
 
     showGovukConfirm('Are you sure you want to delete this record?').then(function (confirmed) {
         if (!confirmed) { return; }
+        showLoader();
         $.ajax({
             url: '/FPS/AdditionalCostJob/Delete',
             type: 'DELETE',
             data: { jobCode: jobCode, account: account, description: description },
             success: function (response) {
+                hideLoader();
                 if (response.success) {
                     showAlertMessage('Deleted successfully.', AlertType.SUCCESS).then(function () {
                         AdditionalCostConfig.onDeleted();
@@ -142,6 +153,7 @@ function deleteAdditionalCost(btn) {
                 }
             },
             error: function () {
+                hideLoader();
                 showAlertMessage('An error occurred while deleting.', AlertType.ERROR);
             }
         });

@@ -49,7 +49,7 @@
                 <label class="govuk-label" asp-for="DailyRate">Daily Rate</label>
                 <div class="govuk-input__wrapper">
                     <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                    <input type="text" asp-for="DailyRate" class="govuk-input" value="@Model.DailyRate" />
+                    <input type="text" asp-for="DailyRate" maxlength="20" class="govuk-input js-numeric-decimal" value="@Model.DailyRate" />
                 </div>
                 <span asp-validation-for="DailyRate" class="govuk-error-message" style="display:none;"></span>
             </div>
@@ -57,7 +57,7 @@
                 <label class="govuk-label" asp-for="DefraDailyRate">Defra Daily Rate</label>
                 <div class="govuk-input__wrapper">
                     <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                    <input type="text" asp-for="DefraDailyRate" class="govuk-input" value="@Model.DefraDailyRate" />
+                    <input type="text" asp-for="DefraDailyRate" maxlength="20" class="govuk-input js-numeric-decimal" value="@Model.DefraDailyRate" />
                 </div>
                 <span asp-validation-for="DefraDailyRate" class="govuk-error-message" style="display:none;"></span>
             </div>

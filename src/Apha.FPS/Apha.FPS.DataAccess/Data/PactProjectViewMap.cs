@@ -13,10 +13,10 @@ namespace Apha.FPS.DataAccess.Data
                 .ToView("vpactproject", "fps");
 
             entity.Property(e => e.BudgetCvl)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("budget_cvl");
             entity.Property(e => e.BudgetExt)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("budget_ext");
             entity.Property(e => e.Comments).HasColumnName("comments");
             entity.Property(e => e.Contract)
@@ -31,7 +31,7 @@ namespace Apha.FPS.DataAccess.Data
                 .HasColumnName("disease");
             entity.Property(e => e.Finished).HasColumnName("finished");
             entity.Property(e => e.ForecastCost)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("forecastcost");
             entity.Property(e => e.FpsYear).HasColumnName("fpsyear");
             entity.Property(e => e.IsDefraProject).HasColumnName("isdefraproject");
@@ -60,22 +60,22 @@ namespace Apha.FPS.DataAccess.Data
                 .HasMaxLength(200)
                 .HasColumnName("projecttitle");
             entity.Property(e => e.PvsIncome)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("pvsincome");
             entity.Property(e => e.SubAccountCode)
                 .HasMaxLength(50)
                 .HasColumnName("subaccountcode");
             entity.Property(e => e.TransferIncome)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("transferincome");
             entity.Property(e => e.WipCurrent)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("wip_current");
             entity.Property(e => e.WipEoy)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("wip_eoy");
             entity.Property(e => e.WipLimit)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("wip_limit");
         }
     }

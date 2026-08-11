@@ -64,6 +64,18 @@ namespace Apha.FPS.Api.Controllers
             return Ok(_mapper.Map<PaginationRes<ProgramRes>>(programDto));
         }   
 
+        [HttpGet("time-snapshot/paged")]
+        public async Task<ActionResult> GetProgramTimeSnapshotAsync(
+            [FromQuery] QueryParameters<string> query)
+        {
+            var planCostDto = await _programService.GetProgramTimeSnapshotAsync(query);
+            if (planCostDto == null)
+            {
+                throw new ArgumentException("Program time snapshot records not found");
+            }
+            return Ok(_mapper.Map<PaginationRes<ProgramPlanCostRes>>(planCostDto));
+        }
+
         [HttpGet("{programNo}")]
         public async Task<ActionResult<ProgramRes>> GetProgramById(
             string programNo)

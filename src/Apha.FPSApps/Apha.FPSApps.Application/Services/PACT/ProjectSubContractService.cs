@@ -1,11 +1,14 @@
+using Apha.Common.Utilities.ExcelImport;
+using Apha.Common.Utilities.Storage;
 using Apha.FPSApps.Application.Dtos;
 using Apha.FPSApps.Application.Dtos.PACT;
 using Apha.FPSApps.Application.Interfaces.PACT;
 using Apha.FPSApps.Application.Interfaces.PactApiClients;
 using Apha.FPSApps.Application.Pagination;
-using Apha.Common.Utilities.ExcelImport;
 using ClosedXML.Excel;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace Apha.FPSApps.Application.Services.PACT
 {
@@ -13,11 +16,25 @@ namespace Apha.FPSApps.Application.Services.PACT
     {
         private readonly IPactApiClient _pactClient;
         private readonly IExcelImportService _excelImportService;
+        private readonly IS3StorageService _s3StorageService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IConfiguration _configuration;
+        private readonly ILogger<ProjectSubContractService> _logger;
 
-        public ProjectSubContractService(IPactApiClient pactClient, IExcelImportService excelImportService)
+        public ProjectSubContractService(
+            IPactApiClient pactClient,
+            IExcelImportService excelImportService,
+            IS3StorageService s3StorageService,
+            IHttpContextAccessor httpContextAccessor,
+            IConfiguration configuration,
+            ILogger<ProjectSubContractService> logger)
         {
             _pactClient = pactClient;
             _excelImportService = excelImportService;
+            _s3StorageService = s3StorageService;
+            _httpContextAccessor = httpContextAccessor;
+            _configuration = configuration;
+            _logger = logger;
         }
 
         public async Task<ApiResponseDto<List<ProjectSubContractDto>>> GetPagedProjectSubContractsAsync(QueryParameters<string> query, string? project)
@@ -64,8 +81,12 @@ namespace Apha.FPSApps.Application.Services.PACT
 
         public async Task<ApiResponseDto<SubContractRmsImportResultDto>> ImportSubContractRmsAsync(IFormFile file)
         {
-            using var stream = file.OpenReadStream();
-            using var workbook = new XLWorkbook(stream);
+            using var originalFileStream = file.OpenReadStream();
+            using var bufferStream = new MemoryStream();
+            await originalFileStream.CopyToAsync(bufferStream);
+
+            bufferStream.Position = 0;
+            using var workbook = new XLWorkbook(bufferStream);
 
             var requiredHeaders = new[]
             {
@@ -107,7 +128,34 @@ namespace Apha.FPSApps.Application.Services.PACT
                 Rows = importResult.Rows
             };
 
-            return await _pactClient.PactProjectSubContract.ImportSubContractRmsAsync(request);
+            var importResponse = await _pactClient.PactProjectSubContract.ImportSubContractRmsAsync(request);
+            if (!importResponse.Success || importResponse.Data == null)
+            {
+                return importResponse;
+            }
+
+            bufferStream.Position = 0;
+            try
+            {
+                var uploadResult = await UploadAuditFileAsync(file, bufferStream);
+                if (!uploadResult.Success)
+                {
+                    _logger.LogWarning(
+                        "Sub-contract RMS import succeeded but S3 audit upload failed. FileName: {FileName}, ErrorCode: {ErrorCode}, Message: {Message}",
+                        file.FileName,
+                        uploadResult.ErrorCode,
+                        uploadResult.Message);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "Sub-contract RMS import succeeded but S3 audit upload threw an exception. FileName: {FileName}",
+                    file.FileName);
+            }
+
+            return importResponse;
         }
 
         private SubContractRmsImportRowDto MapRowToDto(IXLRangeRow row, Dictionary<string, int> headerMap)
@@ -126,6 +174,50 @@ namespace Apha.FPSApps.Application.Services.PACT
                 AnimalDays = _excelImportService.GetText(row.Cell(headerMap[_excelImportService.NormalizeHeader("Animal Days")]))
             };
         }
+
+        private async Task<S3UploadResult> UploadAuditFileAsync(IFormFile file, Stream fileStream)
+        {
+            var sourceFileName = Path.GetFileName(file.FileName);
+            if (string.IsNullOrWhiteSpace(sourceFileName))
+            {
+                sourceFileName = "sub-contract-rms-import.xlsx";
+            }
+
+            var timestamp = DateTime.UtcNow;
+            var selectedYear = timestamp.Year;
+            var selectedYearItem = _httpContextAccessor.HttpContext?.Items["SelectedFPSYear"];
+            if (selectedYearItem != null && int.TryParse(selectedYearItem.ToString(), out var parsedYear) && parsedYear > 0)
+            {
+                selectedYear = parsedYear;
+            }
+
+            var folderPath = $"FPS{selectedYear}/SubContractRms";
+
+            var originalName = Path.GetFileNameWithoutExtension(sourceFileName);
+            if (string.IsNullOrWhiteSpace(originalName))
+            {
+                originalName = "sub-contract-rms-import";
+            }
+
+            var extension = Path.GetExtension(sourceFileName);
+            if (string.IsNullOrWhiteSpace(extension))
+            {
+                extension = ".xlsx";
+            }
+
+            var auditFileName = $"{originalName}_{timestamp:yyyyMMddHHmmss}{extension}";
+
+            return await _s3StorageService.UploadFileAsync(
+                fileStream,
+                GetAuditBucketName(),
+                folderPath,
+                auditFileName,
+                file.ContentType);
+        }
+
+        private string GetAuditBucketName()
+            => _configuration["S3Storage:BucketName"]
+               ?? throw new InvalidOperationException("S3Storage:BucketName is not configured.");
 
         public async Task<ApiResponseDto<bool>> DeleteFailedSubContractRmsByUserAsync()
             => await _pactClient.PactProjectSubContract.DeleteFailedSubContractRmsByUserAsync();

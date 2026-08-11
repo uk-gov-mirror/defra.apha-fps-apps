@@ -54,11 +54,15 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PACTApis.Clients
         public async Task<ApiResponseDto<List<TestRequirementDto>>> GetAllTestReqmtForExportAsync(
             string testCode, string? filter)
         {
-            var url = string.Format(PactApiEndpoints.GetAllTestReqmtForExport, Uri.EscapeDataString(testCode));
-            if (!string.IsNullOrWhiteSpace(filter))
-                url += $"?filter={Uri.EscapeDataString(filter)}";
+            var baseUrl = string.Format(PactApiEndpoints.GetAllTestReqmtForExport, Uri.EscapeDataString(testCode));
 
-            var response = await _http.GetAsync<List<TestRequirementtRes>>(url);
+            // Only add filter if it's not null, empty, or just empty JSON braces
+            if (!string.IsNullOrWhiteSpace(filter) && filter != "{}")
+            {
+                baseUrl += $"?filter={Uri.EscapeDataString(filter)}";
+            }
+
+            var response = await _http.GetAsync<List<TestRequirementtRes>>(baseUrl);
             if (response.Success)
                 return _mapper.Map<ApiResponseDto<List<TestRequirementDto>>>(response);
 
@@ -133,7 +137,7 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PACTApis.Clients
         {
             var baseUrl = string.Format(PactApiEndpoints.GetPagedBySupplierTestCode,
                 Uri.EscapeDataString(testCode));
-            baseUrl += $"?showRejected={Uri.EscapeDataString(showRejected.ToString())}";
+            baseUrl += $"&showRejected={Uri.EscapeDataString(showRejected.ToString())}";
             var url = QueryStringHelper.AddQueryString(baseUrl, query);
             var response = await _http.GetAsync<List<TestSupplierViewRes>>(url);
             if (response.Success)
@@ -153,6 +157,16 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PACTApis.Clients
 
             var dto = _mapper.Map<ApiResponseDto<List<TestReqBreakdownDto>>>(response);
             return ApiResponseDto<List<TestReqBreakdownDto>>.FailureResponse(dto.Errors, dto.Meta);
+        }
+
+        public async Task<ApiResponseDto<List<TestRequirementDto>>> GetAllActiveAsync()
+        {
+            var response = await _http.GetAsync<List<TestRequirementtRes>>(PactApiEndpoints.GetAllTestReqmtActive);
+            if (response.Success)
+                return _mapper.Map<ApiResponseDto<List<TestRequirementDto>>>(response);
+
+            var dto = _mapper.Map<ApiResponseDto<List<TestRequirementDto>>>(response);
+            return ApiResponseDto<List<TestRequirementDto>>.FailureResponse(dto.Errors, dto.Meta);
         }
     }
 }

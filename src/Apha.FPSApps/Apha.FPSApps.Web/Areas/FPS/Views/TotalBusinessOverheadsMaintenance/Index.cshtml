@@ -40,7 +40,7 @@
                                                     <div class="govuk-form-group sup_margin_bottom_10">
                                                         <div class="govuk-input__wrapper">
                                                             <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                                                            <input type="text" asp-for="TotalBusinessOverheads" class="govuk-input text-AlignRight pva-input-185" id="TotalBusinessOverheads" />
+                                                            <input type="text" asp-for="TotalBusinessOverheads" class="govuk-input text-AlignRight pva-input-185 js-numeric-decimal" maxlength="20" id="TotalBusinessOverheads" />
                                                         </div>
                                                     </div>
 
@@ -69,58 +69,12 @@
 
 @section Scripts {
     <script>
-        // Currency formatting helpers (without £ symbol - it's already in the HTML prefix)
-        function formatCurrency(value) {
-            return parseFloat(value || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-        }
-
-        function parseCurrencyValue(val) {
-            return (val || '').toString().replace(/[£,\s]/g, '').trim();
-        }
-
-        function parseDecimalOrNull(val) {
-            var cleaned = parseCurrencyValue(val);
-            return cleaned !== '' ? parseFloat(cleaned) : null;
-        }
-
-        $(document).ready(function () {
-            var $field = $('[name="TotalBusinessOverheads"]');
-
-            // Format on page load if there's a value
-            if ($field.val()) {
-                var raw = parseCurrencyValue($field.val());
-                if (raw !== '' && !isNaN(parseFloat(raw))) {
-                    $field.val(formatCurrency(raw));
-                }
-            }
-
-            // Format currency on blur (when user leaves the field)
-            $field.on('blur', function () {
-                var raw = parseCurrencyValue($(this).val());
-                if (raw !== '' && !isNaN(parseFloat(raw))) {
-                    $(this).val(formatCurrency(raw));
-                }
-            });
-
-            // Strip formatting on focus (so user can edit the number easily)
-            $field.on('focus', function () {
-                $(this).val(parseCurrencyValue($(this).val()));
-            });
-
-            // Restrict input to numbers, decimal point, and minus sign only
-            $field.on('input', function () {
-                var raw = $(this).val();
-                if (raw !== '' && raw !== '-' && !/^-?\d*\.?\d*$/.test(raw)) {
-                    $(this).val(raw.replace(/[^0-9.\-]/g, ''));
-                }
-            });
-        });
-
         function saveBusinessOverheads() {
             var form = $('#totalBusinessOverheadsForm');
+            var overheadsValue = form.find('[name="TotalBusinessOverheads"]').val().trim();
             var data = {
                 FpsYear: form.find('[name="FpsYear"]').val(),
-                TotalBusinessOverheads: parseDecimalOrNull(form.find('[name="TotalBusinessOverheads"]').val())
+                TotalBusinessOverheads: overheadsValue === '' ? null : overheadsValue
             };
 
             $.ajax({
@@ -134,14 +88,6 @@
                 success: function (result) {
                     if (result.success) {
                         showAlertMessage(result.message || 'Total Business Overheads saved successfully.', AlertType.SUCCESS);
-                        // Re-format the field after successful save
-                        var $field = $('[name="TotalBusinessOverheads"]');
-                        if ($field.val()) {
-                            var raw = parseCurrencyValue($field.val());
-                            if (raw !== '' && !isNaN(parseFloat(raw))) {
-                                $field.val(formatCurrency(raw));
-                            }
-                        }
                     } else {
                         showAlertMessage(result.message || 'Failed to save Total Business Overheads.', AlertType.ERROR);
                     }
@@ -151,5 +97,9 @@
                 }
             });
         }
+
+        $(document).ready(function () {
+            $(document).ajaxStart(showLoader).ajaxStop(hideLoader);
+        });
     </script>
 }

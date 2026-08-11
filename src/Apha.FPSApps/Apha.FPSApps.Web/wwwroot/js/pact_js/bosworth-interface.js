@@ -259,13 +259,20 @@ $(document).ready(function () {
                 exportUrls.testSaleSellingWg,
                 { workGroup: selectedSellingWorkGroupValue }
             );
-        } else if (selectedBuyingProjectValue) {
+        } else {
+            showAlertMessage('Please select a Selling Workgroup first.', AlertType.INFO);
+        }
+    });
+
+    $('#export-buying-project-link').on('click', function (e) {
+        e.preventDefault();
+        if (selectedBuyingProjectValue) {
             downloadExcelReport(
                 exportUrls.testSaleBuyingProj,
                 { parentProject: selectedBuyingProjectValue }
             );
         } else {
-            showAlertMessage('Please select a Selling Workgroup or a Buying Project first.', AlertType.INFO);
+            showAlertMessage('Please select a Buying Project first.', AlertType.INFO);
         }
     });
 });

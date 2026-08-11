@@ -1,4 +1,4 @@
-﻿using Apha.Common.Contracts;
+using Apha.Common.Contracts;
 using Apha.Common.Contracts.FPS;
 using Apha.FPS.Api.Controllers;
 using Apha.FPS.Application.Dtos;
@@ -119,6 +119,49 @@ namespace Apha.FPS.Api.UnitTests.Controller.ProgramControllerTest
             _serviceMock.GetAllProgramsAsync(query).Returns((PaginatedResult<ProgramDto>)null!);            
 
             await Assert.ThrowsAsync<ArgumentException>(() => _controller.GetAllProgramsPagedAsync(query));
+        }
+
+        #endregion
+
+        #region GetProgramTimeSnapshotAsync
+
+        [Fact]
+        public async Task GetProgramTimeSnapshotAsync_HappyPath_ReturnsOk()
+        {
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+
+            var planCostDtos = new List<ProgramPlanCostDto>
+            {
+                new ProgramPlanCostDto { Program = "P1", HoursCost = 1000m }
+            };
+            var paginationData = new PaginationDto
+            {
+                PageNumber = 1, PageSize = 10, TotalRecords = 1, TotalPages = 1
+            };
+            var serviceResult = new PaginatedResult<ProgramPlanCostDto>(planCostDtos, paginationData);
+
+            var expectedApiResponse = new PaginationRes<ProgramPlanCostRes>
+            {
+                Data = new List<ProgramPlanCostRes> { new ProgramPlanCostRes { Program = "P1", HoursCost = 1000m } },
+                PaginationData = new Pagination { PageNumber = 1, PageSize = 10, TotalRecords = 1, TotalPages = 1 }
+            };
+
+            _serviceMock.GetProgramTimeSnapshotAsync(query).Returns(serviceResult);
+            _mapperMock.Map<PaginationRes<ProgramPlanCostRes>>(serviceResult).Returns(expectedApiResponse);
+
+            var result = await _controller.GetProgramTimeSnapshotAsync(query);
+
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(expectedApiResponse, okResult.Value);
+        }
+
+        [Fact]
+        public async Task GetProgramTimeSnapshotAsync_NullResult_ThrowsArgumentException()
+        {
+            var query = new QueryParameters<string>();
+            _serviceMock.GetProgramTimeSnapshotAsync(query).Returns((PaginatedResult<ProgramPlanCostDto>)null!);
+
+            await Assert.ThrowsAsync<ArgumentException>(() => _controller.GetProgramTimeSnapshotAsync(query));
         }
 
         #endregion

@@ -1441,10 +1441,10 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.EmployeeRepositoryTest
 
         #endregion
 
-        #region GetWorkGroupStaffAsync Tests
+        #region GetPagedWorkGroupStaffAsync Tests
 
         [Fact]
-        public async Task GetWorkGroupStaffAsync_NoFilter_ReturnsAllPeopleOrderedByName()
+        public async Task GetPagedWorkGroupStaffAsync_NoFilter_ReturnsAllPeopleOrderedByName()
         {
             // Arrange
             var people = new List<PactStaff>
@@ -1462,7 +1462,7 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.EmployeeRepositoryTest
             var query = new PaginationParameters<string> { Page = 1, PageSize = 10, Filter = null };
 
             // Act
-            var result = await repo.GetWorkGroupStaffAsync(query);
+            var result = await repo.GetPagedWorkGroupStaffAsync(query);
 
             // Assert
             Assert.Equal(3, result.Data.Count());
@@ -1470,10 +1470,10 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.EmployeeRepositoryTest
         }
 
         [Fact]
-        public async Task GetWorkGroupStaffAsync_FilterByWorkGroup_ReturnsMatchingPeople()
+        public async Task GetPagedWorkGroupStaffAsync_FilterByWorkGroup_ReturnsMatchingPeople()
         {
             // Arrange
-            // GetWorkGroupStaffAsync joins: Workgroups → PactWorkGroupGradeViews → PactStaffs
+            // GetPagedWorkGroupStaffAsync joins: Workgroups → PactWorkGroupGradeViews → PactStaffs
             var people = new List<PactStaff>
             {
                 new() { Name = "Alice", WorkGroupGrade = "WG1" },
@@ -1496,14 +1496,14 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.EmployeeRepositoryTest
             var query = new PaginationParameters<string> { Page = 1, PageSize = 10, Filter = null };
 
             // Act
-            var result = await repo.GetWorkGroupStaffAsync(query, "Group A");
+            var result = await repo.GetPagedWorkGroupStaffAsync(query, "Group A");
 
             // Assert – workGroup filter joins through Workgroups + PactWorkGroupGradeViews; only WG1 staff returned
             Assert.All(result.Data, p => Assert.Equal("WG1", p.WorkGroupGrade));
         }
 
         [Fact]
-        public async Task GetWorkGroupStaffAsync_FilterByLeave_ReturnsMatchingPeople()
+        public async Task GetPagedWorkGroupStaffAsync_FilterByLeave_ReturnsMatchingPeople()
         {
             // Note: EF.Functions.Like (used for string fields such as Name/PersonStatus) is not
             // supported in client-side mock evaluation and can only be tested via integration tests.
@@ -1529,7 +1529,7 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.EmployeeRepositoryTest
             };
 
             // Act
-            var result = await repo.GetWorkGroupStaffAsync(query);
+            var result = await repo.GetPagedWorkGroupStaffAsync(query);
 
             // Assert
             Assert.Single(result.Data);
@@ -1537,7 +1537,7 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.EmployeeRepositoryTest
         }
 
         [Fact]
-        public async Task GetWorkGroupStaffAsync_FilterBySickSpecial_ReturnsMatchingPeople()
+        public async Task GetPagedWorkGroupStaffAsync_FilterBySickSpecial_ReturnsMatchingPeople()
         {
             // Note: EF.Functions.Like (used for string fields such as Name/PersonStatus) is not
             // supported in client-side mock evaluation and can only be tested via integration tests.
@@ -1563,7 +1563,7 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.EmployeeRepositoryTest
             };
 
             // Act
-            var result = await repo.GetWorkGroupStaffAsync(query);
+            var result = await repo.GetPagedWorkGroupStaffAsync(query);
 
             // Assert
             Assert.Single(result.Data);
@@ -1571,7 +1571,7 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.EmployeeRepositoryTest
         }
 
         [Fact]
-        public async Task GetWorkGroupStaffAsync_NumericFilter_HrsPaid_ReturnsMatchingPeople()
+        public async Task GetPagedWorkGroupStaffAsync_NumericFilter_HrsPaid_ReturnsMatchingPeople()
         {
             // Arrange
             var people = new List<PactStaff>
@@ -1592,7 +1592,7 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.EmployeeRepositoryTest
             };
 
             // Act
-            var result = await repo.GetWorkGroupStaffAsync(query);
+            var result = await repo.GetPagedWorkGroupStaffAsync(query);
 
             // Assert
             Assert.Single(result.Data);
@@ -1600,7 +1600,7 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.EmployeeRepositoryTest
         }
 
         [Fact]
-        public async Task GetWorkGroupStaffAsync_NumericFilter_HrsAvail_ReturnsMatchingPeople()
+        public async Task GetPagedWorkGroupStaffAsync_NumericFilter_HrsAvail_ReturnsMatchingPeople()
         {
             // Arrange
             var people = new List<PactStaff>
@@ -1617,7 +1617,7 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.EmployeeRepositoryTest
             };
 
             // Act
-            var result = await repo.GetWorkGroupStaffAsync(query);
+            var result = await repo.GetPagedWorkGroupStaffAsync(query);
 
             // Assert
             Assert.Single(result.Data);
@@ -1625,7 +1625,7 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.EmployeeRepositoryTest
         }
 
         [Fact]
-        public async Task GetWorkGroupStaffAsync_NumericFilter_MultipleFields_FiltersCorrectly()
+        public async Task GetPagedWorkGroupStaffAsync_NumericFilter_MultipleFields_FiltersCorrectly()
         {
             // Covers HrsPaid + Leave + SickSpecial + HrsAvail applied together
             // Arrange
@@ -1645,7 +1645,7 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.EmployeeRepositoryTest
             };
 
             // Act
-            var result = await repo.GetWorkGroupStaffAsync(query);
+            var result = await repo.GetPagedWorkGroupStaffAsync(query);
 
             // Assert
             Assert.Single(result.Data);
@@ -1653,7 +1653,7 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.EmployeeRepositoryTest
         }
 
         [Fact]
-        public async Task GetWorkGroupStaffAsync_NumericFilter_HighPrecisionFloats_ReturnsMatchingPeople()
+        public async Task GetPagedWorkGroupStaffAsync_NumericFilter_HighPrecisionFloats_ReturnsMatchingPeople()
         {
             // Arrange
             var people = new List<PactStaff>
@@ -1670,7 +1670,7 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.EmployeeRepositoryTest
             };
 
             // Act
-            var result = await repo.GetWorkGroupStaffAsync(query);
+            var result = await repo.GetPagedWorkGroupStaffAsync(query);
 
             // Assert
             Assert.Single(result.Data);
@@ -1678,7 +1678,7 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.EmployeeRepositoryTest
         }
 
         [Fact]
-        public async Task GetWorkGroupStaffAsync_Pagination_ReturnsCorrectPage()
+        public async Task GetPagedWorkGroupStaffAsync_Pagination_ReturnsCorrectPage()
         {
             // Arrange
             var people = Enumerable.Range(1, 15)
@@ -1689,7 +1689,7 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.EmployeeRepositoryTest
             var query = new PaginationParameters<string> { Page = 2, PageSize = 5, Filter = null };
 
             // Act
-            var result = await repo.GetWorkGroupStaffAsync(query);
+            var result = await repo.GetPagedWorkGroupStaffAsync(query);
 
             // Assert
             Assert.Equal(5, result.Data.Count());
@@ -1697,7 +1697,7 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.EmployeeRepositoryTest
         }
 
         [Fact]
-        public async Task GetWorkGroupStaffAsync_SortByName_Descending_ReturnsSortedResults()
+        public async Task GetPagedWorkGroupStaffAsync_SortByName_Descending_ReturnsSortedResults()
         {
             // Arrange
             var people = new List<PactStaff>
@@ -1719,7 +1719,7 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.EmployeeRepositoryTest
             };
 
             // Act
-            var result = await repo.GetWorkGroupStaffAsync(query);
+            var result = await repo.GetPagedWorkGroupStaffAsync(query);
 
             // Assert
             var list = result.Data.ToList();
@@ -1729,7 +1729,7 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.EmployeeRepositoryTest
         }
 
         [Fact]
-        public async Task GetWorkGroupStaffAsync_EmptyDatabase_ReturnsEmptyPaginatedResult()
+        public async Task GetPagedWorkGroupStaffAsync_EmptyDatabase_ReturnsEmptyPaginatedResult()
         {
             // Arrange
             var repo = CreateRepositoryForWorkGroupStaff(
@@ -1738,7 +1738,7 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.EmployeeRepositoryTest
             var query = new PaginationParameters<string> { Page = 1, PageSize = 10, Filter = null };
 
             // Act
-            var result = await repo.GetWorkGroupStaffAsync(query);
+            var result = await repo.GetPagedWorkGroupStaffAsync(query);
 
             // Assert
             Assert.NotNull(result);
@@ -1769,7 +1769,7 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.EmployeeRepositoryTest
         [InlineData("HrsAvail",      true,  "Charlie")]
         [InlineData("Name",          false, "Alice")]   // ascending – already tested via Descending test
         [InlineData("UnknownKey",    false, "Alice")]   // unknown key → default OrderBy(Name) asc
-        public async Task GetWorkGroupStaffAsync_SortBy_SortsCorrectly(
+        public async Task GetPagedWorkGroupStaffAsync_SortBy_SortsCorrectly(
             string sortBy, bool descending, string expectedFirstName)
         {
             // Arrange
@@ -1801,10 +1801,117 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.EmployeeRepositoryTest
             };
 
             // Act
-            var result = await repo.GetWorkGroupStaffAsync(query);
+            var result = await repo.GetPagedWorkGroupStaffAsync(query);
 
             // Assert
             Assert.Equal(expectedFirstName, result.Data.First().Name);
+        }
+
+        #endregion
+
+        #region GetPactWorkGroupStaffAsync Tests
+
+        [Fact]
+        public async Task GetPactWorkGroupStaffAsync_WithNullWorkGroup_ReturnsAllStaffOrderedByNameThenWorkGroupGrade()
+        {
+            // Arrange
+            var people = new List<PactStaff>
+            {
+                new() { Name = "Charlie", WorkGroupGrade = "WG2", PactId = "P003" },
+                new() { Name = "Alice", WorkGroupGrade = "WG2", PactId = "P002" },
+                new() { Name = "Alice", WorkGroupGrade = "WG1", PactId = "P001" }
+            };
+            var workgroups = new List<Workgroup>
+            {
+                new() { WorkGroupName = "Group A" },
+                new() { WorkGroupName = "Group B" }
+            };
+            var pactGrades = new List<PactWorkGroupGradeView>
+            {
+                new() { WgGrade = "WG1", WorkGroup = "Group A" },
+                new() { WgGrade = "WG2", WorkGroup = "Group B" }
+            };
+
+            var repo = CreateRepositoryForWorkGroupStaff(
+                people,
+                workgroups: workgroups,
+                pactWorkGroupGradeViews: pactGrades);
+
+            // Act
+            var result = (await repo.GetPactWorkGroupStaffAsync(null)).ToList();
+
+            // Assert
+            Assert.Equal(3, result.Count);
+            Assert.Equal("Alice", result[0].Name);
+            Assert.Equal("WG1", result[0].WorkGroupGrade);
+            Assert.Equal("Alice", result[1].Name);
+            Assert.Equal("WG2", result[1].WorkGroupGrade);
+            Assert.Equal("Charlie", result[2].Name);
+        }
+
+        [Fact]
+        public async Task GetPactWorkGroupStaffAsync_WithSpecificWorkGroup_ReturnsMatchingStaffOrderedByName()
+        {
+            // Arrange
+            var people = new List<PactStaff>
+            {
+                new() { Name = "Charlie", WorkGroupGrade = "WG2", PactId = "P003" },
+                new() { Name = "Bob", WorkGroupGrade = "WG1", PactId = "P002" },
+                new() { Name = "Alice", WorkGroupGrade = "WG1", PactId = "P001" }
+            };
+            var workgroups = new List<Workgroup>
+            {
+                new() { WorkGroupName = "Group A" },
+                new() { WorkGroupName = "Group B" }
+            };
+            var pactGrades = new List<PactWorkGroupGradeView>
+            {
+                new() { WgGrade = "WG1", WorkGroup = "Group A" },
+                new() { WgGrade = "WG2", WorkGroup = "Group B" }
+            };
+
+            var repo = CreateRepositoryForWorkGroupStaff(
+                people,
+                workgroups: workgroups,
+                pactWorkGroupGradeViews: pactGrades);
+
+            // Act
+            var result = (await repo.GetPactWorkGroupStaffAsync("Group A")).ToList();
+
+            // Assert
+            Assert.Equal(2, result.Count);
+            Assert.All(result, x => Assert.Equal("WG1", x.WorkGroupGrade));
+            Assert.Equal("Alice", result[0].Name);
+            Assert.Equal("Bob", result[1].Name);
+        }
+
+        [Fact]
+        public async Task GetPactWorkGroupStaffAsync_WithUnknownWorkGroup_ReturnsEmptyList()
+        {
+            // Arrange
+            var people = new List<PactStaff>
+            {
+                new() { Name = "Alice", WorkGroupGrade = "WG1", PactId = "P001" }
+            };
+            var workgroups = new List<Workgroup>
+            {
+                new() { WorkGroupName = "Group A" }
+            };
+            var pactGrades = new List<PactWorkGroupGradeView>
+            {
+                new() { WgGrade = "WG1", WorkGroup = "Group A" }
+            };
+
+            var repo = CreateRepositoryForWorkGroupStaff(
+                people,
+                workgroups: workgroups,
+                pactWorkGroupGradeViews: pactGrades);
+
+            // Act
+            var result = await repo.GetPactWorkGroupStaffAsync("Group Z");
+
+            // Assert
+            Assert.Empty(result);
         }
 
         #endregion

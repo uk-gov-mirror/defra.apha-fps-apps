@@ -4,6 +4,7 @@ namespace Apha.Common.Contracts
     {
         public bool Success { get; set; }
         public T? Data { get; set; }
+        public decimal Total { get; set; } = 0;
         public Pagination? Pagination { get; set; } = null;
         public List<ApiError>? Errors { get; set; } = new();
         public ApiMeta Meta { get; set; } = new();     

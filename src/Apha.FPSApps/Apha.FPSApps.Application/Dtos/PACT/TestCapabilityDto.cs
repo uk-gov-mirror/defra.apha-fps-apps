@@ -4,6 +4,7 @@ namespace Apha.FPSApps.Application.Dtos.PACT
     {
         public string TestCode { get; set; } = null!;
         public string WorkGroup { get; set; } = null!;
+        public string? OriginalWorkGroup { get; set; }
         public string PlanPortfolio { get; set; } = null!;
         public string? ItemDescription { get; set; }
         public decimal? UnitCost { get; set; }

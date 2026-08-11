@@ -4,21 +4,16 @@
     ViewData["Title"] = "Plan vs Actual - Animals";
 }
 
+@{
+    ViewData["SelectedProjectCode"] = Model.SelectedProjectCode;
+}
 <div class="container-fluid">
     @* <div class="govuk-grid-row">
         <div class="govuk-grid-column-full">
             <div style="padding: 5px 5px; border-bottom: 1px solid #b4b4b4" class="row">
                 <div style="display: flex; font-size: 14px; align-items: center; justify-content: space-between;">
-                    <div class="col-md-6">
-                        
-                    </div>
-                    <div style="display: flex; justify-content: flex-end;" class="col-md-6">
-                        <label class="fw-bold mt-2 me-2" for="projectSelect">Select a Project:</label>
-                        <select id="projectSelect" asp-items="Model.ProjectList" asp-for="SelectedProjectCode"
-                                class="form-select form-select-sm" style="width: auto; min-width: 280px;">
-                            <option value="">-- Select Project --</option>
-                        </select>
-                    </div>
+                    <div class="col-md-6"></div>
+                    @await Html.PartialAsync("_ProjectDropdownSelector")
                 </div>
             </div>
         </div>
@@ -65,42 +60,13 @@
         </div>
 
     <!-- Summary card -->
-    <div class="govuk-grid-row">
-        <div class="govuk-grid-column-full mt-2">
-            <div class="pva-summary-card" style="background-color:#edf4ff; border:1px solid #1d70b8; border-radius:5px; padding:8px;">
-                <div class="row">
-                    <div class="col-lg-6">
-                        <div class="row">
-                            <div class="col-lg-5">
-                                <label class="govuk-label--s" for="summary-project-code">Project</label>
-                                <input type="text" id="summary-project-code" asp-for="SelectedProjectCode"
-                                       class="govuk-input" readonly>
-                            </div>
-                            <div class="col-lg-7">
-                                <label class="govuk-label--s" for="summary-project-description">Project Description</label>
-                                <textarea id="summary-project-description" asp-for="ProjectTitle"
-                                          class="govuk-textarea govuk-!-font-size-16 sup_margin_0" rows="1" readonly></textarea>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6">
-                        <div class="row">
-                            <div class="col-lg-5">
-                                <label class="govuk-label--s" for="summary-program">Program</label>
-                                <input type="text" id="summary-program" asp-for="Program"
-                                       class="govuk-input" readonly>
-                            </div>
-                            <div class="col-lg-7">
-                                <label class="govuk-label--s" for="summary-contract">Contract</label>
-                                <input type="text" id="summary-contract" asp-for="Contract"
-                                       class="govuk-input" readonly>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    @{
+        ViewData["SummaryProjectCodeValue"]  = Model.SelectedProjectCode;
+        ViewData["SummaryProjectTitleValue"] = Model.ProjectTitle;
+        ViewData["SummaryProgramValue"]      = Model.Program;
+        ViewData["SummaryContractValue"]     = Model.Contract;
+    }
+    @await Html.PartialAsync("_PvaSummaryCard")
 
     <!-- Two-column grid area -->
     <div class="govuk-grid-row">
@@ -164,9 +130,10 @@
 </div>
 
 @section Scripts {
-    <script src="~/js/fps_js/ajax-form-validation.js"></script>
-    <script src="~/js/ajax-form-validation.js"></script>
-    <script src="~/js/fps_js/AnimalJob.js"></script>
+    <script src="~/js/fps_js/ajax-form-validation.js" asp-append-version="true"></script>
+    <script src="~/js/ajax-form-validation.js" asp-append-version="true"></script>
+    <script src="~/js/fps_js/AnimalJob.js" asp-append-version="true"></script>
+    <script src="~/js/fps_js/project-dropdown.js" asp-append-version="true"></script>
     <script>
         AnimalJobConfig.getJobCode = function () { return currentProjectCode; };
         AnimalJobConfig.requireJobCodeForAdd = true;
@@ -185,26 +152,38 @@
     </script>
     <script>
         var currentProjectCode = '@Html.Raw(Model.SelectedProjectCode)';
+        var _loaderPendingGrids = 0;
 
         $(document).ready(function () {
             if (currentProjectCode) {
-                window['gridManager_@Model.AnimalPlanGrid.GridId'].reloadGrid({ page: 1 });
-                window['gridManager_@Model.ActualAnimalCostGrid.GridId'].reloadGrid({ page: 1 });
-                refreshPlannedCost();
-                refreshActualCost();
+                showLoader();
+                _loaderPendingGrids = 2;
+                setTimeout(function () {
+                    window['gridManager_@Model.AnimalPlanGrid.GridId'].reloadGrid({ page: 1 });
+                    window['gridManager_@Model.ActualAnimalCostGrid.GridId'].reloadGrid({ page: 1 });
+                    refreshPlannedCost();
+                    refreshActualCost();
+                }, 0);
             }
+            document.addEventListener('gridReloaded', function (e) {
+                var tracked = ['@Model.AnimalPlanGrid.GridId', '@Model.ActualAnimalCostGrid.GridId'];
+                if (tracked.indexOf(e.detail.gridId) !== -1 && _loaderPendingGrids > 0) {
+                    _loaderPendingGrids--;
+                    if (_loaderPendingGrids === 0) hideLoader();
+                }
+            });
         });
 
-        $('#projectSelect').on('change', function () {
-            currentProjectCode = $(this).val();
+        function onProjectSelected(projectCode, projectTitle) {
+            currentProjectCode = projectCode;
+            document.getElementById('projectNameInput').value = projectCode;
             $('#summary-project-code').val(currentProjectCode);
-            $('#summary-project-description').val('');
+            $('#summary-project-description').val(projectTitle || '');
             $('#summary-program').val('');
             $('#summary-contract').val('');
             $('#planned-total-cost').val('0.00');
             $('#project-total-cost').val('0.00');
             $('#project-percent-plan').val('0.00%');
-
             if (currentProjectCode) {
                 $.get('@Url.Action("GetProjectInfo", "ActualAnimalCost", new { area = "FPS" })',
                     { projectCode: currentProjectCode },
@@ -216,17 +195,25 @@
                         }
                     }
                 );
-
-                window['gridManager_@Model.AnimalPlanGrid.GridId'].reloadGrid({ page: 1 });
-                window['gridManager_@Model.ActualAnimalCostGrid.GridId'].reloadGrid({ page: 1 });
-                refreshPlannedCost();
-                refreshActualCost();
+                showLoader();
+                _loaderPendingGrids = 2;
+                setTimeout(function () {
+                    window['gridManager_@Model.AnimalPlanGrid.GridId'].reloadGrid({ page: 1 });
+                    window['gridManager_@Model.ActualAnimalCostGrid.GridId'].reloadGrid({ page: 1 });
+                    refreshPlannedCost();
+                    refreshActualCost();
+                }, 0);
             }
+        }
+
+        $(document).ready(function () {
+            initProjectDropdown(
+                '@Url.Action("GetProjectLookup", "ProjectAnimalPlanActual", new { area = "FPS" })',
+                onProjectSelected
+            );
         });
 
-        function getAnimalPlanExtraFilters() {
-            return { jobCode: currentProjectCode };
-        }
+        function getAnimalPlanExtraFilters() { return { jobCode: currentProjectCode }; }
 
         function getActualAnimalExtraFilters() {
             return { projectCode: currentProjectCode };

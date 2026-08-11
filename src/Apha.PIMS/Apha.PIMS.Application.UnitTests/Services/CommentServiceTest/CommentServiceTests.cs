@@ -130,6 +130,48 @@ namespace Apha.PIMS.Application.UnitTests.Services.CommentServiceTest
             _mockMapper.DidNotReceive().Map<PaginatedResult<CommentDto>>(Arg.Any<PagedData<Comment>>());
         }
 
+        
+        [Fact]
+        public async Task GetCommentsByProjectAsync_WithTopicFilter_ForwardsTopicToRepository()
+        {
+            // Arrange
+            var project = "PP001";
+            int? year = 2024;
+            var topic = "Risk";
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var paginationParams = new PaginationParameters<string>(page: 1, pageSize: 10);
+
+            var commentEntities = new List<Comment>
+            {
+                new Comment { CommentNo = 5, Project = project, Year = 2024, Topic = "Risk", CommentText = "Risk comment", MadeBy = "User1" }
+            };
+
+            var paginationData = new PaginationData { PageNumber = 1, PageSize = 10, TotalPages = 1, TotalRecords = 1 };
+            var pagedData = new PagedData<Comment>(commentEntities, paginationData);
+
+            var expectedDtos = new List<CommentDto>
+            {
+                new CommentDto { CommentNo = 5, Project = project, Year = 2024, Topic = "Risk", CommentText = "Risk comment", MadeBy = "User1" }
+            };
+            var paginationDto = new PaginationDto { PageNumber = 1, PageSize = 10, TotalPages = 1, TotalRecords = 1 };
+            var expectedResult = new PaginatedResult<CommentDto>(expectedDtos, paginationDto);
+
+            _mockMapper.Map<PaginationParameters<string>>(query).Returns(paginationParams);
+            _mockRepository.GetCommentsByProjectAsync(project, year, paginationParams, topic).Returns(pagedData);
+            _mockMapper.Map<PaginatedResult<CommentDto>>(pagedData).Returns(expectedResult);
+
+            // Act
+            var result = await _sut.GetCommentsByProjectAsync(project, year, query, topic);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Data.Should().HaveCount(1);
+            result.Data.First().Topic.Should().Be("Risk");
+
+            await _mockRepository.Received(1).GetCommentsByProjectAsync(project, year, paginationParams, topic);
+            _mockMapper.Received(1).Map<PaginatedResult<CommentDto>>(pagedData);
+        }
+
         #endregion
 
         #region GetByIdAsync
@@ -706,6 +748,165 @@ namespace Apha.PIMS.Application.UnitTests.Services.CommentServiceTest
             exception.Message.Should().Be("Database connection failed");
 
             await _mockRepository.Received(1).DeleteAsync(CommentNo);
+        }
+
+        #endregion
+
+        #region GetCommentTopicsAsync
+
+       
+        [Fact]
+        public async Task GetCommentTopicsAsync_WhenTopicsExist_ReturnsMappedDtos()
+        {
+            // Arrange
+            var topicEntities = new List<CommentTopic>
+            {
+                new CommentTopic { Topic = "Risk" },
+                new CommentTopic { Topic = "Progress" },
+                new CommentTopic { Topic = "Financial" }
+            };
+
+            var expectedDtos = new List<CommentTopicDto>
+            {
+                new CommentTopicDto { Topic = "Risk" },
+                new CommentTopicDto { Topic = "Progress" },
+                new CommentTopicDto { Topic = "Financial" }
+            };
+
+            _mockRepository.GetCommentTopicsAsync().Returns(Task.FromResult<IEnumerable<CommentTopic>>(topicEntities));
+            _mockMapper.Map<IEnumerable<CommentTopicDto>>(topicEntities).Returns(expectedDtos);
+
+            // Act
+            var result = await _sut.GetCommentTopicsAsync();
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Should().HaveCount(3);
+            result.Should().Contain(t => t.Topic == "Risk");
+            result.Should().Contain(t => t.Topic == "Progress");
+
+            await _mockRepository.Received(1).GetCommentTopicsAsync();
+            _mockMapper.Received(1).Map<IEnumerable<CommentTopicDto>>(topicEntities);
+        }
+
+        [Fact]
+        public async Task GetCommentTopicsAsync_WhenNoTopicsExist_ReturnsEmptyCollection()
+        {
+            // Arrange
+            var emptyTopics = new List<CommentTopic>();
+            var emptyDtos = new List<CommentTopicDto>();
+
+            _mockRepository.GetCommentTopicsAsync().Returns(Task.FromResult<IEnumerable<CommentTopic>>(emptyTopics));
+            _mockMapper.Map<IEnumerable<CommentTopicDto>>(emptyTopics).Returns(emptyDtos);
+
+            // Act
+            var result = await _sut.GetCommentTopicsAsync();
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Should().BeEmpty();
+
+            await _mockRepository.Received(1).GetCommentTopicsAsync();
+            _mockMapper.Received(1).Map<IEnumerable<CommentTopicDto>>(emptyTopics);
+        }
+
+        [Fact]
+        public async Task GetCommentTopicsAsync_WhenRepositoryThrowsException_PropagatesException()
+        {
+            // Arrange
+            var expectedException = new Exception("Database connection failed");
+
+            _mockRepository.GetCommentTopicsAsync()
+                .Returns(Task.FromException<IEnumerable<CommentTopic>>(expectedException));
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<Exception>(
+                async () => await _sut.GetCommentTopicsAsync()
+            );
+
+            exception.Message.Should().Be("Database connection failed");
+
+            await _mockRepository.Received(1).GetCommentTopicsAsync();
+            _mockMapper.DidNotReceive().Map<IEnumerable<CommentTopicDto>>(Arg.Any<IEnumerable<CommentTopic>>());
+        }
+
+        #endregion
+
+        #region GetForecastSpendByProjectAsync
+
+        [Fact]
+        public async Task GetForecastSpendByProjectAsync_WhenRepositoryReturnsValue_ReturnsForecastSpend()
+        {
+            // Arrange
+            var project = "PP001";
+            double? forecastSpend = 12345.67;
+            _mockRepository.GetForecastSpendByProjectAsync(project).Returns(Task.FromResult(forecastSpend));
+
+            // Act
+            var result = await _sut.GetForecastSpendByProjectAsync(project);
+
+            // Assert
+            result.Should().Be(forecastSpend);
+            await _mockRepository.Received(1).GetForecastSpendByProjectAsync(project);
+        }
+
+        [Fact]
+        public async Task GetForecastSpendByProjectAsync_WhenRepositoryThrowsException_PropagatesException()
+        {
+            // Arrange
+            var project = "PP001";
+            var expectedException = new Exception("Database connection failed");
+            _mockRepository.GetForecastSpendByProjectAsync(project)
+                .Returns(Task.FromException<double?>(expectedException));
+
+            // Act
+            var exception = await Assert.ThrowsAsync<Exception>(
+                async () => await _sut.GetForecastSpendByProjectAsync(project)
+            );
+
+            // Assert
+            exception.Message.Should().Be("Database connection failed");
+            await _mockRepository.Received(1).GetForecastSpendByProjectAsync(project);
+        }
+
+        #endregion
+
+        #region UpdateForecastSpendByProjectAsync
+
+        [Fact]
+        public async Task UpdateForecastSpendByProjectAsync_WithValidInput_ReturnsUpdatedForecastSpend()
+        {
+            // Arrange
+            var project = "PP001";
+            double? forecastSpend = 9876.54;
+            _mockRepository.UpdateForecastSpendByProjectAsync(project, forecastSpend).Returns(Task.FromResult(forecastSpend));
+
+            // Act
+            var result = await _sut.UpdateForecastSpendByProjectAsync(project, forecastSpend);
+
+            // Assert
+            result.Should().Be(forecastSpend);
+            await _mockRepository.Received(1).UpdateForecastSpendByProjectAsync(project, forecastSpend);
+        }
+
+        [Fact]
+        public async Task UpdateForecastSpendByProjectAsync_WhenRepositoryThrowsException_PropagatesException()
+        {
+            // Arrange
+            var project = "PP001";
+            double? forecastSpend = 9876.54;
+            var expectedException = new Exception("Database connection failed");
+            _mockRepository.UpdateForecastSpendByProjectAsync(project, forecastSpend)
+                .Returns(Task.FromException<double?>(expectedException));
+
+            // Act
+            var exception = await Assert.ThrowsAsync<Exception>(
+                async () => await _sut.UpdateForecastSpendByProjectAsync(project, forecastSpend)
+            );
+
+            // Assert
+            exception.Message.Should().Be("Database connection failed");
+            await _mockRepository.Received(1).UpdateForecastSpendByProjectAsync(project, forecastSpend);
         }
 
         #endregion

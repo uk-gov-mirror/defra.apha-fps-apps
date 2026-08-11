@@ -226,7 +226,7 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.Costbook.StaffEffortControllerT
         }
 
         [Fact]
-        public async Task Index_GridRowsAreOrderedByWorkGroupThenGradeCodeThenName()
+        public async Task Index_GridRowsPreserveServiceOrder_WhenNoYearSortRequested()
         {
             // Arrange
             const string projectId = "P001";
@@ -252,7 +252,7 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.Costbook.StaffEffortControllerT
                 Assert.IsType<ViewResult>(result).Model!);
 
             var names = model.Grid.Data.Select(r => r.Name).ToList();
-            Assert.Equal(["Alice", "Mike", "Zara"], names);
+            Assert.Equal(["Zara", "Mike", "Alice"], names);
         }
 
         [Fact]

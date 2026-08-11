@@ -131,6 +131,60 @@ namespace Apha.PACT.Application.UnitTests.Services.BosworthInterfaceServiceTest
 
         #endregion
 
+        #region GetTimeSaleWorkGroupAsync
+
+        [Fact]
+        public async Task GetTimeSaleWorkGroupAsync_ValidWorkGroup_ReturnsMappedResult()
+        {
+            var entities = new List<TimeSaleWorkGroup> { new() { SellingWg = "WG1" } };
+            var dtos = new List<TimeSaleWorkGroupDto> { new() { SellingWg = "WG1" } };
+
+            _mockRepository.GetTimeSaleWorkGroupAsync("WG1").Returns(entities);
+            _mockMapper.Map<IEnumerable<TimeSaleWorkGroupDto>>(entities).Returns(dtos);
+
+            var result = await _sut.GetTimeSaleWorkGroupAsync("WG1");
+
+            result.Should().BeEquivalentTo(dtos);
+            await _mockRepository.Received(1).GetTimeSaleWorkGroupAsync("WG1");
+        }
+
+        [Fact]
+        public async Task GetTimeSaleWorkGroupAsync_NullWorkGroup_ThrowsBusinessValidationErrorException()
+        {
+            var ex = await Assert.ThrowsAsync<BusinessValidationErrorException>(
+                () => _sut.GetTimeSaleWorkGroupAsync(null!));
+
+            ex.Errors.Should().ContainSingle(e => e.Code == "WORKGROUP_REQUIRED");
+        }
+
+        [Fact]
+        public async Task GetTimeSaleWorkGroupAsync_EmptyWorkGroup_ThrowsBusinessValidationErrorException()
+        {
+            var ex = await Assert.ThrowsAsync<BusinessValidationErrorException>(
+                () => _sut.GetTimeSaleWorkGroupAsync(""));
+
+            ex.Errors.Should().ContainSingle(e => e.Code == "WORKGROUP_REQUIRED");
+        }
+
+        [Fact]
+        public async Task GetTimeSaleWorkGroupAsync_WhitespaceWorkGroup_ThrowsBusinessValidationErrorException()
+        {
+            var ex = await Assert.ThrowsAsync<BusinessValidationErrorException>(
+                () => _sut.GetTimeSaleWorkGroupAsync("   "));
+
+            ex.Errors.Should().ContainSingle(e => e.Code == "WORKGROUP_REQUIRED");
+        }
+
+        [Fact]
+        public async Task GetTimeSaleWorkGroupAsync_RepositoryThrows_PropagatesException()
+        {
+            _mockRepository.GetTimeSaleWorkGroupAsync("WG1").ThrowsAsync(new Exception("DB error"));
+
+            await Assert.ThrowsAsync<Exception>(() => _sut.GetTimeSaleWorkGroupAsync("WG1"));
+        }
+
+        #endregion
+
         #region GetTestSaleSellingWorkgroupAsync
 
         [Fact]

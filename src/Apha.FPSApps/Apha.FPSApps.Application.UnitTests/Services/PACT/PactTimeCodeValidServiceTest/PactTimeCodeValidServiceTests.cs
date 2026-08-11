@@ -348,6 +348,109 @@ namespace Apha.FPSApps.Application.UnitTests.Services.PACT.PactTimeCodeValidServ
 
         #endregion
 
+        #region GetTimeCodeValidsByWorkGroupAsync Tests
+
+        [Fact]
+        public async Task GetTimeCodeValidsByWorkGroupAsync_WithValidWorkGroup_ReturnsSuccessResponse()
+        {
+            var expected = ApiResponseDto<List<TimeCodeValidDto>>.SuccessResponse(
+                [new TimeCodeValidDto { TimeCode = "TC001", WorkGroup = "WG001", ParentProject = "PP001" }]);
+            _pactTimeCodeValidApiClient.GetTimeCodeValidsByWorkGroupAsync("WG001").Returns(expected);
+
+            var result = await _service.GetTimeCodeValidsByWorkGroupAsync("WG001");
+
+            Assert.Equal(expected, result);
+            await _pactTimeCodeValidApiClient.Received(1).GetTimeCodeValidsByWorkGroupAsync("WG001");
+        }
+
+        [Fact]
+        public async Task GetTimeCodeValidsByWorkGroupAsync_WithEmptyWorkGroup_ThrowsArgumentException()
+        {
+            var ex = await Assert.ThrowsAsync<ArgumentException>(() => _service.GetTimeCodeValidsByWorkGroupAsync(""));
+
+            Assert.Equal("workGroup", ex.ParamName);
+        }
+
+        [Fact]
+        public async Task GetTimeCodeValidsByWorkGroupAsync_WithNullWorkGroup_ThrowsArgumentException()
+        {
+            var ex = await Assert.ThrowsAsync<ArgumentException>(() => _service.GetTimeCodeValidsByWorkGroupAsync(null!));
+
+            Assert.Equal("workGroup", ex.ParamName);
+        }
+
+        #endregion
+
+        #region GetTimeCodesProjectsByWorkGroupAndTimeCodeAsync Tests
+
+        [Fact]
+        public async Task GetTimeCodesProjectsByWorkGroupAndTimeCodeAsync_WithValidInput_ReturnsSuccessResponse()
+        {
+            var expected = ApiResponseDto<List<string>>.SuccessResponse(["PP001", "PP002"]);
+            _pactTimeCodeValidApiClient
+                .GetTimeCodesProjectsByWorkGroupAndTimeCodeAsync("WG001", "TC001")
+                .Returns(expected);
+
+            var result = await _service.GetTimeCodesProjectsByWorkGroupAndTimeCodeAsync("WG001", "TC001");
+
+            Assert.Equal(expected, result);
+            await _pactTimeCodeValidApiClient
+                .Received(1)
+                .GetTimeCodesProjectsByWorkGroupAndTimeCodeAsync("WG001", "TC001");
+        }
+
+        [Fact]
+        public async Task GetTimeCodesProjectsByWorkGroupAndTimeCodeAsync_WithEmptyWorkGroup_ThrowsArgumentException()
+        {
+            var ex = await Assert.ThrowsAsync<ArgumentException>(() =>
+                _service.GetTimeCodesProjectsByWorkGroupAndTimeCodeAsync("", "TC001"));
+
+            Assert.Equal("workGroup", ex.ParamName);
+        }
+
+        [Fact]
+        public async Task GetTimeCodesProjectsByWorkGroupAndTimeCodeAsync_WithEmptyTimeCode_ThrowsArgumentException()
+        {
+            var ex = await Assert.ThrowsAsync<ArgumentException>(() =>
+                _service.GetTimeCodesProjectsByWorkGroupAndTimeCodeAsync("WG001", ""));
+
+            Assert.Equal("timeCode", ex.ParamName);
+        }
+
+        #endregion
+
+        #region GetAllDistinctTimeCodesAsync Tests
+
+        [Fact]
+        public async Task GetAllDistinctTimeCodesAsync_WhenApiReturnsSuccess_DelegatesAndReturnsResponse()
+        {
+            var expected = ApiResponseDto<List<string>>.SuccessResponse(["TC001", "TC002"]);
+            _pactTimeCodeValidApiClient.GetAllDistinctTimeCodesAsync().Returns(expected);
+
+            var result = await _service.GetAllDistinctTimeCodesAsync();
+
+            Assert.Equal(expected, result);
+            await _pactTimeCodeValidApiClient.Received(1).GetAllDistinctTimeCodesAsync();
+        }
+
+        #endregion
+
+        #region GetAllDistinctProjectsAsync Tests
+
+        [Fact]
+        public async Task GetAllDistinctProjectsAsync_WhenApiReturnsSuccess_DelegatesAndReturnsResponse()
+        {
+            var expected = ApiResponseDto<List<string>>.SuccessResponse(["PP001", "PP002"]);
+            _pactTimeCodeValidApiClient.GetAllDistinctProjectsAsync().Returns(expected);
+
+            var result = await _service.GetAllDistinctProjectsAsync();
+
+            Assert.Equal(expected, result);
+            await _pactTimeCodeValidApiClient.Received(1).GetAllDistinctProjectsAsync();
+        }
+
+        #endregion
+
         #region DeleteAllByJobCodeAsync Tests
 
         [Fact]

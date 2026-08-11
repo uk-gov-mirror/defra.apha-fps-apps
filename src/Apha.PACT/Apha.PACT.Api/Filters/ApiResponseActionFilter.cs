@@ -59,6 +59,7 @@ namespace Apha.PACT.Api.Filters
             {
                 Success = true,
                 Data = paginated.Data,
+                Total = paginated.Total,
                 Pagination = paginated.PaginationData,
                 Errors = null,
                 Meta = CreateMeta(correlationId)

@@ -1,4 +1,4 @@
-﻿using Apha.Common.Contracts;
+using Apha.Common.Contracts;
 using Apha.Common.Contracts.PIMS;
 using Apha.PIMS.Api.Controllers;
 using Apha.PIMS.Application.Dtos;
@@ -32,24 +32,26 @@ namespace Apha.PIMS.Api.UnitTests.Controllers.ProjectCommentControllerTest
             // Arrange
             var project = "PP001";
             var year = 2024;
+            string? topic = null;
             var query = new PaginationReq<string> { Page = 1, PageSize = 10 };
             var filter = new QueryParameters<string> { Page = 1, PageSize = 10 };
             var paginatedResult = new PaginatedResult<CommentDto>();
             var mappedResult = new PaginationRes<CommentRes>();
 
             _mapper.Map<QueryParameters<string>>(query).Returns(filter);
-            _service.GetCommentsByProjectAsync(project, year, filter).Returns(paginatedResult);
+           
+            _service.GetCommentsByProjectAsync(project, year, filter, topic).Returns(paginatedResult);
             _mapper.Map<PaginationRes<CommentRes>>(paginatedResult).Returns(mappedResult);
 
             // Act
-            var result = await _controller.GetCommentsByProject(project, year, query);
+            var result = await _controller.GetCommentsByProject(project, year, topic, query);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
             Assert.Equal(mappedResult, okResult.Value);
 
             _mapper.Received(1).Map<QueryParameters<string>>(query);
-            await _service.Received(1).GetCommentsByProjectAsync(project, year, filter);
+            await _service.Received(1).GetCommentsByProjectAsync(project, year, filter, topic);
             _mapper.Received(1).Map<PaginationRes<CommentRes>>(paginatedResult);
         }
 
@@ -59,24 +61,25 @@ namespace Apha.PIMS.Api.UnitTests.Controllers.ProjectCommentControllerTest
             // Arrange
             var project = "PP001";
             int? year = null;
+            string? topic = null;
             var query = new PaginationReq<string> { Page = 1, PageSize = 10 };
             var filter = new QueryParameters<string> { Page = 1, PageSize = 10 };
             var paginatedResult = new PaginatedResult<CommentDto>();
             var mappedResult = new PaginationRes<CommentRes>();
 
             _mapper.Map<QueryParameters<string>>(query).Returns(filter);
-            _service.GetCommentsByProjectAsync(project, year, filter).Returns(paginatedResult);
+            _service.GetCommentsByProjectAsync(project, year, filter, topic).Returns(paginatedResult);
             _mapper.Map<PaginationRes<CommentRes>>(paginatedResult).Returns(mappedResult);
 
             // Act
-            var result = await _controller.GetCommentsByProject(project, year, query);
+            var result = await _controller.GetCommentsByProject(project, year, topic, query);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
             Assert.Equal(mappedResult, okResult.Value);
 
             _mapper.Received(1).Map<QueryParameters<string>>(query);
-            await _service.Received(1).GetCommentsByProjectAsync(project, year, filter);
+            await _service.Received(1).GetCommentsByProjectAsync(project, year, filter, topic);
             _mapper.Received(1).Map<PaginationRes<CommentRes>>(paginatedResult);
         }
 
@@ -86,23 +89,24 @@ namespace Apha.PIMS.Api.UnitTests.Controllers.ProjectCommentControllerTest
             // Arrange
             var project = "PP001";
             var year = 2024;
+            string? topic = null;
             var query = new PaginationReq<string> { Page = 1, PageSize = 10 };
             var filter = new QueryParameters<string> { Page = 1, PageSize = 10 };
             var emptyResult = new PaginatedResult<CommentDto>();
             var emptyMapped = new PaginationRes<CommentRes>();
 
             _mapper.Map<QueryParameters<string>>(query).Returns(filter);
-            _service.GetCommentsByProjectAsync(project, year, filter).Returns(emptyResult);
+            _service.GetCommentsByProjectAsync(project, year, filter, topic).Returns(emptyResult);
             _mapper.Map<PaginationRes<CommentRes>>(emptyResult).Returns(emptyMapped);
 
             // Act
-            var result = await _controller.GetCommentsByProject(project, year, query);
+            var result = await _controller.GetCommentsByProject(project, year, topic, query);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
             Assert.Equal(emptyMapped, okResult.Value);
 
-            await _service.Received(1).GetCommentsByProjectAsync(project, year, filter);
+            await _service.Received(1).GetCommentsByProjectAsync(project, year, filter, topic);
         }
 
         [Fact]
@@ -111,17 +115,44 @@ namespace Apha.PIMS.Api.UnitTests.Controllers.ProjectCommentControllerTest
             // Arrange
             var project = "PP001";
             var year = 2024;
+            string? topic = null;
             var query = new PaginationReq<string> { Page = 1, PageSize = 10 };
             var filter = new QueryParameters<string> { Page = 1, PageSize = 10 };
 
             _mapper.Map<QueryParameters<string>>(query).Returns(filter);
-            _service.GetCommentsByProjectAsync(project, year, filter).Throws(new Exception("Database error"));
+            _service.GetCommentsByProjectAsync(project, year, filter, topic).Throws(new Exception("Database error"));
 
             // Act & Assert
-            await Assert.ThrowsAsync<Exception>(() => _controller.GetCommentsByProject(project, year, query));
+            await Assert.ThrowsAsync<Exception>(() => _controller.GetCommentsByProject(project, year, topic, query));
 
             _mapper.Received(1).Map<QueryParameters<string>>(query);
-            await _service.Received(1).GetCommentsByProjectAsync(project, year, filter);
+            await _service.Received(1).GetCommentsByProjectAsync(project, year, filter, topic);
+        }
+
+        [Fact]
+        public async Task GetCommentsByProject_WithTopicFilter_ReturnsOkResult_WithFilteredComments()
+        {
+            // Arrange
+            var project = "PP001";
+            var year = 2024;
+            var topic = "Budget";
+            var query = new PaginationReq<string> { Page = 1, PageSize = 10 };
+            var filter = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var paginatedResult = new PaginatedResult<CommentDto>();
+            var mappedResult = new PaginationRes<CommentRes>();
+
+            _mapper.Map<QueryParameters<string>>(query).Returns(filter);
+            _service.GetCommentsByProjectAsync(project, year, filter, topic).Returns(paginatedResult);
+            _mapper.Map<PaginationRes<CommentRes>>(paginatedResult).Returns(mappedResult);
+
+            // Act
+            var result = await _controller.GetCommentsByProject(project, year, topic, query);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(mappedResult, okResult.Value);
+
+            await _service.Received(1).GetCommentsByProjectAsync(project, year, filter, topic);
         }
 
         #endregion
@@ -414,6 +445,112 @@ namespace Apha.PIMS.Api.UnitTests.Controllers.ProjectCommentControllerTest
             await Assert.ThrowsAsync<Exception>(() => _controller.Delete(CommentNo));
 
             await _service.Received(1).DeleteAsync(CommentNo);
+        }
+
+        #endregion
+
+        #region GetCommentTopics
+
+        [Fact]
+        public async Task GetCommentTopics_ReturnsOkResult_WithMappedTopics()
+        {
+            // Arrange
+            var topicDtos = new List<CommentTopicDto>
+            {
+                new CommentTopicDto { Topic = "Budget" },
+                new CommentTopicDto { Topic = "Risk" }
+            };
+            var topicRes = new List<CommentTopicRes>
+            {
+                new CommentTopicRes { Topic = "Budget" },
+                new CommentTopicRes { Topic = "Risk" }
+            };
+
+            _service.GetCommentTopicsAsync().Returns(topicDtos);
+            _mapper.Map<IEnumerable<CommentTopicRes>>(topicDtos).Returns(topicRes);
+
+            // Act
+            var result = await _controller.GetCommentTopics();
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(topicRes, okResult.Value);
+            await _service.Received(1).GetCommentTopicsAsync();
+            _mapper.Received(1).Map<IEnumerable<CommentTopicRes>>(topicDtos);
+        }
+
+        #endregion
+
+        #region GetForecastSpendByProject
+
+        [Fact]
+        public async Task GetForecastSpendByProject_ReturnsOkResult_WithForecastSpendResponse()
+        {
+            // Arrange
+            const string project = "PP001";
+            const double expectedForecastSpend = 12345.67;
+            _service.GetForecastSpendByProjectAsync(project).Returns(expectedForecastSpend);
+
+            // Act
+            var result = await _controller.GetForecastSpendByProject(project);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var value = Assert.IsType<ProjectCommentForecastSpendRes>(okResult.Value);
+            Assert.Equal(expectedForecastSpend, value.ForecastSpend);
+            await _service.Received(1).GetForecastSpendByProjectAsync(project);
+        }
+
+        #endregion
+
+        #region UpdateForecastSpendByProject
+
+        [Fact]
+        public async Task UpdateForecastSpendByProject_WithEmptyProject_ReturnsBadRequest()
+        {
+            // Arrange
+            var request = new ProjectCommentForecastSpendRes { ForecastSpend = 12.34 };
+
+            // Act
+            var result = await _controller.UpdateForecastSpendByProject(string.Empty, request);
+
+            // Assert
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal("Project is required.", badRequest.Value);
+            await _service.DidNotReceive().UpdateForecastSpendByProjectAsync(Arg.Any<string>(), Arg.Any<double?>());
+        }
+
+        [Fact]
+        public async Task UpdateForecastSpendByProject_WithNullRequest_ReturnsBadRequest()
+        {
+            // Arrange
+            const string project = "PP001";
+
+            // Act
+            var result = await _controller.UpdateForecastSpendByProject(project, null!);
+
+            // Assert
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal("Forecast spend payload is required.", badRequest.Value);
+            await _service.DidNotReceive().UpdateForecastSpendByProjectAsync(Arg.Any<string>(), Arg.Any<double?>());
+        }
+
+        [Fact]
+        public async Task UpdateForecastSpendByProject_WithValidInput_ReturnsOkResult_WithUpdatedForecastSpend()
+        {
+            // Arrange
+            const string project = "PP001";
+            var request = new ProjectCommentForecastSpendRes { ForecastSpend = 9876.54 };
+            _service.UpdateForecastSpendByProjectAsync(project, request.ForecastSpend).Returns(request.ForecastSpend);
+
+            // Act
+            var result = await _controller.UpdateForecastSpendByProject(project, request);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var value = Assert.IsType<ProjectCommentForecastSpendRes>(okResult.Value);
+            Assert.Equal(request.ForecastSpend, value.ForecastSpend);
+            await _service.Received(1).UpdateForecastSpendByProjectAsync(project, request.ForecastSpend);
         }
 
         #endregion

@@ -23,6 +23,8 @@ namespace Apha.FPS.Api.Mappings
             CreateMap<StaffJobDto, StaffJobRes>().ReverseMap();
 
             CreateMap<FpsSettingRes, FpsSettingDto>().ReverseMap();
+            CreateMap<FpsSettingReq, FpsSettingDto>().ReverseMap();
+            CreateMap<FpsYearEndSettingRes, YearEndFpsSettingDto>().ReverseMap();
 
             CreateMap<AnimalCostViewDto, AnimalCostViewRes>().ReverseMap();
             CreateMap<AnimalSnapshotViewDto, AnimalSnapshotViewRes>().ReverseMap();
@@ -35,7 +37,7 @@ namespace Apha.FPS.Api.Mappings
             CreateMap<ManagerDto, ManagerRes>().ReverseMap();
             CreateMap<ProgramReq, ProgramDto>().ReverseMap();
             CreateMap<ProgramRes, ProgramDto>().ReverseMap();
-
+            CreateMap<ProgramPlanCostRes, ProgramPlanCostDto>().ReverseMap();
             CreateMap<ProjectDto, ProjectReq>()
                 .ForMember(d => d.BudgetExt, o => o.MapFrom(s => s.CustIncome)).ReverseMap()
                 .ForMember(d => d.CustIncome, o => o.MapFrom(s => s.BudgetExt));
@@ -109,6 +111,10 @@ namespace Apha.FPS.Api.Mappings
             CreateMap<ProjectGroupStaffPlanViewDto, ProjectGroupStaffPlanViewRes>().ReverseMap();
             CreateMap<PaginatedResult<ProjectGroupStaffPlanViewDto>, PaginationRes<ProjectGroupStaffPlanViewRes>>();
 
+            // Workgroup Staff Plan view
+            CreateMap<WgStaffPlanViewDto, WgStaffPlanViewRes>().ReverseMap();
+            CreateMap<PaginatedResult<WgStaffPlanViewDto>, PaginationRes<WgStaffPlanViewRes>>();
+
             CreateMap<PactStaffDto, PactStaffRes>().ReverseMap();
             CreateMap<WorkgroupGradeDto, WorkgroupGradeReq>().ReverseMap();
              
@@ -124,6 +130,8 @@ namespace Apha.FPS.Api.Mappings
             CreateMap<BidDto, BidReq>().ReverseMap();
             CreateMap<BidDto, BidRes>().ReverseMap();
             CreateMap<BidViewDto, BidViewRes>().ReverseMap();
+            CreateMap<TestsRequiredByWgDto, TestsRequiredByWgRes>().ReverseMap();
+            CreateMap<TestsRequiredByRcDto, TestsRequiredByRcRes>().ReverseMap();
             CreateMap<GenericBidViewDto, GenericBidViewRes>().ReverseMap();
             CreateMap<ProjectExceptionalCostViewDto, ProjectExceptionalCostViewRes>().ReverseMap();
             CreateMap<PurchaseDto, PurchaseReq>().ReverseMap();
@@ -177,6 +185,12 @@ namespace Apha.FPS.Api.Mappings
 
             // Resource Replan — project staff replan
             CreateMap<ProjectStaffReplanDto, ProjectStaffReplanRes>().ReverseMap();
+            CreateMap<BatchJobHistoryRes, BatchJobHistoryDto>().ReverseMap();
+            CreateMap<BatchJobQueueRes, BatchJobQueueDto>().ReverseMap();
+            CreateMap<BatchJobEventTriggerRes, BatchJobEventTriggerDto>().ReverseMap();
+            CreateMap<MonthHourRes, MonthHourDto>().ReverseMap();
+            CreateMap<MonthHourReq, MonthHourDto>().ReverseMap();
+            CreateMap<YearEndMonthHourRes, YearEndMonthHourDto>().ReverseMap();
         }
     }
 }

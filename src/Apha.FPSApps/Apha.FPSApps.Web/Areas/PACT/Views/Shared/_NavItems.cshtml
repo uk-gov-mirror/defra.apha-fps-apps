@@ -1,3 +1,7 @@
+@inject IConfiguration Configuration
+@{
+    var pactPowerBiReportUrl = Configuration["PowerBiReports:PACT"];
+}
 @* PACT navigation items — referenced by Views/Shared/Components/AppNav/Default.cshtml *@
 
             <!-- Project & Programme -->
@@ -55,8 +59,8 @@
                     <span class="arrow"><img src="~/images/arrow-down.svg" alt="down arrow for dropdown menu" width="12" /></span>
                 </button>
                 <div class="dropdown-menu" id="time-data">
-                    <a class="dropdown-item" href="#">Time record data entry</a>
-                    <a class="dropdown-item" href="#">Output record data entry</a>
+                    <a class="dropdown-item" asp-area="PACT" asp-controller="MonthlyTime" asp-action="Index">Time record data entry</a>
+                    <a class="dropdown-item" asp-area="PACT" asp-controller="MonthlyOutput" asp-action="Index">Output record data entry</a>
                     <a class="dropdown-item" asp-area="PACT" asp-controller="WorkGroupReport" asp-action="Index">Create &amp; email time &amp; output summaries</a>
                     @* <a class="dropdown-item" href="#">Create &amp; print individual COS90s</a> *@
                     <a class="dropdown-item" asp-area="PACT" asp-controller="MonthlyOutputLog" asp-action="Index">Search Audit Log for Monthly Output Change</a>
@@ -64,18 +68,32 @@
                 </div>
             </div>
 
-            <!-- Reports -->
+<!-- Release & Recreate -->
             <div class="nav-item dropdown">
-                <button class="nav-button dropdown-toggle" data-dropdown="report" allow-edit="true">
-                    <div class="align-menu-text"><span>Report & Summaries</span>
+    <button class="nav-button dropdown-toggle" data-dropdown="ReleaseRecreate" allow-edit="true">
+        <div class="align-menu-text">
+            <span>Release & Recreate Summaries</span>
                         <span class="arrow"><img src="~/images/arrow-down.svg" alt="down arrow for dropdown menu" width="12" /></span>
                     </div>
                 </button>
-                <div class="dropdown-menu" id="report">
+                <div class="dropdown-menu" id="ReleaseRecreate">
                     <a class="dropdown-item" asp-area="PACT" asp-controller="ReleaseSummary" asp-action="Index">Release Summaries</a>
                     <a class="dropdown-item" asp-area="PACT" asp-controller="RecreateSummary" asp-action="Index">Recreate Summaries</a>
                     <a class="dropdown-item" asp-area="PACT" asp-controller="RecreateSummaryLog" asp-action="Index">Log of Releases</a>
                     <a class="dropdown-item" asp-area="PACT" asp-controller="ProfitCenterCostSummary" asp-action="Index">PC SOCT Query</a>
-                    <a class="dropdown-item" href="#">Report</a>
                 </div>
             </div>
+
+<!-- Reports -->
+<div class="nav-item dropdown">
+    <button class="nav-button dropdown-toggle" data-dropdown="report" allow-edit="true">
+        <div class="align-menu-text">
+            <span>Reports</span>
+            <span class="arrow"><img src="~/images/arrow-down.svg" alt="down arrow for dropdown menu" width="12" /></span>
+        </div>
+    </button>
+    <div class="dropdown-menu" id="report">
+        <a class="dropdown-item" href="@pactPowerBiReportUrl"
+           target="_blank" rel="noopener noreferrer">PACT Power BI Report</a>
+    </div>
+</div>

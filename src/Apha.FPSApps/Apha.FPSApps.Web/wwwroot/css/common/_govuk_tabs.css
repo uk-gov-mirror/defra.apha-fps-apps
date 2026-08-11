@@ -44,7 +44,7 @@
 }
 
 .govuk-tabs__tab {
-    color: #1d70b8;
+    color: #0b0c0c !important;
     text-decoration: none !important;
     font-weight: 600;
 }

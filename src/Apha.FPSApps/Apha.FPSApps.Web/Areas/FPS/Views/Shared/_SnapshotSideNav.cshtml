@@ -35,13 +35,25 @@
                asp-area="FPS" asp-controller="ExceptionalCostSnapshotData" asp-action="Index"
                aria-current="@(ActiveClass("ExceptionalCostSnapshotData") == string.Empty ? null : "page")">SnapshotExceptionalCosts</a>
         </li>
-        <li><a class="dropdown-item" href="#">SnapshotsTests</a></li>
-        <li><a class="dropdown-item" href="#">SnapshotTime</a></li>
+        <li>
+            <a class="dropdown-item@(ActiveClass("TestSnapshotData"))"
+               asp-area="FPS" asp-controller="TestSnapshotData" asp-action="Index"
+               aria-current="@(ActiveClass("TestSnapshotData") == string.Empty ? null : "page")">SnapshotsTests</a>
+        </li>
+        <li>
+            <a class="dropdown-item@(ActiveClass("TimeSnapshotData"))"
+               asp-area="FPS" asp-controller="TimeSnapshotData" asp-action="Index"
+               aria-current="@(ActiveClass("TimeSnapshotData") == string.Empty ? null : "page")">SnapshotTime</a>
+        </li>
         <li>
             <a class="dropdown-item@(ActiveClass("BidSnapshotData"))"
                asp-area="FPS" asp-controller="BidSnapshotData" asp-action="Index"
                aria-current="@(ActiveClass("BidSnapshotData") == string.Empty ? null : "page")">SnapshotBids</a>
         </li>
-        <li><a class="dropdown-item" href="#">SnapshotProjects</a></li>
+        <li>
+            <a class="dropdown-item@(ActiveClass("ProjectSnapshotData"))"
+               asp-area="FPS" asp-controller="ProjectSnapshotData" asp-action="Index"
+               aria-current="@(ActiveClass("ProjectSnapshotData") == string.Empty ? null : "page")">SnapshotProjects</a>
+        </li>
     </ul>
 </nav>

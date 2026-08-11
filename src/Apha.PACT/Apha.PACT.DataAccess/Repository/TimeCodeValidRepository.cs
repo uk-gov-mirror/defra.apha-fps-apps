@@ -27,6 +27,33 @@ namespace Apha.PACT.DataAccess.Repository
                 .ToListAsync();
         }
 
+        public async Task<List<TimeCodeValid>> GetTimeCodeValidsAsync()
+        {
+            return await _context.TimeCodeValids
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<TimeCodeValid>> GetTimeCodeValidsByWorkGroupAsync(string workGroup)
+        {
+            return await _context.TimeCodeValids
+                .AsNoTracking()
+                .Where(t => t.WorkGroup == workGroup)
+                .OrderBy(t => t.TimeCode)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<string>> GetTimeCodeValidProjectsByWorkGroupAndTimeCodeAsync(string workGroup, string timeCode)
+        {
+            return await _context.TimeCodeValids
+                .AsNoTracking()
+                .Where(t => t.WorkGroup == workGroup && t.TimeCode == timeCode)
+                .Select(t => t.ParentProject)
+                .Distinct()
+                .OrderBy(p => p)
+                .ToListAsync();
+        }
+
         public async Task<PagedData<TimeCodeValid>> GetPagedTimeCodesAsync(
             PaginationParameters<string> query, string? jobCode, string? parentProject)
         {
@@ -73,9 +100,9 @@ namespace Apha.PACT.DataAccess.Repository
             return await _context.TimeCodeValids
                 .AsNoTracking()
                 .FirstOrDefaultAsync(t =>
-                    t.WorkGroup == workGroup &&
-                    t.TimeCode == timeCode &&
-                    t.ParentProject == parentProject);
+                    t.WorkGroup.ToLower() == workGroup.ToLower() &&
+                    t.TimeCode.ToLower() == timeCode.ToLower() &&
+                    t.ParentProject.ToLower() == parentProject.ToLower());
         }
 
         public async Task<TimeCodeValid> CreateTimeCodeValidAsync(TimeCodeValid timeCodeValid)

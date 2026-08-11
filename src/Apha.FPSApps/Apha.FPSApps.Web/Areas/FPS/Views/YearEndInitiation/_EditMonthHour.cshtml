@@ -1,0 +1,55 @@
+@model Apha.FPSApps.Web.Areas.FPS.Models.YearEndEditMonthHourModel
+
+<div class="modal-header flex-space-center">
+    <h3 class="modal-title govuk-heading-s" style="margin:0;">Edit Month Working Hours – @Model.MonthName</h3>
+    <button type="button" class="btn-close btn-red" onclick="closeYeiModal()" aria-label="Close">X</button>
+</div>
+
+<div class="modal-body cc-modal-body">
+    <div class="govuk-error-summary" aria-labelledby="yei-modal-error-title" tabindex="-1" style="display:none;">
+        <h2 class="govuk-error-summary__title" id="yei-modal-error-title">There is a problem</h2>
+        <div class="govuk-error-summary__body">
+            <ul class="govuk-list govuk-error-summary__list"></ul>
+        </div>
+    </div>
+
+    <form id="monthHourForm" novalidate>
+        @Html.AntiForgeryToken()
+        <input type="hidden" id="monthModalYear"    value="@Model.Year" />
+        <input type="hidden" id="monthModalMonth"   value="@Model.Month" />
+        <input type="hidden" id="monthModalFmonth"  value="@Model.Fmonth" />
+        <input type="hidden" id="monthModalFpsYear" value="@Model.FpsYear" />
+
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-one-third">
+                <div class="govuk-form-group govuk-!-margin-bottom-3">
+                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" for="monthModalDays">Days</label>
+                    <input class="govuk-input govuk-input--width-5 govuk-!-font-size-16"
+                           id="monthModalDays" name="Days" type="number"
+                           min="0" step="1" value="@Model.Days" autocomplete="off" />
+                </div>
+            </div>
+            <div class="govuk-grid-column-one-third">
+                <div class="govuk-form-group govuk-!-margin-bottom-3">
+                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" for="monthModalCvlHours">CVL Hours</label>
+                    <input class="govuk-input govuk-input--width-5 govuk-!-font-size-16"
+                           id="monthModalCvlHours" name="CvlHours" type="number"
+                           min="0" step="0.1" value="@Model.CvlHours" autocomplete="off" />
+                </div>
+            </div>
+            <div class="govuk-grid-column-one-third">
+                <div class="govuk-form-group govuk-!-margin-bottom-3">
+                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" for="monthModalVidHours">VID Hours</label>
+                    <input class="govuk-input govuk-input--width-5 govuk-!-font-size-16"
+                           id="monthModalVidHours" name="VidHours" type="number"
+                           min="0" step="0.1" value="@Model.VidHours" autocomplete="off" />
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="modal-footer" style="display:flex; gap:8px; justify-content:flex-end; padding:12px 16px;">
+    <button class="govuk-button govuk-!-margin-bottom-0" onclick="saveMonthHour()">Confirm</button>
+    <button class="govuk-button govuk-button--secondary govuk-!-margin-bottom-0" onclick="closeYeiModal()">Cancel</button>
+</div>

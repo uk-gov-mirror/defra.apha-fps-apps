@@ -18,10 +18,10 @@ namespace Apha.FPS.DataAccess.Data
                 .HasMaxLength(50)
                 .HasColumnName("animaltype");
             entity.Property(e => e.DailyRate)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("dailyrate");
             entity.Property(e => e.DefraDailyRate)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("defradailyrate");
             entity.Property(e => e.FpsYear).HasColumnName("fpsyear");
             entity.Property(e => e.PlanByWeek)

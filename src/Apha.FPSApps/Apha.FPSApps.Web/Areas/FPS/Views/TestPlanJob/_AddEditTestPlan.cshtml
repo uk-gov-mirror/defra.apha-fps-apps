@@ -121,7 +121,7 @@
                 <div class="govuk-input__wrapper">
                     <div class="govuk-input__prefix" aria-hidden="true">£</div>
                     <input type="number" step="0.01" class="govuk-input" id="RecUnitPrice"
-                           value="@(Model.RecUnitPrice?.ToString("F2") ?? "0.00")" readonly>
+                           value="@(Model.RecUnitPrice?.ToString() ?? "0.0000")" readonly>
                 </div>
             </div>
         </div>
@@ -142,7 +142,7 @@
                     <label for="UnitPrice" class="govuk-label" asp-for="UnitPrice">Agreed Unit Price</label>
                     <div class="govuk-input__wrapper">
                         <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                        <input type="number" step="0.01" min="0" asp-for="UnitPrice" class="govuk-input" id="UnitPrice"
+                        <input type="text" maxlength="20" asp-for="UnitPrice" class="govuk-input js-numeric-decimal" id="UnitPrice"
                                onchange="calculateTestCost()">
                         </div>
                         <span asp-validation-for="UnitPrice" class="govuk-error-message" style="display:none;"></span>
@@ -156,7 +156,7 @@
                         <div class="govuk-input__wrapper">
                             <div class="govuk-input__prefix" aria-hidden="true">£</div>
                             <input type="number" step="0.01" class="govuk-input" id="TotalCost" readonly
-                                   value="@(((Model.UnitPrice ?? 0) * (decimal)(Model.NoRequired)).ToString("F2"))">
+                                   value="@(((Model.UnitPrice ?? 0) * (decimal)(Model.NoRequired)).ToString())">
                         </div>                       
                     </div>
                 </div>

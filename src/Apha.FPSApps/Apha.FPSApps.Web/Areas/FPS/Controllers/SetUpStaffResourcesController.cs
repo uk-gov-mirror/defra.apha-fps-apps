@@ -40,7 +40,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index(string? resourceCentre = null)
+        public async Task<IActionResult> Index(string? resourceCentre = null, string? workGroup = null)
         {
             var resourceCentres = await PopulateResourceCentresAsync();
             var selectedRc = resourceCentre ?? string.Empty;
@@ -51,14 +51,42 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
                 SelectedResourceCentre = selectedRc
             };
 
+            // Populate workgroup dropdown if resource centre is selected
             if (!string.IsNullOrWhiteSpace(selectedRc))
             {
-                var gradesResponse = await _workGroupGradeService.GetWorkGroupGradeAsync(selectedRc);
-                if (gradesResponse.Success && gradesResponse.Data != null)
+                var workGroupsResponse = await _workGroupService.GetWorkGroupsByProfitCentreForBudgetAsync(selectedRc);
+                if (workGroupsResponse.Success && workGroupsResponse.Data != null)
                 {
-                    viewModel.GradeList = gradesResponse.Data.Select(g => g.WgGrade).ToList();
-                    viewModel.GradeCodeMap = gradesResponse.Data
-                        .ToDictionary(g => g.WgGrade, g => g.GradeCode ?? string.Empty);
+                    viewModel.WorkGroupList = workGroupsResponse.Data
+                        .Select(w => new SelectListItem
+                        {
+                            Value = w.WorkGroupName,
+                            Text = w.WorkGroupName
+                        })
+                        .OrderBy(w => w.Text)
+                        .ToList();
+                }
+
+                // Set selected workgroup if provided and valid
+                if (!string.IsNullOrWhiteSpace(workGroup) && 
+                    viewModel.WorkGroupList.Any(w => w.Value == workGroup))
+                {
+                    viewModel.SelectedWorkgroup = workGroup;
+
+                    // Load grades for the specific workgroup when both are selected
+                    var gradesResponse = await _workGroupGradeService.GetWorkgroupGradesByWorkGroupAsync(workGroup);
+                    if (gradesResponse.Success && gradesResponse.Data != null)
+                    {
+                        viewModel.GradeList = gradesResponse.Data.Select(g => g.WgGrade).ToList();
+                        viewModel.GradeCodeMap = gradesResponse.Data
+                            .ToDictionary(g => g.WgGrade, g => g.GradeCode ?? string.Empty);
+
+                        // Auto-select the first grade by default
+                        if (viewModel.GradeList.Any())
+                        {
+                            viewModel.SelectedGrade = viewModel.GradeList.First();
+                        }
+                    }
                 }
             }
 

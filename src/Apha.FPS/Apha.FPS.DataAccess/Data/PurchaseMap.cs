@@ -25,8 +25,8 @@ namespace Apha.FPS.DataAccess.Data
                 .HasColumnName("itemdescription");
 
             builder.Property(e => e.Amount)
-                .HasDefaultValueSql("0")
-                .HasColumnType("money")
+                .HasDefaultValue(0m)
+                .HasPrecision(19, 4)
                 .HasColumnName("amount");
 
             builder.Property(e => e.FpsYear).HasColumnName("fpsyear");

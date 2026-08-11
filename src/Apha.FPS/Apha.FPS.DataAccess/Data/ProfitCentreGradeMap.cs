@@ -23,14 +23,14 @@ namespace Apha.FPS.DataAccess.Data
                 .HasColumnName("pcgrade");
             entity.Property(e => e.FpsYear).HasColumnName("fpsyear");
             entity.Property(e => e.ChargeRate)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("chargerate");
             entity.Property(e => e.DefraChargeRate)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("defrachargerate");
             entity.Property(e => e.DirectRate)
-                .HasDefaultValueSql("0")
-                .HasColumnType("money")
+                .HasDefaultValue(0m)
+                .HasPrecision(19, 4)
                 .HasColumnName("directrate");
             entity.Property(e => e.DivisionGrade)
                 .HasMaxLength(10)
@@ -42,20 +42,20 @@ namespace Apha.FPS.DataAccess.Data
                 .HasDefaultValue(0.0)
                 .HasColumnName("hrsavailable");
             entity.Property(e => e.NPR)
-                .HasDefaultValueSql("0")
-                .HasColumnType("money")
+                .HasDefaultValue(0m)
+                .HasPrecision(19, 4)
                 .HasColumnName("npr");
             entity.Property(e => e.OHR)
-                .HasDefaultValueSql("0")
-                .HasColumnType("money")
+                .HasDefaultValue(0m)
+                .HasPrecision(19, 4)
                 .HasColumnName("ohr");
             entity.Property(e => e.OldChargeRate)
-                .HasDefaultValueSql("0")
-                .HasColumnType("money")
+                .HasDefaultValue(0m)
+                .HasPrecision(19, 4)
                 .HasColumnName("oldchargerate");
             entity.Property(e => e.PayRate)
-                .HasDefaultValueSql("0")
-                .HasColumnType("money")
+                .HasDefaultValue(0m)
+                .HasPrecision(19, 4)
                 .HasColumnName("payrate");
             entity.Property(e => e.ProfitCentre)
                 .HasMaxLength(50)

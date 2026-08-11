@@ -35,10 +35,10 @@
             <div class="sub-dropdown-menu" id="pm-review-plans">
                 <a class="dropdown-item" asp-area="FPS" asp-controller="ProjectProfitability" asp-action="Index">Project Profitability</a>
                 <a class="dropdown-item" asp-area="FPS" asp-controller="StaffPlan" asp-action="Index">Staff Plan Pivot</a>
-                        </div>
-                </div>
-                </div>
+            </div>
          </div>
+     </div>
+ </div>
 
 <!-- Resource Management -->
 <div class="nav-item dropdown">
@@ -84,29 +84,17 @@
     <div class="dropdown-menu dropdown-menu--columns" id="mab-menu">
         <div class="dropdown-col" style="min-width:200px">
             <a class="dropdown-item" asp-area="FPS" asp-controller="StaffMaintenance" asp-action="Index">Maintenance Menu</a>
-            <a class="dropdown-item" href="#">Stage 1 Plans</a>
             <a class="dropdown-item" asp-area="FPS" asp-controller="AnimalCosts" asp-action="Index">ASU Data View</a>
             <a class="dropdown-item" asp-area="FPS" asp-controller="ProjectProfitabilityVla" asp-action="Index">VLA Project Totals</a>
             <a class="dropdown-item" asp-area="FPS" asp-controller="BudgetResourceLevel" asp-action="Index">Generic Bids</a>
             <a class="dropdown-item" asp-area="FPS" asp-controller="ProjectAuditTrail" asp-action="Index">Project Audit Trails</a>
         </div>
         <div class="dropdown-col" style="min-width:310px">
-            <a class="dropdown-item" href="#">SMG Summary Report - All Work</a>
              <a class="dropdown-item" asp-area="FPS" asp-controller="ProjectMisc" asp-action="Index">Project Misc</a>
-            <a class="dropdown-item" href="#">SMG Summary Report - Assured Work Only</a>
-            <a class="dropdown-item" href="#">All Programs Profitability</a>
-            <a class="dropdown-item" href="#">Program Exceptional Bids</a>
-            <a class="dropdown-item" href="#">Income Contribution Rpt</a>
-            <a class="dropdown-item" href="#">Income Cont - Summary</a>
             <a class="dropdown-item" asp-area="FPS" asp-controller="ProjectSpecificQuery" asp-action="Index">Project Specific - Query</a>
         </div>
         <div class="dropdown-col" style="min-width:240px">
-            <a class="dropdown-item" href="#">Resource Grades by Programme</a>
-            <a class="dropdown-item" href="#">Resource Utilisation</a>
-            <a class="dropdown-item" href="#">Open FPS</a>
-            <a class="dropdown-item" href="#">Close FPS</a>
             <a class="dropdown-item" asp-area="FPS" asp-controller="AnimalSnapshotData" asp-action="Index">Run Snapshot Queries</a>
-            <a class="dropdown-item" href="#">Run Comparison Queries</a>
         </div>
     </div>
 </div>
@@ -191,6 +179,16 @@
     </div>
 </div>
 
+<!-- Management Account Menu -->
+<div class="nav-item dropdown">
+    <button class="nav-button dropdown-toggle" data-dropdown="management-account" allow-edit="true">
+            <div class="align-menu-text"><span>Management Account</span></div>
+            <span class="arrow"><img src="~/images/arrow-down.svg" alt="down arrow" width="12" /></span>
+     </button>
+     <div class="dropdown-menu" id="management-account">
+         <a class="dropdown-item" asp-area="FPS" asp-controller="MiscReports" asp-action="Index">Misc Reports</a>
+     </div>
+</div>
 
 <!-- FPS Power Bi Report -->
 <div class="nav-item dropdown">
@@ -210,3 +208,15 @@
         }
     </div>
 </div>
+
+<div class="nav-item dropdown">
+    <button class="nav-button dropdown-toggle" data-dropdown="YearEnd-Process" allow-edit="true">
+        <div class="align-menu-text"><span>YearEnd Process</span></div>
+        <span class="arrow"><img src="~/images/arrow-down.svg" alt="down arrow" width="12" /></span>
+    </button>
+    <div class="dropdown-menu" id="YearEnd-Process">
+        <a class="dropdown-item" asp-area="FPS" asp-controller="YearEndInitiation" asp-action="Index">YearEnd Initiation</a>
+        <a class="dropdown-item" asp-area="FPS" asp-controller="YearEndInitiation" asp-action="Index">YearEnd CuttOff</a>
+    </div>
+</div>
+ 

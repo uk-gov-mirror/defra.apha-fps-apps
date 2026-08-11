@@ -5,16 +5,18 @@
         public bool Success { get; set; }
         public T? Data { get; set; }
         public PaginationDto? Pagination { get; set; }
+        public decimal Total { get; set; } = 0;
         public List<ApiErrorDto>? Errors { get; set; } = new();
         public ApiMetaDto Meta { get; set; } = new();
 
-        public static ApiResponseDto<T> SuccessResponse(T data, PaginationDto? pagination = null)
+        public static ApiResponseDto<T> SuccessResponse(T data, PaginationDto? pagination = null, decimal total = 0)
         {
             return new ApiResponseDto<T>
             {
                 Success = true,
                 Data = data,
                 Pagination = pagination,
+                Total = total,
                 Meta = new ApiMetaDto
                 {
                     CorrelationId = Guid.NewGuid().ToString(),

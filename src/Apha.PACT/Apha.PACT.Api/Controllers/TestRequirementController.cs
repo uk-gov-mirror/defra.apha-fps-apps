@@ -67,6 +67,14 @@ namespace Apha.PACT.Api.Controllers
             return Ok(_mapper.Map<IEnumerable<TestRequirementtRes>>(items));
         }
 
+        /// <summary>Retrieves all active TestRequirement records (all test codes and buyers).</summary>
+        [HttpGet("active")]
+        public async Task<IActionResult> GetAllActive()
+        {
+            var items = await _service.GetAllActiveAsync();
+            return Ok(_mapper.Map<IEnumerable<TestRequirementtRes>>(items));
+        }
+
         /// <summary>Retrieves a TestReqmt record by composite key.</summary>
         [HttpGet("testcodebuyer")]
         public async Task<IActionResult> GetTestReqmtById([FromQuery] string testCode, [FromQuery] string buyer)

@@ -6,6 +6,10 @@ namespace Apha.PACT.Application.Interfaces
     public interface ITimeCodeValidService
     {
         Task<IEnumerable<TimeCodeValidDto>> GetByJobCodeAsync(string jobCode, string parentProject);
+        Task<IEnumerable<TimeCodeValidDto>> GetTimeCodeValidsByWorkGroupAsync(string workGroup);
+        Task<IEnumerable<string>> GetTimeCodeValidProjectsByWorkGroupAndTimeCodeAsync(string workGroup, string timeCode);
+        Task<IEnumerable<string>> GetAllDistinctTimeCodesAsync();
+        Task<IEnumerable<string>> GetAllDistinctProjectsAsync();
         Task<PaginatedResult<TimeCodeValidDto>> GetPagedTimeCodesAsync(QueryParameters<string> query, string? jobCode, string? parentProject);
         Task<PaginatedResult<TimeCodeValidDto>> GetPagedByProjectAndTestCodeAsync(QueryParameters<string> query, string parentProject, string testCode);
         Task<TimeCodeValidDto?> GetTimeCodeValidAsync(string workGroup, string timeCode, string parentProject);

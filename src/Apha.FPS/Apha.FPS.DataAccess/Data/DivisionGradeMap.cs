@@ -20,13 +20,13 @@ namespace Apha.FPS.DataAccess.Data
                 .HasColumnName("fpsyear");
 
             entity.Property(e => e.ChargeRate)
-                .HasDefaultValueSql("0")
-                .HasColumnType("money")
+                .HasDefaultValue(0m)
+                .HasPrecision(19, 4)
                 .HasColumnName("chargerate");
 
             entity.Property(e => e.DirectRate)
-                .HasDefaultValueSql("0")
-                .HasColumnType("money")
+                .HasDefaultValue(0m)
+                .HasPrecision(19, 4)
                 .HasColumnName("directrate");
 
             entity.Property(e => e.Division)
@@ -38,18 +38,18 @@ namespace Apha.FPS.DataAccess.Data
                 .HasColumnName("gradecode");
 
             entity.Property(e => e.Npr)
-                .HasDefaultValueSql("0")
-                .HasColumnType("money")
+                .HasDefaultValue(0m)
+                .HasPrecision(19, 4)
                 .HasColumnName("npr");
 
             entity.Property(e => e.Ohr)
-                .HasDefaultValueSql("0")
-                .HasColumnType("money")
+                .HasDefaultValue(0m)
+                .HasPrecision(19, 4)
                 .HasColumnName("ohr");
 
             entity.Property(e => e.PayRate)
-                .HasDefaultValueSql("0")
-                .HasColumnType("money")
+                .HasDefaultValue(0m)
+                .HasPrecision(19, 4)
                 .HasColumnName("payrate");
         }
     }

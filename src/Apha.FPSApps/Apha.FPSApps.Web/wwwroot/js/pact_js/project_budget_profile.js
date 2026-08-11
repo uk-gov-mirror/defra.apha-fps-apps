@@ -253,9 +253,11 @@ function openCostProfileModal(project, monthNo) {
             content.innerHTML = '';
             content.appendChild(document.createRange().createContextualFragment(html));
             document.getElementById('costProfileModal').classList.add('show');
+            // Initialize form validation (unobtrusive + numeric)
+            initializeFormValidation('#projectMonthForm');
         },
         error: function (xhr) {
-            console.error('Failed to load cost profile form: HTTP ' + xhr.status + ' – ' + url);
+            showAlertMessage('Failed to load cost profile form: HTTP ' + xhr.status + ' – ' + url, AlertType.ERROR);
         }
     });
 }
@@ -264,10 +266,13 @@ function saveProjectMonth() {
     const form = document.getElementById('projectMonthForm');
     if (!form) return;
 
+    const costProfileInput = form.querySelector('[name="CostProfile"]')?.value || '';
+    const costProfileValue = costProfileInput.trim() === '' ? null : parseFloat(costProfileInput);
+
     const payload = {
         project:     form.querySelector('[name="Project"]')?.value,
         monthNo:     parseInt(form.querySelector('[name="MonthNo"]')?.value) || 0,
-        costProfile: parseFloat(form.querySelector('[name="CostProfile"]')?.value) || null
+        costProfile: costProfileValue
     };
 
     if (!payload.monthNo) { showAlertMessage('Please enter a month number.', AlertType.INFO); return; }
@@ -332,7 +337,7 @@ function loadProjectDetails(project) {
             }
         },
         error: function (err) {
-            console.error('Failed to load project details:', err);
+            showAlertMessage('Failed to load project details.', AlertType.ERROR);
         }
     });
 }

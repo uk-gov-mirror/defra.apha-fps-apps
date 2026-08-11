@@ -45,8 +45,9 @@
                     <label for="unitPriceVla" class="govuk-label govuk-!-font-weight-bold">Non-Defra Unit Price VLA</label>
                     <div class="govuk-input__wrapper">
                         <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                        <input type="number" step="0.01" class="govuk-input govuk-!-font-size-16" id="unitPriceVla" name="UnitPriceVla" placeholder="0.00" />
+                        <input type="text" class="govuk-input govuk-!-font-size-16 decfmt-input" id="unitPriceVla" name="UnitPriceVla" placeholder="0.00" />
                     </div>
+                    <span class="govuk-error-message validation-message" data-valmsg-for="UnitPriceVla" style="display:none;"></span>
                 </div>
             </div>
             <div class="govuk-grid-column-one-half">
@@ -54,7 +55,7 @@
                     <label for="defraUnitPrice" class="govuk-label govuk-!-font-weight-bold">Defra Unit Price <span class="sup_color_red">*</span></label>
                     <div class="govuk-input__wrapper">
                         <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                        <input type="number" step="0.01" class="govuk-input govuk-!-font-size-16" id="defraUnitPrice" name="DefraUnitPrice" placeholder="0.00" value="0.00" required />
+                        <input type="text" class="govuk-input govuk-!-font-size-16 decfmt-input" id="defraUnitPrice" name="DefraUnitPrice" placeholder="0.00" required />
                     </div>
                     <span class="govuk-error-message validation-message" data-valmsg-for="DefraUnitPrice" style="display:none;"></span>
                 </div>

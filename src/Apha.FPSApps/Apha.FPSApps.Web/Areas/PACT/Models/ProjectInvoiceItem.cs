@@ -15,16 +15,20 @@ namespace Apha.FPSApps.Web.Areas.PACT.Models
         public int? Month { get; set; }
 
         [Required(ErrorMessage = "Amount is required")]
+        [Range(typeof(decimal), "-999999999999999.9999", "999999999999999.9999", ErrorMessage = "Amount must be between -999,999,999,999,999.9999 and 999,999,999,999,999.9999.")]
         [GridColumn(Order = 3, Width = 89, Type = GridColumnType.GbpValue)]
         public decimal? Amount { get; set; }
 
+        [Range(typeof(decimal), "-999999999999999.9999", "999999999999999.9999", ErrorMessage = "Cost of Work must be between -999,999,999,999,999.9999 and 999,999,999,999,999.9999.")]
         [GridColumn(Order = 4, Width = 129, Type = GridColumnType.GbpValue)]
         public decimal? CostOfWork { get; set; }
 
         [Display(Name = "WIP")]
+        [Range(typeof(decimal), "-999999999999999.9999", "999999999999999.9999", ErrorMessage = "WIP must be between -999,999,999,999,999.9999 and 999,999,999,999,999.9999.")]
         [GridColumn(Order = 5, Width = 86, Type = GridColumnType.GbpValue)]
         public decimal? Wip { get; set; }
 
+        [Range(typeof(decimal), "-999999999999999.9999", "999999999999999.9999", ErrorMessage = "Profit/Loss must be between -999,999,999,999,999.9999 and 999,999,999,999,999.9999.")]
         [GridColumn(Order = 6, Width = 109, Type = GridColumnType.GbpValue)]
         public decimal? ProfitLoss { get; set; }
 

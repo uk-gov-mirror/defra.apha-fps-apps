@@ -49,8 +49,13 @@ function getExtraFilters_moLogGrid() {
 
 // ── Button handlers ────────────────────────────────────────────────
 $(function () {
+    // Attach numeric validation to all decfmt-input fields
+    // Note: This page doesn't have a form element, just individual filter inputs
+    attachNumericValidation();
+
     $('#btnSearch').on('click', function () {
         clearMoLogError();
+
         if (!hasMoLogCriteria()) {
             showMoLogError('Please enter some criteria before searching.');
             return;
@@ -71,5 +76,14 @@ $(function () {
         $('#dtDateImported').val('');
         $('#txtUserId').val('');
         $('#ddAction').val('');
+
+        // Clear validation errors using shared function
+        clearValidationErrors(document);
+
+        // Reload the grid with empty criteria to show empty grid (no records)
+        var gm = getGridManager();
+        if (gm) {
+            gm.reloadGrid({ page: 1 });
+        }
     });
 });

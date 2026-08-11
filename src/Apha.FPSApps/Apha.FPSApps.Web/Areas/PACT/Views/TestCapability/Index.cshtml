@@ -315,6 +315,8 @@
             $.get('/PACT/TestCapability/CreateTestCapability', function (html) {
                 $('#modaPopupBody').html(html);
                 $('#modalPopup').addClass('show');
+                // Attach numeric validation
+                attachNumericValidation();
             });
         }
 
@@ -326,6 +328,8 @@
                 function (html) {
                     $('#modaPopupBody').html(html);
                     $('#modalPopup').addClass('show');
+                    // Attach numeric validation
+                    attachNumericValidation();
                 });
         }
 
@@ -398,6 +402,10 @@
                 function (html) {
                     $('#modaPopupBody').html(html);
                     $('#modalPopup').addClass('show');
+                    // Initialize form validation (unobtrusive + numeric)
+                    setTimeout(function() {
+                        initializeFormValidation('#testReqmtForm');
+                    }, 50);
                 });
         }
 
@@ -408,16 +416,36 @@
                 function (html) {
                     $('#modaPopupBody').html(html);
                     $('#modalPopup').addClass('show');
+                    // Initialize form validation (unobtrusive + numeric)
+                    setTimeout(function() {
+                        initializeFormValidation('#testReqmtForm');
+                    }, 50);
                 });
         }
 
         function saveTestReqmt() {
-            clearValidationErrors('#modaPopupBody');
             var form = $('#testReqmtForm');
-            if (!isFormValid(form)) {
+
+            // Validate all numeric fields before checking isFormValid
+            form.find('.decfmt-input').each(function() {
+                validateRangeOnInput(this);
+            });
+
+            // Check for numeric validation errors
+            if (hasNumericValidationErrors(form)) {
                 displayClientValidationErrors(form, '#modaPopupBody');
                 return;
             }
+
+            if (!isFormValid(form)) {
+                // Display validation errors without clearing them first
+                displayClientValidationErrors(form, '#modaPopupBody');
+                return;
+            }
+
+            // Clear validation errors only after validation passes
+            clearValidationErrors('#modaPopupBody');
+
             var isEdit        = form.find('[name="isEdit"]').val() === 'true';
             var rawUnitPrice  = form.find('[name="UnitPrice"]').val();
             var rawNoRequired = form.find('[name="NoRequired"]').val();

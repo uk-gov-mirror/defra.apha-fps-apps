@@ -47,6 +47,17 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PACTApis.Clients
 
         }
 
+        public async Task<ApiResponseDto<List<TestFeePlanViewDto>>> GetTestSnapshotPagedAsync(QueryParameters<string> query)
+        {
+            var url = QueryStringHelper.AddQueryString(PactApiEndpoints.GetTestSnapshotPaged, query);
+            var response = await _http.GetAsync<List<TestFeePlanViewDto>>(url);
+            if (response.Success)
+                return _mapper.Map<ApiResponseDto<List<TestFeePlanViewDto>>>(response);
+
+            var dto = _mapper.Map<ApiResponseDto<List<TestFeePlanViewDto>>>(response);
+            return ApiResponseDto<List<TestFeePlanViewDto>>.FailureResponse(dto.Errors, dto.Meta);
+        }
+
         public async Task<ApiResponseDto<TestorProductDto>> GetTestOrProductByIdAsync(string itemCode)
         {
 

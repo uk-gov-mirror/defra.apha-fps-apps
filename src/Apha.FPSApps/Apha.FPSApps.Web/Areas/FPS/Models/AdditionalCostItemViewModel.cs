@@ -1,3 +1,4 @@
+using Apha.FPSApps.Web.Validation;
 using Apha.FPSApps.Web.Models.Components.DataGrid;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel.DataAnnotations;
@@ -22,7 +23,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Models
 
         [Required(ErrorMessage = "Item cost is required")]
         [Display(Name = "Total Cost")]
-        [Range(0, double.MaxValue, ErrorMessage = "Item cost must be a positive value")]
+        [CurrencyRange]
         [DataType(DataType.Currency)]
         [DisplayFormat(DataFormatString = "{0:C}", ApplyFormatInEditMode = false)]
         [GridColumn(Width = 110, Type = GridColumnType.GbpValue)]

@@ -1,0 +1,41 @@
+@model string
+@* activeItem: identifier of the currently active Misc Report (e.g. "TestManagerWgPivot", "TestManagerRcPivot") *@
+<script>
+    function toggleMiscReportsSidebar() {
+        const sidebar = document.querySelector('#miscReportsSidenav');
+        sidebar.classList.toggle('collapsed');
+    }
+
+    // Append the currently selected Resource Centre to the report links so the
+    // dropdown selection is retained when switching between WG and RC grids.
+    function miscReportsNavigate(event, baseUrl) {
+        event.preventDefault();
+        var pc = document.getElementById('SelectedProfitCentre')?.value ?? '';
+        var url = baseUrl;
+        if (pc) {
+            url += (baseUrl.indexOf('?') >= 0 ? '&' : '?') + 'profitCentre=' + encodeURIComponent(pc);
+        }
+        window.location.href = url;
+    }
+</script>
+<nav class="sidenav flex-column flex-shrink-0" id="miscReportsSidenav" aria-label="Misc Reports navigation">
+    <button class="toggle-btn" onclick="toggleMiscReportsSidebar()" style="right: -8px; top: 30px;" aria-label="Toggle sidebar">
+        <img src="~/images/chevron-left-solid-full.svg" alt="side nav menu arrow" width="24" />
+    </button>
+    <ul>
+        <li>
+            <a class="dropdown-item@(Model == "TestManagerWgPivot" ? " sidenav-title" : "")"
+               href="@Url.Action("Index", "MiscReports", new { area = "FPS", report = "TestManagerWgPivot" })"
+               onclick="miscReportsNavigate(event, '@Url.Action("Index", "MiscReports", new { area = "FPS", report = "TestManagerWgPivot" })')">
+                Test Manager WG Pivot
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item@(Model == "TestManagerRcPivot" ? " sidenav-title" : "")"
+               href="@Url.Action("Index", "MiscReports", new { area = "FPS", report = "TestManagerRcPivot" })"
+               onclick="miscReportsNavigate(event, '@Url.Action("Index", "MiscReports", new { area = "FPS", report = "TestManagerRcPivot" })')">
+                Test Manager RC Pivot
+            </a>
+        </li>
+    </ul>
+</nav>

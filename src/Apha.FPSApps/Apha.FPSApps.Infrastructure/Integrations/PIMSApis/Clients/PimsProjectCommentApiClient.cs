@@ -22,12 +22,13 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PIMSApis.Clients
             _mapper = mapper;
         }
 
-        public async Task<ApiResponseDto<List<CommentDto>>> GetCommentsByProjectAsync(string project, int? year, QueryParameters<string> query)
+        
+        public async Task<ApiResponseDto<List<CommentDto>>> GetCommentsByProjectAsync(string project, int? year, string? topic, QueryParameters<string> query)
         {
             try
             {
                 string url = QueryStringHelper.AddQueryString(PimsApiEndpoints.GetCommentsByProject, query);
-                url = QueryStringHelper.AddQueryString(url, new { project, year });
+                url = QueryStringHelper.AddQueryString(url, new { project, year, topic });
                 var response = await _http.GetAsync<List<CommentRes>>(url);
                 if (response.Success)
                     return _mapper.Map<ApiResponseDto<List<CommentDto>>>(response);
@@ -136,6 +137,47 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PIMSApis.Clients
             {
                 return ApiResponseDto<List<CommentTopicDto>>.FailureResponse(
                     [new ApiErrorDto { Message = "Failed to retrieve comment topics", Code = InternalCodeError }],
+                    new ApiMetaDto());
+            }
+        }
+
+        public async Task<ApiResponseDto<ProjectCommentForecastSpendDto>> GetForecastSpendByProjectAsync(string project)
+        {
+            try
+            {
+                string url = QueryStringHelper.AddQueryString(PimsApiEndpoints.GetCommentForecastSpend, new { project });
+                var response = await _http.GetAsync<ProjectCommentForecastSpendRes>(url);
+                if (response.Success)
+                    return _mapper.Map<ApiResponseDto<ProjectCommentForecastSpendDto>>(response);
+
+                var dto = _mapper.Map<ApiResponseDto<ProjectCommentForecastSpendDto>>(response);
+                return ApiResponseDto<ProjectCommentForecastSpendDto>.FailureResponse(dto.Errors, dto.Meta);
+            }
+            catch (Exception)
+            {
+                return ApiResponseDto<ProjectCommentForecastSpendDto>.FailureResponse(
+                    [new ApiErrorDto { Message = "Failed to retrieve forecast spend", Code = InternalCodeError }],
+                    new ApiMetaDto());
+            }
+        }
+
+        public async Task<ApiResponseDto<ProjectCommentForecastSpendDto>> UpdateForecastSpendByProjectAsync(string project, double? forecastSpend)
+        {
+            try
+            {
+                string url = QueryStringHelper.AddQueryString(PimsApiEndpoints.GetCommentForecastSpend, new { project });
+                ProjectCommentForecastSpendRes request = new() { ForecastSpend = forecastSpend };
+                var response = await _http.PutAsync<ProjectCommentForecastSpendRes, ProjectCommentForecastSpendRes>(url, request);
+                if (response.Success)
+                    return _mapper.Map<ApiResponseDto<ProjectCommentForecastSpendDto>>(response);
+
+                var dto = _mapper.Map<ApiResponseDto<ProjectCommentForecastSpendDto>>(response);
+                return ApiResponseDto<ProjectCommentForecastSpendDto>.FailureResponse(dto.Errors, dto.Meta);
+            }
+            catch (Exception)
+            {
+                return ApiResponseDto<ProjectCommentForecastSpendDto>.FailureResponse(
+                    [new ApiErrorDto { Message = "Failed to update forecast spend", Code = InternalCodeError }],
                     new ApiMetaDto());
             }
         }

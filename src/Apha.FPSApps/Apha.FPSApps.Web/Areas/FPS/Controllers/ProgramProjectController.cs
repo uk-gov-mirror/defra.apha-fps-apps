@@ -133,19 +133,26 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
                 : null;
 
             var queryParameters = _mapper.Map<QueryParameters<string>>(request);
-            var projectsData = await _projectService.GetProjectsByProgramAsync(
-                queryParameters, programNo ?? string.Empty);
 
             var projectItems = new List<ProjectViewModel>();
-            if (projectsData.Success && projectsData.Data != null)
+            var paginationModel = new PaginationModel
             {
-                projectItems = _mapper.Map<List<ProjectViewModel>>(projectsData.Data);
-            }
+                SortColumn = request.SortBy,
+                SortDirection = request.Descending
+            };
 
-            var paginationModel = _mapper.Map<PaginationModel>(projectsData.Pagination)
-                ?? new PaginationModel();
-            paginationModel.SortColumn = request.SortBy;
-            paginationModel.SortDirection = request.Descending;
+            if (!string.IsNullOrWhiteSpace(programNo))
+            {
+                var projectsData = await _projectService.GetProjectsByProgramAsync(
+                    queryParameters, programNo);
+
+                if (projectsData.Success && projectsData.Data != null)
+                    projectItems = _mapper.Map<List<ProjectViewModel>>(projectsData.Data);
+
+                paginationModel = _mapper.Map<PaginationModel>(projectsData.Pagination) ?? paginationModel;
+                paginationModel.SortColumn = request.SortBy;
+                paginationModel.SortDirection = request.Descending;
+            }
 
             var gridConfig = new DataGridConfig<ProjectViewModel>
             {
@@ -198,18 +205,28 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             var queryParameters = _mapper.Map<QueryParameters<string>>(request);
 
             var isProjectGroupMode = !string.IsNullOrWhiteSpace(projectGroup);
+            var hasProgramNo = !string.IsNullOrWhiteSpace(programNo);
 
-            var apiResult = isProjectGroupMode
-                ? await _projectService.GetProjectsByProjectGroupAsync(queryParameters, projectGroup!)
-                : await _projectService.GetProjectsByProgramAsync(queryParameters, programNo ?? string.Empty);
+            var projectItems = new List<ProgramProjectItem>();
+            var paginationModel = new PaginationModel
+            {
+                SortColumn = request.SortBy,
+                SortDirection = request.Descending
+            };
 
-            var projectItems = apiResult.Success && apiResult.Data != null
-                ? _mapper.Map<List<ProgramProjectItem>>(apiResult.Data)
-                : new List<ProgramProjectItem>();
+            if (isProjectGroupMode || hasProgramNo)
+            {
+                var apiResult = isProjectGroupMode
+                    ? await _projectService.GetProjectsByProjectGroupAsync(queryParameters, projectGroup!)
+                    : await _projectService.GetProjectsByProgramAsync(queryParameters, programNo!);
 
-            var paginationModel = _mapper.Map<PaginationModel>(apiResult.Pagination) ?? new PaginationModel();
-            paginationModel.SortColumn = request.SortBy;
-            paginationModel.SortDirection = request.Descending;
+                if (apiResult.Success && apiResult.Data != null)
+                    projectItems = _mapper.Map<List<ProgramProjectItem>>(apiResult.Data);
+
+                paginationModel = _mapper.Map<PaginationModel>(apiResult.Pagination) ?? paginationModel;
+                paginationModel.SortColumn = request.SortBy;
+                paginationModel.SortDirection = request.Descending;
+            }
 
             var gridConfig = new DataGridConfig<ProgramProjectItem>
             {

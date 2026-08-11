@@ -8,6 +8,7 @@ namespace Apha.FPSApps.Application.Interfaces.PactApiClients
     {
         Task<ApiResponseDto<List<TestorProductDto>>> GetAllTestorProductsAsync();
         Task<ApiResponseDto<List<TestorProductDto>>> GetPagedTestOrProductsAsync(QueryParameters<string> query);
+        Task<ApiResponseDto<List<TestFeePlanViewDto>>> GetTestSnapshotPagedAsync(QueryParameters<string> query);
         Task<ApiResponseDto<TestorProductDto>> GetTestOrProductByIdAsync(string itemCode);
         Task<ApiResponseDto<TestorProductDto>> CreateTestOrProductAsync(TestorProductDto dto);
         Task<ApiResponseDto<TestorProductDto>> UpdateTestOrProductAsync(string itemCode, TestorProductDto dto);

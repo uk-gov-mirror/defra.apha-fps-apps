@@ -24,6 +24,10 @@ namespace Apha.PIMS.DataAccess.Data
             entity.Property(e => e.Mnumber)
                 .HasMaxLength(10)
                 .HasColumnName("mnumber");
+
+            entity.Property(e => e.LoginEmail)
+                .HasMaxLength(255)
+                .HasColumnName("loginemail");
         }
     }
 }

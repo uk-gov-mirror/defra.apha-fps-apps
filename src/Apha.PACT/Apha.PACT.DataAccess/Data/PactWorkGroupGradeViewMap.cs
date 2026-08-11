@@ -1,4 +1,4 @@
-﻿using Apha.PACT.Core.Entities;
+using Apha.PACT.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -13,13 +13,13 @@ namespace Apha.PACT.DataAccess.Data
                 .ToView("vpactworkgroupgrade", "fps");
 
             entity.Property(e => e.AvSalary)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("avsalary");
             entity.Property(e => e.ChargeRateWg)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("chargerate_wg");
             entity.Property(e => e.DirectRateWg)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("directrate_wg");
             entity.Property(e => e.FpsYear).HasColumnName("fpsyear");
             entity.Property(e => e.GradeCode)
@@ -29,13 +29,13 @@ namespace Apha.PACT.DataAccess.Data
                 .HasMaxLength(50)
                 .HasColumnName("hrschangedby");
             entity.Property(e => e.NprWg)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("npr_wg");
             entity.Property(e => e.OhrWg)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("ohr_wg");
             entity.Property(e => e.PayRateWg)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("payrate_wg");
             entity.Property(e => e.ProfitCentreGrade)
                 .HasMaxLength(20)

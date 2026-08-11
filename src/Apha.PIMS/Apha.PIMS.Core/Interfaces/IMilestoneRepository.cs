@@ -14,6 +14,7 @@ namespace Apha.PIMS.Core.Interfaces
         Task<string> GetProgramByProjectAsync(string project);
         Task<Milestone> AddMilestoneAsync(Milestone entity, string? changedBy);
         Task<Milestone> UpdateMilestoneAsync(Milestone entity, string? changedBy);
+        Task<Milestone> UpdateMilestoneAsync_PMD(string project, string number, short underReview, short onTarget, DateTime? dateCompleted, string? projectLeaderComment, string? changedBy);
         Task<bool> DeleteMilestoneAsync(string project, string number);
         Task<bool> UpdateFormRequiredAsync(string parentproject, bool formRequired);
         // Lookup

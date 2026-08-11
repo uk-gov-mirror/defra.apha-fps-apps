@@ -129,6 +129,17 @@ namespace Apha.FPS.Api.Controllers
         }
 
         /// <summary>
+        /// Retrieves a paginated list of the project snapshot data
+        /// (income and budget figures) across all projects.
+        /// </summary>
+        [HttpGet("project-snapshot/paged")]
+        public async Task<IActionResult> GetPagedProjectSnapshotDataAsync([FromQuery] QueryParameters<string> query)
+        {
+            var result = await _projectService.GetPagedProjectSnapshotDataAsync(query);
+            return Ok(_mapper.Map<PaginationRes<ProjectRes>>(result));
+        }
+
+        /// <summary>
         /// Retrieves a paginated list of project specific query rows
         /// (project general + additional costs + account category) for the current FPS year.
         /// </summary>

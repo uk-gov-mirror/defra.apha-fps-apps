@@ -286,5 +286,108 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactMonthlyTimeApiC
         }
 
         #endregion
+
+        #region Live Methods Tests
+
+        [Fact]
+        public async Task GetLiveAsync_WithSuccessResponse_ReturnsMappedData()
+        {
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var apiResponse = new ApiResponse<List<MonthlyTimeRes>>
+            {
+                Success = true,
+                Data = [new MonthlyTimeRes { PactStaffId = "S1", TimeCode = "TC1", ParentProject = "PP1", Month = 6, WorkGroup = "WG1", Hours = 7 }]
+            };
+            var mapped = ApiResponseDto<List<MonthlyTimeDto>>.SuccessResponse(
+            [
+                new MonthlyTimeDto { PactStaffId = "S1", TimeCode = "TC1", ParentProject = "PP1", Month = 6, WorkGroup = "WG1", Hours = 7 }
+            ]);
+
+            _http.GetAsync<List<MonthlyTimeRes>>(Arg.Is<string>(url =>
+                url.Contains("monthlytime/live") &&
+                url.Contains("workGroup=WG1") &&
+                url.Contains("timeCode=TC1") &&
+                url.Contains("pactStaffId=S1") &&
+                url.Contains("parentProject=PP1") &&
+                url.Contains("month=6"))).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<MonthlyTimeDto>>>(apiResponse).Returns(mapped);
+
+            var result = await _client.GetLiveAsync(query, "WG1", "TC1", "S1", "PP1", 6);
+
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Single(result.Data!);
+        }
+
+        [Fact]
+        public async Task GetLiveByKeyAsync_WhenApiFails_ReturnsFailureResponse()
+        {
+            var apiResponse = new ApiResponse<MonthlyTimeRes>
+            {
+                Success = false,
+                Errors = [new ApiError { Message = "failed", Code = "ERR" }]
+            };
+            var mapped = new ApiResponseDto<MonthlyTimeDto>
+            {
+                Success = false,
+                Errors = [new ApiErrorDto { Message = "failed", Code = "ERR" }],
+                Meta = new ApiMetaDto()
+            };
+
+            _http.GetAsync<MonthlyTimeRes>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<MonthlyTimeDto>>(apiResponse).Returns(mapped);
+
+            var result = await _client.GetLiveByKeyAsync("S1", "TC1", 6, "PP1");
+
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.Single(result.Errors!);
+        }
+
+        [Fact]
+        public async Task UpdateLiveAsync_WithSuccessResponse_ReturnsMappedData()
+        {
+            var dto = new MonthlyTimeDto { PactStaffId = "S1", TimeCode = "TC1", ParentProject = "PP1", Month = 6, WorkGroup = "WG1", Hours = 7 };
+            var request = new MonthlyTimeReq { PactStaffId = "S1", TimeCode = "TC1", ParentProject = "PP1", Month = 6, WorkGroup = "WG1", Hours = 7 };
+            var apiResponse = new ApiResponse<MonthlyTimeRes>
+            {
+                Success = true,
+                Data = new MonthlyTimeRes { PactStaffId = "S1", TimeCode = "TC1", ParentProject = "PP1", Month = 6, WorkGroup = "WG1", Hours = 7 }
+            };
+            var mapped = ApiResponseDto<MonthlyTimeDto>.SuccessResponse(dto);
+
+            _mapper.Map<MonthlyTimeReq>(dto).Returns(request);
+            _http.PutAsync<MonthlyTimeReq, MonthlyTimeRes>(Arg.Any<string>(), request).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<MonthlyTimeDto>>(apiResponse).Returns(mapped);
+
+            var result = await _client.UpdateLiveAsync(dto);
+
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            await _http.Received(1).PutAsync<MonthlyTimeReq, MonthlyTimeRes>(Arg.Any<string>(), request);
+        }
+
+        #endregion
+
+        #region Staging Methods Tests
+
+        [Fact]
+        public async Task GetStagingAsync_WithPassedFilter_AppendsPassedQuery()
+        {
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var apiResponse = new ApiResponse<List<StagingMonthlyTimeRes>> { Success = true, Data = [] };
+            var mapped = ApiResponseDto<List<StagingMonthlyTimeDto>>.SuccessResponse([]);
+
+            _http.GetAsync<List<StagingMonthlyTimeRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<StagingMonthlyTimeDto>>>(apiResponse).Returns(mapped);
+
+            var result = await _client.GetStagingAsync(query, false);
+
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            await _http.Received(1).GetAsync<List<StagingMonthlyTimeRes>>(Arg.Is<string>(url => url.Contains("passed=false")));
+        }
+
+        #endregion
     }
 }

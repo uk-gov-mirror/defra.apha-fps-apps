@@ -908,5 +908,228 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.ProfitCentreRepositoryTest
 
         #endregion
 
+        #region GetPagedWgStaffPlanAsync Tests
+
+        private static WgStaffPlanView BuildWgStaffPlanView(
+            string workGroup = "WG001",
+            string gradeCode = "G1",
+            string name = "Staff One",
+            int fpsYear = 2024) =>
+            new()
+            {
+                WorkGroup = workGroup,
+                GradeCode = gradeCode,
+                Name = name,
+                Manager = "Manager01",
+                Program = "PROG01",
+                JobCode = "JOB001",
+                ProjectStatus = "Active",
+                PlannedHours = 40.0,
+                Fee = 1000m,
+                FpsYear = fpsYear
+            };
+
+        private static ProfitCentreRepository CreateRepositoryWithWgStaffPlan(
+            IEnumerable<WgStaffPlanView>? wgStaffPlanViews = null)
+        {
+            var requestContext = Substitute.For<IFpsRequestContext>();
+            requestContext.FpsYear.Returns(2024);
+            requestContext.UserEmailId.Returns("test@example.com");
+
+            var mockContext = RepositoryTestHelper.CreateMockDbContext<FpsDbContext>(requestContext);
+
+            var wgSet = RepositoryTestHelper.CreateMockDbSet(wgStaffPlanViews ?? []);
+            mockContext.Setup(x => x.WgStaffPlanViews).Returns(wgSet.Object);
+
+            RepositoryTestHelper.SetupSaveChanges(mockContext);
+
+            return new ProfitCentreRepository(mockContext.Object, requestContext);
+        }
+
+        [Fact]
+        public async Task GetPagedWgStaffPlanAsync_WithValidWorkGroup_ReturnsPagedResults()
+        {
+            // Arrange
+            const string workGroup = "WG001";
+            var staffPlanViews = new List<WgStaffPlanView>
+            {
+                BuildWgStaffPlanView(workGroup, "G1", "Staff One"),
+                BuildWgStaffPlanView(workGroup, "G2", "Staff Two"),
+                BuildWgStaffPlanView(workGroup, "G1", "Staff Three")
+            };
+            var repo = CreateRepositoryWithWgStaffPlan(staffPlanViews);
+            var parameters = new PaginationParameters<string> { Page = 1, PageSize = 10 };
+
+            // Act
+            var result = await repo.GetPagedWgStaffPlanAsync(parameters, workGroup);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(3, result.Data.Count());
+            Assert.Equal(3, result.PaginationData.TotalRecords);
+        }
+
+        [Fact]
+        public async Task GetPagedWgStaffPlanAsync_WithEmptyWorkGroup_ReturnsAllRecords()
+        {
+            // Arrange
+            var staffPlanViews = new List<WgStaffPlanView>
+            {
+                BuildWgStaffPlanView("WG001", "G1", "Staff One"),
+                BuildWgStaffPlanView("WG002", "G2", "Staff Two"),
+                BuildWgStaffPlanView("WG003", "G1", "Staff Three")
+            };
+            var repo = CreateRepositoryWithWgStaffPlan(staffPlanViews);
+            var parameters = new PaginationParameters<string> { Page = 1, PageSize = 10 };
+
+            // Act
+            var result = await repo.GetPagedWgStaffPlanAsync(parameters, string.Empty);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(3, result.Data.Count());
+        }
+
+        [Fact]
+        public async Task GetPagedWgStaffPlanAsync_WithPagination_ReturnsCorrectPage()
+        {
+            // Arrange
+            const string workGroup = "WG001";
+            var staffPlanViews = Enumerable.Range(1, 15)
+                .Select(i => BuildWgStaffPlanView(workGroup, "G1", $"Staff {i:D2}"))
+                .ToList();
+            var repo = CreateRepositoryWithWgStaffPlan(staffPlanViews);
+            var parameters = new PaginationParameters<string> { Page = 2, PageSize = 5 };
+
+            // Act
+            var result = await repo.GetPagedWgStaffPlanAsync(parameters, workGroup);
+
+            // Assert
+            Assert.Equal(5, result.Data.Count());
+            Assert.Equal(15, result.PaginationData.TotalRecords);
+            Assert.Equal(2, result.PaginationData.PageNumber);
+            Assert.Equal(5, result.PaginationData.PageSize);
+            Assert.Equal(3, result.PaginationData.TotalPages);
+        }
+
+        [Fact]
+        public async Task GetPagedWgStaffPlanAsync_WithSortByName_ReturnsSortedResults()
+        {
+            // Arrange
+            const string workGroup = "WG001";
+            var staffPlanViews = new List<WgStaffPlanView>
+            {
+                BuildWgStaffPlanView(workGroup, "G1", "Charlie"),
+                BuildWgStaffPlanView(workGroup, "G2", "Alice"),
+                BuildWgStaffPlanView(workGroup, "G1", "Bob")
+            };
+            var repo = CreateRepositoryWithWgStaffPlan(staffPlanViews);
+            var parameters = new PaginationParameters<string>
+            {
+                Page = 1,
+                PageSize = 10,
+                SortBy = "Name",
+                Descending = false
+            };
+
+            // Act
+            var result = await repo.GetPagedWgStaffPlanAsync(parameters, workGroup);
+
+            // Assert
+            var data = result.Data.ToList();
+            Assert.Equal("Alice", data[0].Name);
+            Assert.Equal("Bob", data[1].Name);
+            Assert.Equal("Charlie", data[2].Name);
+        }
+
+        [Fact]
+        public async Task GetPagedWgStaffPlanAsync_WithDescendingSort_ReturnsSortedDescending()
+        {
+            // Arrange
+            const string workGroup = "WG001";
+            var staffPlanViews = new List<WgStaffPlanView>
+            {
+                BuildWgStaffPlanView(workGroup, "G1", "Alice"),
+                BuildWgStaffPlanView(workGroup, "G2", "Bob"),
+                BuildWgStaffPlanView(workGroup, "G1", "Charlie")
+            };
+            var repo = CreateRepositoryWithWgStaffPlan(staffPlanViews);
+            var parameters = new PaginationParameters<string>
+            {
+                Page = 1,
+                PageSize = 10,
+                SortBy = "Name",
+                Descending = true
+            };
+
+            // Act
+            var result = await repo.GetPagedWgStaffPlanAsync(parameters, workGroup);
+
+            // Assert
+            var data = result.Data.ToList();
+            Assert.Equal("Charlie", data[0].Name);
+            Assert.Equal("Bob", data[1].Name);
+            Assert.Equal("Alice", data[2].Name);
+        }
+
+        [Fact]
+        public async Task GetPagedWgStaffPlanAsync_WithNoMatchingWorkGroup_ReturnsEmpty()
+        {
+            // Arrange
+            var staffPlanViews = new List<WgStaffPlanView>
+            {
+                BuildWgStaffPlanView("WG001", "G1", "Staff One"),
+                BuildWgStaffPlanView("WG002", "G2", "Staff Two")
+            };
+            var repo = CreateRepositoryWithWgStaffPlan(staffPlanViews);
+            var parameters = new PaginationParameters<string> { Page = 1, PageSize = 10 };
+
+            // Act
+            var result = await repo.GetPagedWgStaffPlanAsync(parameters, "WG999");
+
+            // Assert
+            Assert.Empty(result.Data);
+            Assert.Equal(0, result.PaginationData.TotalRecords);
+        }
+
+        [Fact]
+        public async Task GetPagedWgStaffPlanAsync_WithEmptyData_ReturnsEmptyPagedData()
+        {
+            // Arrange
+            var repo = CreateRepositoryWithWgStaffPlan([]);
+            var parameters = new PaginationParameters<string> { Page = 1, PageSize = 10 };
+
+            // Act
+            var result = await repo.GetPagedWgStaffPlanAsync(parameters, "WG001");
+
+            // Assert
+            Assert.Empty(result.Data);
+            Assert.Equal(0, result.PaginationData.TotalRecords);
+        }
+
+        [Fact]
+        public async Task GetPagedWgStaffPlanAsync_WithMultipleWorkGroups_FiltersCorrectly()
+        {
+            // Arrange
+            var staffPlanViews = new List<WgStaffPlanView>
+            {
+                BuildWgStaffPlanView("WG001", "G1", "Staff One"),
+                BuildWgStaffPlanView("WG001", "G2", "Staff Two"),
+                BuildWgStaffPlanView("WG002", "G1", "Staff Three"),
+                BuildWgStaffPlanView("WG003", "G2", "Staff Four")
+            };
+            var repo = CreateRepositoryWithWgStaffPlan(staffPlanViews);
+            var parameters = new PaginationParameters<string> { Page = 1, PageSize = 10 };
+
+            // Act
+            var result = await repo.GetPagedWgStaffPlanAsync(parameters, "WG001");
+
+            // Assert
+            Assert.Equal(2, result.Data.Count());
+            Assert.All(result.Data, item => Assert.Equal("WG001", item.WorkGroup));
+        }
+
+        #endregion
+
     }
 }

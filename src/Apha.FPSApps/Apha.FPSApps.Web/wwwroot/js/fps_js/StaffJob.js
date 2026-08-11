@@ -253,7 +253,7 @@ function fetchChargeRate(staffId) {
         data: { staffId: staffId, jobCode: jobCode },
         success: function (result) {
             chargeRateField.prop('disabled', false);
-            chargeRateField.val(result.success ? result.chargeRate.toFixed(2) : '0.00');
+            chargeRateField.val(result.success ? result.chargeRate.toFixed(4) : '0.0000');
             calculateStaffCost();
         },
         error: function () {
@@ -277,7 +277,7 @@ function fetchHoursPerDay() {
 function calculateStaffCost() {
     var rate = parseFloat($('#ChargeRate').val()) || 0;
     var hours = parseFloat($('#PlannedHours').val()) || 0;
-    $('#StaffCost').val((rate * hours).toFixed(2));
+    $('#StaffCost').val((rate * hours).toFixed(4));
     $('#Days').val((hours / _hoursPerDay).toFixed(2));
 }
 
@@ -286,7 +286,7 @@ function calculateHoursFromDays() {
     var hours = days * _hoursPerDay;
     $('#PlannedHours').val(hours.toFixed(2));
     var rate = parseFloat($('#ChargeRate').val()) || 0;
-    $('#StaffCost').val((rate * hours).toFixed(2));
+    $('#StaffCost').val((rate * hours).toFixed(4));
 }
 
 $(document).on('change', '#PlannedHours, #ChargeRate', function () {

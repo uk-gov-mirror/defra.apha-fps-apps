@@ -16,7 +16,7 @@ namespace Apha.FPS.DataAccess.Data
                 .HasColumnName("fpsyear");
 
             entity.Property(e => e.BusinessOverheads)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("totalbusinessoverheads");
         }
     }

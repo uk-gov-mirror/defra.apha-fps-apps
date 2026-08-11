@@ -2,7 +2,7 @@ namespace Apha.PIMS.Application.Dtos
 {
     public class RiskDto
     {
-        public int Riskid { get; set; }
-        public string Riskrating { get; set; } = null!;
+        public int RiskId { get; set; }
+        public string RiskRating { get; set; } = null!;
     }
 }

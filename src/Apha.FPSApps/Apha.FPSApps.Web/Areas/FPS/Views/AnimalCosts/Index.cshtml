@@ -88,6 +88,21 @@
                 </div>
             </div>
         </div>
+
+        <div class="govuk-grid-column-one-third govuk-!-padding-right-0">
+            <div class="pva-summary-card asu-side-card">
+                <div class="asu-side-actions">
+                     <button type="button"
+                            id="asuExportBtn"
+                            class="govuk-button govuk-button--primary asu-side-button"
+                            data-module="govuk-button"
+                            role="button"
+                            onclick="exportAnimalCosts()">
+                        Download Animal data<br>For email attachement
+                    </button>
+                </div>
+            </div>
+       </div>
     </div>
 </div>
 
@@ -142,6 +157,7 @@
             document.getElementById('animal-type-input').value = label;
             document.getElementById('animal-type-panel').style.display = 'none';
 
+
             // Reset totals while grid reloads
             document.getElementById('asuTotalDays').value = '0';
             document.getElementById('asuTotalCost').value = '£0.00';
@@ -172,6 +188,14 @@
             }
         });
 
+        // ── Export the currently selected animal type's cost records to Excel ──
+
+        function exportAnimalCosts() {
+
+            const url = '@Url.Action("Export", "AnimalCosts", new { area = "FPS" })'
+            downloadFile(url, 'AnimalCosts.xlsx');
+        }
+
         // ── Extra filter passed to LoadAnimalCostsGrid (mirrors fsubAnimalCosts LinkMasterFields) ──
 
         function getAnimalCostsExtraFilters() {
@@ -194,7 +218,7 @@
             });
 
             document.getElementById('asuTotalDays').value = totalDays.toFixed(2);
-            document.getElementById('asuTotalCost').value = '£' + totalCost.toFixed(2)
+            document.getElementById('asuTotalCost').value = '£' + totalCost.toFixed(4)
                 .replace(/\B(?=(\d{3})+(?!\d))/g, ',');
         }
 

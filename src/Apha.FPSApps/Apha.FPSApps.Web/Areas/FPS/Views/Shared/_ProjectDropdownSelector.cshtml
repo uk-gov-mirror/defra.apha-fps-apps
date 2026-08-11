@@ -1,0 +1,32 @@
+@* _ProjectDropdownSelector.cshtml
+   Shared project multi-column dropdown selector used by all PlanActual pages.
+   Requires: project-dropdown.js loaded in the page Scripts section.
+   Requires: initProjectDropdown(lookupUrl, onProjectSelected) called in page script.
+*@
+@{
+    var selectedCode = ViewData["SelectedProjectCode"]?.ToString() ?? string.Empty;
+    var label        = ViewData["ProjectDropdownLabel"]?.ToString() ?? "Project:";
+}
+<div style="display: flex; justify-content: flex-end; align-items: center;" class="col-md-6">
+    <label class="fw-bold me-2" style="white-space:nowrap;">@label</label>
+    <div style="position:relative;">
+        <input type="text" id="projectNameInput" placeholder="Select Project" autocomplete="off"
+               class="govuk-input down-arrow-img" style="width:220px; cursor:pointer;"
+               value="@selectedCode" aria-label="Filter project" readonly />
+        <div id="ProjectDropdownPanel" style="display:none; position:fixed; width:420px;
+                max-height:260px; overflow-y:auto; background:#fff; border:1px solid #b1b4b6;
+                box-shadow:0 4px 8px rgba(0,0,0,.2); z-index:9999;">
+            <input type="text" id="ProjectSearchBox" placeholder="Type to search project"
+                   style="width:100%; padding:6px 8px; border:0; border-bottom:1px solid #b1b4b6; outline:none; box-sizing:border-box;" />
+            <table style="width:100%; border-collapse:collapse; font-size:14px;">
+                <thead style="background:#f3f2f1; position:sticky; top:0; z-index:10;">
+                    <tr>
+                        <th style="padding:6px 8px; text-align:left;">Project</th>
+                        <th style="padding:6px 8px; text-align:left;">Project Title</th>
+                    </tr>
+                </thead>
+                <tbody id="ProjectDropdownBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>

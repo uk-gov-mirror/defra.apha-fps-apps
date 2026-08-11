@@ -358,5 +358,78 @@ namespace Apha.FPS.DataAccess.Repositories
                 _ => descending ? query.OrderByDescending(p => p.ProfitCentreId) : query.OrderBy(p => p.ProfitCentreId),
             };
         }
+
+        public async Task<PagedData<WgStaffPlanView>> GetPagedWgStaffPlanAsync(
+            PaginationParameters<string> query, string workGroup)
+        {
+            var baseQuery = _dbContext.WgStaffPlanViews.AsNoTracking();
+
+            // Mandatory workgroup filter from the page toolbar — exact match on the selected workgroup
+            if (!string.IsNullOrWhiteSpace(workGroup))
+                baseQuery = baseQuery.Where(x => EF.Functions.ILike(x.WorkGroup!, workGroup));
+
+            baseQuery = ApplyWgStaffPlanFilter(baseQuery, query.Filter);
+            baseQuery = ApplyWgStaffPlanSorting(baseQuery, query.SortBy, query.Descending);
+
+            var result = await baseQuery.ToListAsync();
+            return ApplyPaging(result, query.Page, query.PageSize);
+        }
+
+        private static IQueryable<WgStaffPlanView> ApplyWgStaffPlanFilter(
+            IQueryable<WgStaffPlanView> query, string? filter)
+        {
+            if (string.IsNullOrEmpty(filter))
+                return query;
+
+            dynamic? filterModel = JsonConvert.DeserializeObject<ExpandoObject>(filter);
+            if (filterModel == null)
+                return query;
+
+            var dict = (IDictionary<string, object>)filterModel;
+
+            if (dict.TryGetValue("WorkGroup", out var workGroup) && workGroup != null)
+                query = query.Where(x => EF.Functions.ILike(x.WorkGroup!, $"%{workGroup}%"));
+
+            if (dict.TryGetValue("GradeCode", out var gradeCode) && gradeCode != null)
+                query = query.Where(x => EF.Functions.ILike(x.GradeCode!, $"%{gradeCode}%"));
+
+            if (dict.TryGetValue("Name", out var name) && name != null)
+                query = query.Where(x => EF.Functions.ILike(x.Name!, $"%{name}%"));
+
+            if (dict.TryGetValue("Manager", out var manager) && manager != null)
+                query = query.Where(x => EF.Functions.ILike(x.Manager!, $"%{manager}%"));
+
+            if (dict.TryGetValue("Program", out var program) && program != null)
+                query = query.Where(x => EF.Functions.ILike(x.Program!, $"%{program}%"));
+
+            if (dict.TryGetValue("JobCode", out var jobCode) && jobCode != null)
+                query = query.Where(x => EF.Functions.ILike(x.JobCode!, $"%{jobCode}%"));
+
+            if (dict.TryGetValue("ProjectStatus", out var projectStatus) && projectStatus != null)
+                query = query.Where(x => EF.Functions.ILike(x.ProjectStatus!, $"%{projectStatus}%"));
+
+            return query;
+        }
+
+        private static IQueryable<WgStaffPlanView> ApplyWgStaffPlanSorting(
+            IQueryable<WgStaffPlanView> query, string? sortBy, bool descending)
+        {
+            if (string.IsNullOrWhiteSpace(sortBy))
+                return query.OrderBy(x => x.WorkGroup).ThenBy(x => x.Name);
+
+            return sortBy.ToLower() switch
+            {
+                "workgroup"     => descending ? query.OrderByDescending(x => x.WorkGroup)     : query.OrderBy(x => x.WorkGroup),
+                "gradecode"     => descending ? query.OrderByDescending(x => x.GradeCode)     : query.OrderBy(x => x.GradeCode),
+                "name"          => descending ? query.OrderByDescending(x => x.Name)          : query.OrderBy(x => x.Name),
+                "manager"       => descending ? query.OrderByDescending(x => x.Manager)       : query.OrderBy(x => x.Manager),
+                "program"       => descending ? query.OrderByDescending(x => x.Program)       : query.OrderBy(x => x.Program),
+                "jobcode"       => descending ? query.OrderByDescending(x => x.JobCode)       : query.OrderBy(x => x.JobCode),
+                "projectstatus" => descending ? query.OrderByDescending(x => x.ProjectStatus) : query.OrderBy(x => x.ProjectStatus),
+                "plannedhours"  => descending ? query.OrderByDescending(x => x.PlannedHours)  : query.OrderBy(x => x.PlannedHours),
+                "fee"           => descending ? query.OrderByDescending(x => x.Fee)           : query.OrderBy(x => x.Fee),
+                _               => query.OrderBy(x => x.WorkGroup).ThenBy(x => x.Name)
+            };
+        }
     }
 }

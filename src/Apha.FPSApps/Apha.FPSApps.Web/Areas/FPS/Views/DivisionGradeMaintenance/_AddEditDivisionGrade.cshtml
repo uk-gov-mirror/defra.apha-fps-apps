@@ -70,7 +70,7 @@
                 <label class="govuk-label" for="ChargeRate">Charge Rate</label>
                 <div class="govuk-input__wrapper">
                     <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                    <input type="number" step="0.01" id="ChargeRate" name="ChargeRate" asp-for="ChargeRate" class="govuk-input" min="0">
+                    <input type="text" id="ChargeRate" name="ChargeRate" asp-for="ChargeRate" class="govuk-input js-numeric-decimal" maxlength="20">
                 </div>
                 <span data-valmsg-for="ChargeRate" class="govuk-error-message field-validation-valid" style="display:none;"></span>
             </div>
@@ -79,7 +79,7 @@
                 <label class="govuk-label" for="DirectRate">Direct Rate</label>
                 <div class="govuk-input__wrapper">
                     <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                    <input type="number" step="0.01" id="DirectRate" name="DirectRate" asp-for="DirectRate" class="govuk-input" min="0">
+                    <input type="text" id="DirectRate" name="DirectRate" asp-for="DirectRate" class="govuk-input js-numeric-decimal" maxlength="20">
                 </div>
                 <span data-valmsg-for="DirectRate" class="govuk-error-message field-validation-valid" style="display:none;"></span>
             </div>
@@ -88,7 +88,7 @@
                 <label class="govuk-label" for="PayRate">Pay Rate</label>
                 <div class="govuk-input__wrapper">
                     <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                    <input type="number" step="0.01" id="PayRate" name="PayRate" asp-for="PayRate" class="govuk-input" min="0">
+                    <input type="text" id="PayRate" name="PayRate" asp-for="PayRate" class="govuk-input js-numeric-decimal" maxlength="20">
                 </div>
                 <span data-valmsg-for="PayRate" class="govuk-error-message field-validation-valid" style="display:none;"></span>
             </div>
@@ -97,7 +97,7 @@
                 <label class="govuk-label" for="Npr">NPR</label>
                 <div class="govuk-input__wrapper">
                     <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                    <input type="number" step="0.01" id="Npr" name="Npr" asp-for="Npr" class="govuk-input" min="0">
+                    <input type="text" id="Npr" name="Npr" asp-for="Npr" class="govuk-input js-numeric-decimal" maxlength="20">
                 </div>
                 <span data-valmsg-for="Npr" class="govuk-error-message field-validation-valid" style="display:none;"></span>
             </div>
@@ -106,7 +106,7 @@
                 <label class="govuk-label" for="Ohr">OHR</label>
                 <div class="govuk-input__wrapper">
                     <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                    <input type="number" step="0.01" id="Ohr" name="Ohr" asp-for="Ohr" class="govuk-input" min="0">
+                    <input type="text" id="Ohr" name="Ohr" asp-for="Ohr" class="govuk-input js-numeric-decimal" maxlength="20">
                 </div>
                 <span data-valmsg-for="Ohr" class="govuk-error-message field-validation-valid" style="display:none;"></span>
             </div>

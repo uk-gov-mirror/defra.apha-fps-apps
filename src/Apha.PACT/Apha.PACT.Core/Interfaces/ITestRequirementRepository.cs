@@ -17,6 +17,7 @@ namespace Apha.PACT.Core.Interfaces
         Task<bool> ExistsAsync(string testCode, string buyer);
         Task<bool> ExistsByTestBuyerCodeAsync(string testBuyerCode);
         Task<bool> ExistsByTestCodeAndBuyerInMonthlyOutputAsync(string testCode, string buyer);
+        Task<List<TestRequirement>> GetAllActiveAsync();
         Task<TestRequirement> AddAsync(TestRequirement entity);
         Task<TestRequirement> UpdateAsync(TestRequirement entity);
         Task<bool> DeleteAsync(string testCode, string buyer);

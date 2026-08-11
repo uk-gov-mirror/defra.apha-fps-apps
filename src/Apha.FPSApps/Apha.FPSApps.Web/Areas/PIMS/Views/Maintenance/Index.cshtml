@@ -1,0 +1,287 @@
+﻿@model Apha.FPSApps.Web.Areas.PIMS.Models.MaintenanceViewModel
+
+@{
+    ViewData["Title"] = "PIMS : Report Admin Maintenance";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/common/_govuk_tabs.css" />
+    <link rel="stylesheet" href="~/css/common/multicolumn-dropdown.css" />
+}
+
+<div class="govuk-grid-row sup_margin_left_right_0 sup_margin_bottom_10">
+    <div class="govuk-grid-column-full sup_border-bottom">
+        <h1 class="govuk-heading-s sup_margin_0 govuk-grid-row govuk-!-padding-top-2 govuk-!-padding-bottom-2">
+            Maintenance
+        </h1>
+    </div>
+</div>
+
+<div class="rc-flex-row govuk-!-padding-top-2 ra-layout-wrapper sup_overflow-y-auto">
+    <main class="main-content sup_p_0 ra-main-content">
+
+        <div class="govuk-grid-row sup_margin_left_right_0 ra-full-width">
+            <div class="govuk-grid-column-full">
+
+                <div class="govuk-tabs " id="mainTabs">
+                    <ul class="govuk-tabs__list">
+                        <li class="govuk-tabs__list-item govuk-tabs__list-item--selected">
+                            <a class="govuk-tabs__tab" href="#tab-reports">Reports</a>
+                        </li>
+                        <li class="govuk-tabs__list-item">
+                            <a class="govuk-tabs__tab" href="#tab-programme">Programme</a>
+                        </li>
+                        <li class="govuk-tabs__list-item">
+                            <a class="govuk-tabs__tab" href="#tab-manager">Manager</a>
+                        </li>
+                        <li class="govuk-tabs__list-item">
+                            <a class="govuk-tabs__tab" href="#tab-time">Time</a>
+                        </li>
+                        <li class="govuk-tabs__list-item">
+                            <a class="govuk-tabs__tab" href="#tab-admin-maintenance">Admin Maintenance</a>
+                        </li>
+                        <li class="govuk-tabs__list-item">
+                            <a class="govuk-tabs__tab" href="#tab-other">Other</a>
+                        </li>
+                    </ul>
+
+                    <!-- ═══════════════════════════════════════════════════════ -->
+                    <!--  REPORTS TAB                                           -->
+                    <!-- ═══════════════════════════════════════════════════════ -->
+                    <div class="govuk-tabs__panel" id="tab-reports" data-tab-key="reports" data-tab-loaded="true">
+
+                        <div class="ra-grid-wrapper">
+                            <div class="govuk-grid-row sup_margin_left_right_0 sup_margin_bottom_10">
+                                <div class="govuk-grid-column-full sup_p_0">
+                                    <div id="gridContainer_reportsGrid">
+                                        @await Html.PartialAsync("_DataGrid", Model.ReportsGrid)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sup_margin_top_20 sup_margin_bottom_20">
+                            <div class="ra-grid-toolbar">
+                                <div class="govuk-grid-row sup_margin_left_right_0 sup_p_0 sup_margin_bottom_10">
+                                    <div class="govuk-grid-column-full sup_p_0">
+                                        <span class="govuk-body ra-groups-heading sup_font_weight_700">Report Groups that this report will appear in</span>
+                                
+                                        <div class="ra-groups-table-wrap">
+                                            <div id="gridContainer_reportGroupsGrid"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <!-- /Reports Tab -->
+                    <!-- ═══════════════════════════════════════════════════════ -->
+                    <!--  PROGRAMME TAB                                         -->
+                    <!-- ═══════════════════════════════════════════════════════ -->
+                    <div class="govuk-tabs__panel" id="tab-programme" data-tab-key="programme" data-tab-loaded="false">
+                        <div class="govuk-grid-row">
+                            <div>
+                                <div class="govuk-grid-row sup_margin_left_right_0  sup_margin_bottom_10">
+                                    <div class="govuk-grid-column-full sup_padding_right_left_10">
+                                        <div id="gridContainer_pimsRadTrackProgTable">
+                                            @await Html.PartialAsync("_DataGrid", Model.RadTrackProgsGrid)
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- /Programme Tab -->
+                    <!-- ═══════════════════════════════════════════════════════ -->
+                    <!--  MANAGER TAB                                           -->
+                    <!-- ═══════════════════════════════════════════════════════ -->
+                    <div class="govuk-tabs__panel" id="tab-manager" data-tab-key="manager" data-tab-loaded="false">
+
+                        <div class="mgr-grid-wrapper">
+                            <div class="govuk-grid-row sup_margin_left_right_0 sup_margin_bottom_10">
+                                <div class="govuk-grid-column-full sup_p_0">
+                                    <div id="gridContainer_mgrTable"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="mgrSubGrids" class="mgr-subgrids-wrapper ra-subgrids-hidden">
+                            <div class="govuk-grid-row">
+                                <div class="govuk-grid-column-one-half">
+                                    <div class="mgr-sub-grid-box">
+                                        <div class="govuk-grid-column-full sup_p_0 ">
+                                            <div id="gridContainer_mgrProgramTable"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="govuk-grid-column-one-half">
+                                    <div class="mgr-sub-grid-box">
+                                        <div class="govuk-grid-column-full sup_p_0">
+                                            <div id="gridContainer_mgrResourceTable"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <!-- /Manager Tab -->
+                    <!-- ═══════════════════════════════════════════════════════ -->
+                    <!--  TIME TAB                                              -->
+                    <!-- ═══════════════════════════════════════════════════════ -->
+                    <div class="govuk-tabs__panel" id="tab-time" data-tab-key="time" data-tab-loaded="false">
+
+                        <div class="govuk-error-summary ra-form-error-banner ra-hidden"
+                             id="timeDbError" role="alert" aria-labelledby="timeDbErrorTitle" tabindex="-1">
+                            <h2 class="govuk-error-summary__title govuk-!-font-size-14" id="timeDbErrorTitle">There is a problem</h2>
+                            <div class="govuk-error-summary__body">
+                                <p class="govuk-body govuk-!-font-size-14" id="timeDbErrorText"></p>
+                            </div>
+                        </div>
+
+                        <div class="time-form-container">
+                            <div class="govuk-form-group time-form-row" id="timeWorkingHoursGroup">
+                                <div class="time-form-label-col">
+                                    <label for="timeWorkingHours"
+                                           class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16">
+                                        Working Hours in a Day:
+                                        <span class="ra-required-star" aria-hidden="true"> *</span>
+                                    </label>
+                                </div>
+                                <div class="time-form-input-col">
+                                    <input type="text"
+                                           id="timeWorkingHours"
+                                           name="timeWorkingHours"
+                                           class="govuk-input govuk-!-font-size-16"
+                                           required
+                                           aria-required="true"
+                                           aria-describedby="timeWorkingHoursError timeWorkingHoursHint"
+                                           oninput="validateTimeInput(this, 'timeWorkingHoursError', 'timeWorkingHoursErrorText', 'Working Hours in a Day')"
+                                           value="@(Model.WorkingHoursSettingItem?.SettingValue ?? "")" />
+                                    <p class="govuk-error-message ra-hidden" id="timeWorkingHoursError">
+                                        <span class="govuk-visually-hidden">Error:</span>
+                                        <span id="timeWorkingHoursErrorText">Working Hours in a Day is required</span>
+                                    </p>
+                                </div>
+                                <div class="time-form-hint-col">
+                                    <span class="govuk-hint govuk-!-font-size-16" id="timeWorkingHoursHint">
+                                        NB. This is the same figure used in the costbook. Do not adjust without proper consultation
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="govuk-form-group time-form-row" id="timeWorkingDaysGroup">
+                                <div class="time-form-label-col">
+                                    <label for="timeWorkingDays"
+                                           class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16">
+                                        Working Days in a Year:
+                                        <span class="ra-required-star" aria-hidden="true"> *</span>
+                                    </label>
+                                </div>
+                                <div class="time-form-input-col">
+                                    <input type="text"
+                                           id="timeWorkingDays"
+                                           name="timeWorkingDays"
+                                           class="govuk-input govuk-!-font-size-16"
+                                           required
+                                           aria-required="true"
+                                           aria-describedby="timeWorkingDaysError"
+                                           oninput="validateTimeInput(this, 'timeWorkingDaysError', 'timeWorkingDaysErrorText', 'Working Days in a Year')"
+                                           value="@(Model.WorkingDaysSettingItem?.SettingValue ?? "")" />
+                                    <p class="govuk-error-message ra-hidden" id="timeWorkingDaysError">
+                                        <span class="govuk-visually-hidden">Error:</span>
+                                        <span id="timeWorkingDaysErrorText">Working Days in a Year is required</span>
+                                    </p>
+                                </div>
+                                <div class="time-form-hint-col"></div>
+                            </div>
+
+                        </div>
+
+                        <div class="time-form-footer">
+                            <button type="button" class="govuk-button govuk-button--secondary sup_margin_0"
+                                    id="btnCancelTime" onclick="cancelTimeTab()">
+                                Cancel
+                            </button>
+                            <button type="button" class="govuk-button sup_margin_0"
+                                    id="btnSaveTime" onclick="saveTimeTab()">
+                                Save
+                            </button>
+                        </div>
+
+                    </div>
+                    <!-- /Time Tab -->
+                    <!-- ═══════════════════════════════════════════════════════ -->
+                    <!--  ADMIN MAINTENANCE TAB                                 -->
+                    <!-- ═══════════════════════════════════════════════════════ -->
+                    <div class="govuk-tabs__panel" id="tab-admin-maintenance" data-tab-key="admin-maintenance" data-tab-loaded="false">
+                        <div class="admin-layout">
+                            <div class="govuk-grid-row">
+                                <div class="govuk-grid-column-one-half">
+                                    <div class="govuk-grid-column-full sup_p_0 ">
+                                        <div id="gridContainer_adminUsersTable"></div>
+                                    </div>
+                                </div>
+
+                                <div class="govuk-grid-column-one-half">
+                                    <div class="govuk-grid-column-full sup_p_0 ">
+                                        <div id="gridContainer_adminAccessTable"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    <!-- /Admin Maintenance Tab -->
+                    <!-- ═══════════════════════════════════════════════════════ -->
+                    <!--  OTHER TAB                                             -->
+                    <!-- ═══════════════════════════════════════════════════════ -->
+                    <div class="govuk-tabs__panel" id="tab-other" data-tab-key="other" data-tab-loaded="false">
+                        <div class="other-layout">
+                            <div class="other-list-panel">
+                                <div class="other-panel-header">List Description</div>
+                                <table class="other-list-table" aria-label="List Description">
+                                    <tbody id="otherListBody">
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="govuk-grid-column-two-thirds" id="otherValuesPanel">
+                                <div class="govuk-grid-row">
+                                    <div class="govuk-grid-column-full sup_p_0">
+                                        <div id="gridContainer_otherValuesTable"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    <!-- /Other Tab -->
+
+                </div>
+                <!-- /GOV.UK Tabs -->
+
+                <div id="detail-panel-status" role="status" aria-live="polite" class="govuk-visually-hidden"></div>
+
+            </div>
+        </div>
+    </main>
+</div>
+
+<form id="pimsMaintenanceAntiForgeryForm" style="display:none;">
+    @Html.AntiForgeryToken()
+</form>
+
+@section Scripts {
+    <script src="~/js/common/multicolumn-dropdown.component.js"></script>
+    <script src="~/js/ajax-form-validation.js"></script>
+    <script src="~/js/common/_govuk_tabs.js"></script>
+    <script>
+        // Razor-generated setting IDs consumed by maintenance.js saveTimeTab()
+        window._pimsHoursId = '@(Model.WorkingHoursSettingItem?.Id ?? "HoursInDay")';
+        window._pimsDaysId  = '@(Model.WorkingDaysSettingItem?.Id  ?? "DaysInYear")';
+    </script>
+    <script src="~/js/pims/maintenance.js"></script>
+}

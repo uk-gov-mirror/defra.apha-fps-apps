@@ -45,11 +45,11 @@ namespace Apha.FPS.DataAccess.Data
                 .HasColumnName("hrs");
 
             entity.Property(e => e.ChargeRate)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("chargerate");
 
             entity.Property(e => e.Fee)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("fee");
 
             entity.Property(e => e.FpsYear)

@@ -1,3 +1,5 @@
+@model string
+@* activeItem: controller name of the currently active page (e.g. "SetUpStaffResources", "ResourceAllocation", "WgStaffPlan") *@
 <script>
     function toggleSidebar() {
         const sidebar = document.querySelector('.sidenav');
@@ -12,6 +14,26 @@
             childList.classList.toggle('sidenav-children--hidden', expanded);
         }
     }
+
+    function sideNavBuildQueryString() {
+        var rc  = (typeof window.sideNavState !== 'undefined' && window.sideNavState.resourceCentre) || '';
+        var wg  = (typeof window.sideNavState !== 'undefined' && window.sideNavState.workGroup)      || '';
+        var yr  = (typeof window.sideNavState !== 'undefined' && window.sideNavState.fpsYear)        || '';
+        var qs  = '';
+        if (rc)  qs += (qs ? '&' : '?') + 'resourceCentre=' + encodeURIComponent(rc);
+        if (wg)  qs += (qs ? '&' : '?') + 'workGroup='      + encodeURIComponent(wg);
+        if (yr)  qs += (qs ? '&' : '?') + 'fpsYear='        + encodeURIComponent(yr);
+        return qs;
+    }
+
+    function sideNavUpdateLinks() {
+        var qs = sideNavBuildQueryString();
+        document.querySelectorAll('[data-sidenav-base]').forEach(function (a) {
+            a.href = a.getAttribute('data-sidenav-base') + qs;
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', sideNavUpdateLinks);
 </script>
 <nav class="sidenav flex-column flex-shrink-0" id="shortnav" aria-label="WorkGroup Resources navigation">
     <button class="toggle-btn" onclick="toggleSidebar()" style="right: -8px; top: 30px;" aria-label="Toggle sidebar">
@@ -19,8 +41,9 @@
     </button>
     <ul>
         <li>
-            <a class="dropdown-item sidenav-title"
-               asp-area="FPS" asp-controller="SetUpStaffResources" asp-action="Index">
+            <a class="dropdown-item@(Model == "SetUpStaffResources" ? " sidenav-title" : "")"
+               data-sidenav-base="@Url.Action("Index", "SetUpStaffResources", new { area = "FPS" })"
+               href="@Url.Action("Index", "SetUpStaffResources", new { area = "FPS" })">
                 Set Up Resources
             </a>
         </li>
@@ -29,22 +52,25 @@
             <a class="dropdown-item"
                href="#"
                role="button"
-               aria-expanded="false"
+               aria-expanded="@(Model == "ResourceAllocation" || Model == "WgStaffPlan" ? "true" : "false")"
                aria-controls="reviewPlansChildren"
                onclick="toggleSidenavGroup(this); return false;">
                 Review Plans
                 <span class="sidenav-toggle-icon" aria-hidden="true">&#9660;</span>
             </a>
             @* Child Nodes *@
-            <ul id="reviewPlansChildren" class="sidenav-children sidenav-children--hidden">
+            <ul id="reviewPlansChildren" class="sidenav-children@(Model == "ResourceAllocation" || Model == "WgStaffPlan" ? "" : " sidenav-children--hidden")">
                 <li>
-                    <a class="dropdown-item sidenav-child"
-                       asp-area="FPS" asp-controller="ResourceAllocation" asp-action="Index">
+                    <a class="dropdown-item sidenav-child@(Model == "ResourceAllocation" ? " sidenav-title" : "")"
+                       data-sidenav-base="@Url.Action("Index", "ResourceAllocation", new { area = "FPS" })"
+                       href="@Url.Action("Index", "ResourceAllocation", new { area = "FPS" })">
                         Stage 2 Check Resource Allocation
                     </a>
                 </li>
                 <li>
-                    <a class="dropdown-item sidenav-child" href="#">
+                    <a class="dropdown-item sidenav-child@(Model == "WgStaffPlan" ? " sidenav-title" : "")"
+                       data-sidenav-base="@Url.Action("Index", "WgStaffPlan", new { area = "FPS" })"
+                       href="@Url.Action("Index", "WgStaffPlan", new { area = "FPS" })">
                         Staff/Project Pivot Table
                     </a>
                 </li>

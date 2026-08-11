@@ -32,7 +32,7 @@
         <div class="govuk-grid-row sup_margin_top_10">
             <div class="govuk-grid-column-one-half">
                 <div class="govuk-form-group sup_margin_bottom_10">
-                    <label class="govuk-label" asp-for="MonthNo">
+                    <label class="govuk-label sup_font_weight_700" asp-for="MonthNo">
                         Month No:<span class="sup_color_red">*</span>
                     </label>
                     <input class="govuk-input govuk-!-font-size-16 govuk-input--width-5"
@@ -44,10 +44,13 @@
             </div>
             <div class="govuk-grid-column-one-half">
                 <div class="govuk-form-group sup_margin_bottom_10">
-                    <label class="govuk-label" asp-for="CostProfile">Cost Profile (£):</label>
-                    <input class="govuk-input govuk-!-font-size-16 govuk-input--width-10"
-                           asp-for="CostProfile"
-                           type="number" step="0.01"  onkeydown="if(['e', 'E', '+', '-'].includes(event.key)) event.preventDefault();" />
+                    <label class="govuk-label sup_font_weight_700" asp-for="CostProfile">Cost Profile (£):</label>
+                    <div class="govuk-input__wrapper">
+                        <div class="govuk-input__prefix" aria-hidden="true">£</div>
+                        <input class="govuk-input govuk-!-font-size-16 govuk-input--width-10 decfmt-input"
+                               asp-for="CostProfile"
+                               type="text" placeholder="e.g., 1000.00" />
+                    </div>
                     <span asp-validation-for="CostProfile" class="govuk-error-message"></span>
                 </div>
             </div>

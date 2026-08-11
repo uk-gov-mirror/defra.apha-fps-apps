@@ -1,0 +1,143 @@
+@model Apha.FPSApps.Web.Areas.FPS.Models.YearEndInitiationViewModel
+
+@{
+    ViewData["Title"] = "Year End Initiation";
+    var btnIntDisabled = Model.CanInitiate ? (string?)null : "disabled";
+    var btnAppDisabled = Model.CanApprove ? (string?)null : "disabled";
+}
+
+<div class="govuk-grid-row">
+    <div class="govuk-grid-column-full">
+        <h1 class="govuk-grid-row govuk-heading-s sup_border-bottom govuk-!-margin-top-2 govuk-!-padding-bottom-2 govuk-!-padding-left-4">
+            YearEnd Initiation
+        </h1>
+    </div>
+</div>
+
+<div class="govuk-grid-row">
+    <div class="cc-container-fluid">
+        <div class="cc-layout-row">
+            <div class="cc-content-column">
+                <div class="govuk-grid-row">
+                    <div class="govuk-grid-column-full">
+                        <div class="govuk-grid-row sup_margin_left_right_10 sup_margin_bottom_10">
+
+                            @* Error summary *@
+                            <div class="govuk-grid-column-full sup_p_0">
+                                <div class="govuk-error-summary" role="alert" tabindex="-1" style="display:none;" aria-labelledby="yei-error-summary-title">
+                                    <h2 class="govuk-error-summary__title" id="yei-error-summary-title">There is a problem</h2>
+                                    <div class="govuk-error-summary__body">
+                                        <ul class="govuk-list govuk-error-summary__list" id="yei-error-list"></ul>
+                                    </div>
+                                </div>
+                                <div id="yei-success-banner"
+                                     class="govuk-notification-banner govuk-notification-banner--success"
+                                     role="alert"
+                                     aria-labelledby="yei-success-banner-title"
+                                     style="display:none;">
+                                    <div class="govuk-notification-banner__header">
+                                        <h2 class="govuk-notification-banner__title" id="yei-success-banner-title">Success</h2>
+                                    </div>
+                                    <div class="govuk-notification-banner__body">
+                                        <p id="yei-success-banner-message" class="govuk-body"></p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            @* Process Rules *@
+                            <div class="govuk-grid-column-full">
+                                <section class="sup_border govuk-!-padding-3" aria-labelledby="process-rules-title">
+                                    <h2 class="govuk-heading-s govuk-!-margin-bottom-2" id="process-rules-title">Process Rules</h2>
+                                    <ul class="govuk-list govuk-list--bullet govuk-!-font-size-16 govuk-!-margin-bottom-0">
+                                        <li>Calendar Year-End Process is a two-step process consisting of Data Setup Initiation &amp; Approval and Year Cutover.</li>
+                                        <li>Only FPS Admin can perform Calendar Year-End process.</li>
+                                        <li>The initiator and approver for the Data Setup Initiation &amp; Approval and Year Cutover steps must be different users.</li>
+                                        <li>On Failure or Rejection, new request needs to be submitted.</li>
+                                    </ul>
+                                </section>
+                            </div>
+
+                            @* Calendar Year-End Process For + Config Values + Note *@
+                            <div class="govuk-grid-column-full sup_p_0 govuk-!-margin-top-3 govuk-!-margin-left-3">
+                                <div class="govuk-form-group govuk-!-margin-bottom-4" style="display:flex; align-items:center; gap:10px;">
+                                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-margin-bottom-0" for="yearEndProcessYear">
+                                        Calendar Year-End Process For
+                                    </label>
+                                    <input class="govuk-input govuk-input--width-5" id="yearEndProcessYear"
+                                           type="text" value="@Model.PlannedYear" autocomplete="off" disabled>
+                                </div>
+
+                                <div class="govuk-grid-row">
+                                    <div class="govuk-grid-column-one-half ">
+                                        <div id="gridContainer_yearEndConfigValuesGrid">
+                                            @await Html.PartialAsync("_DataGrid", Model.ConfigValuesGrid)
+                                        </div>
+                                    </div>
+                                    <div class="govuk-grid-column-one-half">
+                                        <p class="govuk-body govuk-!-margin-0 govuk-!-margin-top-6">
+                                            <strong>Note:</strong> Config value, Month Working Days, VID Hours and CVL Hours are default populated from previous year.
+                                            Please review and confirm these values for the Calendar Year End.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            @* Month Working Hours Grid *@
+                            <div class="govuk-grid-column-full govuk-!-margin-top-3 govuk-!-margin-bottom-3">
+                                <div id="gridContainer_yearEndMonthHoursGrid">
+                                    @await Html.PartialAsync("_DataGrid", Model.MonthHoursGrid)
+                                </div>
+                            </div>
+
+                        </div>
+
+                        @* Release History Grid *@
+                        <div class="govuk-grid-row sup_margin_left_right_10 sup_margin_bottom_10">
+                            <div class="govuk-grid-column-full">
+                                <div id="gridContainer_yearEndInitiationHistoryGrid">
+                                    @await Html.PartialAsync("_DataGrid", Model.HistoryGrid)
+                                </div>
+                            </div>
+                        </div>
+
+                        @* Action Buttons *@
+                        <div class="govuk-grid-row sup_margin_left_right_10 govuk-!-margin-top-2">
+                            <div class="govuk-grid-column-full">
+                                <div class="approval-buttons-row">
+                                    <div class="govuk-button-group sup_flex_end_center approval-buttons-group">
+                                        <button type="button" class="govuk-button" data-module="govuk-button"
+                                                id="btnInitiateDataSetupRequest"
+                                                disabled="@btnIntDisabled">
+                                            Initiate DataSetup Request
+                                        </button>
+                                        <button type="button" class="govuk-button" data-module="govuk-button"
+                                                id="btnApproveDataSetupRequest"
+                                                disabled="@btnAppDisabled">
+                                            Approve DataSetup Request
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    window.YearEndInitiationConfig = {
+        editConfigValueUrl:  '@Url.Action("EditConfigValue",  "YearEndInitiation", new { area = "FPS" })',
+        editMonthHourUrl:    '@Url.Action("EditMonthHour",    "YearEndInitiation", new { area = "FPS" })',
+        saveSettingUrl:      '@Url.Action("SaveSetting",      "YearEndInitiation", new { area = "FPS" })',
+        saveMonthHourUrl:    '@Url.Action("SaveMonthHour",    "YearEndInitiation", new { area = "FPS" })',
+        triggerInitiateUrl:  '@Url.Action("TriggerInitiate",  "YearEndInitiation", new { area = "FPS" })',
+        triggerApproveUrl:   '@Url.Action("TriggerApprove",   "YearEndInitiation", new { area = "FPS" })',
+        triggerRejectUrl:    '@Url.Action("TriggerReject",    "YearEndInitiation", new { area = "FPS" })'
+    };
+</script>
+<script src="~/js/fps_js/year-end-initiation.js"></script>
+}

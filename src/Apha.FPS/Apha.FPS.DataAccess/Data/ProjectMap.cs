@@ -20,14 +20,14 @@ namespace Apha.FPS.DataAccess.Data
                 .HasMaxLength(20)
                 .HasColumnName("parentproject");
             entity.Property(e => e.BudgetCvl)
-                .HasDefaultValueSql("0")
-                .HasColumnType("money")
+                .HasDefaultValue(0m)
+                .HasPrecision(19, 4)
                 .HasColumnName("budget_cvl");
             entity.Property(e => e.CarryOver)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("carryover");
             entity.Property(e => e.CarryOverSeed)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("carryoverseed");
             entity.Property(e => e.CaseWorkSub)
                 .HasPrecision(5, 4)
@@ -42,7 +42,7 @@ namespace Apha.FPS.DataAccess.Data
                 .HasColumnName("costbookno");
             entity.Property(e => e.CostCentre).HasColumnName("costcentre");
             entity.Property(e => e.CustIncome)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("custincome");
             entity.Property(e => e.Customer)
                 .HasMaxLength(50)
@@ -58,8 +58,8 @@ namespace Apha.FPS.DataAccess.Data
                 .HasMaxLength(50)
                 .HasColumnName("disease");
             entity.Property(e => e.FecCost)
-                .HasDefaultValueSql("0")
-                .HasColumnType("money")
+                .HasDefaultValue(0m)
+                .HasPrecision(19, 4)
                 .HasColumnName("feccost");
             entity.Property(e => e.Finished)
                 .HasDefaultValue((short)0)
@@ -79,11 +79,11 @@ namespace Apha.FPS.DataAccess.Data
                 .HasMaxLength(50)
                 .HasColumnName("owningrc");
             entity.Property(e => e.PlanCaseWorkDebit)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("plancaseworkdebit");
             entity.Property(e => e.Profit)
-                .HasDefaultValueSql("0")
-                .HasColumnType("money")
+                .HasDefaultValue(0m)
+                .HasPrecision(19, 4)
                 .HasColumnName("profit");
             entity.Property(e => e.Program)
                 .HasMaxLength(10)
@@ -101,7 +101,7 @@ namespace Apha.FPS.DataAccess.Data
                 .HasMaxLength(200)
                 .HasColumnName("projecttitle");
             entity.Property(e => e.PvsIncome)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("pvsincome");
             entity.Property(e => e.ShortTitle)
                 .HasMaxLength(30)
@@ -110,17 +110,17 @@ namespace Apha.FPS.DataAccess.Data
                 .HasMaxLength(50)
                 .HasColumnName("subaccountcode");
             entity.Property(e => e.TransferIncome)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("transferincome");
             entity.Property(e => e.WipCurrent)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("wip_current");
             entity.Property(e => e.WipEoy)
-                .HasDefaultValueSql("0")
-                .HasColumnType("money")
+                .HasDefaultValue(0m)
+                .HasPrecision(19, 4)
                 .HasColumnName("wip_eoy");
             entity.Property(e => e.WipLimit)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("wip_limit");
         }
     }

@@ -18,8 +18,8 @@ namespace Apha.PACT.DataAccess.Data
                 .HasMaxLength(50)
                 .HasColumnName("profitcentre");
             entity.Property(e => e.ContTarget)
-                .HasDefaultValueSql("0")
-                .HasColumnType("money")
+                .HasDefaultValue(0m)
+                .HasPrecision(19, 4)
                 .HasColumnName("conttarget");
             entity.Property(e => e.Division)
                 .HasMaxLength(10)

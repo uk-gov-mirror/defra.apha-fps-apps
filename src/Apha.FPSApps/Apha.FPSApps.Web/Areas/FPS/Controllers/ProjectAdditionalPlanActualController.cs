@@ -174,7 +174,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
                 ShowPagination = true,
                 AllowAdd = false,
                 AllowEdit = false,
-                AllowDelete = true,
+                AllowDelete = false,  // ✅ Delete button hidden
                 KeyProperty = "SubContCounter",
                 DeleteFunction = "deleteActualAdditionalCost",
                 ExtraFilterMethod = "getActualAdditionalCostExtraFilters",
@@ -258,6 +258,18 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
                     message = e.Message ?? "An unexpected error occurred."
                 })
             });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetProjectLookup()
+        {
+            var response = await _projectService.GetAllProjectsAsync();
+            if (!response.Success || response.Data == null)
+                return Json(new List<object>());
+            var data = response.Data
+                .Select(p => new { parentProject = p.ParentProject, projectTitle = p.ProjectTitle ?? string.Empty })
+                .ToList();
+            return Json(data);
         }
 
         private async Task<List<SelectListItem>> GetProjectListAsync()

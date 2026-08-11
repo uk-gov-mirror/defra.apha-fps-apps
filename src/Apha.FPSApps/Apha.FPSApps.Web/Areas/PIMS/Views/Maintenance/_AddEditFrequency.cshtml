@@ -1,0 +1,99 @@
+@model Apha.FPSApps.Web.Areas.PIMS.Models.FrequencyItem
+
+@{
+    var isAddingNew = ViewBag.IsAddingNew as bool? ?? Model.Frequencyid == 0;
+    var isEditMode = !isAddingNew;
+    var title = isEditMode ? "Edit Frequency" : "Add Frequency";
+    var saveLabel = isEditMode ? "Update" : "Save";
+}
+
+<div class="modal-header flex-space-center">
+    <h3 class="modal-title" style="margin: 0;">@title</h3>
+    <button type="button" class="btn-close btn-red" onclick="closeModal()">X</button>
+</div>
+<div class="modal-body" style="padding-top: 5px;">
+    <form class="row" id="formFrequency" data-is-edit="@isEditMode.ToString().ToLowerInvariant()">
+        @Html.AntiForgeryToken()
+
+
+        <div class="govuk-error-summary ra-form-error-banner ra-hidden"
+             id="reportDbError" role="alert" aria-labelledby="reportDbErrorTitle" tabindex="-1">
+            <h2 class="govuk-error-summary__title govuk-!-font-size-14" id="reportDbErrorTitle">There is a problem</h2>
+            <div class="govuk-error-summary__body">
+                <ul class="govuk-list govuk-error-summary__list"></ul>
+                <p class="govuk-body govuk-!-font-size-14" id="frequencyDbErrorText"></p>
+            </div>
+        </div>
+
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-one-half">
+                <div class="govuk-form-group sup_margin_bottom_10" id="editNameGroup">
+                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="Frequencyid">
+                        Frequency Id: <span class="ra-required-star" aria-hidden="true">*</span>
+                    </label>
+                    @if (isEditMode)
+                    {
+                        <input class="govuk-input govuk-!-font-size-16"
+                               asp-for="Frequencyid"
+                               id="editName"
+                               type="number"
+                               readonly
+                               aria-required="true"
+                               aria-label="Frequency Id"
+                               aria-describedby="editNameError" />
+                    }
+                    else
+                    {
+                        <input class="govuk-input govuk-!-font-size-16"
+                               asp-for="Frequencyid"
+                               id="editName"
+                               type="number"
+                               required
+                               aria-required="true"
+                               aria-label="Frequency Id"
+                               aria-describedby="editNameError" />
+                    }
+                    <span asp-validation-for="Frequencyid"
+                    data-valmsg-for="Frequencyid"
+                    class="govuk-error-message"
+                    id="editNameError"
+                    style="display:none;"></span>
+                </div>
+            </div>
+
+            <div class="govuk-grid-column-one-half">
+                <div class="govuk-form-group sup_margin_bottom_10" id="editDescriptionGroup">
+                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="FrequencyValue">
+                        Frequency: <span class="ra-required-star" aria-hidden="true">*</span>
+                    </label>
+                    <input class="govuk-input govuk-!-font-size-16"
+                           asp-for="FrequencyValue"
+                           id="editDescription"
+                           type="text"
+                           required
+                           aria-required="true"
+                           aria-label="Frequency"
+                           aria-describedby="editDescriptionError" />
+                    <span asp-validation-for="FrequencyValue"
+                    data-valmsg-for="FrequencyValue"
+                    class="govuk-error-message"
+                    id="editDescriptionError"
+                    style="display:none;"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12" style="display: flex; justify-content: space-between; margin-top: 10px;">
+            <button type="button"
+                    class="govuk-button govuk-button--secondary sup_margin_0"
+                    onclick="closeModal()">
+                Cancel
+            </button>
+            <button type="button"
+                    class="govuk-button sup_margin_0"
+                    onclick="saveFrequency()">
+                @saveLabel
+            </button>
+        </div>
+    </form>
+</div>

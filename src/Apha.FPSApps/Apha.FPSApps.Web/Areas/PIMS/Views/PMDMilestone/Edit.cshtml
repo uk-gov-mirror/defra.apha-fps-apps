@@ -29,64 +29,91 @@
 
         <form id="milestoneDetailsForm" novalidate class="govuk-grid-column-one-third govuk-!-padding-left-0">
             @Html.AntiForgeryToken()
-            <p class="app-mandatory-note govuk-!-font-size-14">
-                <span class="app-required" aria-hidden="true">*</span>&nbsp;Mandatory Fields
-            </p>
+            <input type="hidden" name="Project" value="@Model?.Project" />
+            <input type="hidden" name="Number" value="@Model?.Number" />
+          
 
             <div class="govuk-form-group" id="fg-projectcode">
-                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="Project">Project</label>
-                <input class="govuk-input govuk-!-font-size-16" asp-for="Project" readonly>
+                <span class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" style="display: inline-block; min-width: 150px;">Project:</span>
+                <span class="govuk-body govuk-!-font-size-16">@Model?.Project</span>
             </div>
 
             <div class="govuk-form-group" id="fg-milestone">
-                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="Number">
-                    Milestone <span class="app-required" aria-hidden="true">*</span>
-                </label>
-                <input class="govuk-input govuk-!-font-size-16" asp-for="Number" readonly>
-                <span asp-validation-for="Number" class="govuk-error-message govuk-!-display-none"></span>
+                <span class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" style="display: inline-block; min-width: 150px;">Milestone :</span>
+                <span class="govuk-body govuk-!-font-size-16">@Model?.Number</span>
             </div>
 
             <div class="govuk-form-group" id="fg-description">
-                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="Description">
-                    Description <span class="app-required" aria-hidden="true">*</span>
-                </label>
-                <input class="govuk-input govuk-!-font-size-16" asp-for="Description">
-                <span asp-validation-for="Description" class="govuk-error-message govuk-!-display-none"></span>
+                <span class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" style="display: inline-block; min-width: 150px;">Description :</span>
+                <span class="govuk-body govuk-!-font-size-16">@Model?.Description</span>
             </div>
 
             <div class="govuk-form-group" id="fg-datedue">
-                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="DateDue">
-                    Date Due <span class="app-required" aria-hidden="true">*</span>
-                </label>
-                <input class="govuk-input govuk-!-font-size-16" asp-for="DateDue" type="date">
-                <span asp-validation-for="DateDue" class="govuk-error-message govuk-!-display-none"></span>
+                <span class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" style="display: inline-block; min-width: 150px;">Date Due :</span>
+                <span class="govuk-body govuk-!-font-size-16">@Model?.DateDue?.ToString("dd/MM/yyyy")</span>
             </div>
 
             <div class="govuk-form-group">
-                <input type="hidden" asp-for="UnderSdReview" id="underreviewValue" />
-                <div class="govuk-checkboxes govuk-checkboxes--small" data-module="govuk-checkboxes">
+                <div class="govuk-checkboxes govuk-checkboxes--small">
                     <div class="govuk-checkboxes__item">
-                        <input class="govuk-checkboxes__input" id="underreview" type="checkbox" value="-1"
-                               @(Model?.UnderSdReview != 0 ? "checked" : "") onchange="syncCheckboxValues()">
+                        <input class="govuk-checkboxes__input"
+                               id="underreview"
+                               name="UnderSdReview"
+                               type="checkbox"
+                               value="-1"
+                               @(Model?.UnderSdReview == -1 ? "checked" : "")
+                               onchange="onUnderReviewChanged(this)">
                         <label class="govuk-checkboxes__label govuk-!-font-size-16" for="underreview">Under Review</label>
+                        <input type="hidden" name="UnderSdReview" value="0" />
                     </div>
                 </div>
             </div>
 
             <div class="govuk-form-group">
-                <input type="hidden" asp-for="OnTarget" id="ontargetValue" />
-                <div class="govuk-checkboxes govuk-checkboxes--small" data-module="govuk-checkboxes">
+                <div class="govuk-checkboxes govuk-checkboxes--small">
                     <div class="govuk-checkboxes__item">
-                        <input class="govuk-checkboxes__input" id="ontarget" type="checkbox" value="-1"
-                               @(Model?.OnTarget != 0 ? "checked" : "") onchange="syncCheckboxValues()">
+                        <input class="govuk-checkboxes__input"
+                               id="ontarget"
+                               name="OnTarget"
+                               type="checkbox"
+                               value="-1"
+                               @(Model?.OnTarget == -1 ? "checked" : "")
+                               onchange="onOnTargetChanged(this)">
                         <label class="govuk-checkboxes__label govuk-!-font-size-16" for="ontarget">On Target</label>
+                        <input type="hidden" name="OnTarget" value="0" />
                     </div>
                 </div>
             </div>
 
             <div class="govuk-form-group" id="fg-datecompleted">
-                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="DateCompleted">Date Completed</label>
-                <input class="govuk-input govuk-!-font-size-16" asp-for="DateCompleted" type="date">
+                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" for="DateCompletedDisplay">Date Completed</label>
+                <div style="position:relative; display:flex; align-items:center; width:stretch;">
+                    <input type="text"
+                           id="DateCompletedDisplay"
+                           class="govuk-input govuk-!-font-size-16"
+                           value="@(Model?.DateCompleted?.ToString("dd/MM/yyyy") ?? string.Empty)"
+                           aria-label="DateCompletedDisplay"
+                           placeholder="dd/mm/yyyy"
+                           maxlength="10"
+                           autocomplete="off"
+                           oninput="formatDateInput(this)"
+                           onblur="validateAndSyncDate('DateCompletedDisplay', 'DateCompletedBinding', 'DateCompletedError')"
+                           style="flex:1;">
+                    <button type="button"
+                            onclick="openDatePicker('DateCompletedPicker')"
+                            style="margin-left:4px; padding:6px 10px; cursor:pointer; background:#f3f2f1; border:2px solid #0b0c0c; font-size:1rem; line-height:1;"
+                            aria-label="Open date picker for Date Completed">&#128197;</button>
+                    <input type="hidden"
+                           name="DateCompleted"
+                           id="DateCompletedBinding"
+                           value="@(Model?.DateCompleted?.ToString("yyyy-MM-dd") ?? string.Empty)">
+                    <input type="date"
+                           id="DateCompletedPicker"
+                           value="@(Model?.DateCompleted?.ToString("yyyy-MM-dd") ?? string.Empty)"
+                           onchange="syncDateToText('DateCompletedPicker', 'DateCompletedDisplay', 'DateCompletedBinding', 'DateCompletedError')"
+                           style="display:none;">
+                </div>
+                <span id="DateCompletedError" class="govuk-error-message" style="display:none;"></span>
             </div>
 
             <div class="govuk-form-group" id="fg-comment">
@@ -117,12 +144,187 @@ else
 
 @section Scripts {
     <script>
-        function syncCheckboxValues() {
-            document.getElementById('underreviewValue').value = document.getElementById('underreview').checked ? -1 : 0;
-            document.getElementById('ontargetValue').value = document.getElementById('ontarget').checked ? -1 : 0;
+        // Date handling functions (same as in _AddEditMilestone.cshtml)
+        function openDatePicker(pickerId) {
+            var picker = document.getElementById(pickerId);
+            if (picker) {
+                try { picker.showPicker(); } catch (e) { picker.click(); }
+            }
         }
 
-        syncCheckboxValues();
+        function syncDateToText(pickerId, displayId, hiddenId, errorId) {
+            var picker = document.getElementById(pickerId);
+            if (picker.value) {
+                var parts = picker.value.split('-');
+                document.getElementById(displayId).value = parts[2] + '/' + parts[1] + '/' + parts[0];
+                document.getElementById(hiddenId).value = picker.value;
+            } else {
+                document.getElementById(displayId).value = '';
+                document.getElementById(hiddenId).value = '';
+            }
+            if (errorId) {
+                var err = document.getElementById(errorId);
+                if (err) { err.style.display = 'none'; err.textContent = ''; }
+            }
+        }
+
+        function formatDateInput(input) {
+            var val = input.value.replace(/[^\d\/\-]/g, '');
+            if (val.length > 10) val = val.substring(0, 10);
+            input.value = val;
+        }
+
+        function validateAndSyncDate(displayId, hiddenId, errorId) {
+            var display = document.getElementById(displayId);
+            var hidden  = document.getElementById(hiddenId);
+            var errorEl = document.getElementById(errorId);
+            var val = display.value.trim();
+
+            if (!val) {
+                hidden.value = '';
+                errorEl.style.display = 'none';
+                errorEl.textContent = '';
+                return;
+            }
+
+            if (/^\d{4}[\\/\-]\d{2}[\\/\-]\d{2}$/.test(val)) {
+                hidden.value = '';
+                errorEl.textContent = 'Enter the date in dd/mm/yyyy format, not yyyy/mm/dd';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            var usMatch = val.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+            if (usMatch && parseInt(usMatch[2], 10) > 12) {
+                hidden.value = '';
+                errorEl.textContent = 'Enter the date in dd/mm/yyyy format, not mm/dd/yyyy';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            var match = val.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+            if (!match) {
+                hidden.value = '';
+                errorEl.textContent = 'Enter the date in dd/mm/yyyy format';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            var day   = parseInt(match[1], 10);
+            var month = parseInt(match[2], 10);
+            var year  = parseInt(match[3], 10);
+            var date  = new Date(year, month - 1, day);
+
+            if (date.getFullYear() !== year || date.getMonth() !== (month - 1) || date.getDate() !== day) {
+                hidden.value = '';
+                errorEl.textContent = 'Enter a valid date in dd/mm/yyyy format';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            var mm = String(month).padStart(2, '0');
+            var dd = String(day).padStart(2, '0');
+            hidden.value = year + '-' + mm + '-' + dd;
+            errorEl.style.display = 'none';
+            errorEl.textContent = '';
+        }
+
+        function onUnderReviewChanged(checkbox) {
+            // Update hidden input based on checkbox state
+            const hiddenInput = checkbox.parentElement.querySelector('input[type="hidden"][name="UnderSdReview"]');
+            if (hiddenInput) {
+                hiddenInput.value = checkbox.checked ? -1 : 0;
+            }
+        }
+
+        function onOnTargetChanged(checkbox) {
+            // Update hidden input based on checkbox state
+            const hiddenInput = checkbox.parentElement.querySelector('input[type="hidden"][name="OnTarget"]');
+            if (hiddenInput) {
+                hiddenInput.value = checkbox.checked ? -1 : 0;
+            }
+        }
+
+        function submitMilestoneDetails() {
+            const form = document.getElementById('milestoneDetailsForm');
+            if (!form) return;
+
+            // Validate form
+            if (!validateMilestoneForm()) {
+                return;
+            }
+
+            // Sync hidden values for date
+            validateAndSyncDate('DateCompletedDisplay', 'DateCompletedBinding', 'DateCompletedError');
+
+            // Prepare form data
+            const formData = new FormData(form);
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+            $.ajax({
+                url: '@Url.Action("EditMilestoneDetails", "PMDMilestone", new { area = "PIMS" })',
+                type: 'POST',
+                headers: { 'RequestVerificationToken': token },
+                data: {
+                    project: formData.get('Project'),
+                    number: formData.get('Number'),
+                    datecompleted: formData.get('DateCompleted'),
+                    underreview: formData.get('UnderSdReview'),
+                    ontarget: formData.get('OnTarget'),
+                    projectleadercomment: formData.get('ProjectLeaderComment'),
+                    __RequestVerificationToken: token
+                },
+                success: function (result) {
+                    if (result.success) {
+                        showAlertMessage(result.message, AlertType.SUCCESS).then(function () {
+                            window.location.href = '@Url.Action("Index", "PMDMilestone", new { area = "PIMS", parentproject })';
+                        });
+                    } else {
+                        displayErrorSummary(result.errors || ['Failed to update milestone.']);
+                    }
+                },
+                error: function (xhr) {
+                    displayErrorSummary(['An unexpected error occurred.']);
+                }
+            });
+        }
+
+        function validateMilestoneForm() {
+            const errors = [];
+            const projectLeaderComment = document.querySelector('[name="ProjectLeaderComment"]')?.value || '';
+            const dateCompletedError = document.getElementById('DateCompletedError');
+
+            if (!projectLeaderComment.trim()) {
+                errors.push('Project Leaders Comment is required.');
+            }
+
+            // Check if there are any date validation errors
+            if (dateCompletedError && dateCompletedError.style.display === 'block') {
+                errors.push('Please fix the Date Completed field.');
+            }
+
+            if (errors.length > 0) {
+                displayErrorSummary(errors);
+                return false;
+            }
+
+            return true;
+        }
+
+        function displayErrorSummary(errors) {
+            const errorSummary = document.getElementById('dbErrorSummary');
+            const errorList = document.getElementById('dbErrorSummaryList');
+
+            if (errorSummary && errorList) {
+                errorList.innerHTML = '';
+                errors.forEach(error => {
+                    const li = document.createElement('li');
+                    li.textContent = typeof error === 'string' ? error : error.message || 'An error occurred';
+                    errorList.appendChild(li);
+                });
+                errorSummary.classList.remove('govuk-!-display-none');
+            }
+        }
     </script>
 }
 

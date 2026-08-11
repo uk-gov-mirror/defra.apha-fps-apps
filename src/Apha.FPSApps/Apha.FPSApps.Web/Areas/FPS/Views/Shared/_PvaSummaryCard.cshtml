@@ -1,0 +1,58 @@
+@* _PvaSummaryCard.cshtml
+   Shared project summary card (Project / Description / Program / Contract) used by PlanActual pages.
+   Reads values directly from asp-for model binding using the page's own model;
+   callers pass the four IDs via ViewData so the partial stays model-agnostic.
+
+   Required ViewData keys (all strings):
+     "SummaryProjectCode"      – id for the Project input
+     "SummaryProjectTitle"     – id for the Project Description textarea
+     "SummaryProgram"          – id for the Program input
+     "SummaryContract"         – id for the Contract input
+     "SummaryProjectCodeValue"   – initial value for Project
+     "SummaryProjectTitleValue"  – initial value for Project Description
+     "SummaryProgramValue"       – initial value for Program
+     "SummaryContractValue"      – initial value for Contract
+*@
+@{
+    var projectCodeVal  = ViewData["SummaryProjectCodeValue"]?.ToString()  ?? string.Empty;
+    var projectTitleVal = ViewData["SummaryProjectTitleValue"]?.ToString() ?? string.Empty;
+    var programVal      = ViewData["SummaryProgramValue"]?.ToString()      ?? string.Empty;
+    var contractVal     = ViewData["SummaryContractValue"]?.ToString()     ?? string.Empty;
+}
+<div class="govuk-grid-row">
+    <div class="govuk-grid-column-full mt-2">
+        <div class="pva-summary-card" style="background-color:#edf4ff; border:1px solid #1d70b8; border-radius:5px; padding:8px;">
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="row">
+                        <div class="col-lg-5">
+                            <label class="govuk-label--s" for="summary-project-code">Project</label>
+                            <input type="text" id="summary-project-code" name="SelectedProjectCode"
+                                   class="govuk-input" value="@projectCodeVal" readonly>
+                        </div>
+                        <div class="col-lg-7">
+                            <label class="govuk-label--s" for="summary-project-description">Project Description</label>
+                            <textarea id="summary-project-description" name="ProjectTitle"
+                                      class="govuk-textarea govuk-!-font-size-16 sup_margin_0"
+                                      rows="1" readonly>@projectTitleVal</textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="row">
+                        <div class="col-lg-5">
+                            <label class="govuk-label--s" for="summary-program">Program</label>
+                            <input type="text" id="summary-program" name="Program"
+                                   class="govuk-input" value="@programVal" readonly>
+                        </div>
+                        <div class="col-lg-7">
+                            <label class="govuk-label--s" for="summary-contract">Contract</label>
+                            <input type="text" id="summary-contract" name="Contract"
+                                   class="govuk-input" value="@contractVal" readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

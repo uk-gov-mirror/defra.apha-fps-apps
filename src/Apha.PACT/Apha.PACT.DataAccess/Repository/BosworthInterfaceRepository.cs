@@ -80,6 +80,40 @@ namespace Apha.PACT.DataAccess.Repository
             return result;
         }
 
+        public async Task<IEnumerable<TimeSaleWorkGroup>> GetTimeSaleWorkGroupAsync(string workGroup)
+        {
+            var result = await _context.PactWorkGroupGradeViews.AsNoTracking()
+                .Where(workGroupGrade => workGroupGrade.WorkGroup == workGroup)
+                .Join(_context.WorkGroupStaffViews.AsNoTracking(),
+                    workGroupGrade => workGroupGrade.WgGrade,
+                    staff => staff.WorkGroupGrade,
+                    (workGroupGrade, staff) => new { workGroupGrade, staff })
+                .Join(_context.TimeCostCalcs.AsNoTracking(),
+                    outer => outer.staff.PactId,
+                    timeCost => timeCost.StaffId,
+                    (outer, timeCost) => new { outer.workGroupGrade, outer.staff, timeCost })
+                .Join(_context.Projects.AsNoTracking(),
+                    outer => outer.timeCost.Project,
+                    project => project.ParentProject,
+                    (outer, project) => new TimeSaleWorkGroup
+                    {
+                        SellingWg = outer.workGroupGrade.WorkGroup,
+                        Name = outer.staff.Name,
+                        Time = outer.timeCost.Time,
+                        Cost = outer.timeCost.Cost,
+                        Month = outer.timeCost.Month,
+                        PlanCategory = "",  // Since PlanCategory is not available in the Project entity, keep it empty for this report output to maintain the consistency.
+                        Program = project.Program,
+                        Project = outer.timeCost.Project,
+                        JobCode = outer.timeCost.JobCode,
+                        Manager = project.Manager
+                    })
+                .Distinct()
+                .ToListAsync();
+
+            return result;
+        }
+
         public async Task<IEnumerable<TestSaleSellingWorkgroup>> GetTestSaleSellingWorkgroupAsync(string workGroup)
         {
             var data = await _context.MonthlyOutputs.AsNoTracking()

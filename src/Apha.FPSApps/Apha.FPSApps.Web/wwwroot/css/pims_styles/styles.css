@@ -73,6 +73,11 @@
     text-align: right;
 }
 
+.sup_btn_input_height {
+    padding: 5px 10px;
+    line-height: 1.2;
+}
+
 /*menu*/
 
 :root {
@@ -929,10 +934,13 @@ select {
     line-height: normal;
 }
 
-.selectedProjectForm .headline {
-    margin-left: -5px;
-    background: aliceblue;
-    margin-top: -10px;
+    .selectedProjectForm .headline {
+        margin-left: -5px;
+       
+        margin-top: -10px;
+    }
+.selectedProjectForm h6 {
+    background: #f4f8fb !important;
 }
 
 .flexbox-column {
@@ -962,12 +970,6 @@ select {
     ;
     border-left: 1px solid var(--govuk-border-colour);
     border-right: 1px solid var(--govuk-border-colour);
-}
-
-.govuk-tabs__list-item--selected,
-.govuk-tabs__list-item {
-    padding: 12px !important;
-
 }
 
 #modalNumber,
@@ -1966,7 +1968,7 @@ th.sorted-desc {
 
 /* Report groups label */
 .ra-groups-heading {
-    flex: 0 0 auto;
+    margin-bottom: 2px;
     white-space: nowrap;
     font-size: 16px;
 }
@@ -2036,7 +2038,8 @@ th.sorted-desc {
 .ra-grid-toolbar {
     display: flex;
     justify-content: space-between;
-    padding: 8px 10px;
+    flex-direction: column;
+/*    padding: 8px 10px;*/
 }
 
 /* --- Add button font size override --- */
@@ -2618,7 +2621,20 @@ th.sorted-desc {
     font-weight: 600;
 }
 
+    .other-list-table tbody tr td.other-list-item.selected {
+        background-color: #f4f8fb;
+        color: #0b0c0c;
+        font-weight: 700;
+    }
+
 /* ── Right panel – Values ──────────────────────────── */
+
+#gridContainer_otherValuesTable table td:nth-child(1),
+#gridContainer_otherValuesTable table td:nth-child(2),
+#gridContainer_otherValuesTable table th:nth-child(1),
+#gridContainer_otherValuesTable table th:nth-child(2) {
+    text-align: center !important;
+}
 .other-values-panel {
     flex: 1 1 auto;
     max-width: 50%;
@@ -2778,9 +2794,8 @@ th.sorted-desc {
 
 /* ── Sub-grid box ──────────────────────────────────── */
 .mgr-sub-grid-box {
-    border: 1px solid #b1b4b6;
     border-radius: 2px;
-    overflow: hidden;
+/*    overflow: hidden;*/
     margin-bottom: 8px;
 }
 
@@ -2856,9 +2871,6 @@ th.sorted-desc {
     color: white !important;
 }
 
-.govuk-grid-column-full {
-    padding: 0px 10px !important;
-}
 
 /* =====================================================
    Time Tab – Working Hours & Working Days
@@ -2875,9 +2887,8 @@ th.sorted-desc {
 .time-form-row {
     display: flex;
     align-items: flex-start;
-    gap: 16px;
+    gap: 25px;
     margin-bottom: 0;
-    padding: 6px 0;
     border-left: none;
 }
 
@@ -2891,6 +2902,7 @@ th.sorted-desc {
     flex: 0 0 200px;
     min-width: 0;
     padding-top: 5px;
+    padding-left: 10px
 }
 
 .time-form-label-col .govuk-label {
@@ -2932,6 +2944,7 @@ th.sorted-desc {
     justify-content: space-between;
     align-items: center;
     padding-top: 16px;
+    padding-left: 7px;
     margin-top: 12px;
     max-width: 470px;
 
@@ -2974,7 +2987,9 @@ th.sorted-desc {
 }
 /* Override button positioning to move Add button to rightmost */
 
-#gridContainer_milestonesGrid .editable-grid-container > div > h2 > .sup_flex_space_between, #gridContainer_milestoneFormDatesGrid .editable-grid-container > div > h2 > .sup_flex_space_between {
+#gridContainer_milestonesGrid .editable-grid-container > div > h2 > .sup_flex_space_between,
+#gridContainer_milestoneFormDatesGrid .editable-grid-container > div > h2 > .sup_flex_space_between, 
+#gridContainer_comments .editable-grid-container > div > h2 > .sup_flex_space_between {
     display: flex !important;
     justify-content: end !important;
 }

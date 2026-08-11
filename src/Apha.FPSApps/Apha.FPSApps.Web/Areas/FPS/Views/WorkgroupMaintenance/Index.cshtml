@@ -102,13 +102,15 @@
         }
 
         function buildWorkgroupDto() {
+            var costCentre = $('#CostCentre').val().trim();
+            var centralOverhead = $('#CentralOverhead').val().trim();
             return {
                 WorkGroupName: $('#WorkGroupName').val(),
                 ProfitCentre: $('#ProfitCentre').val() || null,
-                CostCentre: parseDoubleOrNull($('#CostCentre').val()),
+                CostCentre: costCentre === '' ? null : costCentre,
                 Owner: $('#Owner').val() || null,
                 Description: $('#Description').val() || null,
-                CentralOverhead: parseDecimalOrNull($('#CentralOverhead').val())
+                CentralOverhead: centralOverhead === '' ? null : centralOverhead
             };
         }
 
@@ -166,19 +168,6 @@
         function closeModal() {
             $('#modaPopupBody').html('');
             $('#modalPopup').removeClass('show');
-        }
-
-        function parseDecimalOrNull(val) {
-            if (val === null || val === undefined || val.toString().trim() === '') return null;
-            var cleaned = val.toString().replace(/[^0-9.-]/g, '');
-            var parsed = parseFloat(cleaned);
-            return isNaN(parsed) ? null : parsed;
-        }
-
-        function parseDoubleOrNull(val) {
-            if (val === null || val === undefined || val.toString().trim() === '') return null;
-            var parsed = parseFloat(val);
-            return isNaN(parsed) ? null : parsed;
         }
 
     </script>

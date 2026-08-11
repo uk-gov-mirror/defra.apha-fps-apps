@@ -1,5 +1,6 @@
 using Apha.FPSApps.Application.Dtos.FPS;
-using Apha.FPSApps.Application.Dtos.PACT;using Apha.FPSApps.Web.Areas.PACT.Models;
+using Apha.FPSApps.Application.Dtos.PACT;
+using Apha.FPSApps.Web.Areas.PACT.Models;
 using AutoMapper;
 
 namespace Apha.FPSApps.Web.Mappings
@@ -54,6 +55,17 @@ namespace Apha.FPSApps.Web.Mappings
             CreateMap<WorkGroupDto, WorkGroup>().ReverseMap();
             CreateMap<WorkGroupPersonDto, WorkGroupPerson>().ReverseMap();
             CreateMap<MonthlyOutputLogDto, MonthlyOutputLogItem>().ReverseMap();
+            CreateMap<MonthlyTimeDto, MonthlyTimeLiveItem>()
+                .ForMember(dest => dest.CompositeKey, opt => opt.MapFrom(src => $"{src.PactStaffId}|{src.TimeCode}|{src.Month}|{src.ParentProject}"));
+            CreateMap<StagingMonthlyTimeDto, StagingMonthlyTimeItem>()
+                .ForMember(dest => dest.Passed, opt => opt.MapFrom(src => src.Passed ?? false));
+            CreateMap<MonthlyTimeLiveItem, MonthlyTimeDto>()
+                .ForMember(dest => dest.FpsYear, opt => opt.MapFrom(src => src.FpsYear ?? 0));
+            CreateMap<StagingMonthlyTimeItem, StagingMonthlyTimeDto>()
+                .ForMember(dest => dest.Passed, opt => opt.MapFrom(src => (bool?)src.Passed));
+            CreateMap<StagingMonthlyTimeDto, StagingMonthlyTimeExportItem>()
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => string.IsNullOrWhiteSpace(src.Name) ? src.PactStaffId : src.Name))
+                .ForMember(dest => dest.Passed, opt => opt.MapFrom(src => src.Passed ?? false));
             CreateMap<MonthlyTimeLogDto, MonthlyTimeLogItem>().ReverseMap();
             CreateMap<CalenderMonthDto, CalenderMonth>().ReverseMap();
             CreateMap<WorkGroupTimeCodeDto, WorkGroupTimeCodeItem>().ReverseMap();
@@ -142,7 +154,7 @@ namespace Apha.FPSApps.Web.Mappings
             CreateMap<RecreateSummaryLogDto, RecreateSummaryLogItem>()
                 .ForMember(dest => dest.User, opt => opt.MapFrom(src => src.Comments));
 
-            CreateMap<BatchJobHistoryDto, BatchJobHistoryItem>();
+            CreateMap<Apha.FPSApps.Application.Dtos.PACT.BatchJobHistoryDto, BatchJobHistoryItem>();
 
             CreateMap<ProfitCentreCostDto, ProfitCenterCostItem>().ReverseMap();
 
@@ -151,6 +163,22 @@ namespace Apha.FPSApps.Web.Mappings
             CreateMap<ReleasePeriodDto, ReleasePeriodItem>().ReverseMap();
 
             CreateMap<WgTestCapabilitiesWithDescriptionDto, WgTestCapabilitiesWithDescriptionItem>().ReverseMap();
+
+            // Monthly Output
+            CreateMap<Apha.FPSApps.Application.Dtos.PACT.PactMonthlyOutputDto, MonthlyOutputLiveItem>()
+                .ForMember(dest => dest.CompositeKey, opt => opt.MapFrom(src => $"{src.TestCode}|{src.Buyer}|{src.Month}|{src.WorkGroup}"));
+            CreateMap<MonthlyOutputLiveItem, Apha.FPSApps.Application.Dtos.PACT.PactMonthlyOutputDto>()
+                .ForMember(dest => dest.FpsYear, opt => opt.MapFrom(src => src.FpsYear ?? 0))
+                .ForMember(dest => dest.OriginalTestCode,  opt => opt.Ignore())
+                .ForMember(dest => dest.OriginalBuyer,     opt => opt.Ignore())
+                .ForMember(dest => dest.OriginalMonth,     opt => opt.Ignore())
+                .ForMember(dest => dest.OriginalWorkGroup, opt => opt.Ignore())
+                .ForMember(dest => dest.WgBuyer,           opt => opt.Ignore());
+            CreateMap<StagingMonthlyOutputDto, StagingMonthlyOutputItem>()
+                .ForMember(dest => dest.Passed, opt => opt.MapFrom(src => src.Passed ?? false));
+            CreateMap<StagingMonthlyOutputItem, StagingMonthlyOutputDto>()
+                .ForMember(dest => dest.Passed, opt => opt.MapFrom(src => (bool?)src.Passed));
+            CreateMap<StagingMonthlyOutputDto, StagingMonthlyOutputExportItem>();
         }
     }
 }

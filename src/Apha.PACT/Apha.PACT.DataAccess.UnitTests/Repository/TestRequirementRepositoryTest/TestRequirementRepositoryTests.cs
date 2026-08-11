@@ -3336,6 +3336,41 @@ namespace Apha.PACT.DataAccess.UnitTests.Repository.TestRequirementRepositoryTes
 
         #endregion
 
+        #region GetAllActiveAsync
+
+        [Fact]
+        public async Task GetAllActiveAsync_WithMixedActiveFlags_ReturnsOnlyActiveItems()
+        {
+            var testReqmts = new List<TestRequirement>
+            {
+                new() { TestCode = "PT0001", Buyer = "SV3300", Active = 1, FpsYear = DefaultFpsYear },
+                new() { TestCode = "PT0002", Buyer = "SV3301", Active = 0, FpsYear = DefaultFpsYear },
+                new() { TestCode = "PT0003", Buyer = "SV3302", Active = 2, FpsYear = DefaultFpsYear }
+            };
+            var (repo, _, _, _) = CreateRepositoryWithMocks(testReqmts);
+
+            var result = await repo.GetAllActiveAsync();
+
+            Assert.Equal(2, result.Count);
+            Assert.All(result, x => Assert.True(x.Active != 0));
+        }
+
+        [Fact]
+        public async Task GetAllActiveAsync_WithNoActiveItems_ReturnsEmptyList()
+        {
+            var testReqmts = new List<TestRequirement>
+            {
+                new() { TestCode = "PT0001", Buyer = "SV3300", Active = 0, FpsYear = DefaultFpsYear }
+            };
+            var (repo, _, _, _) = CreateRepositoryWithMocks(testReqmts);
+
+            var result = await repo.GetAllActiveAsync();
+
+            Assert.Empty(result);
+        }
+
+        #endregion
+
         // ── Helper: CreateRepositoryWithActualBreakdownMocks ─────────────────────────
 
         private static TestRequirementRepository CreateRepositoryWithActualBreakdownMocks(

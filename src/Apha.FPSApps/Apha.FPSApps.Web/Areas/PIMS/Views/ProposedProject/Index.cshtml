@@ -7,7 +7,7 @@
 <!-- Page heading bar -->
 <div class="govuk-grid-row sup_border-bottom govuk-!-padding-left-1 govuk-!-padding-right-1">
     <div class="govuk-grid-column-full sup_flex_between_center">
-        <h5 class="govuk-heading-s sup_margin_0 govuk-!-padding-top-2 govuk-!-padding-bottom-2">
+        <h5 class="govuk-heading-s govuk-!-margin-bottom-0 govuk-!-padding-top-2 govuk-!-margin-left-3 govuk-!-padding-bottom-2">
             Proposed New Project
         </h5>
         <a href="@Url.Action("Index", "ProjectList", new { area = "PIMS" })"
@@ -40,7 +40,7 @@
 
     <!-- Instruction note -->
     <p class="pnp-app-note" role="note" style="max-width: 640px; width: 100%; margin-top: 16px;">
-        Only use this form to add details of projects <strong>NOT</strong> on FPS.
+        Only use this form to add details of projects NOT on FPS.
     </p>
 
     <!-- Form -->
@@ -53,10 +53,6 @@
           style="max-width: 640px; width: 100%;"
           novalidate>
         @Html.AntiForgeryToken()
-
-        <p class="govuk-body govuk-!-font-size-16" style="margin-bottom: 8px;">
-            * &nbsp; Mandatory Fields
-        </p>
 
         <!-- Project (required) -->
         <div class="govuk-form-group govuk-!-margin-bottom-6">

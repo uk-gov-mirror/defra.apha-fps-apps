@@ -69,6 +69,8 @@ function addSubContract() {
         function (html) {
             $('#modaPopupBody').html(html);
             $('#modalPopup').addClass('show');
+            // Initialize form validation (unobtrusive + numeric)
+            initializeFormValidation('#subContractForm');
         })
         .fail(function(xhr, status, error) {
             showAlertMessage('Error loading form: ' + error, AlertType.ERROR);
@@ -80,6 +82,8 @@ function editSubContract(btn) {
     $.get('/PACT/SubContract/GetSubContract', { id: id }, function (html) {
         $('#modaPopupBody').html(html);
         $('#modalPopup').addClass('show');
+        // Initialize form validation (unobtrusive + numeric)
+        initializeFormValidation('#subContractForm');
     })
     .fail(function(xhr, status, error) {
         showAlertMessage('Error loading form: ' + error, AlertType.ERROR);
@@ -117,34 +121,23 @@ function saveSubContract() {
     }
     var data = form.serializeObject ? form.serializeObject() : Object.fromEntries(new FormData(form[0]));
 
-    ['Month', 'Amount', 'SupplierNumber'].forEach(function (f) {
-        if (data[f] === '' || data[f] === undefined) data[f] = null;
-    });
-
-    // Validate Amount field against PostgreSQL money limits
-    if (data.Amount !== null && data.Amount !== undefined) {
-        var amount = parseFloat(data.Amount);
-        var maxMoney = 92233720368547758.07;
-
-        if (isNaN(amount)) {
-            showAlertMessage('The value you enter is not valid for this fields. The entered value is larger than the fieldsize permit.', AlertType.ERROR);
-            return;
-        }
-        if (amount < 0 || amount > maxMoney) {
-            showAlertMessage('The value you enter is not valid for this fields. The entered value is larger than the fieldsize permit.', AlertType.ERROR);
-            return;
-        }
-
-        // Check decimal places
-        var decimalPart = amount.toString().split('.')[1];
-        if (decimalPart && decimalPart.length > 2) {
-            showAlertMessage('Amount must have at most 2 decimal places.', AlertType.INFO);
-            return;
-        }
-
-        // Ensure we send a proper decimal, not scientific notation
-        data.Amount = amount;
+    // Convert empty strings to null for numeric fields, but parse valid numbers
+    if (data['Amount'] === '' || data['Amount'] === undefined) {
+        data['Amount'] = null;
+    } else if (typeof data['Amount'] === 'string') {
+        var parsed = parseFloat(data['Amount']);
+        data['Amount'] = isNaN(parsed) ? null : parsed;
     }
+
+    if (data['Month'] === '' || data['Month'] === undefined) {
+        data['Month'] = null;
+    }
+
+    if (data['SupplierNumber'] === '' || data['SupplierNumber'] === undefined) {
+        data['SupplierNumber'] = null;
+    }
+
+    
 
     $.ajax({
         url: '/PACT/SubContract/SaveSubContract',

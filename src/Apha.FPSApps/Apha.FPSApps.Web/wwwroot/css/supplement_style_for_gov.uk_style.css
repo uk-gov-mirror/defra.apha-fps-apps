@@ -1737,3 +1737,6 @@ table#tblMonthPeriod > tbody > tr > td {
 .sup_whitespace_nowrap {
     white-space: nowrap !important;
 }
+.sup_m-2 {
+    margin-bottom: 2px;
+}

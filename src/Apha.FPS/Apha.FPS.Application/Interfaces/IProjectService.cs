@@ -9,6 +9,7 @@ namespace Apha.FPS.Application.Interfaces
         Task<IEnumerable<ProjectDto>> GetAllProjectsForAllUsersAsync();
         Task<IEnumerable<ProjectDto>> GetAllPactProjectsAsync();
         Task<PaginatedResult<ProjectDto>> GetPagedProjectsAsync(QueryParameters<string> query);
+        Task<PaginatedResult<ProjectDto>> GetPagedProjectSnapshotDataAsync(QueryParameters<string> query);
         Task<PaginatedResult<ProjectSpecificQueryDto>> GetPagedProjectSpecificQueryAsync(QueryParameters<string> query);
         Task<PaginatedResult<ProjectDto>> GetPagedProjectsByUserAsync(QueryParameters<string> query);
         Task<PaginatedResult<ProjectDto>> GetPagedPactProjectsAsync(QueryParameters<string> query);

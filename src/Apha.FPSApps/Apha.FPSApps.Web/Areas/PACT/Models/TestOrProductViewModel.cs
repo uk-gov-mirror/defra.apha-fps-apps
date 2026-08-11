@@ -34,11 +34,13 @@ namespace Apha.FPSApps.Web.Areas.PACT.Models
         public string? TestManager { get; set; }
        
         [Display(Name = "Non Defra Unit Price")]
+        [Range(typeof(decimal), "-999999999999999.9999", "999999999999999.9999", ErrorMessage = "Non Defra Unit Price must be between -999,999,999,999,999.9999 and 999,999,999,999,999.9999.")]
         [GridColumn(Order = 9, Width = 100, Type = GridColumnType.GbpValue)]
         public decimal? UnitPriceVla { get; set; }
 
         [Display(Name = "Defra Unit Price")]
         [Required(ErrorMessage = "Defra Unit Price is required")]
+        [Range(typeof(decimal), "-999999999999999.9999", "999999999999999.9999", ErrorMessage = "Defra Unit Price must be between -999,999,999,999,999.9999 and 999,999,999,999,999.9999.")]
         [GridColumn(Order = 8, Width = 100, Type = GridColumnType.GbpValue)]
         public decimal DefraUnitPrice { get; set; }
         [GridColumn(IsVisible = false)]

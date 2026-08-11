@@ -1,3 +1,4 @@
+using Apha.Common.Utilities.GenericExcelExport;
 using Apha.FPSApps.Application.Dtos.FPS;
 using Apha.FPSApps.Application.Interfaces.FPS;
 using Apha.FPSApps.Application.Pagination;
@@ -25,15 +26,18 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
         private readonly IMapper _mapper;
         private readonly IAnimalPlanService _animalPlanService;
         private readonly IAnimalService _animalService;
+        private readonly IGenericExcelExporter _excelExporter;
 
         public AnimalCostsController(
             IMapper mapper,
             IAnimalPlanService animalPlanService,
-            IAnimalService animalService)
+            IAnimalService animalService,
+            IGenericExcelExporter excelExporter)
         {
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _animalPlanService = animalPlanService ?? throw new ArgumentNullException(nameof(animalPlanService));
             _animalService = animalService ?? throw new ArgumentNullException(nameof(animalService));
+            _excelExporter = excelExporter ?? throw new ArgumentNullException(nameof(excelExporter));
         }
 
         public async Task<IActionResult> Index()
@@ -79,6 +83,30 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             var gridConfig = BuildAnimalCostsGridConfig(items, paginationModel, filterDict, request);
 
             return PartialView("_DataGrid", gridConfig);
+        }
+
+        /// <summary>
+        /// Exports all animal cost records for the selected animal type to an Excel (.xlsx) file.
+        /// Column headers are taken from each property's [Display(Name = ...)] attribute.
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> Export()
+        {
+
+            var pagedData = await _animalService.GetAllAnimalsAsync();
+
+            List<AnimalDto> items = pagedData.Data != null
+                ? _mapper.Map<List<AnimalDto>>(pagedData.Data)
+                : new List<AnimalDto>();
+
+            byte[] fileContent = _excelExporter.Export(items, "Animal Data");
+
+            var fileName = $"AnimalData_{DateTime.UtcNow:yyyyMMddHHmmss}.xlsx";
+
+            return File(
+                fileContent,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                fileName);
         }
 
         private static DataGridConfig<AnimalCostsItem> BuildAnimalCostsGridConfig(

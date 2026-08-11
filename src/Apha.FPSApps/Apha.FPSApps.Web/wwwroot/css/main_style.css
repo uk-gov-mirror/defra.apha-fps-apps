@@ -1740,12 +1740,147 @@ textarea {
         opacity: .15;
     }
 }
-.isCustomPageHeadings {
-    line-height: 57px;
+
+.isCustomSvg {
+    filter: brightness(0) saturate(100%) invert(26%) sepia(89%) saturate(1026%) hue-rotate(345deg) brightness(90%) contrast(102%);
 }
 
-.modal-content {
-    .govuk-label{
-        font-weight:bold;
+
+.isSubHeading {
+    color: #1d70b8;
+    border-bottom: 2px solid #1d70b8;
+    padding-bottom: 8px;
+    margin-bottom: 14px;
+    font-size: 1.6rem;
+    line-height: 1.2;
+}
+
+.excel-icon {
+    height: 45px;
+    width: 45px;
+}
+
+.isOverflowHidden {
+    overflow: hidden;
+}
+
+.tr-section-box {
+    position: relative;
+    border-radius: 6px;
+    background: #ffffff;
+    margin-bottom: 18px;
+    padding: 14px;
+    box-shadow: 0 2px 0 rgba(11, 12, 12, 0.08);
+}
+
+.tr-section-box--compact {
+    overflow: visible;
+    display: flow-root;
+    margin-top: -4px;
+}
+
+.tr-section-panel {
+    border: 1px solid #d8dbe0;
+    background: #f7f8fa;
+    border-radius: 4px;
+    padding: 12px;
+    overflow: visible;
+    display: flow-root;
+}
+
+    .tr-section-panel .govuk-heading-s {
+        border-bottom: 1px solid #d8dbe0;
+        padding-bottom: 6px;
+        margin-bottom: 12px;
+        font-size: 1.35rem;
+    }
+
+    .tr-section-panel .govuk-grid-column-one-full,
+    .tr-section-panel .govuk-grid-column-three-quarters {
+        border: 1px solid #d8dbe0;
+        border-radius: 4px;
+        padding: 12px;
+        background: #ffffff;
+    }
+
+    .tr-section-panel .govuk-button {
+        margin-top: 4px;
+        margin-bottom: 0;
+    }
+
+    .tr-section-panel .govuk-label {
+        font-weight: 600;
+    }
+
+    .tr-section-panel .govuk-label--l {
+        font-weight: 400;
+        font-size: 1rem;
+        line-height: 1.2;
+        margin-top: 4px;
+        color: #505a5f;
+    }
+
+#test-sale-capabilities-button {
+    display: block;
+    width: auto;
+    max-width: 240px;
+    margin: 4px auto 0;
+    padding: 8px 14px !important;
+    min-height: 36px;
+    color: #ffffff !important;
+    background-color: #00703c !important;
+    border: 2px solid transparent !important;
+    box-shadow: 0 2px 0 #002d18 !important;
+    text-align: center;
+    white-space: normal;
+    line-height: 1.2;
+}
+
+    #test-sale-capabilities-button:hover {
+        background-color: #005a30 !important;
+    }
+
+#select-project-dropdown {
+    position: relative;
+    z-index: 50;
+}
+
+    #select-project-dropdown .dropdown-panel {
+        position: absolute;
+        top: 72%;
+        left: 0;
+        right: auto;
+        width: 100%;
+        margin-top: 2px;
+        z-index: 2000;
+    }
+
+    #select-project-dropdown .period-dropdown__table tbody td {
+        font-weight: normal;
+    }
+
+.time-recordings-layout .resource-dropdown {
+    position: relative;
+    z-index: 40;
+    margin-bottom: 10px;
+}
+
+    .time-recordings-layout .resource-dropdown .dropdown-panel {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        margin-top: 2px;
+        z-index: 2500;
+    }
+
+@media (max-width: 960px) {
+    .tr-section-box {
+        padding: 10px;
+    }
+
+    .tr-section-panel {
+        margin-bottom: 10px;
+        padding: 10px;
     }
 }

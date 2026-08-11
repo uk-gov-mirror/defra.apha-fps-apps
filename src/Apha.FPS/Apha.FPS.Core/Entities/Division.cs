@@ -35,7 +35,6 @@ namespace Apha.FPS.Core.Entities
         /// <summary>
         /// Central overhead cost allocation amount.
         /// </summary>
-        [Column("centoverhead", TypeName = "money")]
         public decimal? CentOverhead { get; set; }
     }
 }

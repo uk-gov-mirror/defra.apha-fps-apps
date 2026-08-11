@@ -63,6 +63,8 @@ function addInvoice() {
         function (html) {
             $('#modaPopupBody').html(html);
             $('#modalPopup').addClass('show');
+            // Initialize form validation (unobtrusive + numeric)
+            initializeFormValidation('#invoiceForm');
         })
         .fail(function(xhr, status, error) {
             showAlertMessage('Error loading form: ' + error, AlertType.ERROR);
@@ -74,6 +76,8 @@ function editInvoice(btn) {
     $.get('/PACT/Invoice/GetInvoice', { id: id }, function (html) {
         $('#modaPopupBody').html(html);
         $('#modalPopup').addClass('show');
+        // Initialize form validation (unobtrusive + numeric)
+        initializeFormValidation('#invoiceForm');
     })
     .fail(function(xhr, status, error) {
         showAlertMessage('Error loading form: ' + error, AlertType.ERROR);
@@ -111,40 +115,19 @@ function saveInvoice() {
     }
     var data = form.serializeObject ? form.serializeObject() : Object.fromEntries(new FormData(form[0]));
 
-    ['Month', 'Amount', 'CostOfWork', 'Wip', 'ProfitLoss'].forEach(function (f) {
-        if (data[f] === '' || data[f] === undefined) data[f] = null;
+    // Convert empty strings to null for numeric fields, but parse valid numbers
+    ['Amount', 'CostOfWork', 'Wip', 'ProfitLoss'].forEach(function (f) {
+        if (data[f] === '' || data[f] === undefined) {
+            data[f] = null;
+        } else if (typeof data[f] === 'string') {
+            var parsed = parseFloat(data[f]);
+            data[f] = isNaN(parsed) ? null : parsed;
+        }
     });
 
-    // Validate money fields against PostgreSQL money limits
-    var moneyFields = ['Amount', 'CostOfWork', 'Wip', 'ProfitLoss'];
-    var maxMoney = 92233720368547758.07;
-
-    for (var i = 0; i < moneyFields.length; i++) {
-        var fieldName = moneyFields[i];
-        var fieldValue = data[fieldName];
-
-        if (fieldValue !== null && fieldValue !== undefined) {
-            var parsedValue = parseFloat(fieldValue);
-
-            if (isNaN(parsedValue)) {
-                showAlertMessage('The value you enter is not valid for this fields. The entered value is larger than the fieldsize permit.', AlertType.ERROR);
-                return;
-            }
-            if (parsedValue < 0 || parsedValue > maxMoney) {
-                showAlertMessage('The value you enter is not valid for this fields. The entered value is larger than the fieldsize permit.', AlertType.ERROR);
-                return;
-            }
-
-            // Check decimal places
-            var decimalPart = parsedValue.toString().split('.')[1];
-            if (decimalPart && decimalPart.length > 2) {
-                showAlertMessage(fieldName.replace(/([A-Z])/g, ' $1').trim() + ' must have at most 2 decimal places.', AlertType.INFO);
-                return;
-            }
-
-            // Ensure we send a proper decimal, not scientific notation
-            data[fieldName] = parsedValue;
-        }
+    // Parse Month as integer
+    if (data['Month'] === '' || data['Month'] === undefined) {
+        data['Month'] = null;
     }
 
     $.ajax({

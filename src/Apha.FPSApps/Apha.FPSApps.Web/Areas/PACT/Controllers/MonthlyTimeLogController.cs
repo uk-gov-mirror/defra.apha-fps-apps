@@ -134,11 +134,8 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
 
             if (!HasSearchCriteria(workGroup, timeCode, parentProject, pactStaffId, dateImported, month, userId, insertDelete))
             {
-                return Json(new
-                {
-                    success = false,
-                    message = "Please enter some criteria"
-                });
+                var emptyGridConfig = await BuildLogGrid(request, null, null, null, null, null, null, null, null);
+                return PartialView("_DataGrid", emptyGridConfig);
             }
 
             var gridConfig = await BuildLogGrid(request, workGroup, timeCode, parentProject, pactStaffId,

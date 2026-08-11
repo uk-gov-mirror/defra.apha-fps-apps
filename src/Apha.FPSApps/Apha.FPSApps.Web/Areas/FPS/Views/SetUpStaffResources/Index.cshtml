@@ -27,6 +27,8 @@
                         <select class="govuk-select ssr-resource-select"
                                 id="workGroupSelect"
                                 aria-label="Select a Work Group"
+                                asp-for="SelectedWorkgroup"
+                                asp-items="Model.WorkGroupList"
                                 onchange="LoadGradeByGroup()">
                             <option value="">-- Select a Work Group --</option>
                         </select>
@@ -39,7 +41,7 @@
             <div class="cc-container-fluid">
                 <div class="cc-layout-row">
 
-                    @await Html.PartialAsync("_SetUpStaffResourcesSideNav")
+                    @await Html.PartialAsync("_SetUpStaffResourcesSideNav", "SetUpStaffResources")
 
                     <div class="cc-content-column">
                         <div class="govuk-grid-row">
@@ -142,10 +144,47 @@
     <script>
         // Initialise the SetUpStaffResources module with server-side values.
         window.ssrConfig = {
-            currentCentre: '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(Model.SelectedResourceCentre))',
-            currentGrade:  '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(Model.SelectedGrade))',
-            ztCodeUrl:     '@Url.Action("Index", "PlanStaffZTCode", new { area = "FPS" })'
+            currentCentre:    '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(Model.SelectedResourceCentre))',
+            currentWorkGroup: '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(Model.SelectedWorkgroup))',
+            currentGrade:     '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(Model.SelectedGrade))',
+            ztCodeUrl:        '@Url.Action("Index", "PlanStaffZTCode", new { area = "FPS" })'
         };
+
+        // Initialise side nav state from server-selected values.
+        window.sideNavState = {
+            resourceCentre: '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(Model.SelectedResourceCentre))',
+            workGroup:      '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(Model.SelectedWorkgroup))',
+            fpsYear:        '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(ViewBag.FpsYear?.ToString() ?? string.Empty))'
+        };
+
+        // Keep sideNavState in sync when the user changes the Resource Centre dropdown.
+        (function() {
+            function attachDropdownListeners() {
+                const rcSelect = document.getElementById('resourceCentreSelect');
+                const wgSelect = document.getElementById('workGroupSelect');
+
+                if (rcSelect) {
+                    rcSelect.addEventListener('change', function () {
+                        window.sideNavState.resourceCentre = this.value;
+                        window.sideNavState.workGroup = '';
+                        sideNavUpdateLinks();
+                    });
+                }
+
+                if (wgSelect) {
+                    wgSelect.addEventListener('change', function () {
+                        window.sideNavState.workGroup = this.value;
+                        sideNavUpdateLinks();
+                    });
+                }
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', attachDropdownListeners);
+            } else {
+                attachDropdownListeners();
+            }
+        })();
     </script>
     <script src="~/js/fps_js/SetUpStaffResources.js"></script>
 }

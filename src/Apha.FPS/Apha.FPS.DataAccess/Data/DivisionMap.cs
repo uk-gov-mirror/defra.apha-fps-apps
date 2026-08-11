@@ -26,7 +26,7 @@ namespace Apha.FPS.DataAccess.Data
                 .HasColumnName("agencyid");
 
             entity.Property(e => e.CentOverhead)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasDefaultValue(0m)
                 .HasComment("Central overhead cost allocation.")
                 .HasColumnName("centoverhead");

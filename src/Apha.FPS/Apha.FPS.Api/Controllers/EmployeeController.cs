@@ -160,7 +160,7 @@ namespace Apha.FPS.Api.Controllers
         public async Task<IActionResult> GetWorkGroupStaffPaginatedAsync([FromQuery] PaginationReq<string> query, [FromQuery] string? workGroup = null)
         {
             var filter = _mapper.Map<QueryParameters<string>>(query);
-            var result = await _employeeService.GetWorkGroupStaffAsync(filter, workGroup);
+            var result = await _employeeService.GetPagedWorkGroupStaffAsync(filter, workGroup);
             return Ok(_mapper.Map<PaginationRes<PactStaffRes>>(result));
         }
 
@@ -171,6 +171,18 @@ namespace Apha.FPS.Api.Controllers
         public async Task<IActionResult> GetAllPactStaffAsync()
         {
             var result = await _employeeService.GetPactStaffAsync();
+            return Ok(_mapper.Map<List<PactStaffRes>>(result));
+        }
+
+        /// <summary>
+        /// Gets a list of PACT staff for a specific work group.
+        /// </summary>
+        /// <param name="workGroup">The work group to filter by.</param>
+        /// <returns>A list of PACT staff for the specified work group.</returns>
+        [HttpGet("PactWorkGroupStaff")]
+        public async Task<IActionResult> GetPactWorkGroupStaffAsync([FromQuery] string? workGroup)
+        {
+            var result = await _employeeService.GetPactWorkGroupStaffAsync(workGroup);
             return Ok(_mapper.Map<List<PactStaffRes>>(result));
         }
     }

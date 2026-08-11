@@ -15,13 +15,24 @@ namespace Apha.PACT.Application.UnitTests.Services.MonthlyTimeServiceTest
     {
         private readonly IMonthlyTimeRepository _mockRepository;
         private readonly IMapper _mockMapper;
+        private readonly ICalenderMonthRepository _mockCalenderMonthRepository;
+        private readonly IWorkGroupRepository _mockWorkGroupRepository;
+        private readonly ITimeCodeValidRepository _mockTimeCodeValidRepository;
         private readonly MonthlyTimeService _sut;
 
         public MonthlyTimeServiceTests()
         {
             _mockRepository = Substitute.For<IMonthlyTimeRepository>();
             _mockMapper = Substitute.For<IMapper>();
-            _sut = new MonthlyTimeService(_mockRepository, _mockMapper);
+            _mockCalenderMonthRepository = Substitute.For<ICalenderMonthRepository>();
+            _mockWorkGroupRepository = Substitute.For<IWorkGroupRepository>();
+            _mockTimeCodeValidRepository = Substitute.For<ITimeCodeValidRepository>();
+            _sut = new MonthlyTimeService(
+                _mockRepository,
+                _mockMapper,
+                _mockCalenderMonthRepository,
+                _mockWorkGroupRepository,
+                _mockTimeCodeValidRepository);
         }
 
         // ── helpers ────────────────────────────────────────────────────────────
@@ -491,6 +502,81 @@ namespace Apha.PACT.Application.UnitTests.Services.MonthlyTimeServiceTest
             // Assert
             await act.Should().ThrowAsync<InvalidOperationException>()
                 .WithMessage("Repository failure");
+        }
+
+        #endregion
+
+        #region Live and Staging Operations
+
+        [Fact]
+        public async Task SearchLiveAsync_WithFilters_MapsAndDelegatesToRepository()
+        {
+            var query = DefaultQuery();
+            var paginationParams = DefaultPaginationParameters();
+            var paged = new PagedData<MonthlyTimeStaff>([], new PaginationData());
+            var expected = new PaginatedResult<MonthlyTimeDto>([], new PaginationDto());
+
+            _mockMapper.Map<PaginationParameters<string>>(query).Returns(paginationParams);
+            _mockRepository.SearchLiveAsync(paginationParams, "WG1", "TC1", "S1", "PP1", 6).Returns(paged);
+            _mockMapper.Map<PaginatedResult<MonthlyTimeDto>>(paged).Returns(expected);
+
+            var result = await _sut.SearchLiveAsync(query, "WG1", "TC1", "S1", "PP1", 6);
+
+            result.Should().BeSameAs(expected);
+            await _mockRepository.Received(1).SearchLiveAsync(paginationParams, "WG1", "TC1", "S1", "PP1", 6);
+        }
+
+        [Fact]
+        public async Task GetLiveByKeyAsync_WhenEntityExists_ReturnsMappedDto()
+        {
+            var entity = new MonthlyTime { PactStaffId = "S1", TimeCode = "TC1", ParentProject = "PP1", Month = 6, WorkGroup = "WG1" };
+            var dto = new MonthlyTimeDto { PactStaffId = "S1", TimeCode = "TC1", ParentProject = "PP1", Month = 6, WorkGroup = "WG1" };
+
+            _mockRepository.GetLiveByKeyAsync("S1", "TC1", 6, "PP1").Returns(entity);
+            _mockMapper.Map<MonthlyTimeDto>(entity).Returns(dto);
+
+            var result = await _sut.GetLiveByKeyAsync("S1", "TC1", 6, "PP1");
+
+            result.Should().BeEquivalentTo(dto);
+        }
+
+        [Fact]
+        public async Task GetLiveByKeyAsync_WhenEntityMissing_ReturnsNull()
+        {
+            _mockRepository.GetLiveByKeyAsync("S1", "TC1", 6, "PP1").Returns((MonthlyTime?)null);
+
+            var result = await _sut.GetLiveByKeyAsync("S1", "TC1", 6, "PP1");
+
+            result.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task DeleteLiveAsync_DelegatesToRepository()
+        {
+            _mockRepository.DeleteLiveAsync("S1", "TC1", 6, "PP1").Returns(true);
+
+            var result = await _sut.DeleteLiveAsync("S1", "TC1", 6, "PP1");
+
+            result.Should().BeTrue();
+            await _mockRepository.Received(1).DeleteLiveAsync("S1", "TC1", 6, "PP1");
+        }
+
+        [Fact]
+        public async Task SearchStagingAsync_WithFilters_MapsAndDelegatesToRepository()
+        {
+            var query = DefaultQuery();
+            var paginationParams = DefaultPaginationParameters();
+            var paged = new PagedData<StagingMonthlyTime>([], new PaginationData());
+            var expected = new PaginatedResult<StagingMonthlyTimeDto>([], new PaginationDto());
+
+            _mockMapper.Map<PaginationParameters<string>>(query).Returns(paginationParams);
+            _mockRepository.SearchStagingAsync(paginationParams, "user1", false).Returns(paged);
+            _mockMapper.Map<PaginatedResult<StagingMonthlyTimeDto>>(paged).Returns(expected);
+
+            var result = await _sut.SearchStagingAsync(query, "user1", false);
+
+            result.Should().BeSameAs(expected);
+            await _mockRepository.Received(1).SearchStagingAsync(paginationParams, "user1", false);
         }
 
         #endregion

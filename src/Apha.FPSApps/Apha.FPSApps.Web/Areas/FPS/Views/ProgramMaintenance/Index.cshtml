@@ -79,7 +79,7 @@
                 ProgramName: form.find('[name="ProgramName"]').val(),
                 Directorate: form.find('[name="Directorate"]').val(),
                 // Parse to number so decimal? model binding succeeds
-                Target: rawTarget !== '' ? parseFloat(rawTarget) : null,
+                Target: rawTarget !== '' ? rawTarget : null,
                 Manager: form.find('[name="Manager"]').val()
             };
 

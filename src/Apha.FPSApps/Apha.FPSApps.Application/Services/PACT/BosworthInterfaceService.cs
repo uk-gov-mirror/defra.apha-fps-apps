@@ -20,6 +20,9 @@ namespace Apha.FPSApps.Application.Services.PACT
         public async Task<ApiResponseDto<List<TimeSaleProfitCentreDto>>> GetTimeSaleProfitCentreAsync(string profitCentre)
             => await _pactApiClient.PactBosworthInterface.GetTimeSaleProfitCentreAsync(profitCentre);
 
+        public async Task<ApiResponseDto<List<TimeSaleWorkGroupDto>>> GetTimeSaleWorkGroupAsync(string workGroup)
+            => await _pactApiClient.PactBosworthInterface.GetTimeSaleWorkGroupAsync(workGroup);
+
         public async Task<ApiResponseDto<List<TestSaleSellingWorkgroupDto>>> GetTestSaleSellingWorkgroupAsync(string workGroup)
             => await _pactApiClient.PactBosworthInterface.GetTestSaleSellingWorkgroupAsync(workGroup);
 

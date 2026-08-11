@@ -13,7 +13,7 @@ namespace Apha.FPS.DataAccess.Data
 
             builder.Property(e => e.WorkGroupName).HasColumnName("workgroup");
             builder.Property(e => e.Account).HasColumnName("account");
-            builder.Property(e => e.GenBid).HasColumnType("money").HasColumnName("genbid");
+            builder.Property(e => e.GenBid).HasPrecision(19, 4).HasColumnName("genbid");
             builder.Property(e => e.FpsYear).HasColumnName("fpsyear");
             builder.Property(e => e.UserId).HasColumnName("user_id");
             builder.Property(e => e.Dt2Username).HasColumnName("dt2username");

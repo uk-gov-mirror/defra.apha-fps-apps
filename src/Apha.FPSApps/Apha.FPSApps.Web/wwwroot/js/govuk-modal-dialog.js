@@ -348,6 +348,22 @@
         //document.getElementById("loader").style.display = "none";
     }
 
+    // Downloads a file from the given URL, showing the global loader until the
+    // download completes. Reusable for any Excel/PDF/CSV export endpoint.
+    window.downloadFile = function (url, fileName) {
+        showLoader();
+        return fetch(url)
+            .then(function (r) { return r.blob(); })
+            .then(function (blob) {
+                const link = document.createElement('a');
+                link.href = window.URL.createObjectURL(blob);
+                link.download = fileName || 'download';
+                link.click();
+                window.URL.revokeObjectURL(link.href);
+            })
+            .finally(hideLoader);
+    }
+
 
     window.showGovukYesNo = function (message) {
         pending = pending.then(function () {
@@ -356,6 +372,21 @@
                 message: message,
                 okText: "Yes",
                 cancelText: "No"
+            });
+        });
+
+        return pending.then(function (result) {
+            return result;
+        });
+    };
+
+    window.showGovukApproveReject = function (message) {
+        pending = pending.then(function () {
+            return openDialog({
+                type: "confirm",
+                message: message,
+                okText: "Approve",
+                cancelText: "Reject"
             });
         });
 

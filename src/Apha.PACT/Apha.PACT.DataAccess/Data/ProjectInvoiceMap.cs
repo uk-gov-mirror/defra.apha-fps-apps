@@ -19,17 +19,17 @@ namespace Apha.PACT.DataAccess.Data
                  .HasColumnName("invoicecounter");
             entity.Property(e => e.FpsYear).HasColumnName("fpsyear");
             entity.Property(e => e.Amount)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("amount");
             entity.Property(e => e.CostOfWork)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("costofwork");
             entity.Property(e => e.Detail)
                 .HasMaxLength(100)
                 .HasColumnName("detail");
             entity.Property(e => e.Month).HasColumnName("month");
             entity.Property(e => e.ProfitLoss)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("profitloss");
             entity.Property(e => e.ProjectParent)
                 .HasMaxLength(20)
@@ -38,7 +38,7 @@ namespace Apha.PACT.DataAccess.Data
                 .HasMaxLength(10)
                 .HasColumnName("type");
             entity.Property(e => e.Wip)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("wip");
             entity.Property(e => e.X)
                 .HasMaxLength(5)

@@ -1,0 +1,99 @@
+@model Apha.FPSApps.Web.Areas.PIMS.Models.PublicationTypeItem
+
+@{
+    var isAddingNew = ViewBag.IsAddingNew as bool? ?? string.IsNullOrEmpty(Model.Type);
+    var isEditMode = !isAddingNew;
+    var title = isEditMode ? "Edit Publication Type" : "Add Publication Type";
+    var saveLabel = isEditMode ? "Update" : "Save";
+}
+
+<div class="modal-header flex-space-center">
+    <h3 class="modal-title" style="margin: 0;">@title</h3>
+    <button type="button" class="btn-close btn-red" onclick="closeModal()">X</button>
+</div>
+<div class="modal-body" style="padding-top: 5px;">
+    <form class="row" id="formPublicationType" data-is-edit="@isEditMode.ToString().ToLowerInvariant()">
+    @Html.AntiForgeryToken()
+
+        <div class="govuk-error-summary ra-form-error-banner ra-hidden"
+             id="publicationTypeDbError" role="alert" aria-labelledby="publicationTypeDbErrorTitle" tabindex="-1">
+            <h2 class="govuk-error-summary__title govuk-!-font-size-14" id="publicationTypeDbErrorTitle">There is a problem</h2>
+            <div class="govuk-error-summary__body">
+                <ul class="govuk-list govuk-error-summary__list"></ul>
+                <p class="govuk-body govuk-!-font-size-14" id="publicationTypeDbErrorText"></p>
+            </div>
+        </div>
+
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-one-half">
+                <div class="govuk-form-group sup_margin_bottom_10" id="editPublicationTypeCodeGroup">
+                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="Type">
+                        Type : <span class="ra-required-star" aria-hidden="true">*</span>
+                    </label>
+                    @if (isEditMode)
+                    {
+                        <input class="govuk-input govuk-!-font-size-16"
+                               asp-for="Type"
+                               id="editPublicationTypeCode"
+                               type="text"
+                               maxlength="3"
+                               readonly
+                               aria-required="true"
+                               aria-label="Type"
+                               aria-describedby="editPublicationTypeCodeError" />
+                    }
+                    else
+                    {
+                        <input class="govuk-input govuk-!-font-size-16"
+                               asp-for="Type"
+                               id="editPublicationTypeCode"
+                               type="text"
+                               maxlength="3"
+                               required
+                               aria-required="true"
+                               aria-label="Type"
+                               aria-describedby="editPublicationTypeCodeError" />
+                    }
+                    <span asp-validation-for="Type"
+                    data-valmsg-for="Type"
+                    class="govuk-error-message"
+                    id="editPublicationTypeCodeError"
+                    style="display:none;"></span>
+                </div>
+            </div>
+
+            <div class="govuk-grid-column-one-half">
+                <div class="govuk-form-group sup_margin_bottom_10" id="editPublicationTypeDescGroup">
+                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="Description">
+                        Description:
+                    </label>
+                    <input class="govuk-input govuk-!-font-size-16"
+                           asp-for="Description"
+                           id="editPublicationTypeDesc"
+                           type="text"
+                           maxlength="50"
+                           aria-label="Description"
+                           aria-describedby="editPublicationTypeDescError" />
+                    <span asp-validation-for="Description"
+                    data-valmsg-for="Description"
+                    class="govuk-error-message"
+                    id="editPublicationTypeDescError"
+                    style="display:none;"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12" style="display: flex; justify-content: space-between; margin-top: 10px;">
+            <button type="button"
+                    class="govuk-button govuk-button--secondary sup_margin_0"
+                    onclick="closeModal()">
+                Cancel
+            </button>
+            <button type="button"
+                    class="govuk-button sup_margin_0"
+                    onclick="savePublicationType()">
+                @saveLabel
+            </button>
+        </div>
+    </form>
+</div>

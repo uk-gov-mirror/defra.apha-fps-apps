@@ -14,6 +14,7 @@ namespace Apha.FPS.Core.Interfaces
         Task<IEnumerable<Project>> GetAllProjectsForAllUsersAsync();
         Task<IEnumerable<PactProjectView>> GetAllPactProjectsAsync();
         Task<PagedData<Project>> GetPagedProjectsAsync(PaginationParameters<string> query);
+        Task<PagedData<Project>> GetPagedProjectSnapshotDataAsync(PaginationParameters<string> query);
         Task<PagedData<ProjectSpecificQueryItem>> GetPagedProjectSpecificQueryAsync(PaginationParameters<string> query);
         Task<PagedData<ProjectView>> GetPagedProjectsByUserAsync(PaginationParameters<string> query);
         Task<PagedData<PactProjectView>> GetPagedPactProjectsAsync(PaginationParameters<string> query);

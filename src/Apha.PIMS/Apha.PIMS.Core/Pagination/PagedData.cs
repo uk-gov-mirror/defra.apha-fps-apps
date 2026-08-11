@@ -1,5 +1,6 @@
 ﻿namespace Apha.PIMS.Core.Pagination
 {
+    
     public class PagedData<T>
     {
         public IReadOnlyCollection<T> Data { get; }       

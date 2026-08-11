@@ -1,0 +1,101 @@
+@model Apha.FPSApps.Web.Areas.PACT.Models.MonthlyTimeLiveItem
+
+@{
+    var monthOptions = ViewBag.MonthOptions as IEnumerable<SelectListItem> ?? new List<SelectListItem>();
+    var workGroups   = ViewBag.WorkGroups   as IEnumerable<SelectListItem> ?? new List<SelectListItem>();
+}
+
+<div class="modal-header flex-space-center">
+    <h3 class="modal-title m-0" id="liveModalTitle">Edit Monthly Time</h3>
+    <button type="button" class="btn-close btn-red" onclick="$('#modalPopup').removeClass('show')" aria-label="Close">X</button>
+</div>
+
+<div class="modal-body modal-body-custom" style="max-height: 500px;">
+    <form id="monthlyTimeLiveForm" class="govuk-grid-column-full" novalidate>
+        <input type="hidden" asp-for="CompositeKey" />
+
+        <div id="liveForm-db-error" class="govuk-error-summary sup_margin_0" role="alert"
+             aria-labelledby="liveForm-db-error-title" hidden>
+            <h2 class="govuk-error-summary__title" id="liveForm-db-error-title">There is a problem</h2>
+            <div class="govuk-error-summary__body">
+                <ul class="govuk-list govuk-error-summary__list"></ul>
+            </div>
+        </div>
+
+        <fieldset class="govuk-fieldset">
+            <legend class="govuk-visually-hidden">Monthly Time Record</legend>
+
+            @* <span class="app-mandatory-note sup_padding_top_10" aria-hidden="true">
+                <span class="app-required">*</span> Mandatory Fields
+            </span> *@
+
+            <div class="govuk-form-group sup_margin_bottom_10" id="fg-live-workgroup">
+                <div id="live-modal-workgroup-dropdown-container" class="modal-dropdown-container"></div>
+                <input type="hidden" asp-for="WorkGroup" id="LiveWorkGroup" name="WorkGroup" required />
+                <span data-valmsg-for="WorkGroup" class="govuk-error-message" style="display:none;"></span>
+            </div>
+
+            <div class="govuk-form-group sup_margin_bottom_10" id="fg-live-id">
+                <label for="LivePactStaffId" class="govuk-label govuk-!-font-weight-bold">Staff Pact ID</label>
+                <input type="text" class="govuk-input govuk-!-font-size-16" id="LivePactStaffId"
+                       asp-for="PactStaffId" placeholder="Select a name to populate"
+                       autocomplete="off" disabled />
+            </div>
+
+            <div class="govuk-form-group sup_margin_bottom_10" id="fg-live-name">
+                <label class="govuk-label govuk-!-font-weight-bold" asp-for="Name">
+                    Name <span class="app-required" aria-hidden="true">*</span>
+                </label>
+                <div id="live-modal-name-dropdown"></div>
+                <input type="hidden" asp-for="Name" id="LiveName" name="Name"
+                       aria-required="true" required />
+                <span data-valmsg-for="Name" class="govuk-error-message" style="display:none;"></span>
+            </div>
+
+            <div class="govuk-form-group sup_margin_bottom_10">
+                <label class="govuk-label govuk-!-font-weight-bold" asp-for="TimeCode">
+                    Time Code <span class="app-required" aria-hidden="true">*</span>
+                    </label>
+                <input class="govuk-input govuk-!-font-size-16" asp-for="TimeCode" disabled />
+            </div>
+
+            <div class="govuk-form-group sup_margin_bottom_10">
+                <label class="govuk-label govuk-!-font-weight-bold" asp-for="ParentProject">
+                    Parent Project <span class="app-required" aria-hidden="true">*</span>
+                    </label>
+                <input class="govuk-input govuk-!-font-size-16" asp-for="ParentProject" disabled />
+            </div>
+
+            <div class="modal-form-row">
+                <div class="govuk-form-group sup_margin_bottom_10 modal-form-col" id="fg-live-period">
+                    <label for="LiveMonth" class="govuk-label govuk-!-font-weight-bold">
+                        Period <span class="app-required" aria-hidden="true">*</span>
+                    </label>
+                    <select class="govuk-select govuk-!-font-size-16 sup_width_100" asp-for="Month"
+                            asp-items="@monthOptions" id="LiveMonth" name="Month"
+                            aria-required="true" required disabled>
+                        <option value="">--select--</option>
+                    </select>
+                    <span data-valmsg-for="Month" class="govuk-error-message" style="display:none;"></span>
+                </div>
+
+                <div class="govuk-form-group sup_margin_bottom_10 modal-form-col" id="fg-live-hours">
+                    <label for="LiveHours" class="govuk-label govuk-!-font-weight-bold">
+                        Hours <span class="app-required" aria-hidden="true">*</span>
+                    </label>
+                    <input type="text" class="govuk-input govuk-!-font-size-16 decfmt-input"
+                           asp-for="Hours" id="LiveHours" name="Hours" placeholder="Enter Hours"
+                           autocomplete="off" aria-required="true" required />
+                    <span asp-validation-for="Hours" class="govuk-error-message"></span>
+                </div>
+            </div>
+        </fieldset>
+    </form>
+</div>
+
+<div class="modal-footer modal-footer-custom">
+    <button type="button" class="govuk-button govuk-button--secondary sup_margin_0"
+            aria-label="Cancel" onclick="$('#modalPopup').removeClass('show')">Cancel</button>
+    <button type="button" class="govuk-button sup_margin_0"
+            aria-label="Save" onclick="saveMonthlyTimeLive()" allow-edit="true">Save</button>
+</div>

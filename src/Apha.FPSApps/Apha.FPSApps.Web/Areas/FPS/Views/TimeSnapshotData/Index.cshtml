@@ -1,0 +1,64 @@
+@using Apha.FPSApps.Web.Models.Components.DataGrid
+@model Apha.FPSApps.Web.Areas.FPS.Models.TimeSnapshotDataViewModel
+
+@{
+    ViewData["Title"] = "FPS : Snapshot Time";
+}
+
+<main class="govuk-main-wrapper govuk-!-padding-top-0 asu-main-content" id="main-content" role="main">
+    <div class="container-fluid">
+        @* ── Page title ──────────────────────────────────────────────────────── *@
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <h1 class="govuk-grid-row govuk-heading-s sup_border-bottom govuk-!-margin-top-2 govuk-!-padding-bottom-2 govuk-!-padding-left-4">
+                    SnapshotTime
+                </h1>
+            </div>
+        </div>
+        @* ── Sidenav layout (matches HTML prototype) ─ *@
+        <div class="govuk-grid-row">
+            <div class="cc-container-fluid">
+                <div class="cc-layout-row">
+                    @await Html.PartialAsync("_SnapshotSideNav")
+                    <div class="cc-content-column">
+                        <div class="govuk-grid-row">
+                            <div class="govuk-grid-column-full">
+
+                                @* ── DataGrid ──────────────────────────────────── *@
+                                <div class="govuk-grid-row sup_margin_left_right_10 sup_margin_bottom_10">
+                                    <div class="govuk-grid-column-full sup_p_0">
+                                        <div id="gridContainer_snapShotTimeDataGrid">
+                                            @await Html.PartialAsync("_DataGrid", Model.SnapShotTimeDataGrid)
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+@section Scripts {
+    <script>
+        function toggleSidebar() {
+            document.querySelector('.sidenav')?.classList.toggle('collapsed');
+        }
+
+        function reloadSnapShotTimeDataGrid() {
+            var gm = window['gridManager_snapShotTimeDataGrid'];
+            if (gm) {
+                gm.reloadGrid({ page: 1 });
+            }
+        }
+
+        $(document).ready(function () {
+            $(document).ajaxStart(showLoader).ajaxStop(hideLoader);
+            reloadSnapShotTimeDataGrid();
+        });
+    </script>
+}

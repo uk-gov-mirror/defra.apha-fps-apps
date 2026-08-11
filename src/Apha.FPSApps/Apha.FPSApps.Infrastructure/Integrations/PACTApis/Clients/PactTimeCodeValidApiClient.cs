@@ -32,6 +32,48 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PACTApis.Clients
             return ApiResponseDto<List<TimeCodeValidDto>>.FailureResponse(dto.Errors, dto.Meta);
         }
 
+        public async Task<ApiResponseDto<List<TimeCodeValidDto>>> GetTimeCodeValidsByWorkGroupAsync(string workGroup)
+        {
+            var response = await _http.GetAsync<List<TimeCodeValidRes>>(
+                string.Format(PactApiEndpoints.GetTimeCodesByWorkGroup, Uri.EscapeDataString(workGroup)));
+            if (response.Success)
+                return _mapper.Map<ApiResponseDto<List<TimeCodeValidDto>>>(response);
+
+            var dto = _mapper.Map<ApiResponseDto<List<TimeCodeValidDto>>>(response);
+            return ApiResponseDto<List<TimeCodeValidDto>>.FailureResponse(dto.Errors, dto.Meta);
+        }
+
+        public async Task<ApiResponseDto<List<string>>> GetTimeCodesProjectsByWorkGroupAndTimeCodeAsync(string workGroup, string timeCode)
+        {
+            var response = await _http.GetAsync<List<string>>(
+                string.Format(PactApiEndpoints.GetTimeCodesProjectsByWorkGroupAndTimeCode, Uri.EscapeDataString(workGroup), Uri.EscapeDataString(timeCode)));
+            if (response.Success)
+                return _mapper.Map<ApiResponseDto<List<string>>>(response);
+
+            var dto = _mapper.Map<ApiResponseDto<List<string>>>(response);
+            return ApiResponseDto<List<string>>.FailureResponse(dto.Errors, dto.Meta);
+        }
+
+        public async Task<ApiResponseDto<List<string>>> GetAllDistinctTimeCodesAsync()
+        {
+            var response = await _http.GetAsync<List<string>>(PactApiEndpoints.GetAllDistinctTimeCodes);
+            if (response.Success)
+                return _mapper.Map<ApiResponseDto<List<string>>>(response);
+
+            var dto = _mapper.Map<ApiResponseDto<List<string>>>(response);
+            return ApiResponseDto<List<string>>.FailureResponse(dto.Errors, dto.Meta);
+        }
+
+        public async Task<ApiResponseDto<List<string>>> GetAllDistinctProjectsAsync()
+        {
+            var response = await _http.GetAsync<List<string>>(PactApiEndpoints.GetAllDistinctProjects);
+            if (response.Success)
+                return _mapper.Map<ApiResponseDto<List<string>>>(response);
+
+            var dto = _mapper.Map<ApiResponseDto<List<string>>>(response);
+            return ApiResponseDto<List<string>>.FailureResponse(dto.Errors, dto.Meta);
+        }
+
         public async Task<ApiResponseDto<TimeCodeValidDto>> GetTimeCodeValidAsync(string workGroup, string timeCode, string parentProject)
         {
             var url = string.Format(PactApiEndpoints.GetTimeCodeValidById,

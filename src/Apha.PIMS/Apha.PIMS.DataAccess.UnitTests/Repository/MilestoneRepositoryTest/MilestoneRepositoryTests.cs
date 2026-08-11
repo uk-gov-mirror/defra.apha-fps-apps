@@ -980,7 +980,125 @@ namespace Apha.PIMS.DataAccess.UnitTests.Repository.MilestoneRepositoryTest
 
         #endregion
 
-        #region UpdateMilestoneFormDatesAsync — return value & side effects
+        #region UpdateMilestoneAsync_PMD - return value & side effects
+
+        [Fact]
+        public async Task UpdateMilestoneAsync_PMD_ReturnsEntity()
+        {
+            // Arrange
+            var milestone = new Milestone
+            {
+                Project = "PP001",
+                Number = "M1",
+                Description = "Original milestone",
+                DateDue = new DateTime(2024, 9, 1),
+                UnderSdReview = 0,
+                OnTarget = 1,
+                DateCompleted = null,
+                ProjectLeaderComment = ""
+            };
+
+            var (repo, _, _, _, _, _) = CreateRepositoryWithMocks(new[] { milestone });
+
+            var updatedDateTime = new DateTime(2024, 8, 15);
+            var newComment = "Updated via PMD";
+            const string changedBy = "testuser";
+
+            // Act
+            var result = await repo.UpdateMilestoneAsync_PMD("PP001", "M1", underReview: 1, onTarget: 0, dateCompleted: updatedDateTime, projectLeaderComment: newComment, changedBy: changedBy);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("PP001", result.Project);
+            Assert.Equal("M1", result.Number);
+            Assert.Equal((short?)1, result.UnderSdReview);
+            Assert.Equal((short?)0, result.OnTarget);
+            Assert.Equal(updatedDateTime, result.DateCompleted);
+            Assert.Equal(newComment, result.ProjectLeaderComment);
+            // Original description should remain unchanged
+            Assert.Equal("Original milestone", result.Description);
+        }
+
+        [Fact]
+        public async Task UpdateMilestoneAsync_PMD_UpdatesOnlySpecifiedFields()
+        {
+            // Arrange
+            var milestone = new Milestone
+            {
+                Project = "PP001",
+                Number = "M1",
+                Description = "Original milestone",
+                DateDue = new DateTime(2024, 9, 1),
+                UnderSdReview = 0,
+                OnTarget = 1,
+                DateCompleted = null,
+                ProjectLeaderComment = "Original comment"
+            };
+
+            var (repo, milestonesDbSet, _, mockContext, _, _) = CreateRepositoryWithMocks(new[] { milestone });
+
+            // Act
+            var result = await repo.UpdateMilestoneAsync_PMD("PP001", "M1", underReview: 0, onTarget: 1, dateCompleted: new DateTime(2024, 8, 15), projectLeaderComment: "Original comment", changedBy: "testuser");
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(new DateTime(2024, 8, 15), result.DateCompleted);
+            Assert.Equal((short?)0, result.UnderSdReview); // Should remain unchanged
+            Assert.Equal((short?)1, result.OnTarget); // Should remain unchanged
+            Assert.Equal("Original comment", result.ProjectLeaderComment); // Should remain unchanged
+        }
+
+        [Fact]
+        public async Task UpdateMilestoneAsync_PMD_CallsSaveChangesAsync()
+        {
+            // Arrange
+            var milestone = new Milestone { Project = "PP001", Number = "M1", DateDue = new DateTime(2024, 1, 1) };
+            var (repo, _, _, mockContext, _, _) = CreateRepositoryWithMocks(new[] { milestone });
+
+            // Act
+            await repo.UpdateMilestoneAsync_PMD("PP001", "M1", underReview: 1, onTarget: 0, dateCompleted: new DateTime(2024, 8, 15), projectLeaderComment: "Updated", changedBy: "testuser");
+
+            // Assert - called twice: once for the milestone, once for the log entry
+            RepositoryTestHelper.VerifySaveChanges(mockContext, times: 2);
+        }
+
+        [Fact]
+        public async Task UpdateMilestoneAsync_PMD_CreatesLogEntry()
+        {
+            // Arrange
+            var milestone = new Milestone 
+            { 
+                Project = "PP001", 
+                Number = "M1", 
+                DateDue = new DateTime(2024, 1, 1),
+                UnderSdReview = 0,
+                OnTarget = 0,
+                DateCompleted = null,
+                ProjectLeaderComment = ""
+            };
+            var (repo, _, _, _, logDbSet, _) = CreateRepositoryWithMocks(new[] { milestone });
+
+            // Act
+            await repo.UpdateMilestoneAsync_PMD("PP001", "M1", underReview: 1, onTarget: 0, dateCompleted: new DateTime(2024, 8, 15), projectLeaderComment: "Updated", changedBy: "testuser");
+
+            // Assert
+            logDbSet.Verify(x => x.Add(It.IsAny<LogMilestone>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdateMilestoneAsync_PMD_ThrowsWhenMilestoneNotFound()
+        {
+            // Arrange
+            var (repo, _, _, _, _, _) = CreateRepositoryWithMocks(); // No milestones
+
+            // Act & Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(() => 
+                repo.UpdateMilestoneAsync_PMD("NONEXISTENT", "M999", underReview: 1, onTarget: 0, dateCompleted: new DateTime(2024, 8, 15), projectLeaderComment: "Updated", changedBy: "testuser"));
+        }
+
+        #endregion
+
+        #region UpdateMilestoneFormDatesAsync - return value & side effects
 
         [Fact]
         public async Task UpdateMilestoneFormDatesAsync_ReturnsEntity()

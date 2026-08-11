@@ -1,4 +1,5 @@
 ﻿using Apha.FPSApps.Web.Models.Components.DataGrid;
+using Apha.FPSApps.Web.Validation;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel.DataAnnotations;
 
@@ -48,6 +49,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Models
         [DataType(DataType.Currency)]
         [DisplayFormat(DataFormatString = "{0:C}", ApplyFormatInEditMode = false)]
         [GridColumn(Width = 104, Type = GridColumnType.GbpValue)]
+        [CurrencyRange]
         public decimal StaffCost { get; set; }
 
         [GridColumn(IsVisible = false)]

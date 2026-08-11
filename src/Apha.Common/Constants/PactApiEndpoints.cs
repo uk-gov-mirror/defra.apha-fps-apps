@@ -16,7 +16,11 @@ namespace Apha.Common.Constants
 
         // Time Code Valid
         public const string GetTimeCodesByJobCode = "api/v1/timecodevalid/jobcode?jobCode={0}&parentProject={1}";
-        public const string GetTimeCodeValidById = "api/v1/timecodevalid/wgtimecodeprojectcode/?workGroup={0}&timeCode={1}&parentProject={2}";
+        public const string GetTimeCodeValidById = "api/v1/timecodevalid/wgtimecodeprojectcode/?workGroup={0}&timeCode={1}&parentProject={2}";        
+        public const string GetTimeCodesByWorkGroup = "api/v1/timecodevalid/workgroup?workGroup={0}";
+        public const string GetTimeCodesProjectsByWorkGroupAndTimeCode = "api/v1/timecodevalid/projects?workgroup={0}&timecode={1}";
+        public const string GetAllDistinctTimeCodes = "api/v1/timecodevalid/timecodes/all";
+        public const string GetAllDistinctProjects = "api/v1/timecodevalid/projects/all";        
         public const string GetPagedTimeCodes = "api/v1/timecodevalid/paged";
         public const string GetPagedTimeCodesByJobCode = "api/v1/timecodevalid/paged?jobCode={0}";
         public const string GetPagedTimeCodesByProject = "api/v1/timecodevalid/paged?parentProject={0}";
@@ -62,6 +66,7 @@ namespace Apha.Common.Constants
 
         // Test List
         public const string GetPagedTestOrProducts = "api/v1/testorproduct/paged";
+        public const string GetTestSnapshotPaged = "api/v1/testorproduct/test-snapshot/paged";
         public const string GetTestOrProductById = "api/v1/testorproduct/itemCode?itemCode={0}";
         public const string CreateTestOrProduct = "api/v1/testorproduct";
         public const string UpdateTestOrProduct = "api/v1/testorproduct/itemCode?itemCode={0}";
@@ -137,6 +142,7 @@ namespace Apha.Common.Constants
         public const string GetPagedBySupplierTestCode = "api/v1/testrequirement/supplier/paged?testCode={0}";
         public const string GetPagedTestReqmtbyProject = "api/v1/testrequirement/pagedbyproject?parentProject={0}";
         public const string GetAllTestReqmtForExport = "api/v1/testrequirement/export?testCode={0}";
+        public const string GetAllTestReqmtActive = "api/v1/testrequirement/active";
         public const string GetTestReqmtById = "api/v1/testrequirement/testcodebuyer?testCode={0}&buyer={1}";
         public const string CreateTestReqmt = "api/v1/testrequirement";
         public const string UpdateTestReqmt = "api/v1/testrequirement";
@@ -160,6 +166,39 @@ namespace Apha.Common.Constants
         // Monthly Output Log
         public const string SearchMonthlyOutputLog = "api/v1/monthlyoutput/log/search";
 
+        // Monthly Output
+        public const string GetPagedMonthlyOutputLive = "api/v1/monthlyoutput/live";
+        public const string GetMonthlyOutputLiveByKey = "api/v1/monthlyoutput/live/key?testCode={0}&buyer={1}&month={2}&workGroup={3}";
+        public const string UpdateMonthlyOutputLive = "api/v1/monthlyoutput/live";
+        public const string DeleteMonthlyOutputLive = "api/v1/monthlyoutput/live?testCode={0}&buyer={1}&month={2}&workGroup={3}";
+        public const string GetPagedStagingMonthlyOutput = "api/v1/monthlyoutput/staging";
+        public const string GetStagingMonthlyOutputById = "api/v1/monthlyoutput/staging/{0}";
+        public const string CreateStagingMonthlyOutput = "api/v1/monthlyoutput/staging";
+        public const string UpdateStagingMonthlyOutput = "api/v1/monthlyoutput/staging/{0}";
+        public const string DeleteStagingMonthlyOutput = "api/v1/monthlyoutput/staging/{0}";
+        public const string DeleteAllStagingMonthlyOutputByUser = "api/v1/monthlyoutput/staging/user";
+        public const string DeleteFailedStagingMonthlyOutputByUser = "api/v1/monthlyoutput/staging/user/failed";
+        public const string ImportStagingMonthlyOutput = "api/v1/monthlyoutput/staging/import";
+        public const string ValidateStagingMonthlyOutput = "api/v1/monthlyoutput/staging/validate";
+        public const string MakeLiveMonthlyOutput = "api/v1/monthlyoutput/staging/makelive";
+
+        // Monthly Time
+        public const string GetPagedMonthlyTimeLive = "api/v1/monthlytime/live";
+        public const string GetMonthlyTimeLiveByKey = "api/v1/monthlytime/live/key?pactStaffId={0}&timeCode={1}&month={2}&parentProject={3}";
+        public const string UpdateMonthlyTimeLive = "api/v1/monthlytime/live";
+        public const string DeleteMonthlyTimeLive = "api/v1/monthlytime/live?pactStaffId={0}&timeCode={1}&month={2}&parentProject={3}";
+        public const string GetPagedStagingMonthlyTime = "api/v1/monthlytime/staging";
+        public const string GetStagingMonthlyTimeById = "api/v1/monthlytime/staging/{0}";
+        public const string CreateStagingMonthlyTime = "api/v1/monthlytime/staging";
+        public const string UpdateStagingMonthlyTime = "api/v1/monthlytime/staging/{0}";
+        public const string BulkUpdateStagingMonthlyTimeNames = "api/v1/monthlytime/staging/bulk-name-update";
+        public const string DeleteStagingMonthlyTime = "api/v1/monthlytime/staging/{0}";
+        public const string DeleteAllStagingMonthlyTimeByUser = "api/v1/monthlytime/staging/user";
+        public const string DeleteFailedStagingMonthlyTimeByUser = "api/v1/monthlytime/staging/user/failed";
+        public const string ImportStagingMonthlyTime = "api/v1/monthlytime/staging/import";
+        public const string ValidateStagingMonthlyTime = "api/v1/monthlytime/staging/validate";
+        public const string MakeLiveMonthlyTime = "api/v1/monthlytime/staging/makelive";
+
         // Monthly Time Log (MT_LOG)
         public const string SearchMonthlyTimeLog = "api/v1/monthlytime/log/search";
 
@@ -169,6 +208,7 @@ namespace Apha.Common.Constants
         // Bosworth Interface
         public const string GetTimePurchaseProject = "api/v1/bosworth-interface/time-purchase-project";
         public const string GetTimeSaleProfitCentre = "api/v1/bosworth-interface/time-sale-profit-centre";
+        public const string GetTimeSaleWorkGroup = "api/v1/bosworth-interface/time-sale-workgroup";
         public const string GetTestSaleSellingWorkgroup = "api/v1/bosworth-interface/test-sale-selling-workgroup";
         public const string GetTestSaleBuyingProject = "api/v1/bosworth-interface/test-sale-buying-project";
     }

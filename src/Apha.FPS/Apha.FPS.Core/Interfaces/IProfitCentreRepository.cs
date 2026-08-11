@@ -18,5 +18,7 @@ namespace Apha.FPS.Core.Interfaces
         Task<bool> UpdateProfitCentreSettingsAsync(string profitCentre, int timesheet, int outputsheet, short timesheetlayout);
         Task<PagedData<ProfitCentreCostSummary>> GetPagedProfitCenterCostSummaryAsync(
             PaginationParameters<string> parameters, double monthNumber);
+        Task<PagedData<WgStaffPlanView>> GetPagedWgStaffPlanAsync(
+            PaginationParameters<string> query, string workGroup);
     }
 }

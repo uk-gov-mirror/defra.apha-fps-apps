@@ -66,6 +66,21 @@ namespace Apha.FPSApps.Infrastructure.Integrations.FPSApis.Clients
             }
         }
 
+        public async Task<ApiResponseDto<List<ProgramPlanCostViewDto>>> GetProgramTimeSnapshotAsync(QueryParameters<string> query)
+        {
+            var url = QueryStringHelper.AddQueryString(FpsApiEndpoints.GetProgramTimeSnapshot, query);
+            var response = await _http.GetAsync<List<ProgramPlanCostViewDto>>(url);
+            if (response.Success)
+            {
+                return _mapper.Map<ApiResponseDto<List<ProgramPlanCostViewDto>>>(response);
+            }
+            else
+            {
+                var responseDto = _mapper.Map<ApiResponseDto<List<ProgramPlanCostViewDto>>>(response);
+                return ApiResponseDto<List<ProgramPlanCostViewDto>>.FailureResponse(responseDto.Errors, responseDto.Meta);
+            }
+        }
+
         public async Task<ApiResponseDto<ProgramDto?>> GetProgramByIdAsync(string programNo)
         {
             var response = await _http.GetAsync<ProgramDto>(string.Format(FpsApiEndpoints.GetProgramById, programNo));

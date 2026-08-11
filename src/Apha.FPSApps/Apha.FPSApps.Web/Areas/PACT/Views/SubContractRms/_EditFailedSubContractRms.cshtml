@@ -55,7 +55,7 @@
                     <label for="txtmodal-amount-failed" class="govuk-label govuk-!-font-weight-bold">Amount:<span class="sup_color_red">*</span></label>
                     <div class="govuk-input__wrapper">
                         <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                        <input type="text" class="govuk-input govuk-!-font-size-16"
+                        <input type="text" class="govuk-input govuk-!-font-size-16 decfmt-input"
                                id="txtmodal-amount-failed" asp-for="Amount" placeholder="0.00" required>
                     </div>
                     <span asp-validation-for="Amount" class="govuk-error-message"></span>
@@ -100,8 +100,8 @@
             <div class="govuk-grid-column-one-half">
                 <div class="govuk-form-group sup_margin_bottom_10">
                     <label for="txtmodal-suppliernumber-failed" class="govuk-label govuk-!-font-weight-bold">Supplier Number:</label>
-                    <input type="text" class="govuk-input govuk-!-font-size-16"
-                           id="txtmodal-suppliernumber-failed" asp-for="SupplierNumber" placeholder="Enter supplier number">
+                    <input type="text" class="govuk-input govuk-!-font-size-16 decfmt-input"
+                          maxlength="9" id="txtmodal-suppliernumber-failed" asp-for="SupplierNumber" placeholder="Enter supplier number">
                     <span asp-validation-for="SupplierNumber" class="govuk-error-message"></span>
                 </div>
             </div>
@@ -112,7 +112,7 @@
                     <label for="txtmodal-dailyrate-failed" class="govuk-label govuk-!-font-weight-bold">Daily Rate:</label>
                     <div class="govuk-input__wrapper">
                         <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                        <input type="text" class="govuk-input govuk-!-font-size-16"
+                        <input type="text" class="govuk-input govuk-!-font-size-16 decfmt-input"
                                id="txtmodal-dailyrate-failed" asp-for="DailyRate" placeholder="0.00">
                     </div>
                     <span asp-validation-for="DailyRate" class="govuk-error-message"></span>
@@ -121,8 +121,8 @@
             <div class="govuk-grid-column-one-half">
                 <div class="govuk-form-group sup_margin_bottom_10">
                     <label for="txtmodal-animaldays-failed" class="govuk-label govuk-!-font-weight-bold">Animal Days:</label>
-                    <input type="text" class="govuk-input govuk-!-font-size-16"
-                           id="txtmodal-animaldays-failed" asp-for="AnimalDays" placeholder="Enter animal days">
+                    <input type="text" class="govuk-input govuk-!-font-size-16 decfmt-input"
+                        maxlength="9"   id="txtmodal-animaldays-failed" asp-for="AnimalDays" placeholder="e.g., 10.5">
                     <span asp-validation-for="AnimalDays" class="govuk-error-message"></span>
                 </div>
             </div>

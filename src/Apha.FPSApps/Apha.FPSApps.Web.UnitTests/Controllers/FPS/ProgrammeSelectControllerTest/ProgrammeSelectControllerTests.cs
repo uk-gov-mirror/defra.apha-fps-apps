@@ -326,16 +326,22 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.FPS.ProgrammeSelectControllerTe
         }
 
         [Fact]
-        public async Task LoadProjectsGrid_WithEmptyProgramNo_ReturnsBadRequest()
+        public async Task LoadProjectsGrid_WithEmptyProgramNo_ReturnsEmptyGrid()
         {
             // Arrange
             var request = new PaginationFilter<string>();
+            var queryParameters = new QueryParameters<string>();
+            _mapper.Map<QueryParameters<string>>(request).Returns(queryParameters);
 
             // Act
             var result = await _controller.LoadProjectsGrid(request, string.Empty);
 
             // Assert
-            Assert.IsType<BadRequestObjectResult>(result);
+            var partialView = Assert.IsType<PartialViewResult>(result);
+            var grid = Assert.IsType<DataGridConfig<ProgrammeSelectProjectItem>>(partialView.Model);
+            Assert.Empty(grid.Data);
+            await _projectService.DidNotReceive().GetProjectsByProgramAsync(
+                Arg.Any<QueryParameters<string>>(), Arg.Any<string>());
         }
 
         [Fact]

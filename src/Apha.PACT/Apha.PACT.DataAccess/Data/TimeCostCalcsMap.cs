@@ -6,8 +6,6 @@ namespace Apha.PACT.DataAccess.Data
 {
     public class TimeCostCalcsMap : IEntityTypeConfiguration<TimeCostCalcs>
     {
-        private const string MoneyColumnType = "money";
-
         public void Configure(EntityTypeBuilder<TimeCostCalcs> entity)
         {
             entity.HasKey(e => new { e.WorkGroup, e.JobCode, e.Project, e.Month, e.StaffId, e.FpsYear }).HasName("pk_timecostcalcs");
@@ -35,7 +33,7 @@ namespace Apha.PACT.DataAccess.Data
                 .HasMaxLength(50)
                 .HasColumnName("name");
             entity.Property(e => e.ChargeRate)
-                .HasColumnType(MoneyColumnType)
+                .HasPrecision(19, 4)
                 .HasColumnName("chargerate");
             entity.Property(e => e.Class)
                 .HasMaxLength(255)
@@ -49,13 +47,13 @@ namespace Apha.PACT.DataAccess.Data
                 .HasMaxLength(14)
                 .HasColumnName("jobcodeold");
             entity.Property(e => e.Pay)
-                .HasColumnType(MoneyColumnType)
+                .HasPrecision(19, 4)
                 .HasColumnName("pay");
             entity.Property(e => e.NonPay)
-                .HasColumnType(MoneyColumnType)
+                .HasPrecision(19, 4)
                 .HasColumnName("nonpay");
             entity.Property(e => e.Overhead)
-                .HasColumnType(MoneyColumnType)
+                .HasPrecision(19, 4)
                 .HasColumnName("overhead");
         }
     }

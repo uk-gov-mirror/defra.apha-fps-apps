@@ -210,7 +210,7 @@
                                     <div class="govuk-input__wrapper">
                                     <div class="govuk-input__prefix" aria-hidden="true">£</div>
                                     <input class="govuk-input govuk-!-font-size-16" asp-for="Project.BudgetCvl"
-                                           type="number" step="0.01" max="92233720368547758.07" readonly/>
+                                           type="number" readonly/>
                                            </div>
                                     <span asp-validation-for="Project.BudgetCvl" class="govuk-error-message"></span>
                                 </div>
@@ -218,8 +218,8 @@
                                     <label class="govuk-label govuk-!-font-weight-bold" asp-for="Project.TransferIncome">Transfer Inc</label>
                                     <div class="govuk-input__wrapper">
                                     <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                                    <input class="govuk-input govuk-!-font-size-16" asp-for="Project.TransferIncome"
-                                           type="number" step="0.01" min="0" max="92233720368547758.07"  onkeydown="if(['e', 'E', '+', '-'].includes(event.key)) event.preventDefault();" />
+                                    <input  class="govuk-input govuk-!-font-size-16 decfmt-input" asp-for="Project.TransferIncome"
+                                        type="text"/>
                                            </div>
                                     <span asp-validation-for="Project.TransferIncome" class="govuk-error-message"></span>
                                 </div>
@@ -227,8 +227,8 @@
                                     <label class="govuk-label govuk-!-font-weight-bold" asp-for="Project.BudgetExt">Budget-Ext</label>
                                     <div class="govuk-input__wrapper">
                                         <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                                    <input class="govuk-input govuk-!-font-size-16" asp-for="Project.BudgetExt"
-                                           type="number" step="0.01" min="0" max="92233720368547758.07"  onkeydown="if(['e', 'E', '+', '-'].includes(event.key)) event.preventDefault();"/>
+                                        <input   class="govuk-input govuk-!-font-size-16 decfmt-input" asp-for="Project.BudgetExt"
+                                               type="text" />
                                            </div>
                                     <span asp-validation-for="Project.BudgetExt" class="govuk-error-message"></span>
                                 </div>
@@ -236,8 +236,8 @@
                                     <label class="govuk-label govuk-!-font-weight-bold" asp-for="Project.PvsIncome">PVS Inc</label>
                                     <div class="govuk-input__wrapper">
                                         <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                                    <input class="govuk-input govuk-!-font-size-16" asp-for="Project.PvsIncome"
-                                           type="number" step="0.01" min="0" max="92233720368547758.07"  onkeydown="if(['e', 'E', '+', '-'].includes(event.key)) event.preventDefault();" />
+                                        <input  class="govuk-input govuk-!-font-size-16 decfmt-input" asp-for="Project.PvsIncome"
+                                               type="text" />
                                            </div>
                                     <span asp-validation-for="Project.PvsIncome" class="govuk-error-message"></span>
                                 </div>
@@ -249,9 +249,9 @@
                                     <label class="govuk-label govuk-!-font-weight-bold" asp-for="Project.WipEoy">WIP-EOY</label>
                                     <div class="govuk-input__wrapper">
                                         <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                                    <input class="govuk-input govuk-!-font-size-16" asp-for="Project.WipEoy"
-                                           type="number" step="0.01" min="0" max="92233720368547758.07"  onkeydown="if(['e', 'E', '+', '-'].includes(event.key)) event.preventDefault();" />
-                                     </div>
+                                        <input  class="govuk-input govuk-!-font-size-16 decfmt-input" asp-for="Project.WipEoy"
+                                               type="text" />
+                                      </div>
                                     <span asp-validation-for="Project.WipEoy" class="govuk-error-message"></span>
                                 </div>
                                 <!-- WIP-Limit + WIP_Cur side by side -->
@@ -260,8 +260,8 @@
                                         <label class="govuk-label govuk-!-font-weight-bold" asp-for="Project.WipLimit">WIP-Limit</label>
                                         <div class="govuk-input__wrapper">
                                             <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                                        <input class="govuk-input govuk-!-font-size-16" asp-for="Project.WipLimit"
-                                               type="number" step="0.01" min="0" max="92233720368547758.07"  onkeydown="if(['e', 'E', '+', '-'].includes(event.key)) event.preventDefault();"/>
+                                            <input  class="govuk-input govuk-!-font-size-16 decfmt-input" asp-for="Project.WipLimit"
+                                                   type="text" />
                                                </div>
                                         <span asp-validation-for="Project.WipLimit" class="govuk-error-message"></span>
                                     </div>
@@ -269,8 +269,8 @@
                                         <label class="govuk-label govuk-!-font-weight-bold" asp-for="Project.WipCurrent">WIP_Cur</label>
                                         <div class="govuk-input__wrapper">
                                     <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                                        <input class="govuk-input govuk-!-font-size-16" asp-for="Project.WipCurrent"
-                                               type="number" step="0.01" min="0" max="92233720368547758.07"  onkeydown="if(['e', 'E', '+', '-'].includes(event.key)) event.preventDefault();" />
+                                            <input  class="govuk-input govuk-!-font-size-16 decfmt-input" asp-for="Project.WipCurrent"
+                                                   type="text" />
                                                </div>
                                         <span asp-validation-for="Project.WipCurrent" class="govuk-error-message"></span>
                                     </div>
@@ -283,8 +283,8 @@
                                             <label class="govuk-label govuk-!-font-weight-bold" asp-for="Project.FecCost">Forecast</label>
                                             <div class="govuk-input__wrapper">
                                                 <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                                            <input class="govuk-input govuk-!-font-size-16" asp-for="Project.FecCost"
-                                                   type="number" step="0.01" min="0" max="92233720368547758.07"  onkeydown="if(['e', 'E', '+', '-'].includes(event.key)) event.preventDefault();"/>
+                                                <input  class="govuk-input govuk-!-font-size-16 decfmt-input" asp-for="Project.FecCost"
+                                                       type="text" />
                                                    </div>
                                             <span asp-validation-for="Project.FecCost" class="govuk-error-message"></span>
                                         </div>

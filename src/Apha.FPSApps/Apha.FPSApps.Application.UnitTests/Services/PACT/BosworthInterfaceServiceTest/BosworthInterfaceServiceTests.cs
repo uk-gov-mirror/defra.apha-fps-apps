@@ -106,6 +106,49 @@ namespace Apha.FPSApps.Application.UnitTests.Services.PACT.BosworthInterfaceServ
 
         #endregion
 
+        #region GetTimeSaleWorkGroupAsync
+
+        [Fact]
+        public async Task GetTimeSaleWorkGroupAsync_DelegatesToApiClient_ReturnsResult()
+        {
+            var expected = ApiResponseDto<List<TimeSaleWorkGroupDto>>.SuccessResponse(
+                [new TimeSaleWorkGroupDto { SellingWg = "WG1", Project = "P1" }]);
+            _apiClient.GetTimeSaleWorkGroupAsync("WG1").Returns(expected);
+
+            var result = await _service.GetTimeSaleWorkGroupAsync("WG1");
+
+            Assert.Equal(expected, result);
+            await _apiClient.Received(1).GetTimeSaleWorkGroupAsync("WG1");
+        }
+
+        [Fact]
+        public async Task GetTimeSaleWorkGroupAsync_WhenApiReturnsFailure_ReturnsFailure()
+        {
+            var expected = ApiResponseDto<List<TimeSaleWorkGroupDto>>.FailureResponse(
+                [new ApiErrorDto { Code = "ERR", Message = "Error" }], new ApiMetaDto());
+            _apiClient.GetTimeSaleWorkGroupAsync("WG1").Returns(expected);
+
+            var result = await _service.GetTimeSaleWorkGroupAsync("WG1");
+
+            Assert.False(result.Success);
+            Assert.Equal(expected, result);
+        }
+
+        [Fact]
+        public async Task GetTimeSaleWorkGroupAsync_WhenApiReturnsEmptyList_ReturnsEmptyList()
+        {
+            var expected = ApiResponseDto<List<TimeSaleWorkGroupDto>>.SuccessResponse([]);
+            _apiClient.GetTimeSaleWorkGroupAsync("WG1").Returns(expected);
+
+            var result = await _service.GetTimeSaleWorkGroupAsync("WG1");
+
+            Assert.True(result.Success);
+            Assert.NotNull(result.Data);
+            Assert.Empty(result.Data);
+        }
+
+        #endregion
+
         #region GetTestSaleSellingWorkgroupAsync
 
         [Fact]

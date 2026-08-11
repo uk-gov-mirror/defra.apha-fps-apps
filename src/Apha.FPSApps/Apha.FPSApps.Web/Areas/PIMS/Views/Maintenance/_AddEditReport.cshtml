@@ -1,0 +1,201 @@
+@model Apha.FPSApps.Web.Areas.PIMS.Models.ReportItem
+
+@{
+    var isEditMode = Model.Id != 0;
+    var title = isEditMode ? "Edit Report" : "Add Report";
+    var saveLabel = isEditMode ? "Update" : "Save";
+}
+
+<div class="modal-header flex-space-center">
+    <h3 class="modal-title" style="margin: 0;">@title</h3>
+    <button type="button" class="btn-close btn-red" onclick="closeModal()">X</button>
+</div>
+<div class="modal-body" style="padding-top: 5px;">
+    <form class="row" id="formReport">
+        @Html.AntiForgeryToken()
+
+        <input type="hidden" asp-for="Id" id="hdnReportId" />
+        <input type="hidden" id="hdnReportIsEdit" value="@isEditMode.ToString().ToLower()" />
+
+        <input type="hidden" asp-for="Type" />
+        <input type="hidden" asp-for="Filter" />
+        <input type="hidden" asp-for="AllowPickProgramme" />
+        <input type="hidden" asp-for="AllowPickProject" />
+        <input type="hidden" asp-for="AllowPickManager" />
+        <input type="hidden" asp-for="AllowPickContract" />
+        <input type="hidden" asp-for="AllowPickCustomer" />
+        <input type="hidden" asp-for="AllowPickMonth" />
+        <input type="hidden" asp-for="AllowPickFYear" />
+        <input asp-for="Type" type="hidden" />
+
+
+        <div class="govuk-error-summary ra-form-error-banner ra-hidden"
+             id="reportDbError" role="alert" aria-labelledby="reportDbErrorTitle" tabindex="-1">
+            <h2 class="govuk-error-summary__title govuk-!-font-size-14" id="reportDbErrorTitle">There is a problem</h2>
+            <div class="govuk-error-summary__body">
+                <ul class="govuk-list govuk-error-summary__list"></ul>
+                <p class="govuk-body govuk-!-font-size-14" id="reportDbErrorText"></p>
+            </div>
+        </div>
+
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-one-half">
+                <div class="govuk-form-group sup_margin_bottom_10" id="editNameGroup">
+                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="ReportName">
+                        Name: <span class="ra-required-star" aria-hidden="true">*</span>
+                    </label>
+                    <input class="govuk-input govuk-!-font-size-16"
+                           asp-for="ReportName"
+                           id="editName"
+                           type="text"
+                           required
+                           aria-required="true"
+                           aria-label="Name"
+                           aria-describedby="editNameError" />
+                    <span asp-validation-for="ReportName"
+                    data-valmsg-for="ReportName"
+                    class="govuk-error-message"
+                    id="editNameError"
+                    style="display:none;"></span>
+                </div>
+            </div>
+
+            <div class="govuk-grid-column-one-half">
+                <div class="govuk-form-group sup_margin_bottom_10" id="editDescriptionGroup">
+                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="ReportDescription">
+                        Description: <span class="ra-required-star" aria-hidden="true">*</span>
+                    </label>
+                    <input class="govuk-input govuk-!-font-size-16"
+                           asp-for="ReportDescription"
+                           id="editDescription"
+                           type="text"
+                           required
+                           aria-required="true"
+                           aria-label="Description"
+                           aria-describedby="editDescriptionError" />
+                    <span asp-validation-for="ReportDescription"
+                    data-valmsg-for="ReportDescription"
+                    class="govuk-error-message"
+                    id="editDescriptionError"
+                    style="display:none;"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <div class="govuk-form-group sup_margin_bottom_10" id="editReportHelpGroup">
+                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="ReportHelp">
+                        Report Help: <span class="ra-required-star" aria-hidden="true">*</span>
+                    </label>
+                    <textarea class="govuk-textarea govuk-!-font-size-16 sup_margin_0"
+                              asp-for="ReportHelp"
+                              id="editReportHelp"
+                              rows="3"
+                              required
+                              aria-required="true"
+                              aria-label="Report Help"
+                              aria-describedby="editReportHelpError"></textarea>
+                    <span asp-validation-for="ReportHelp"
+                    data-valmsg-for="ReportHelp"
+                    class="govuk-error-message"
+                    id="editReportHelpError"
+                    style="display:none;"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-one-half">
+                <div class="govuk-form-group sup_margin_bottom_10" id="editMailCommentGroup">
+                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="MailComment">
+                        Mail Comment: <span class="ra-required-star" aria-hidden="true">*</span>
+                    </label>
+                    <input class="govuk-input govuk-!-font-size-16"
+                           asp-for="MailComment"
+                           id="editMailComment"
+                           type="text"
+                           required
+                           aria-required="true"
+                           aria-label="Mail Comment"
+                           aria-describedby="editMailCommentError" />
+                    <span asp-validation-for="MailComment" data-valmsg-for="MailComment" class="govuk-error-message" id="editMailCommentError" style="display:none;"></span>
+                </div>
+            </div>
+
+            <div class="govuk-grid-column-one-half">
+                <div class="govuk-form-group sup_margin_bottom_10" id="editMailTitleGroup">
+                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="MailTitle">
+                        Mail Title: <span class="ra-required-star" aria-hidden="true">*</span>
+                    </label>
+                    <input class="govuk-input govuk-!-font-size-16"
+                           asp-for="MailTitle"
+                           id="editMailTitle"
+                           type="text"
+                           required
+                           aria-required="true"
+                           aria-label="Mail Title"
+                           aria-describedby="editMailTitleError" />
+                    <span asp-validation-for="MailTitle"
+                    data-valmsg-for="MailTitle"
+                    class="govuk-error-message"
+                    id="editMailTitleError"
+                    style="display:none;"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-one-half">
+                <div class="govuk-form-group sup_margin_bottom_10" id="editOrderGroup">
+                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="SortOrder">
+                        Order:
+                    </label>
+                    <input class="govuk-input govuk-input--width-30 govuk-!-font-size-16"
+                           asp-for="SortOrder"
+                           id="editOrder"
+                           type="number"
+                           min="0"
+                           aria-label="Order"
+                           aria-describedby="editOrderError" />
+                    <span asp-validation-for="SortOrder"
+                          data-valmsg-for="SortOrder"
+                          class="govuk-error-message"
+                          id="editOrderError"
+                          style="display:none;"></span>
+                </div>
+            </div>
+
+            <div class="govuk-grid-column-one-half">
+                <div class="govuk-form-group sup_margin_bottom_10">
+                    <div class="govuk-checkboxes govuk-checkboxes--small govuk-!-padding-top-4">
+                        <div class="govuk-checkboxes__item">
+                            <input class="govuk-checkboxes__input"
+                                   asp-for="Emailable"
+                                   aria-label="editEmailable"
+                                   id="editEmailable"
+                                   type="checkbox" />
+                            <label class="govuk-label govuk-checkboxes__label govuk-!-font-size-16 sup_label_auto_width"
+                                   asp-for="Emailable">
+                                Email-able
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12" style="display: flex; justify-content: space-between; margin-top: 10px;">
+            <button type="button"
+                    class="govuk-button govuk-button--secondary sup_margin_0"
+                    onclick="closeModal()">
+                Cancel
+            </button>
+            <button type="button"
+                    class="govuk-button sup_margin_0"
+                    onclick="saveReport()">
+                @saveLabel
+            </button>
+        </div>
+    </form>
+</div>

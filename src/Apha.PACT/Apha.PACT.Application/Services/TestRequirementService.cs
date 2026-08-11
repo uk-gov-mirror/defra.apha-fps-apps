@@ -48,6 +48,12 @@ namespace Apha.PACT.Application.Services
             return _mapper.Map<IEnumerable<TestRequirementtDto>>(items);
         }
 
+        public async Task<IEnumerable<TestRequirementtDto>> GetAllActiveAsync()
+        {
+            var items = await _testReqmtRepository.GetAllActiveAsync();
+            return _mapper.Map<IEnumerable<TestRequirementtDto>>(items);
+        }
+
         public async Task<TestRequirementtDto?> GetTestReqmtByIdAsync(string testCode, string buyer)
         {
             var detail = await _testReqmtRepository.GetDetailByIdAsync(testCode, buyer);

@@ -15,7 +15,7 @@ namespace Apha.FPS.DataAccess.Data
             builder.Property(e => e.ProfitCentreId).HasColumnName("profitcentre");
             builder.Property(e => e.ProfitCentreName).HasColumnName("profitcentrename");
             builder.Property(e => e.Division).HasColumnName("division");
-            builder.Property(e => e.ContTarget).HasColumnName("conttarget");
+            builder.Property(e => e.ContTarget).HasPrecision(19, 4).HasColumnName("conttarget");
             builder.Property(e => e.ProfitCentreHead).HasColumnName("profitcentrehead");
             builder.Property(e => e.DivisionId).HasColumnName("divisionid");
             builder.Property(e => e.EmailRecipient).HasColumnName("email_recipient");

@@ -8,6 +8,7 @@ namespace Apha.FPS.Application.Interfaces
         Task<IEnumerable<ProgramDto>> GetAllProgramsAsync();
         Task<IEnumerable<ProgramDto>> GetAllProgramsForAllUsersAsync();
         Task<PaginatedResult<ProgramDto>> GetAllProgramsAsync(QueryParameters<string> query);
+        Task<PaginatedResult<ProgramPlanCostDto>> GetProgramTimeSnapshotAsync(QueryParameters<string> query);
         Task<ProgramDto?> GetProgramByIdAsync(string programNo);
         Task<ProgramDto> AddProgramAsync(ProgramDto programDto);
         Task<ProgramDto> UpdateProgramAsync( ProgramDto programDto);

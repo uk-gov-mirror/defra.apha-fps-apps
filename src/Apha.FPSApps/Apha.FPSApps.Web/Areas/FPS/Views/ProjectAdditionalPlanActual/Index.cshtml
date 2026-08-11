@@ -4,23 +4,21 @@
     ViewData["Title"] = "Plan vs Actual - Additional Costs";
 }
 
-<div class="govuk-grid-column-full">
+@{
+    ViewData["SelectedProjectCode"] = Model.SelectedProjectCode;
+}
+<div class="container-fluid">
     <!-- Project selector -->
     @* <div class="govuk-grid-row">
         <div class="govuk-grid-column-full">
             <div class="row fps-sr-breadcrumb-row">
                 <div class="fps-sr-breadcrumb-flex" style="display: flex; justify-content: flex-end;">
-                    <div class="pva-project-wrap">
-                        <label class="fw-bold me-2" for="projectSelect">Select a Project:</label>
-                        <select id="projectSelect" asp-items="Model.ProjectList" asp-for="SelectedProjectCode"
-                                class="govuk-select" style="min-width: 200px;">
-                            <option value="">-- Select Project --</option>
-                        </select>
-                    </div>
+                    <div class="col-md-6"></div>
+                    @await Html.PartialAsync("_ProjectDropdownSelector")
                 </div>
             </div>
         </div>
-    </div> *@
+    </div>
 
     <!-- Title section -->
     @* <div class="govuk-grid-row">        
@@ -60,42 +58,13 @@
     </div>
 
     <!-- Summary card -->
-    <div class="govuk-grid-row">
-        <div class="govuk-grid-column-full mt-2">
-            <div class="pva-summary-card">
-                <div class="row">
-                    <div class="col-lg-6">
-                        <div class="row">
-                            <div class="col-lg-5">
-                                <label class="govuk-label--s" for="summary-project-code">Project</label>
-                                <input type="text" id="summary-project-code" asp-for="SelectedProjectCode"
-                                       class="govuk-input" readonly>
-                                </div>
-                                <div class="col-lg-7">
-                                    <label class="govuk-label--s" for="summary-project-description">Project Description</label>
-                                    <textarea id="summary-project-description" asp-for="ProjectTitle"
-                                              class="govuk-textarea govuk-!-font-size-16 sup_margin_0" rows="1" readonly></textarea>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-6">
-                            <div class="row">
-                                <div class="col-lg-5">
-                                    <label class="govuk-label--s" for="summary-program">Program</label>
-                                    <input type="text" id="summary-program" asp-for="Program"
-                                           class="govuk-input" readonly>
-                                    </div>
-                                    <div class="col-lg-7">
-                                        <label class="govuk-label--s" for="summary-contract">Contract</label>
-                                        <input type="text" id="summary-contract" asp-for="Contract"
-                                               class="govuk-input" readonly>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    @{
+        ViewData["SummaryProjectCodeValue"]  = Model.SelectedProjectCode;
+        ViewData["SummaryProjectTitleValue"] = Model.ProjectTitle;
+        ViewData["SummaryProgramValue"]      = Model.Program;
+        ViewData["SummaryContractValue"]     = Model.Contract;
+    }
+    @await Html.PartialAsync("_PvaSummaryCard")
 
                 <!-- Two-column grid area -->
                 <div class="govuk-grid-row">
@@ -161,6 +130,7 @@
                             <script src="~/js/fps_js/ajax-form-validation.js"></script>
                             <script src="~/js/ajax-form-validation.js"></script>
                             <script src="~/js/fps_js/AdditionalCost.js" asp-append-version="true"></script>
+                            <script src="~/js/fps_js/project-dropdown.js" asp-append-version="true"></script>
                             <script>
                                 AdditionalCostConfig.getJobCode = function () { return currentProjectCode; };
                                 AdditionalCostConfig.requireJobCodeForAdd = true;
@@ -179,26 +149,38 @@
                             </script>
                             <script>
                                 var currentProjectCode = '@Html.Raw(Model.SelectedProjectCode)';
+                                var _loaderPendingGrids = 0;
 
                                 $(document).ready(function () {
                                     if (currentProjectCode) {
-                                        window['gridManager_@Model.AdditionalCostPlanGrid.GridId'].reloadGrid({ page: 1 });
-                                        window['gridManager_@Model.ActualAdditionalCostGrid.GridId'].reloadGrid({ page: 1 });
-                                        refreshPlannedCost();
-                                        refreshActualCost();
+                                        showLoader();
+                                        _loaderPendingGrids = 2;
+                                        setTimeout(function () {
+                                            window['gridManager_@Model.AdditionalCostPlanGrid.GridId'].reloadGrid({ page: 1 });
+                                            window['gridManager_@Model.ActualAdditionalCostGrid.GridId'].reloadGrid({ page: 1 });
+                                            refreshPlannedCost();
+                                            refreshActualCost();
+                                        }, 0);
                                     }
+                                    document.addEventListener('gridReloaded', function (e) {
+                                        var tracked = ['@Model.AdditionalCostPlanGrid.GridId', '@Model.ActualAdditionalCostGrid.GridId'];
+                                        if (tracked.indexOf(e.detail.gridId) !== -1 && _loaderPendingGrids > 0) {
+                                            _loaderPendingGrids--;
+                                            if (_loaderPendingGrids === 0) hideLoader();
+                                        }
+                                    });
                                 });
 
-                                $('#projectSelect').on('change', function () {
-                                    currentProjectCode = $(this).val();
+                                function onProjectSelected(projectCode, projectTitle) {
+                                    currentProjectCode = projectCode;
+                                    document.getElementById('projectNameInput').value = projectCode;
                                     $('#summary-project-code').val(currentProjectCode);
-                                    $('#summary-project-description').val('');
+                                    $('#summary-project-description').val(projectTitle || '');
                                     $('#summary-program').val('');
                                     $('#summary-contract').val('');
                                     $('#planned-total-cost').val('0');
                                     $('#project-total-cost').val('0');
                                     $('#project-percent-plan').val('0.00%');
-
                                     if (currentProjectCode) {
                                         $.get('@Url.Action("GetProjectInfo", "ProjectAdditionalPlanActual", new { area = "FPS" })',
                                             { projectCode: currentProjectCode },
@@ -210,17 +192,25 @@
                                                 }
                                             }
                                         );
-
-                                        window['gridManager_@Model.AdditionalCostPlanGrid.GridId'].reloadGrid({ page: 1 });
-                                        window['gridManager_@Model.ActualAdditionalCostGrid.GridId'].reloadGrid({ page: 1 });
-                                        refreshPlannedCost();
-                                        refreshActualCost();
+                                        showLoader();
+                                        _loaderPendingGrids = 2;
+                                        setTimeout(function () {
+                                            window['gridManager_@Model.AdditionalCostPlanGrid.GridId'].reloadGrid({ page: 1 });
+                                            window['gridManager_@Model.ActualAdditionalCostGrid.GridId'].reloadGrid({ page: 1 });
+                                            refreshPlannedCost();
+                                            refreshActualCost();
+                                        }, 0);
                                     }
+                                }
+
+                                $(document).ready(function () {
+                                    initProjectDropdown(
+                                        '@Url.Action("GetProjectLookup", "ProjectAdditionalPlanActual", new { area = "FPS" })',
+                                        onProjectSelected
+                                    );
                                 });
 
-                                function getAdditionalCostPlanExtraFilters() {
-                                    return { jobCode: currentProjectCode };
-                                }
+                                function getAdditionalCostPlanExtraFilters() { return { jobCode: currentProjectCode }; }
 
                                 function getActualAdditionalCostExtraFilters() {
                                     return { projectCode: currentProjectCode };

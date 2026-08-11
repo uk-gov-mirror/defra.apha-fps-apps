@@ -162,7 +162,7 @@ namespace Apha.FPS.DataAccess.Repositories
                 .FirstOrDefaultAsync();
 
             if (record == null) return null;
-            record.AnimalCost = (decimal)record.NumberOfDays * (decimal)record.NumberOfAnimals * (record.DailyRate ?? 0m);
+            record.AnimalCost = Math.Round((decimal)record.NumberOfDays * (decimal)record.NumberOfAnimals * (record.DailyRate ?? 0m), 4);
             return record;
         }
 

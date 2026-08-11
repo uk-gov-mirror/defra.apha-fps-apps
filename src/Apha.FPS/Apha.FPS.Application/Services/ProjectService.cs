@@ -45,6 +45,13 @@ namespace Apha.FPS.Application.Services
             return _mapper.Map<PaginatedResult<ProjectDto>>(pagedProjects);
         }
 
+        public async Task<PaginatedResult<ProjectDto>> GetPagedProjectSnapshotDataAsync(QueryParameters<string> query)
+        {
+            var pagedProjects = await _projectRepository.GetPagedProjectSnapshotDataAsync(
+                _mapper.Map<PaginationParameters<string>>(query));
+            return _mapper.Map<PaginatedResult<ProjectDto>>(pagedProjects);
+        }
+
         public async Task<PaginatedResult<ProjectSpecificQueryDto>> GetPagedProjectSpecificQueryAsync(QueryParameters<string> query)
         {
             var pagedItems = await _projectRepository.GetPagedProjectSpecificQueryAsync(
@@ -238,6 +245,12 @@ namespace Apha.FPS.Application.Services
             bool farmFileDataExists = await _projectRepository.CheckProjectExistsInFarmFileAsync(oldCode);
             if (farmFileDataExists)
                 errors.Add(new BusinessValidationError("Cannot change code, data exists in Farm File for old code.", "FARM_FILE_DATA_EXISTS"));
+
+            bool oldCodeHasJobCodes = await _projectRepository.HasAssociatedJobCodesAsync(oldCode);
+            if (oldCodeHasJobCodes)
+                errors.Add(new BusinessValidationError(
+                    "There are associated Jobcode(s) with the project, hence cannot change the project name.",
+                    "OLD_CODE_HAS_JOBCODES"));
 
             if (errors.Count > 0)
                 throw new BusinessValidationErrorException(errors);

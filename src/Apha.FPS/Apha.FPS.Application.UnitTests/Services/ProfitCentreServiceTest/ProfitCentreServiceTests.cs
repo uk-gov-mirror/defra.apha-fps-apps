@@ -858,5 +858,259 @@ namespace Apha.FPS.Application.UnitTests.Services.ProfitCentreServiceTest
 
         #endregion
 
+        #region GetPagedWgStaffPlanAsync Tests
+
+        private static WgStaffPlanViewDto BuildWgStaffPlanDto(string workGroup = "WG001", string name = "Staff One") =>
+            new()
+            {
+                WorkGroup = workGroup,
+                GradeCode = "G1",
+                Name = name,
+                Manager = "Manager01",
+                Program = "PROG01",
+                JobCode = "JOB001",
+                ProjectStatus = "Active",
+                PlannedHours = 40.0,
+                Fee = 1000m
+            };
+
+        private static WgStaffPlanView BuildWgStaffPlanEntity(string workGroup = "WG001", string name = "Staff One") =>
+            new()
+            {
+                WorkGroup = workGroup,
+                GradeCode = "G1",
+                Name = name,
+                Manager = "Manager01",
+                Program = "PROG01",
+                JobCode = "JOB001",
+                ProjectStatus = "Active",
+                PlannedHours = 40.0,
+                Fee = 1000m,
+                FpsYear = 2024
+            };
+
+        [Fact]
+        public async Task GetPagedWgStaffPlanAsync_ThrowsArgumentNullException_WhenQueryIsNull()
+        {
+            await Assert.ThrowsAsync<ArgumentNullException>(() =>
+                _sut.GetPagedWgStaffPlanAsync(null!, "WG001"));
+        }
+
+        [Fact]
+        public async Task GetPagedWgStaffPlanAsync_WithValidData_ReturnsPaginatedResult()
+        {
+            // Arrange
+            const string workGroup = "WG001";
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var mappedParams = new PaginationParameters<string> { Page = 1, PageSize = 10 };
+            var pagedData = new PagedData<WgStaffPlanView>
+            {
+                Data = new List<WgStaffPlanView>
+                {
+                    BuildWgStaffPlanEntity(workGroup, "Staff One"),
+                    BuildWgStaffPlanEntity(workGroup, "Staff Two")
+                },
+                PaginationData = new PaginationData
+                {
+                    PageNumber = 1,
+                    PageSize = 10,
+                    TotalRecords = 2
+                }
+            };
+            var expectedResult = new PaginatedResult<WgStaffPlanViewDto>
+            {
+                Data = new List<WgStaffPlanViewDto>
+                {
+                    BuildWgStaffPlanDto(workGroup, "Staff One"),
+                    BuildWgStaffPlanDto(workGroup, "Staff Two")
+                },
+                PaginationData = new PaginationDto
+                {
+                    PageNumber = 1,
+                    PageSize = 10,
+                    TotalRecords = 2
+                }
+            };
+
+            _mockMapper.Map<PaginationParameters<string>>(query).Returns(mappedParams);
+            _mockRepository.GetPagedWgStaffPlanAsync(mappedParams, workGroup).Returns(pagedData);
+            _mockMapper.Map<PaginatedResult<WgStaffPlanViewDto>>(pagedData).Returns(expectedResult);
+
+            // Act
+            var result = await _sut.GetPagedWgStaffPlanAsync(query, workGroup);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Data.Should().HaveCount(2);
+            result.PaginationData.TotalRecords.Should().Be(2);
+            await _mockRepository.Received(1).GetPagedWgStaffPlanAsync(mappedParams, workGroup);
+        }
+
+        [Fact]
+        public async Task GetPagedWgStaffPlanAsync_WithEmptyResult_ReturnsEmptyPaginatedResult()
+        {
+            // Arrange
+            const string workGroup = "WG001";
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var mappedParams = new PaginationParameters<string> { Page = 1, PageSize = 10 };
+            var pagedData = new PagedData<WgStaffPlanView>
+            {
+                Data = new List<WgStaffPlanView>(),
+                PaginationData = new PaginationData { PageNumber = 1, PageSize = 10, TotalRecords = 0 }
+            };
+            var expectedResult = new PaginatedResult<WgStaffPlanViewDto>
+            {
+                Data = new List<WgStaffPlanViewDto>(),
+                PaginationData = new PaginationDto { PageNumber = 1, PageSize = 10, TotalRecords = 0 }
+            };
+
+            _mockMapper.Map<PaginationParameters<string>>(query).Returns(mappedParams);
+            _mockRepository.GetPagedWgStaffPlanAsync(mappedParams, workGroup).Returns(pagedData);
+            _mockMapper.Map<PaginatedResult<WgStaffPlanViewDto>>(pagedData).Returns(expectedResult);
+
+            // Act
+            var result = await _sut.GetPagedWgStaffPlanAsync(query, workGroup);
+
+            // Assert
+            result.Data.Should().BeEmpty();
+            result.PaginationData.TotalRecords.Should().Be(0);
+        }
+
+        [Fact]
+        public async Task GetPagedWgStaffPlanAsync_WhenRepositoryThrows_PropagatesException()
+        {
+            // Arrange
+            const string workGroup = "WG001";
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var mappedParams = new PaginationParameters<string> { Page = 1, PageSize = 10 };
+
+            _mockMapper.Map<PaginationParameters<string>>(query).Returns(mappedParams);
+            _mockRepository.GetPagedWgStaffPlanAsync(mappedParams, workGroup)
+                .ThrowsAsync(new InvalidOperationException("Repository error"));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                _sut.GetPagedWgStaffPlanAsync(query, workGroup));
+        }
+
+        [Fact]
+        public async Task GetPagedWgStaffPlanAsync_MapsQueryParametersCorrectly()
+        {
+            // Arrange
+            const string workGroup = "WG001";
+            var query = new QueryParameters<string>
+            {
+                Page = 2,
+                PageSize = 20,
+                SortBy = "Name",
+                Descending = true
+            };
+            var mappedParams = new PaginationParameters<string>
+            {
+                Page = 2,
+                PageSize = 20,
+                SortBy = "Name",
+                Descending = true
+            };
+            var pagedData = new PagedData<WgStaffPlanView>
+            {
+                Data = new List<WgStaffPlanView>(),
+                PaginationData = new PaginationData { PageNumber = 2, PageSize = 20 }
+            };
+            var expectedResult = new PaginatedResult<WgStaffPlanViewDto>
+            {
+                Data = new List<WgStaffPlanViewDto>(),
+                PaginationData = new PaginationDto { PageNumber = 2, PageSize = 20 }
+            };
+
+            _mockMapper.Map<PaginationParameters<string>>(query).Returns(mappedParams);
+            _mockRepository.GetPagedWgStaffPlanAsync(mappedParams, workGroup).Returns(pagedData);
+            _mockMapper.Map<PaginatedResult<WgStaffPlanViewDto>>(pagedData).Returns(expectedResult);
+
+            // Act
+            await _sut.GetPagedWgStaffPlanAsync(query, workGroup);
+
+            // Assert
+            _mockMapper.Received(1).Map<PaginationParameters<string>>(Arg.Is<QueryParameters<string>>(q =>
+                q.Page == 2 && q.PageSize == 20 && q.SortBy == "Name" && q.Descending == true));
+        }
+
+        [Fact]
+        public async Task GetPagedWgStaffPlanAsync_PassesWorkGroupToRepository()
+        {
+            // Arrange
+            const string workGroup = "WG-SPECIAL-001";
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var mappedParams = new PaginationParameters<string> { Page = 1, PageSize = 10 };
+            var pagedData = new PagedData<WgStaffPlanView>
+            {
+                Data = new List<WgStaffPlanView>(),
+                PaginationData = new PaginationData()
+            };
+            var expectedResult = new PaginatedResult<WgStaffPlanViewDto>
+            {
+                Data = new List<WgStaffPlanViewDto>(),
+                PaginationData = new PaginationDto()
+            };
+
+            _mockMapper.Map<PaginationParameters<string>>(query).Returns(mappedParams);
+            _mockRepository.GetPagedWgStaffPlanAsync(mappedParams, workGroup).Returns(pagedData);
+            _mockMapper.Map<PaginatedResult<WgStaffPlanViewDto>>(pagedData).Returns(expectedResult);
+
+            // Act
+            await _sut.GetPagedWgStaffPlanAsync(query, workGroup);
+
+            // Assert
+            await _mockRepository.Received(1).GetPagedWgStaffPlanAsync(
+                Arg.Any<PaginationParameters<string>>(),
+                Arg.Is<string>(wg => wg == workGroup));
+        }
+
+        [Fact]
+        public async Task GetPagedWgStaffPlanAsync_ReturnsPaginationDataCorrectly()
+        {
+            // Arrange
+            const string workGroup = "WG001";
+            var query = new QueryParameters<string> { Page = 3, PageSize = 20 };
+            var mappedParams = new PaginationParameters<string> { Page = 3, PageSize = 20 };
+            var pagedData = new PagedData<WgStaffPlanView>
+            {
+                Data = new List<WgStaffPlanView> { BuildWgStaffPlanEntity(workGroup) },
+                PaginationData = new PaginationData
+                {
+                    PageNumber = 3,
+                    PageSize = 20,
+                    TotalRecords = 55,
+                    TotalPages = 3
+                }
+            };
+            var expectedResult = new PaginatedResult<WgStaffPlanViewDto>
+            {
+                Data = new List<WgStaffPlanViewDto> { BuildWgStaffPlanDto(workGroup) },
+                PaginationData = new PaginationDto
+                {
+                    PageNumber = 3,
+                    PageSize = 20,
+                    TotalRecords = 55,
+                    TotalPages = 3
+                }
+            };
+
+            _mockMapper.Map<PaginationParameters<string>>(query).Returns(mappedParams);
+            _mockRepository.GetPagedWgStaffPlanAsync(mappedParams, workGroup).Returns(pagedData);
+            _mockMapper.Map<PaginatedResult<WgStaffPlanViewDto>>(pagedData).Returns(expectedResult);
+
+            // Act
+            var result = await _sut.GetPagedWgStaffPlanAsync(query, workGroup);
+
+            // Assert
+            result.PaginationData.PageNumber.Should().Be(3);
+            result.PaginationData.PageSize.Should().Be(20);
+            result.PaginationData.TotalRecords.Should().Be(55);
+            result.PaginationData.TotalPages.Should().Be(3);
+        }
+
+        #endregion
+
     }
 }

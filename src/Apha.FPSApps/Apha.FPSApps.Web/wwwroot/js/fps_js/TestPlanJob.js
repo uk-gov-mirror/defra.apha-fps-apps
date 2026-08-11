@@ -17,6 +17,7 @@ function addTestPlan(btn) {
         showAlertMessage('Please select a project first.', AlertType.INFO);
         return;
     }
+    showLoader();
     $.ajax({
         url: '/FPS/TestPlanJob/Create',
         type: 'GET',
@@ -25,8 +26,10 @@ function addTestPlan(btn) {
             // Inject the current project as ProjectBuyerCode for the pricing lookup
             $('#modaPopupBody #ProjectBuyerCode').val(TestPlanJobConfig.getJobCode());
             $('#modalPopup').addClass('show');
+            hideLoader();
         },
         error: function (xhr) {
+            hideLoader();
             if (xhr.status === 400 && xhr.responseJSON) {
                 displayServerValidationErrors(xhr.responseJSON.errors, xhr.responseJSON.message, '#modaPopupBody');
             } else {
@@ -42,6 +45,7 @@ function saveTestPlan() {
         displayClientValidationErrors(form, '#modaPopupBody');
         return;
     }
+    showLoader();
     var data = {
         IsEdit: false,
         TestCode: $('#TestCode').val(),
@@ -57,6 +61,7 @@ function saveTestPlan() {
         data: JSON.stringify(data),
         contentType: 'application/json; charset=utf-8',
         success: function (result) {
+            hideLoader();
             if (result.success) {
                 closeModal();
                 showAlertMessage(result.message, AlertType.SUCCESS).then(function () {                   
@@ -67,6 +72,7 @@ function saveTestPlan() {
             }
         },
         error: function (xhr) {
+            hideLoader();
             if (xhr.status === 400 && xhr.responseJSON) {
                 displayServerValidationErrors(xhr.responseJSON.errors, xhr.responseJSON.message, '#modaPopupBody');
             } else {
@@ -77,6 +83,7 @@ function saveTestPlan() {
 }
 
 function editTestPlan(btn) {
+    showLoader();
     var testCode = $(btn).data('id');
     var buyer = TestPlanJobConfig.getJobCode();
     $.ajax({
@@ -86,8 +93,10 @@ function editTestPlan(btn) {
         success: function (html) {
             $('#modaPopupBody').html(html);
             $('#modalPopup').addClass('show');
+            hideLoader();
         },
         error: function (xhr) {
+            hideLoader();
             if (xhr.status === 400 && xhr.responseJSON) {
                 displayServerValidationErrors(xhr.responseJSON.errors, xhr.responseJSON.message, '#modaPopupBody');
             } else {
@@ -103,13 +112,14 @@ function updateTestPlan() {
         displayClientValidationErrors(form, '#modaPopupBody');
         return;
     }
+    showLoader();
     var data = {
         IsEdit: true,
         TestCode: form.find('[name="TestCode"]').val(),
         Buyer: form.find('[name="Buyer"]').val(),
         ProjectBuyerCode: form.find('[name="ProjectBuyerCode"]').val(),
         NoRequired: parseFloat($('#NoRequired').val()) || 0,
-        UnitPrice: parseFloat($('#UnitPrice').val()) || 0,
+        UnitPrice: $('#UnitPrice').val() || 0,
         Active: parseInt(form.find('[name="Active"]').val()) || 1
     };
     $.ajax({
@@ -118,6 +128,7 @@ function updateTestPlan() {
         data: JSON.stringify(data),
         contentType: 'application/json; charset=utf-8',
         success: function (result) {
+            hideLoader();
             if (result.success) {
                 closeModal();
                 showAlertMessage(result.message, AlertType.SUCCESS).then(function () {                  
@@ -128,6 +139,7 @@ function updateTestPlan() {
             }
         },
         error: function (xhr) {
+            hideLoader();
             if (xhr.status === 400 && xhr.responseJSON) {
                 displayServerValidationErrors(xhr.responseJSON.errors, xhr.responseJSON.message, '#modaPopupBody');
             } else {
@@ -142,11 +154,13 @@ function deleteTestPlan(btn) {
     var buyer = TestPlanJobConfig.getJobCode();
     showGovukConfirm('Are you sure you want to delete this test plan item?').then(function (confirmed) {
         if (!confirmed) { return; }
+        showLoader();
         $.ajax({
             url: '/FPS/TestPlanJob/Delete',
             type: 'DELETE',
             data: { testCode: testCode, buyer: buyer },
             success: function (response) {
+                hideLoader();
                 if (response.success) {
                     showAlertMessage('Deleted successfully.', AlertType.SUCCESS).then(function () {
                         TestPlanJobConfig.onDeleted();
@@ -156,6 +170,7 @@ function deleteTestPlan(btn) {
                 }
             },
             error: function () {
+                hideLoader();
                 showAlertMessage('An error occurred while deleting.', AlertType.ERROR);
             }
         });
@@ -229,7 +244,7 @@ function onTestCodeSelected(select) {
     var projectBuyerCode = $('#ProjectBuyerCode').val() || '';
     $.get('/FPS/TestPlanJob/GetRecUnitPrice', { testCode: testCode, projectBuyerCode: projectBuyerCode }, function (result) {
         if (result.success) {
-            var price = parseFloat(result.recUnitPrice || 0).toFixed(2);
+            var price = result.recUnitPrice || 0;
             $('#RecUnitPrice').val(price);
             $('#UnitPrice').val(price);
             calculateTestCost();
@@ -240,7 +255,7 @@ function onTestCodeSelected(select) {
 function calculateTestCost() {
     var noRequired = parseFloat($('#NoRequired').val()) || 0;
     var unitPrice = parseFloat($('#UnitPrice').val()) || 0;
-    $('#TotalCost').val((noRequired * unitPrice).toFixed(2));
+    $('#TotalCost').val((noRequired * unitPrice).toFixed(4));
 }
 
 $(document).on('change', '#NoRequired, #UnitPrice', function () {

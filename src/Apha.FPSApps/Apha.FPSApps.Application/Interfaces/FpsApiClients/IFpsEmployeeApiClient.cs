@@ -16,5 +16,6 @@ namespace Apha.FPSApps.Application.Interfaces.FpsApiClients
         Task<ApiResponseDto<List<WorkGroupPersonDto>>> GetAllWorkGroupPersonAsync();
         Task<ApiResponseDto<PaginatedResult<PactStaffDto>>> GetWorkGroupStaffAsync(QueryParameters<string> query, string? workGroup = null);
         Task<ApiResponseDto<List<PactStaffDto>>> GetPactStaffAsync();
+        Task<ApiResponseDto<List<PactStaffDto>>> GetPactWorkGroupStaffAsync(string? workGroup);
     }
 }

@@ -1,4 +1,5 @@
-﻿using Apha.FPSApps.Web.Models.Components.DataGrid;
+﻿using Apha.FPSApps.Web.Validation;
+using Apha.FPSApps.Web.Models.Components.DataGrid;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel.DataAnnotations;
 
@@ -21,6 +22,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Models
 
         [GridColumn(Type = GridColumnType.GbpValue)]
         [Display(Name = "Target")]
+        [CurrencyRange]
         public decimal? Target { get; set; }
 
         

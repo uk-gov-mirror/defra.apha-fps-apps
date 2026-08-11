@@ -1,0 +1,67 @@
+@model Apha.FPSApps.Web.Areas.PIMS.Models.ReportGroupViewModel
+
+@{
+    var isEditMode = Model.GroupId != 0;
+    var title = isEditMode ? "Edit Report Group" : "Add Report Group";
+    var saveLabel = isEditMode ? "Update" : "Save";
+}
+
+<div class="modal-header flex-space-center">
+    <h3 class="modal-title" style="margin: 0;">@title</h3>
+    <button type="button" class="btn-close btn-red" onclick="closeModal()">X</button>
+</div>
+<div class="modal-body" style="padding-top: 5px;">
+    <form class="row" id="formReportGroup">
+        @Html.AntiForgeryToken()
+
+        <input type="hidden" asp-for="Reportid" id="hdnGroupid" />
+        <input type="hidden" id="hdnGroupIsEdit" value="@isEditMode.ToString().ToLower()" />
+
+        <div class="govuk-error-summary ra-form-error-banner ra-hidden"
+             id="groupDbError" role="alert" aria-labelledby="groupDbErrorTitle" tabindex="-1">
+            <h2 class="govuk-error-summary__title govuk-!-font-size-16" id="groupDbErrorTitle">There is a problem</h2>
+            <div class="govuk-error-summary__body">
+                <p class="govuk-body govuk-!-font-size-16" id="groupDbErrorText"></p>
+            </div>
+        </div>
+
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <div class="govuk-form-group" id="groupFormGroup">
+                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="GroupId">
+                        Report Group: <span class="ra-required-star" aria-hidden="true">*</span>
+                    </label>
+
+                    <select asp-for="GroupId"
+                            asp-items="Model.ReportGroups"
+                            class="govuk-select govuk-!-font-size-16 ra-select-full"
+                            id="groupReportGroup"
+                            required
+                            aria-required="true"
+                            aria-label="Report Group"
+                            aria-describedby="groupReportGroupError">
+                        <option value="">-- Select Report Group --</option>
+                    </select>
+                    <span asp-validation-for="GroupId"
+                          data-valmsg-for="GroupId"
+                          class="govuk-error-message"
+                          id="groupReportGroupError"
+                          style="display:none;"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12" style="display: flex; justify-content: space-between; margin-top: 10px;">
+            <button type="button"
+                    class="govuk-button govuk-button--secondary sup_margin_0"
+                    onclick="closeModal()">
+                Cancel
+            </button>
+            <button type="button"
+                    class="govuk-button sup_margin_0"
+                    onclick="saveReportGroup()">
+                @saveLabel
+            </button>
+        </div>
+    </form>
+</div>

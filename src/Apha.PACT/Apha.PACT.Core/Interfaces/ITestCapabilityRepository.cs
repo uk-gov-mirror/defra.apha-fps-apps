@@ -11,9 +11,10 @@ namespace Apha.PACT.Core.Interfaces
         Task<TestCapability?> GetByIdAsync(string testCode, string workGroup);
         Task<TestCapability?> HasRelatedTestCapabilitiesValidRecordsAsync(string testCode);
         Task<TestCapability> AddAsync(TestCapability entity);
-        Task<TestCapability> UpdateAsync(TestCapability entity);
+        Task<TestCapability> UpdateAsync(TestCapability entity, string? originalWorkGroup = null);
         Task<bool> DeleteAsync(string testCode, string workGroup);
         Task<bool> ExistsAsync(string testCode, string portfolio);
+        Task<List<TestCapability>> GetAllAsync();
         Task<PagedData<WgTestCapabilitiesWithDescription>> GetPagedWgTestCapabilitiesWithDescriptionAsync(PaginationParameters<string> query, string workGroup);
 
         // Plan CrossTab

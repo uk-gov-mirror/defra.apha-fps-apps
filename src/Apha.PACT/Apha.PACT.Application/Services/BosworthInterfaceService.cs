@@ -41,6 +41,18 @@ namespace Apha.PACT.Application.Services
             return _mapper.Map<IEnumerable<TimeSaleProfitCentreDto>>(data);
         }
 
+        public async Task<IEnumerable<TimeSaleWorkGroupDto>> GetTimeSaleWorkGroupAsync(string workGroup)
+        {
+            var errors = new List<BusinessValidationError>();
+            if (string.IsNullOrWhiteSpace(workGroup))
+                errors.Add(new BusinessValidationError("Work Group is required", "WORKGROUP_REQUIRED"));
+            if (errors.Count > 0)
+                throw new BusinessValidationErrorException(errors);
+
+            var data = await _repository.GetTimeSaleWorkGroupAsync(workGroup);
+            return _mapper.Map<IEnumerable<TimeSaleWorkGroupDto>>(data);
+        }
+
         public async Task<IEnumerable<TestSaleSellingWorkgroupDto>> GetTestSaleSellingWorkgroupAsync(string workGroup)
         {
             var errors = new List<BusinessValidationError>();

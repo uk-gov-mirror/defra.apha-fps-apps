@@ -224,7 +224,7 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PACT.MonthlyOutputLogController
         }
 
         [Fact]
-        public async Task Search_WithNoSearchCriteria_ReturnsJsonFailureWithMessage()
+        public async Task Search_WithNoSearchCriteria_ReturnsPartialViewWithEmptyGrid()
         {
             // Arrange
             var request = new PaginationFilter<string> { Page = 1, PageSize = 10, Filter = "{}" };
@@ -233,12 +233,10 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PACT.MonthlyOutputLogController
             var result = await _controller.Search(request, null, null, null, null, null, null, null, null);
 
             // Assert
-            var jsonResult = Assert.IsType<JsonResult>(result);
-            var value = jsonResult.Value;
-            var success = value?.GetType().GetProperty("success")?.GetValue(value);
-            var message = value?.GetType().GetProperty("message")?.GetValue(value)?.ToString();
-            Assert.False((bool)success!);
-            Assert.Equal("Please enter some criteria", message);
+            var partialViewResult = Assert.IsType<PartialViewResult>(result);
+            Assert.Equal("_DataGrid", partialViewResult.ViewName);
+            var model = Assert.IsType<DataGridConfig<MonthlyOutputLogItem>>(partialViewResult.Model);
+            Assert.Empty(model.Data); // Verify empty grid is returned when no search criteria
         }
 
         [Fact]

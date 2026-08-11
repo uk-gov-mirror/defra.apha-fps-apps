@@ -1,0 +1,89 @@
+@model Apha.FPSApps.Web.Areas.PIMS.Models.AccessUserItem
+
+@{
+    var isEditMode = Model.SystemId != 0;
+    var title = isEditMode ? "Edit User" : "Add User";
+    var saveLabel = isEditMode ? "Update" : "Save";
+}
+
+<div class="modal-header flex-space-center">
+    <h3 class="modal-title" style="margin: 0;">@title</h3>
+    <button type="button" class="btn-close btn-red" onclick="closeModal()">X</button>
+</div>
+<div class="modal-body" style="padding-top: 5px;">
+    <form class="row" id="formAccessUser">
+        @Html.AntiForgeryToken()
+
+        <input type="hidden" asp-for="SystemId" id="hdnUserSystemid" />
+        <input type="hidden" id="hdnUserOriginalSystemid" name="originalSystemid" value="@Model.SystemId" />
+        <input type="hidden" id="hdnUserOriginalNtlogin" name="originalNtlogin" value="@Model.NtLogin" />
+        <input type="hidden" id="hdnUserIsEdit" name="isEditMode" value="@isEditMode.ToString().ToLower()" />
+
+        <div class="govuk-error-summary ra-form-error-banner ra-hidden"
+             id="adminUserDbError" role="alert" aria-labelledby="adminUserDbErrorTitle" tabindex="-1">
+            <h2 class="govuk-error-summary__title govuk-!-font-size-14" id="adminUserDbErrorTitle">There is a problem</h2>
+            <div class="govuk-error-summary__body">
+                <p class="govuk-body govuk-!-font-size-14" id="adminUserDbErrorText"></p>
+            </div>
+        </div>
+
+        <div class="govuk-form-group sup_margin_bottom_10" id="adminUserNTLoginGroup">
+            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="NtLogin">
+                NTLogin<span class="ra-required-star" aria-hidden="true"> *</span>
+            </label>
+            <input class="govuk-input govuk-!-font-size-16"
+                   asp-for="NtLogin"
+                   id="adminUserNTLogin"
+                   type="text"
+                   aria-required="true"
+                   aria-label="NTLogin"
+                   aria-describedby="adminUserNTLoginError"
+                   autocomplete="off"
+                   readonly="@(isEditMode ? "readonly" : null)" />
+            <span asp-validation-for="NtLogin" class="govuk-error-message" id="adminUserNTLoginError" style="display:none;"></span>
+        </div>
+
+        <div class="govuk-form-group sup_margin_bottom_10" id="adminUserNameGroup">
+            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="UserName">
+                UserName<span class="ra-required-star" aria-hidden="true"> *</span>
+            </label>
+            <input class="govuk-input govuk-!-font-size-16"
+                   asp-for="UserName"
+                   id="adminUserName"
+                   type="text"
+                   aria-required="true"
+                   aria-label="UserName"
+                   aria-describedby="adminUserNameError"
+                   autocomplete="off" />
+            <span asp-validation-for="UserName" class="govuk-error-message" id="adminUserNameError" style="display:none;"></span>
+        </div>
+
+        <div class="govuk-form-group sup_margin_bottom_10" id="adminUserEmailGroup">
+            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="UserEmail">
+                UserEmail
+            </label>
+            <input class="govuk-input govuk-!-font-size-16"
+                   asp-for="UserEmail"
+                   id="adminUserEmail"
+                   type="email"
+                   aria-label="UserEmail"
+                   aria-describedby="adminUserEmailError"
+                   autocomplete="off" />
+            <span asp-validation-for="UserEmail" class="govuk-error-message" id="adminUserEmailError" style="display:none;"></span>
+        </div>
+
+        <div class="col-12" style="display: flex; justify-content: space-between; margin-top: 10px;">
+            <button type="button"
+                    class="govuk-button govuk-button--secondary sup_margin_0"
+                    onclick="closeModal()">
+                Cancel
+            </button>
+            <button type="button"
+                    class="govuk-button sup_margin_0"
+                    onclick="saveAccessUser()">
+                @saveLabel
+            </button>
+        </div>
+    </form>
+</div>
+

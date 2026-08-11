@@ -1,4 +1,5 @@
 using Apha.FPSApps.Web.Models.Components.DataGrid;
+using Apha.FPSApps.Web.Validation;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel.DataAnnotations;
 
@@ -34,6 +35,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Models
 
         [Display(Name = "Agr Price")]
         [GridColumn(Order = 6, Width = 100, Type = GridColumnType.GbpValue)]
+        [CurrencyRange]
         public decimal? TestPrice { get; set; }
 
         [Display(Name = "Standard Price *")]
@@ -53,6 +55,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Models
 
         [Display(Name = "Defra Price")]
         [GridColumn(Order = 10, Width = 100, Type = GridColumnType.GbpValue)]
+        [CurrencyRange]
         public decimal? DefraUnitPrice { get; set; }
 
         [Display(Name = "Owner")]

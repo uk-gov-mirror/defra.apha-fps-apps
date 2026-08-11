@@ -56,10 +56,17 @@ namespace Apha.PACT.Application.Services
             {
                 var testCodes = result.Data.Select(d => d.TestCode).Distinct().ToList();
                 var descriptions = await _testorProductRepository.GetDescriptionsByCodesAsync(testCodes);
+                var unitPrices = await _testorProductRepository.GetUnitPricesByCodesAsync(testCodes);
                 foreach (var dto in result.Data)
                 {
-                    if (descriptions.TryGetValue(dto.TestCode, out var desc))
+                    if (descriptions != null && descriptions.TryGetValue(dto.TestCode, out var desc))
                         dto.ItemDescription = desc;
+
+                    // Unit Cost is sourced from the TestorProduct master (testorproduct.unitpricevla),
+                    // not from tlkptestcapability, so every portfolio row for the same Test Code shows
+                    // the same master price and reflects any update made to it.
+                    if (unitPrices != null && unitPrices.TryGetValue(dto.TestCode, out var unitPrice))
+                        dto.UnitCost = unitPrice;
                 }
 
                 if (HasItemDescriptionFilterOrSort(query))
@@ -72,7 +79,18 @@ namespace Apha.PACT.Application.Services
         public async Task<TestCapabilityDto?> GetTestCapabilityByIdAsync(string testCode, string workGroup)
         {
             var entity = await _testCapabilityRepository.GetByIdAsync(testCode, workGroup);
-            return entity is null ? null : _mapper.Map<TestCapabilityDto>(entity);
+            if (entity is null)
+                return null;
+
+            var dto = _mapper.Map<TestCapabilityDto>(entity);
+
+            // Unit Cost is sourced from the TestorProduct master (testorproduct.unitpricevla),
+            // not from tlkptestcapability, so the edit form always shows the master price.
+            var unitPrices = await _testorProductRepository.GetUnitPricesByCodesAsync([dto.TestCode]);
+            if (unitPrices != null && unitPrices.TryGetValue(dto.TestCode, out var unitPrice))
+                dto.UnitCost = unitPrice;
+
+            return dto;
         }
 
         public async Task<TestCapabilityDto> AddTestCapabilityAsync(TestCapabilityDto dto)
@@ -93,17 +111,29 @@ namespace Apha.PACT.Application.Services
         {
             ValidateRequiredFields(dto);
 
-            var existing = await _testCapabilityRepository.GetByIdAsync(dto.TestCode, dto.WorkGroup);
+            // WorkGroup is part of the composite key. Use the original WorkGroup (when supplied)
+            // to locate the existing record; fall back to the current WorkGroup for backwards compatibility.
+            var lookupWorkGroup = string.IsNullOrWhiteSpace(dto.OriginalWorkGroup)
+                ? dto.WorkGroup
+                : dto.OriginalWorkGroup;
+
+            var existing = await _testCapabilityRepository.GetByIdAsync(dto.TestCode, lookupWorkGroup);
             if (existing is null)
                 throw new KeyNotFoundException(
-                    $"A Test Capability record with TestCode '{dto.TestCode}' and WorkGroup '{dto.WorkGroup}' was not found.");
+                    $"A Test Capability record with TestCode '{dto.TestCode}' and WorkGroup '{lookupWorkGroup}' was not found.");
 
-            var hasReqmts = await _testReqmtRepository.ExistsByTestBuyerCodeAsync(dto.TestCode + dto.WorkGroup);
+            var hasReqmts = await _testReqmtRepository.ExistsByTestBuyerCodeAsync(dto.TestCode + lookupWorkGroup);
             if (hasReqmts)
                 throw new InvalidOperationException("Cannot update, test requirements are dependant on this.");
 
+            // Unit Cost is the master price held on testorproduct.unitpricevla, not on
+            // tlkptestcapability. Persist any changed unit cost to the TestorProduct master so it
+            // is reflected for every portfolio row that shares the same Test Code.
+            if (dto.UnitCost.HasValue)
+                await _testorProductRepository.UpdateUnitPriceByCodeAsync(dto.TestCode, dto.UnitCost.Value);
+
             var entity = _mapper.Map<TestCapability>(dto);
-            var updated = await _testCapabilityRepository.UpdateAsync(entity);
+            var updated = await _testCapabilityRepository.UpdateAsync(entity, lookupWorkGroup);
             return _mapper.Map<TestCapabilityDto>(updated);
         }
 

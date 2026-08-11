@@ -39,7 +39,7 @@ namespace Apha.PACT.DataAccess.Data
                 .HasMaxLength(50)
                 .HasColumnName("testbuyercode");
             entity.Property(e => e.UnitPrice)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("unitprice");
         }
     }

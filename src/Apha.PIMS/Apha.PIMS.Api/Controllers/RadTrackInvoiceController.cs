@@ -67,12 +67,12 @@ namespace Apha.PIMS.Api.Controllers
             return Ok(_mapper.Map<RadTrackInvoiceRes>(result));
         }
 
-      
+
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
             bool deleted = await _service.DeleteAsync(id);
-            return Ok(new { success = deleted });
+            return Ok(deleted);
         }
 
         // ── Lookup endpoints ─────────────────────────────────────────────────

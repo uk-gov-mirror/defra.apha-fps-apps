@@ -41,48 +41,42 @@ namespace Apha.FPSApps.Web.Areas.PACT.Models
         public string ProjectStatus { get; set; } = null!;
 
         [Display(Name = "Transfer Income")]
-        [Range(0, 92233720368547758.07, ErrorMessage = "Transfer Income must be between 0 and 92,233,720,368,547,758.07.")]
-        [RegularExpression(@"^-?\d{1,17}(\.\d{0,2})?$", ErrorMessage = "Transfer Income must have at most 2 decimal places.")]
+        [Range(typeof(decimal), "-999999999999999.9999", "999999999999999.9999", ErrorMessage = "Transfer Income must be between -999,999,999,999,999.9999 and 999,999,999,999,999.9999.")]
         [GridColumn(IsVisible = false)]
         public decimal TransferIncome { get; set; }
 
         [Display(Name = "Budget cvl")]
+        [Range(-999999999999999.9999, 999999999999999.9999, ErrorMessage = "Budget cvl must be between -999,999,999,999,999.9999 and 999,999,999,999,999.9999.")]
         [GridColumn(IsVisible = false)]
         public decimal? BudgetCvl { get; set; }
 
         [Display(Name = "Budget Ext")]
-        [Range(0, 92233720368547758.07, ErrorMessage = "Budget Ext must be between 0 and 92,233,720,368,547,758.07.")]
-        [RegularExpression(@"^-?\d{1,17}(\.\d{0,2})?$", ErrorMessage = "Budget Ext must have at most 2 decimal places.")]
+        [Range(typeof(decimal), "-999999999999999.9999", "999999999999999.9999", ErrorMessage = "Budget Ext must be between -999,999,999,999,999.9999 and 999,999,999,999,999.9999.")]
         [GridColumn(IsVisible = false)]
         public decimal? BudgetExt { get; set; }
 
         [Display(Name = "PVS Income")]
-        [Range(0, 92233720368547758.07, ErrorMessage = "PVS Income must be between 0 and 92,233,720,368,547,758.07.")]
-        [RegularExpression(@"^-?\d{1,17}(\.\d{0,2})?$", ErrorMessage = "PVS Income must have at most 2 decimal places.")]
+        [Range(typeof(decimal), "-999999999999999.9999", "999999999999999.9999", ErrorMessage = "PVS Income must be between -999,999,999,999,999.9999 and 999,999,999,999,999.9999.")]
         [GridColumn(IsVisible = false)]
         public decimal? PvsIncome { get; set; }
 
         [Display(Name = "WIP EOY")]
-        [Range(0, 92233720368547758.07, ErrorMessage = "WIP EOY must be between 0 and 92,233,720,368,547,758.07.")]
-        [RegularExpression(@"^-?\d{1,17}(\.\d{0,2})?$", ErrorMessage = "WIP EOY must have at most 2 decimal places.")]
+        [Range(typeof(decimal), "-999999999999999.9999", "999999999999999.9999", ErrorMessage = "WIP EOY must be between -999,999,999,999,999.9999 and 999,999,999,999,999.9999.")]
         [GridColumn(IsVisible = false)]
         public decimal? WipEoy { get; set; }
 
         [Display(Name = "WIP Limit")]
-        [Range(0, 92233720368547758.07, ErrorMessage = "WIP Limit must be between 0 and 92,233,720,368,547,758.07.")]
-        [RegularExpression(@"^-?\d{1,17}(\.\d{0,2})?$", ErrorMessage = "WIP Limit must have at most 2 decimal places.")]
+        [Range(typeof(decimal), "-999999999999999.9999", "999999999999999.9999", ErrorMessage = "WIP Limit must be between -999,999,999,999,999.9999 and 999,999,999,999,999.9999.")]
         [GridColumn(IsVisible = false)]
         public decimal? WipLimit { get; set; }
 
         [Display(Name = "WIP Current")]
-        [Range(0, 92233720368547758.07, ErrorMessage = "WIP Current must be between 0 and 92,233,720,368,547,758.07.")]
-        [RegularExpression(@"^-?\d{1,17}(\.\d{0,2})?$", ErrorMessage = "WIP Current must have at most 2 decimal places.")]
+        [Range(typeof(decimal), "-999999999999999.9999", "999999999999999.9999", ErrorMessage = "WIP Current must be between -999,999,999,999,999.9999 and 999,999,999,999,999.9999.")]
         [GridColumn(IsVisible = false)]
         public decimal? WipCurrent { get; set; }
 
         [Display(Name = "FEC Cost")]
-        [Range(0, 92233720368547758.07, ErrorMessage = "FEC Cost must be between 0 and 92,233,720,368,547,758.07.")]
-        [RegularExpression(@"^-?\d{1,17}(\.\d{0,2})?$", ErrorMessage = "FEC Cost must have at most 2 decimal places.")]
+        [Range(typeof(decimal), "-999999999999999.9999", "999999999999999.9999", ErrorMessage = "FEC Cost must be between -999,999,999,999,999.9999 and 999,999,999,999,999.9999.")]
         [GridColumn(IsVisible = false)]
         public decimal? FecCost { get; set; }
 

@@ -105,6 +105,48 @@ namespace Apha.PACT.Api.UnitTests.Controller.BosworthInterfaceControllerTest
 
         #endregion
 
+        #region GetTimeSaleWorkGroup
+
+        [Fact]
+        public async Task GetTimeSaleWorkGroup_HappyPath_ReturnsOkWithMappedResult()
+        {
+            var serviceResult = new List<TimeSaleWorkGroupDto> { new() { SellingWg = "WG1" } };
+            var mapped = new List<TimeSaleWorkGroupRes> { new() { SellingWg = "WG1" } };
+            var request = new TimeSaleWorkGroupReq { WorkGroup = "WG1" };
+
+            _service.GetTimeSaleWorkGroupAsync("WG1").Returns(serviceResult);
+            _mapper.Map<IEnumerable<TimeSaleWorkGroupRes>>(serviceResult).Returns(mapped);
+
+            var result = await _controller.GetTimeSaleWorkGroup(request);
+
+            var ok = Assert.IsType<OkObjectResult>(result);
+            ok.Value.Should().Be(mapped);
+        }
+
+        [Fact]
+        public async Task GetTimeSaleWorkGroup_ServiceThrows_PropagatesException()
+        {
+            _service.GetTimeSaleWorkGroupAsync("WG1").ThrowsAsync(new Exception("Service error"));
+
+            await Assert.ThrowsAsync<Exception>(() => _controller.GetTimeSaleWorkGroup(new TimeSaleWorkGroupReq { WorkGroup = "WG1" }));
+        }
+
+        [Fact]
+        public async Task GetTimeSaleWorkGroup_EmptyResult_ReturnsOk()
+        {
+            var serviceResult = Enumerable.Empty<TimeSaleWorkGroupDto>();
+            var mapped = Enumerable.Empty<TimeSaleWorkGroupRes>();
+
+            _service.GetTimeSaleWorkGroupAsync("WG1").Returns(serviceResult);
+            _mapper.Map<IEnumerable<TimeSaleWorkGroupRes>>(serviceResult).Returns(mapped);
+
+            var result = await _controller.GetTimeSaleWorkGroup(new TimeSaleWorkGroupReq { WorkGroup = "WG1" });
+
+            Assert.IsType<OkObjectResult>(result);
+        }
+
+        #endregion
+
         #region GetTestSaleSellingWorkgroup
 
         [Fact]

@@ -20,19 +20,19 @@ namespace Apha.FPS.DataAccess.Data
             entity.Property(e => e.Program).HasColumnName("program");
             entity.Property(e => e.Customer).HasColumnName("customer");
             entity.Property(e => e.Manager).HasColumnName("manager");
-            entity.Property(e => e.TransferIncome).HasColumnName("transferincome");
-            entity.Property(e => e.CustIncome).HasColumnName("custincome");
-            entity.Property(e => e.WipEoy).HasColumnName("wip_eoy");
-            entity.Property(e => e.WipLimit).HasColumnName("wip_limit");
-            entity.Property(e => e.WipCurrent).HasColumnName("wip_current");
+            entity.Property(e => e.TransferIncome).HasPrecision(19, 4).HasColumnName("transferincome");
+            entity.Property(e => e.CustIncome).HasPrecision(19, 4).HasColumnName("custincome");
+            entity.Property(e => e.WipEoy).HasPrecision(19, 4).HasColumnName("wip_eoy");
+            entity.Property(e => e.WipLimit).HasPrecision(19, 4).HasColumnName("wip_limit");
+            entity.Property(e => e.WipCurrent).HasPrecision(19, 4).HasColumnName("wip_current");
             entity.Property(e => e.ProjectStatus).HasColumnName("projectstatus");
             entity.Property(e => e.CostBookNo).HasColumnName("costbookno");
             entity.Property(e => e.DateCreated)
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("datecreated");
-            entity.Property(e => e.FecCost).HasColumnName("feccost");
-            entity.Property(e => e.Profit).HasColumnName("profit");
-            entity.Property(e => e.BudgetCvl).HasColumnName("budget_cvl");
+            entity.Property(e => e.FecCost).HasPrecision(19, 4).HasColumnName("feccost");
+            entity.Property(e => e.Profit).HasPrecision(19, 4).HasColumnName("profit");
+            entity.Property(e => e.BudgetCvl).HasPrecision(19, 4).HasColumnName("budget_cvl");
             entity.Property(e => e.DateCosted)
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("datecosted");
@@ -41,13 +41,13 @@ namespace Apha.FPS.DataAccess.Data
             entity.Property(e => e.ProjectParent).HasColumnName("projectparent");
             entity.Property(e => e.ShortTitle).HasColumnName("shorttitle");
             entity.Property(e => e.CaseWorkSub).HasColumnName("caseworksub");
-            entity.Property(e => e.PvsIncome).HasColumnName("pvsincome");
-            entity.Property(e => e.PlanCaseWorkDebit).HasColumnName("plancaseworkdebit");
+            entity.Property(e => e.PvsIncome).HasPrecision(19, 4).HasColumnName("pvsincome");
+            entity.Property(e => e.PlanCaseWorkDebit).HasPrecision(19, 4).HasColumnName("plancaseworkdebit");
             entity.Property(e => e.Finished).HasColumnName("finished");
             entity.Property(e => e.OwningRc).HasColumnName("owningrc");
             entity.Property(e => e.Comments).HasColumnName("comments");
-            entity.Property(e => e.CarryOver).HasColumnName("carryover");
-            entity.Property(e => e.CarryOverSeed).HasColumnName("carryoverseed");
+            entity.Property(e => e.CarryOver).HasPrecision(19, 4).HasColumnName("carryover");
+            entity.Property(e => e.CarryOverSeed).HasPrecision(19, 4).HasColumnName("carryoverseed");
             entity.Property(e => e.DateTime)
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("date_time");

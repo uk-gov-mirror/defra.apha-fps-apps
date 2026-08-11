@@ -39,11 +39,15 @@ namespace Apha.FPSApps.Infrastructure.Integrations.FPSApis.Clients
         public IFpsGradeApiClient FpsGrade { get; }
         public IFpsTotalBusinessOverheadsApiClient FpsTotalBusinessOverheads { get; }
         public IFpsCostCentreApiClient FpsCostCentre { get; }
+        public IFpsMonthHourApiClient FpsMonthHour { get; }
+        public IFpsYearEndApiClient FpsYearEnd { get; }
 
         public IFpsContributionSummaryApiClient FpsContributionSummary { get; }
         public IFpsProjectAuditTrailApiClient FpsProjectAuditTrail { get; }
         public IFpsResourceAllocationApiClient FpsResourceAllocation { get; }
         public IFpsResourceMgmtReplanApiClient FpsResourceMgmtReplan { get; }
+        public IFpsTestsRequiredByWgApiClient FpsTestsRequiredByWg { get; }
+        public IFpsTestsRequiredByRcApiClient FpsTestsRequiredByRc { get; }
 
         public IFpsTestRCCostApiClient FpsTestRCCost { get; }
         public IFpsTestRequirementRCCostApiClient FpsTestRequirementRCCost { get; }
@@ -92,6 +96,10 @@ namespace Apha.FPSApps.Infrastructure.Integrations.FPSApis.Clients
             FpsCostCentre = new FpsCostCentreApiClient(http, mapper);
             FpsResourceAllocation = new FpsResourceAllocationApiClient(http, mapper);
             FpsResourceMgmtReplan = new FpsResourceMgmtReplanApiClient(http, mapper);
+            FpsTestsRequiredByWg = new FpsTestsRequiredByWgApiClient(http, mapper);
+            FpsTestsRequiredByRc = new FpsTestsRequiredByRcApiClient(http, mapper);
+            FpsMonthHour = new FpsMonthHourApiClient(http, mapper);
+            FpsYearEnd = new FpsYearEndApiClient(http, mapper);
         }
     }
 }

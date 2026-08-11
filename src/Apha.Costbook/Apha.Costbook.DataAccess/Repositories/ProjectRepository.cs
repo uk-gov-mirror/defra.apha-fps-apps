@@ -523,7 +523,6 @@ namespace Apha.Costbook.DataAccess.Repositories
                         .ToDictionary(yg => yg.Key, yg => yg.Sum(s => s.Nodays!.Value / daysInYear)),
                     Total = g.Sum(s => s.Nodays!.Value / daysInYear)
                 })
-                .OrderBy(r => r.Grade)
                 .ToList();
 
 
@@ -539,6 +538,30 @@ namespace Apha.Costbook.DataAccess.Repositories
                             .Where(r => r.Grade.Contains(grade.ToString()!, StringComparison.OrdinalIgnoreCase))
                             .ToList();
                 }
+            }
+
+            if (!string.IsNullOrWhiteSpace(parameters?.SortBy))
+            {
+                var sortBy = parameters.SortBy.Trim().ToLowerInvariant();
+                var descending = parameters.Descending;
+
+                pivotRows = sortBy switch
+                {
+                    "project" => descending
+                        ? pivotRows.OrderByDescending(r => r.Project).ToList()
+                        : pivotRows.OrderBy(r => r.Project).ToList(),
+                    "grade" => descending
+                        ? pivotRows.OrderByDescending(r => r.Grade).ToList()
+                        : pivotRows.OrderBy(r => r.Grade).ToList(),
+                    "total" => descending
+                        ? pivotRows.OrderByDescending(r => r.Total).ToList()
+                        : pivotRows.OrderBy(r => r.Total).ToList(),
+                    _ => pivotRows.OrderBy(r => r.Grade).ToList()
+                };
+            }
+            else
+            {
+                pivotRows = pivotRows.OrderBy(r => r.Grade).ToList();
             }
 
             var totalCount = pivotRows.Count;
@@ -592,9 +615,7 @@ namespace Apha.Costbook.DataAccess.Repositories
                     YearlyAmounts = g.GroupBy(r => r.Year)
                         .ToDictionary(yg => yg.Key, yg => yg.Sum(r => r.NoDays)),
                     Total = g.Sum(r => r.NoDays)
-                })
-                .OrderBy(r => r.GradeCode)
-                .ThenBy(r => r.Name)
+                })               
                 .ToList();
 
             if (!string.IsNullOrWhiteSpace(parameters?.Filter))
@@ -619,6 +640,36 @@ namespace Apha.Costbook.DataAccess.Repositories
                             .Where(r => r.WorkGroup.Contains(workGroup.ToString()!, StringComparison.OrdinalIgnoreCase))
                             .ToList();
                 }
+            }
+
+            if (!string.IsNullOrWhiteSpace(parameters?.SortBy))
+            {
+                var sortBy = parameters.SortBy.Trim().ToLowerInvariant();
+                var descending = parameters.Descending;
+
+                pivotRows = sortBy switch
+                {
+                    "project" => descending
+                        ? pivotRows.OrderByDescending(r => r.Project).ToList()
+                        : pivotRows.OrderBy(r => r.Project).ToList(),
+                    "workgroup" => descending
+                        ? pivotRows.OrderByDescending(r => r.WorkGroup).ToList()
+                        : pivotRows.OrderBy(r => r.WorkGroup).ToList(),
+                    "gradecode" => descending
+                        ? pivotRows.OrderByDescending(r => r.GradeCode).ToList()
+                        : pivotRows.OrderBy(r => r.GradeCode).ToList(),
+                    "name" => descending
+                        ? pivotRows.OrderByDescending(r => r.Name).ToList()
+                        : pivotRows.OrderBy(r => r.Name).ToList(),
+                    "total" => descending
+                        ? pivotRows.OrderByDescending(r => r.Total).ToList()
+                        : pivotRows.OrderBy(r => r.Total).ToList(),
+                    _ => pivotRows.OrderBy(r => r.GradeCode).ThenBy(r => r.Name).ToList()
+                };
+            }
+            else
+            {
+                pivotRows = pivotRows.OrderBy(r => r.WorkGroup).ThenBy(r => r.GradeCode).ToList();
             }
 
             var totalCount = pivotRows.Count;
@@ -730,7 +781,6 @@ namespace Apha.Costbook.DataAccess.Repositories
                         .ToDictionary(yg => yg.Key, yg => yg.Sum(r => r.Cost)),
                     Total = g.Sum(r => r.Cost)
                 })
-                .OrderBy(r => r.Category)
                 .ToList();
 
             // Apply filter
@@ -746,6 +796,30 @@ namespace Apha.Costbook.DataAccess.Repositories
                             .Where(r => r.Category.Contains(category.ToString()!, StringComparison.OrdinalIgnoreCase))
                             .ToList();
                 }
+            }
+
+            if (!string.IsNullOrWhiteSpace(parameters?.SortBy))
+            {
+                var sortBy = parameters.SortBy.Trim().ToLowerInvariant();
+                var descending = parameters.Descending;
+
+                pivotRows = sortBy switch
+                {
+                    "project" => descending
+                        ? pivotRows.OrderByDescending(r => r.Project).ToList()
+                        : pivotRows.OrderBy(r => r.Project).ToList(),
+                    "category" => descending
+                        ? pivotRows.OrderByDescending(r => r.Category).ToList()
+                        : pivotRows.OrderBy(r => r.Category).ToList(),
+                    "total" => descending
+                        ? pivotRows.OrderByDescending(r => r.Total).ToList()
+                        : pivotRows.OrderBy(r => r.Total).ToList(),
+                    _ => pivotRows.OrderBy(r => r.Category).ToList()
+                };
+            }
+            else
+            {
+                pivotRows = pivotRows.OrderBy(r => r.Category).ToList();
             }
 
             var totalCount = pivotRows.Count;
@@ -770,8 +844,8 @@ namespace Apha.Costbook.DataAccess.Repositories
 
         // Filtering logic similar to FPS ApplyEmployeeFilter
         private static IQueryable<Project> ApplyProjectFilter(IQueryable<Project> queryProjects, string? filter)
-        {
-            if (string.IsNullOrEmpty(filter))
+        { 
+        if (string.IsNullOrEmpty(filter))
             {
                 return queryProjects;
             }

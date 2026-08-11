@@ -26,11 +26,37 @@ namespace Apha.FPSApps.Infrastructure.Integrations.HttpExecutor
             return await response.Content.ReadAsByteArrayAsync();
         }
 
+        public async Task<ApiResponse<T>> PostAsync<T>(string url)
+        {
+            var response = await _http.PostAsync(url, null);
+            return await response.ToApiResponse<T>();
+        }
+
         public async Task<ApiResponse<T>> PostAsync<TRequest, T>(
             string url,
             TRequest body)
         {
             var response = await _http.PostAsJsonAsync(url, body);
+            return await response.ToApiResponse<T>();
+        }
+
+        public async Task<ApiResponse<T>> PostAsync<TRequest, T>(
+            string url,
+            TRequest body,
+            IDictionary<string, string> headers)
+        {
+            var request = new HttpRequestMessage(HttpMethod.Post, url)
+            {
+                Content = new StringContent(
+                    JsonSerializer.Serialize(body),
+                    Encoding.UTF8,
+                    "application/json")
+            };
+            foreach (var header in headers)
+            {
+                request.Headers.TryAddWithoutValidation(header.Key, header.Value);
+            }
+            var response = await _http.SendAsync(request);
             return await response.ToApiResponse<T>();
         }
 

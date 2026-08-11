@@ -21,8 +21,8 @@ namespace Apha.FPS.DataAccess.Data
                 .HasColumnName("account");
 
             builder.Property(e => e.GenBid)
-                .HasDefaultValueSql("0")
-                .HasColumnType("money")
+                .HasDefaultValue(0m)
+                .HasPrecision(19, 4)
                 .HasColumnName("genbid");
 
             builder.Property(e => e.FpsYear).HasColumnName("fpsyear");

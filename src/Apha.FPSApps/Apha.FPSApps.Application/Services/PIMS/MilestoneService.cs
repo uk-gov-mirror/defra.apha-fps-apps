@@ -84,7 +84,11 @@ namespace Apha.FPSApps.Application.Services.PIMS
 
         public async Task<ApiResponseDto<List<ProjectYearManagerDto>>> GetProjectYearManagersAsync(int year)
             => await _client.PimsMilestone.GetProjectYearManagersAsync(year);
+
         public async Task<ApiResponseDto<List<MilestoneDto>>> GetPMDMilestonesAsync(QueryParameters<string> parameters, string project)
            => await _client.PimsMilestone.GetPMDMilestonesAsync(parameters, project);
+
+        public async Task<ApiResponseDto<MilestoneDto>> UpdateMilestoneAsync_PMD(string project, string number, MilestoneDto dto)
+            => await _client.PimsMilestone.UpdateMilestoneAsync_PMD(project, number, dto);
     }
 }

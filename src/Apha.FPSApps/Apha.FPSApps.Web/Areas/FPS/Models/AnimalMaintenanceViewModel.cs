@@ -1,3 +1,4 @@
+using Apha.FPSApps.Web.Validation;
 using Apha.FPSApps.Web.Models.Components.DataGrid;
 using System.ComponentModel.DataAnnotations;
 
@@ -23,10 +24,12 @@ namespace Apha.FPSApps.Web.Areas.FPS.Models
 
         [Display(Name = "Daily Rate")]
         [GridColumn(Type = GridColumnType.GbpValue)]
+        [CurrencyRange]
         public decimal? DailyRate { get; set; }
 
         [Display(Name = "Defra Daily Rate")]
         [GridColumn(Type = GridColumnType.GbpValue)]
+        [CurrencyRange]
         public decimal? DefraDailyRate { get; set; }
 
         [Display(Name = "Plan Full Weeks")]

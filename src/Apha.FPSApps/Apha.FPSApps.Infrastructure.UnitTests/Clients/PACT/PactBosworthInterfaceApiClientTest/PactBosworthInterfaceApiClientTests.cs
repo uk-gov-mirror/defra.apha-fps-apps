@@ -172,6 +172,81 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactBosworthInterfa
 
         #endregion
 
+        #region GetTimeSaleWorkGroupAsync
+
+        [Fact]
+        public async Task GetTimeSaleWorkGroupAsync_WhenApiReturnsSuccess_ReturnsMappedResponse()
+        {
+            var apiResponse = new ApiResponse<List<TimeSaleWorkGroupRes>>
+            {
+                Success = true,
+                Data = [new TimeSaleWorkGroupRes { SellingWg = "WG1", Project = "PRJ1" }]
+            };
+            var expectedDto = ApiResponseDto<List<TimeSaleWorkGroupDto>>.SuccessResponse(
+                [new TimeSaleWorkGroupDto { SellingWg = "WG1", Project = "PRJ1" }]);
+
+            _http.GetAsync<List<TimeSaleWorkGroupRes>>(Arg.Is<string>(url =>
+                url.Contains("api/v1/bosworth-interface/time-sale-workgroup") && url.Contains("WG1")))
+                .Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<TimeSaleWorkGroupDto>>>(apiResponse).Returns(expectedDto);
+
+            var result = await _client.GetTimeSaleWorkGroupAsync("WG1");
+
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.NotNull(result.Data);
+            Assert.Single(result.Data);
+            await _http.Received(1).GetAsync<List<TimeSaleWorkGroupRes>>(Arg.Is<string>(url =>
+                url.Contains("api/v1/bosworth-interface/time-sale-workgroup")));
+        }
+
+        [Fact]
+        public async Task GetTimeSaleWorkGroupAsync_WhenApiReturnsFailure_ReturnsFailureResponse()
+        {
+            var errors = new List<ApiError> { new() { Message = "Error", Code = "SERVER_ERROR" } };
+            var apiResponse = new ApiResponse<List<TimeSaleWorkGroupRes>> { Success = false, Errors = errors };
+            var mappedDto = new ApiResponseDto<List<TimeSaleWorkGroupDto>>
+            {
+                Success = false,
+                Errors = [new ApiErrorDto { Code = "SERVER_ERROR", Message = "Error" }],
+                Meta = new ApiMetaDto()
+            };
+
+            _http.GetAsync<List<TimeSaleWorkGroupRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<TimeSaleWorkGroupDto>>>(apiResponse).Returns(mappedDto);
+
+            var result = await _client.GetTimeSaleWorkGroupAsync("WG1");
+
+            Assert.False(result.Success);
+            Assert.NotNull(result.Errors);
+            Assert.Single(result.Errors);
+            Assert.Equal("SERVER_ERROR", result.Errors[0].Code);
+        }
+
+        [Fact]
+        public async Task GetTimeSaleWorkGroupAsync_EncodesWorkGroupParameter()
+        {
+            var apiResponse = new ApiResponse<List<TimeSaleWorkGroupRes>>
+            {
+                Success = true,
+                Data = []
+            };
+            var expectedDto = ApiResponseDto<List<TimeSaleWorkGroupDto>>.SuccessResponse([]);
+
+            _http.GetAsync<List<TimeSaleWorkGroupRes>>(Arg.Is<string>(url =>
+                url.Contains(Uri.EscapeDataString("WG&1"))))
+                .Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<TimeSaleWorkGroupDto>>>(apiResponse).Returns(expectedDto);
+
+            var result = await _client.GetTimeSaleWorkGroupAsync("WG&1");
+
+            Assert.True(result.Success);
+            await _http.Received(1).GetAsync<List<TimeSaleWorkGroupRes>>(Arg.Is<string>(url =>
+                url.Contains(Uri.EscapeDataString("WG&1"))));
+        }
+
+        #endregion
+
         #region GetTestSaleSellingWorkgroupAsync
 
         [Fact]

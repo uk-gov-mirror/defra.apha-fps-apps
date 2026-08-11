@@ -25,8 +25,8 @@ namespace Apha.FPS.DataAccess.Data
                 .HasColumnName("desc_long");
 
             entity.Property(e => e.AvSalary)
-                .HasDefaultValueSql("0")
-                .HasColumnType("money")
+                .HasDefaultValue(0m)
+                .HasPrecision(19, 4)
                 .HasColumnName("avsalary");
 
             entity.Property(e => e.PactCode)

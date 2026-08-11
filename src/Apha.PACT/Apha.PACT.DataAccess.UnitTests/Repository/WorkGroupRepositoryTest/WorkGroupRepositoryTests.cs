@@ -37,6 +37,28 @@ namespace Apha.PACT.DataAccess.UnitTests.Repository.WorkGroupRepositoryTest
         private static WorkGroupRepository CreateRepository(IEnumerable<WorkGroup> workGroups)
             => CreateRepositoryWithMocks(workGroups).Repo;
 
+        // ── Staff-by-workgroup repository factory (three-set join) ───────────
+
+        private static WorkGroupRepository CreateRepositoryForStaffByWorkGroup(
+            IEnumerable<PactWorkGroupGradeView> gradeViews,
+            IEnumerable<WorkGroupStaffView> staffViews,
+            IEnumerable<WorkGroup> workGroups)
+        {
+            var fpsRequestContext = Substitute.For<IFpsRequestContext>();
+            var mockContext = RepositoryTestHelper.CreateMockDbContext<FpsDbContext>(fpsRequestContext);
+
+            var gradeViewSet = RepositoryTestHelper.CreateMockDbSet(gradeViews);
+            var staffViewSet = RepositoryTestHelper.CreateMockDbSet(staffViews);
+            var workGroupSet = RepositoryTestHelper.CreateMockDbSet(workGroups);
+
+            mockContext.Setup(x => x.PactWorkGroupGradeViews).Returns(gradeViewSet.Object);
+            mockContext.Setup(x => x.WorkGroupStaffViews).Returns(staffViewSet.Object);
+            mockContext.Setup(x => x.WorkGroups).Returns(workGroupSet.Object);
+            mockContext.Setup(x => x.MonthlyTimes).Returns(RepositoryTestHelper.CreateMockDbSet(Enumerable.Empty<MonthlyTime>()).Object);
+
+            return new WorkGroupRepository(mockContext.Object, fpsRequestContext);
+        }
+
         // ── Time-code repository factory (three-set join) ────────────────────
 
         private static PactWorkGroupGradeView GradeView(string wgGrade, string workGroup) =>
@@ -219,6 +241,64 @@ namespace Apha.PACT.DataAccess.UnitTests.Repository.WorkGroupRepositoryTest
             Assert.All(result, name => Assert.IsType<string>(name));
             Assert.Contains("WG_A", result);
             Assert.Contains("WG_B", result);
+        }
+
+        #endregion
+
+        #region GetStaffByWorkGroupAsync
+
+        [Fact]
+        public async Task GetStaffByWorkGroupAsync_WithActiveAndNullStatus_ReturnsJoinedStaff()
+        {
+            var repo = CreateRepositoryForStaffByWorkGroup(
+                [
+                    new PactWorkGroupGradeView { WgGrade = "G1", WorkGroup = "WG1" },
+                    new PactWorkGroupGradeView { WgGrade = "G2", WorkGroup = "WG2" }
+                ],
+                [
+                    new WorkGroupStaffView { PactId = "P1", SpNumber = "SP1", Name = "Alice", WorkGroupGrade = "G1", PersonStatus = "A" },
+                    new WorkGroupStaffView { PactId = "P2", SpNumber = "SP2", Name = "Bob", WorkGroupGrade = "G2", PersonStatus = null }
+                ],
+                [
+                    new WorkGroup { WorkGroupName = "WG1" },
+                    new WorkGroup { WorkGroupName = "WG2" }
+                ]);
+
+            var result = await repo.GetStaffByWorkGroupAsync();
+
+            Assert.Equal(2, result.Count);
+            Assert.Contains(result, x => x.PactId == "P1" && x.WorkGroup == "WG1");
+            Assert.Contains(result, x => x.PactId == "P2" && x.WorkGroup == "WG2");
+        }
+
+        [Fact]
+        public async Task GetStaffByWorkGroupAsync_WithInactiveStatus_ExcludesInactiveStaff()
+        {
+            var repo = CreateRepositoryForStaffByWorkGroup(
+                [new PactWorkGroupGradeView { WgGrade = "G1", WorkGroup = "WG1" }],
+                [
+                    new WorkGroupStaffView { PactId = "P1", SpNumber = "SP1", Name = "Alice", WorkGroupGrade = "G1", PersonStatus = "A" },
+                    new WorkGroupStaffView { PactId = "P2", SpNumber = "SP2", Name = "Bob", WorkGroupGrade = "G1", PersonStatus = "I" }
+                ],
+                [new WorkGroup { WorkGroupName = "WG1" }]);
+
+            var result = await repo.GetStaffByWorkGroupAsync();
+
+            Assert.Single(result);
+            Assert.Equal("P1", result[0].PactId);
+        }
+
+        [Fact]
+        public async Task GetStaffByWorkGroupAsync_WithNoMatchingJoins_ReturnsEmptyList()
+        {
+            var repo = CreateRepositoryForStaffByWorkGroup(
+                [new PactWorkGroupGradeView { WgGrade = "G1", WorkGroup = "WG1" }],
+                [new WorkGroupStaffView { PactId = "P1", SpNumber = "SP1", Name = "Alice", WorkGroupGrade = "G2", PersonStatus = "A" }],
+                [new WorkGroup { WorkGroupName = "WG1" }]);
+
+            var result = await repo.GetStaffByWorkGroupAsync();
+
+            Assert.Empty(result);
         }
 
         #endregion

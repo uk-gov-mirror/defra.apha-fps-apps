@@ -107,6 +107,22 @@ namespace Apha.FPSApps.Web.Areas.CostBook.Controllers
                 return row;
             }).ToList();
 
+            if (!string.IsNullOrWhiteSpace(query.SortBy)
+                && query.SortBy.StartsWith("Y", StringComparison.OrdinalIgnoreCase)
+                && int.TryParse(query.SortBy[1..], out var yearIndex)
+                && yearIndex >= 1 && yearIndex <= 10)
+            {
+                rows = query.Descending
+                    ? rows.OrderBy(r => GetYearValue(r, yearIndex).HasValue ? 0 : 1)
+                          .ThenByDescending(r => GetYearValue(r, yearIndex))
+                          .ThenBy(r => r.Grade)
+                          .ToList()
+                    : rows.OrderBy(r => GetYearValue(r, yearIndex).HasValue ? 0 : 1)
+                          .ThenBy(r => GetYearValue(r, yearIndex))
+                          .ThenBy(r => r.Grade)
+                          .ToList();
+            }
+
             
             var columns = new List<DataGridColumn>
             {
@@ -149,5 +165,21 @@ namespace Apha.FPSApps.Web.Areas.CostBook.Controllers
                 }
             };
         }
+
+        private static decimal? GetYearValue(StaffYearsPivotRow row, int yearIndex)
+            => yearIndex switch
+            {
+                1 => row.Y1,
+                2 => row.Y2,
+                3 => row.Y3,
+                4 => row.Y4,
+                5 => row.Y5,
+                6 => row.Y6,
+                7 => row.Y7,
+                8 => row.Y8,
+                9 => row.Y9,
+                10 => row.Y10,
+                _ => null
+            };
     }
 }

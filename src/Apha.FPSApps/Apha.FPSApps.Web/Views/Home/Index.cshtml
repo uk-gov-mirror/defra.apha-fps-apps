@@ -73,7 +73,14 @@
             <div class="tile @(hasPimsAccess ? "" : "tile-disabled")">  
                 @if (hasPimsAccess)
                 {
+                    @if ((User.IsInRole("PIMSProjectManager") || User.IsInRole("PMDAdmin")) && !User.IsInRole("PIMSUser") && !User.IsInRole("PIMSAdmin"))
+                    {
+                        <a asp-area="PIMS" asp-controller="PMDMilestone" asp-action="Index" class="govuk-link govuk-link--inverse">PIMS</a>
+                    }
+                    else
+                    {
                         <a asp-area="PIMS" asp-controller="ProjectList" asp-action="Index" class="govuk-link govuk-link--inverse">PIMS</a>
+                    }
                 }
                 else
                 {

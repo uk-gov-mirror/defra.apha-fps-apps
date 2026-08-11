@@ -134,8 +134,8 @@
 
 
 @section Scripts {
-    <script src="~/js/ajax-form-validation.js"></script>
-    <script src="~/js/fps_js/AnimalJob.js"></script>
+    <script src="~/js/ajax-form-validation.js" asp-append-version="true"></script>
+    <script src="~/js/fps_js/AnimalJob.js" asp-append-version="true"></script>
     <script>
         var currentProgramNo = '@Html.Raw(Model.SelectedProgramNo)';
         var currentJobCode = '';
@@ -148,7 +148,10 @@
 
         $(document).ready(function () {
             if (currentProgramNo) {
-                window['gridManager_@Model.ProjectsGrid.GridId'].reloadGrid({ page: 1 });
+                showLoader();
+                setTimeout(function () {
+                    window['gridManager_@Model.ProjectsGrid.GridId'].reloadGrid({ page: 1 });
+                }, 0);
             }
 
             var animalGridContainer = document.getElementById('gridContainer_@Model.AnimalCostGrid.GridId');
@@ -163,7 +166,12 @@
                     var firstRow = $('#tbl_@Model.ProjectsGrid.GridId tbody tr.selectable-row:first');
                     if (firstRow.length) {
                         firstRow.trigger('click');
+                    } else {
+                        hideLoader();
                     }
+                }
+                if (e.detail.gridId === '@Model.AnimalCostGrid.GridId') {
+                    hideLoader();
                 }
             });
 
@@ -209,7 +217,10 @@
                 );
             }
 
-            window['gridManager_@Model.ProjectsGrid.GridId'].reloadGrid({ page: 1 });
+            showLoader();
+            setTimeout(function () {
+                window['gridManager_@Model.ProjectsGrid.GridId'].reloadGrid({ page: 1 });
+            }, 0);
         });
 
         function selectProject(btn) {
@@ -240,7 +251,10 @@
                 }
             );
 
-            window['gridManager_@Model.AnimalCostGrid.GridId'].reloadGrid({ page: 1 });
+            showLoader();
+            setTimeout(function () {
+                window['gridManager_@Model.AnimalCostGrid.GridId'].reloadGrid({ page: 1 });
+            }, 0);
         }
 
         function getProjectExtraFilters() {

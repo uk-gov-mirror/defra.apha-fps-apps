@@ -13,6 +13,7 @@ namespace Apha.FPSApps.Web.Areas.PACT.Models
         public int MonthNo { get; set; }
 
         [Display(Name = "Cost Profile")]
+        [Range(typeof(decimal), "-999999999999999.9999", "999999999999999.9999", ErrorMessage = "Cost Profile must be between -999,999,999,999,999.9999 and 999,999,999,999,999.9999.")]
         [GridColumn(Order = 2, Width = 160, Type = GridColumnType.GbpValue)]
         public decimal? CostProfile { get; set; }
     }

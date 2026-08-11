@@ -57,6 +57,20 @@ namespace Apha.PACT.Api.Controllers
         }
 
         /// <summary>
+        /// Retrieves time sale data for the specified selling workgroup.
+        /// </summary>
+        /// <param name="request">Request containing the workgroup to filter by.</param>
+        /// <returns>
+        /// <c>200 OK</c> with an <see cref="IEnumerable{TimeSaleWorkGroupRes}"/> containing matching records.
+        /// </returns>
+        [HttpGet("time-sale-workgroup")]
+        public async Task<IActionResult> GetTimeSaleWorkGroup([FromQuery] TimeSaleWorkGroupReq request)
+        {
+            var result = await _service.GetTimeSaleWorkGroupAsync(request.WorkGroup ?? string.Empty);
+            return Ok(_mapper.Map<IEnumerable<TimeSaleWorkGroupRes>>(result));
+        }
+
+        /// <summary>
         /// Retrieves test sale data for the specified selling workgroup.
         /// </summary>
         /// <param name="workGroup">The workgroup to filter by.</param>

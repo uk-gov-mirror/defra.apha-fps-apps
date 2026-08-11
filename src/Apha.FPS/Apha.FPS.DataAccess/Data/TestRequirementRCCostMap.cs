@@ -30,7 +30,7 @@ namespace Apha.FPS.DataAccess.Data
                   .HasColumnName("fpsyear");
 
             entity.Property(e => e.Price)
-                  .HasColumnType("money")
+                  .HasPrecision(19, 4)
                   .HasColumnName("price");
         }
     }

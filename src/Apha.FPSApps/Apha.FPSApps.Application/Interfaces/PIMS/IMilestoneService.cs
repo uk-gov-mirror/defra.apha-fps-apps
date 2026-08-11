@@ -38,5 +38,6 @@ namespace Apha.FPSApps.Application.Interfaces.PIMS
         Task<ApiResponseDto<object>> ImportWithOverwriteAsync(string project);
         Task<ApiResponseDto<List<ProjectYearManagerDto>>> GetProjectYearManagersAsync(int year);
         Task<ApiResponseDto<List<MilestoneDto>>> GetPMDMilestonesAsync(QueryParameters<string> parameters, string project);
+        Task<ApiResponseDto<MilestoneDto>> UpdateMilestoneAsync_PMD(string project, string number, MilestoneDto dto);
     }
 }

@@ -116,6 +116,8 @@
                 function (html) {
                     $('#modaPopupBody').html(html);
                     $('#modalPopup').addClass('show');
+                            // Initialize form validation (unobtrusive + numeric)
+                           initializeFormValidation('#testPurchaseReqForm');
                 });
         }
 
@@ -127,6 +129,8 @@
                 function (html) {
                     $('#modaPopupBody').html(html);
                     $('#modalPopup').addClass('show');
+                    // Initialize form validation (unobtrusive + numeric)
+                    initializeFormValidation('#invoiceForm');
                 });
         }
 
@@ -164,34 +168,6 @@
 
             if (typeof data.isEdit === 'string') data.isEdit = data.isEdit === 'true';
 
-            ['NoRequired', 'UnitPrice'].forEach(function (f) {
-                if (data[f] === '' || data[f] === undefined) data[f] = null;
-            });
-
-            // Validate UnitPrice against PostgreSQL money limits
-            if (data.UnitPrice !== null && data.UnitPrice !== undefined) {
-                var unitPrice = parseFloat(data.UnitPrice);
-                var maxMoney = 92233720368547758.07;
-
-                if (isNaN(unitPrice)) {
-        showAlertMessage('The value you enter is not valid for this fields. The entered value is larger than the fieldsize permit.', AlertType.ERROR);
-                    return;
-                }
-                if (unitPrice < 0 || unitPrice > maxMoney) {
-                    showAlertMessage('The value you enter is not valid for this fields. The entered value is larger than the fieldsize permit.', AlertType.ERROR);
-                    return;
-                }
-
-                // Check decimal places
-                var decimalPart = unitPrice.toString().split('.')[1];
-                if (decimalPart && decimalPart.length > 2) {
-                    showAlertMessage('Unit Price must have at most 2 decimal places.', AlertType.INFO);
-                    return;
-                }
-
-                // Ensure we send a proper decimal, not scientific notation
-                data.UnitPrice = unitPrice;
-            }
 
             clearValidationErrors('#testPurchaseReqForm');
             $.ajax({

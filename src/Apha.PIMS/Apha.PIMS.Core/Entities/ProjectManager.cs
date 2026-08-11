@@ -9,5 +9,7 @@ namespace Apha.PIMS.Core.Entities
         public string? Mnumber { get; set; }
 
         public bool Disable { get; set; }
+
+        public string? LoginEmail { get; set; }
     }
 }

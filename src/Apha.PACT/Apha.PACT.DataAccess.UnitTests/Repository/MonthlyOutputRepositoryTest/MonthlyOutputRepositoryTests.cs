@@ -24,7 +24,7 @@ namespace Apha.PACT.DataAccess.UnitTests.Repository.MonthlyOutputRepositoryTest
 
             mockContext.Setup(x => x.MonthlyOutputLogs).Returns(mockSet.Object);
 
-            return new MonthlyOutputRepository(mockContext.Object);
+            return new MonthlyOutputRepository(mockContext.Object, fpsRequestContext);
         }
 
         private static MonthlyOutputRepository CreateRepositoryWithOutputs(
@@ -39,7 +39,7 @@ namespace Apha.PACT.DataAccess.UnitTests.Repository.MonthlyOutputRepositoryTest
 
             mockContext.Setup(x => x.MonthlyOutputs).Returns(mockSet.Object);
 
-            return new MonthlyOutputRepository(mockContext.Object);
+            return new MonthlyOutputRepository(mockContext.Object, fpsRequestContext);
         }
 
         private static PaginationParameters<string> DefaultQuery(int page = 1, int pageSize = 10)
@@ -556,6 +556,57 @@ namespace Apha.PACT.DataAccess.UnitTests.Repository.MonthlyOutputRepositoryTest
             var result = await repo.ExistsByTestCodeAndWorkGroupAsync("TC1", "WG1");
 
             Assert.False(result);
+        }
+
+        #endregion
+
+        #region LiveRecordExistsAsync
+
+        [Fact]
+        public async Task LiveRecordExistsAsync_WithMatchingCompositeKey_ReturnsTrue()
+        {
+            var repo = CreateRepositoryWithOutputs(MonthlyOutputSeedData());
+
+            var result = await repo.LiveRecordExistsAsync("TC1", "BUYER_A", 1, "WG1");
+
+            Assert.True(result);
+        }
+
+        [Fact]
+        public async Task LiveRecordExistsAsync_WithNonMatchingCompositeKey_ReturnsFalse()
+        {
+            var repo = CreateRepositoryWithOutputs(MonthlyOutputSeedData());
+
+            var result = await repo.LiveRecordExistsAsync("TC1", "BUYER_X", 1, "WG1");
+
+            Assert.False(result);
+        }
+
+        #endregion
+
+        #region GetLiveByKeyAsync
+
+        [Fact]
+        public async Task GetLiveByKeyAsync_WithMatchingCompositeKey_ReturnsEntity()
+        {
+            var repo = CreateRepositoryWithOutputs(MonthlyOutputSeedData());
+
+            var result = await repo.GetLiveByKeyAsync("TC1", "BUYER_A", 1, "WG1");
+
+            Assert.NotNull(result);
+            Assert.Equal("TC1", result!.TestCode);
+            Assert.Equal("BUYER_A", result.Buyer);
+            Assert.Equal("WG1", result.WorkGroup);
+        }
+
+        [Fact]
+        public async Task GetLiveByKeyAsync_WithNonMatchingCompositeKey_ReturnsNull()
+        {
+            var repo = CreateRepositoryWithOutputs(MonthlyOutputSeedData());
+
+            var result = await repo.GetLiveByKeyAsync("TC9", "BUYER_A", 1, "WG1");
+
+            Assert.Null(result);
         }
 
         #endregion

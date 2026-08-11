@@ -40,7 +40,27 @@ namespace Apha.PACT.DataAccess.Repository
                 .Select(w => w.WorkGroupName)
                 .OrderBy(x => x)
                 .ToListAsync();
+        }        
+
+        public async Task<List<WorkGroupStaffItem>> GetStaffByWorkGroupAsync()
+        {
+            return await (
+                from grade in _context.PactWorkGroupGradeViews.AsNoTracking()
+                join staff in _context.WorkGroupStaffViews.AsNoTracking()
+                    on grade.WgGrade equals staff.WorkGroupGrade
+                join wg in _context.WorkGroups.AsNoTracking()
+                    on grade.WorkGroup equals wg.WorkGroupName
+                where staff.PersonStatus == null || staff.PersonStatus == "A"
+                select new WorkGroupStaffItem
+                {
+                    WorkGroup = wg.WorkGroupName,
+                    PactId = staff.PactId,
+                    SpNumber = staff.SpNumber,
+                    Name = staff.Name
+                })
+                .ToListAsync();
         }
+
 
         // ─── WorkGroup Maintenance CRUD + lookups (migrated from FPS) ───────────────
 

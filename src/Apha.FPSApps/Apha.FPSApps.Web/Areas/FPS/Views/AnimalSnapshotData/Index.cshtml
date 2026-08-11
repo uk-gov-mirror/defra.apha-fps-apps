@@ -69,6 +69,7 @@
         //   Index() returns empty Data; the grid fetches its first page through the
         //   LoadSnapShotAnimalDataGrid endpoint (server-side pagination/filter/sort).
         $(document).ready(function () {
+            $(document).ajaxStart(showLoader).ajaxStop(hideLoader);
             reloadSnapShotAnimalDataGrid();
         });
     </script>

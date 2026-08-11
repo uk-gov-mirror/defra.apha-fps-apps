@@ -736,6 +736,158 @@ namespace Apha.PIMS.Application.UnitTests.Services.MilestoneServiceTest
 
         #endregion
 
+        #region UpdateMilestoneAsync_PMD
+
+        [Fact]
+        public async Task UpdateMilestoneAsync_PMD_WithValidData_UpdatesMilestoneAndReturnsMappedDto()
+        {
+            // Arrange
+            const string project = "PP001";
+            const string number = "M1";
+            const short underReview = 1;
+            const short onTarget = 0;
+            // No dateCompleted, so mutual exclusion will not apply based on dateCompleted
+            const string projectLeaderComment = "Updated via PMD";
+            const string changedBy = "testuser";
+
+            // The service will first check if the milestone exists
+            var existingMilestone = new Milestone
+            {
+                Project = project,
+                Number = number,
+                Description = "Original",
+                DateDue = new DateTime(2024, 9, 1),
+                UnderSdReview = 0,
+                OnTarget = 1
+            };
+
+            // After mutual exclusions: UnderSdReview=1, so OnTarget=0, DateCompleted=null
+            var updatedMilestone = new Milestone
+            {
+                Project = project,
+                Number = number,
+                Description = "Original",
+                DateDue = new DateTime(2024, 9, 1),
+                UnderSdReview = 1,
+                OnTarget = 0,
+                DateCompleted = null,
+                ProjectLeaderComment = projectLeaderComment
+            };
+
+            var expectedDto = new MilestoneDto
+            {
+                Project = project,
+                Number = number,
+                Description = "Original",
+                DateDue = new DateTime(2024, 9, 1),
+                UnderSdReview = 1,
+                OnTarget = 0,
+                DateCompleted = null,
+                ProjectLeaderComment = projectLeaderComment
+            };
+
+            // The service calls GetMilestoneAsync to validate existence
+            _mockRepository.GetMilestoneAsync(project, number).Returns(existingMilestone);
+            // After applying mutual exclusions: underReview=1, so onTarget=0, dateCompleted=null
+            _mockRepository.UpdateMilestoneAsync_PMD(project, number, (short)1, (short)0, null, projectLeaderComment, changedBy)
+                .Returns(updatedMilestone);
+            _mockMapper.Map<MilestoneDto>(updatedMilestone).Returns(expectedDto);
+
+            // Act
+            var result = await _sut.UpdateMilestoneAsync_PMD(project, number, underReview, onTarget, null, projectLeaderComment, changedBy);
+
+            // Assert
+            result.Should().NotBeNull();
+            result?.Project.Should().Be(project);
+            result?.Number.Should().Be(number);
+            result?.Description.Should().Be("Original"); // Unchanged
+
+            await _mockRepository.Received(1).GetMilestoneAsync(project, number);
+            await _mockRepository.Received(1).UpdateMilestoneAsync_PMD(project, number, (short)1, (short)0, null, projectLeaderComment, changedBy);
+            _mockMapper.Received(1).Map<MilestoneDto>(updatedMilestone);
+        }
+
+        [Fact]
+        public async Task UpdateMilestoneAsync_PMD_WithValidData_DefaultsChangedByToNull()
+        {
+            // Arrange
+            const string project = "PP001";
+            const string number = "M1";
+            const short underReview = 0;
+            const short onTarget = 1;
+            // No dateCompleted
+            const string projectLeaderComment = "Updated";
+
+            var existingMilestone = new Milestone
+            {
+                Project = project,
+                Number = number,
+                DateDue = new DateTime(2024, 9, 1),
+                UnderSdReview = 1,
+                OnTarget = 0
+            };
+
+            // After mutual exclusions: onTarget=1, so underReview=0, dateCompleted=null
+            var updatedMilestone = new Milestone
+            {
+                Project = project,
+                Number = number,
+                DateDue = new DateTime(2024, 9, 1),
+                UnderSdReview = 0,
+                OnTarget = 1,
+                DateCompleted = null,
+                ProjectLeaderComment = projectLeaderComment
+            };
+
+            var expectedDto = new MilestoneDto
+            {
+                Project = project,
+                Number = number,
+                DateDue = new DateTime(2024, 9, 1),
+                UnderSdReview = 0,
+                OnTarget = 1,
+                DateCompleted = null,
+                ProjectLeaderComment = projectLeaderComment
+            };
+
+            _mockRepository.GetMilestoneAsync(project, number).Returns(existingMilestone);
+            _mockRepository.UpdateMilestoneAsync_PMD(project, number, (short)0, (short)1, null, projectLeaderComment, null)
+                .Returns(updatedMilestone);
+            _mockMapper.Map<MilestoneDto>(updatedMilestone).Returns(expectedDto);
+
+            // Act
+            var result = await _sut.UpdateMilestoneAsync_PMD(project, number, underReview, onTarget, null, projectLeaderComment);
+
+            // Assert
+            result.Should().NotBeNull();
+
+            await _mockRepository.Received(1).GetMilestoneAsync(project, number);
+            await _mockRepository.Received(1).UpdateMilestoneAsync_PMD(project, number, (short)0, (short)1, null, projectLeaderComment, null);
+        }
+
+        [Fact]
+        public async Task UpdateMilestoneAsync_PMD_WhenMilestoneNotFound_ThrowsInvalidOperationException()
+        {
+            // Arrange
+            const string project = "PP001";
+            const string number = "UNKNOWN";
+            const short underReview = 1;
+            const short onTarget = 0;
+            var dateCompleted = new DateTime(2024, 8, 15);
+            const string projectLeaderComment = "Updated";
+
+            // GetMilestoneAsync returns null to trigger the validation error
+            _mockRepository.GetMilestoneAsync(project, number).Returns((Milestone?)null);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<BusinessValidationErrorException>(() => 
+                _sut.UpdateMilestoneAsync_PMD(project, number, underReview, onTarget, dateCompleted, projectLeaderComment));
+
+            await _mockRepository.Received(1).GetMilestoneAsync(project, number);
+        }
+
+        #endregion
+
         #region UpdateFormRequiredAsync
 
         [Theory]

@@ -1,0 +1,426 @@
+@using Apha.FPSApps.Web.Models.Components.DataGrid
+@model Apha.FPSApps.Web.Areas.PIMS.Models.CommentViewModel
+
+@{
+    ViewData["Title"] = "PIMS : Comments";
+}
+
+<div class="govuk-grid-row sup_border-bottom" style="padding: 0">
+    <h5 class="govuk-heading-s sup_margin_0"
+        style="padding: 10px 0 5px 24px;">
+        Comments
+    </h5>
+</div>
+
+<div class="content-wrapper govuk-!-padding-top-2">
+    <div class="sup_flex sup_align-items-flex-start">
+
+        <!-- ── Side Navigation ──────────────────────────────────────────── -->
+        @await Html.PartialAsync("_SideNav", new Apha.FPSApps.Web.Areas.PIMS.Models.ProjectDetailsViewModel
+        {
+            Parentproject = Model.Parentproject
+        })
+
+        <!-- ── Main Content ─────────────────────────────────────────────── -->
+        <main class="ra-main-content sup_p_0 sup_width_100">
+
+            <!-- ── Filter / header row ────────────────────────────────────── -->
+            <div class="sup_margin_left_right_0 sup_flex_space_between sup_padding_right_20 sup_margin_bottom_10">
+
+                <div class="govuk-!-padding-4 govuk-\!-margin-top-6 govuk-!-width-one-half">
+                    <div class="govuk-form-group ">
+                        <label class="govuk-label govuk-!-font-weight-bold" for="commentProject">
+                            Project:
+                        </label>
+                        <select class="govuk-select govuk-!-font-size-16 govuk-!-width-two-thirds"
+                                id="commentProject"
+                                name="commentProject"
+                                aria-label="Select project"
+                                asp-items="Model.ProjectOptions"
+                                onchange="onProjectChanged()">
+                        </select>
+                    </div>
+
+                    <div class="govuk-form-group sup_margin_bottom_10">
+                        <label class="govuk-label govuk-!-font-weight-bold" for="forecastSpend">
+                            Forecast Spend: (%)
+                        </label>
+                        <input class="govuk-input govuk-!-font-size-16 govuk-!-width-two-thirds"
+                               type="text"
+                               id="forecastSpend"
+                               name="forecastSpend"
+                               value="@Model.ForecastSpend"
+                               autocomplete="off" />
+                        <button type="button" class="govuk-button govuk-!-margin-right-0 govuk-!-margin-top-0 govuk-!-margin-bottom-0 
+govuk-!-margin-left-2 govuk-!-font-size-16 sup_btn_input_height"
+                                id="btnSaveForecastSpend" onclick="saveForecastSpendIfChanged()">
+                            Save
+                        </button>
+                    </div>
+                </div>
+
+                <div class="govuk-!-width-one-half">
+                    <div>
+                        <div class="sup_border sup_padding_10 sup_margin_top_10 govuk-!-width-full"
+                             aria-labelledby="commentsFilterTitle">
+                            <div id="commentsFilterTitle"
+                                 class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16 sup_margin_bottom_10">
+                                Filter:
+                            </div>
+
+                            <div class="govuk-form-group sup_margin_bottom_10">
+                                <label class="govuk-label govuk-!-font-weight-bold sup_margin_0" for="filterTopic">
+                                    Topic
+                                </label>
+                                <select class="govuk-select govuk-!-font-size-16 govuk-!-width-full"
+                                        id="filterTopic"
+                                        name="filterTopic"
+                                        aria-label="Filter by topic"
+                                        asp-items="Model.TopicOptions"
+                                        onchange="reloadCommentsGrid()">
+                                </select>
+                            </div>
+
+                            <div class="govuk-form-group sup_margin_bottom_10">
+                                <label class="govuk-label govuk-!-font-weight-bold sup_margin_0" for="filterYear">
+                                    Year
+                                </label>
+                                <input class="govuk-input govuk-!-font-size-16"
+                                       type="text"
+                                       id="filterYear"
+                                       name="filterYear"
+                                       autocomplete="off"
+                                       maxlength="4"
+                                       inputmode="numeric"
+                                       pattern="[0-9]*"
+                                       aria-label="Filter by year"
+                                       oninput="onYearFilterChanged(this)"
+                                       onkeydown="if (event.key === 'Enter') { event.preventDefault(); applyCommentsFilter(); }" />
+                            </div>
+
+                            
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Comments DataGrid ──────────────────────────────────────── -->
+            
+            <div class="govuk-grid-row sup_margin_left_right_10 sup_margin_bottom_20">
+                <div class="govuk-grid-column-full">
+                    <div id="gridContainer_comments">
+                        @await Html.PartialAsync("_DataGrid", Model.CommentsGrid)
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        // ── Sidebar ─────────────────────────────────────────────────────────────
+        function toggleSidebar() {
+            document.querySelector('.sidenav').classList.toggle('collapsed');
+        }
+
+        // ── Extra filter method ─────────────────────────────────────────────────
+        
+        function normalizeCommentsYear(value) {
+            return (value || '').toString().replace(/[^0-9]/g, '').slice(0, 4);
+        }
+
+        function getCommentsYearFilterValue() {
+            var year = normalizeCommentsYear(document.getElementById('filterYear')?.value || '');
+            return year.length === 4 ? year : '';
+        }
+
+        function getCommentsExtraFilters() {
+            return {
+                project: document.getElementById('commentProject')?.value || '',
+                topic:   document.getElementById('filterTopic')?.value   || '',
+                year:    getCommentsYearFilterValue()
+            };
+        }
+
+        // ── Grid reload ─────────────────────────────────────────────────────────
+        
+        function reloadCommentsGrid() {
+            var gm = window['gridManager_comments'];
+            if (gm) {
+                gm.reloadGrid({ page: 1 });
+                return;
+            }
+
+            var extra = getCommentsExtraFilters();
+            $.post('/PIMS/Comment/LoadCommentsGrid', {
+                page: 1,
+                pageSize: 10,
+                sortBy: '',
+                descending: false,
+                filter: '{}',
+                project: extra.project,
+                topic: extra.topic,
+                year: extra.year
+            }).done(function (htmlData) {
+                $('#gridContainer_comments').html(htmlData);
+            });
+        }
+
+        function applyCommentsFilter() {
+            reloadCommentsGrid();
+        }
+
+        // ── Live year filter ─────────────────────────────────────────────────────
+        function onYearFilterChanged(input) {
+            if (!input) {
+                return;
+            }
+
+            var normalized = normalizeCommentsYear(input.value);
+            if (input.value !== normalized) {
+                input.value = normalized;
+            }
+        }
+
+        // ── Project changed ─────────────────────────────────────────────────────
+        
+        var forecastSpendLastValue = '';
+        var forecastSpendLastProject = '';
+        var forecastSpendSaving = false;
+
+        function normalizeForecastSpend(value) {
+            return (value ?? '').toString().trim().replace(',', '.');
+        }
+
+        function parseForecastSpend(value) {
+            var normalized = normalizeForecastSpend(value);
+            if (!normalized) {
+                return { valid: true, value: null, normalized: '' };
+            }
+
+            var parsed = Number(normalized);
+            if (!Number.isFinite(parsed)) {
+                return { valid: false, value: null, normalized: normalized };
+            }
+
+            return { valid: true, value: parsed, normalized: normalized };
+        }
+
+        function saveForecastSpendIfChanged() {
+            var project = document.getElementById('commentProject')?.value || '';
+            var input = document.getElementById('forecastSpend');
+            if (!project || !input || forecastSpendSaving) {
+                return;
+            }
+
+            var parsed = parseForecastSpend(input.value);
+            if (!parsed.valid) {
+                showAlertMessage('Forecast Spend must be a valid number.', AlertType.ERROR);
+                input.value = forecastSpendLastValue;
+                return;
+            }
+
+            if (forecastSpendLastProject === project && parsed.normalized === forecastSpendLastValue) {
+                return;
+            }
+
+            var token = $('body > input[name="__RequestVerificationToken"]').val()
+                || $('input[name="__RequestVerificationToken"]').first().val();
+
+            forecastSpendSaving = true;
+            $.ajax({
+                url: '/PIMS/Comment/SaveForecastSpend?project=' + encodeURIComponent(project),
+                type: 'POST',
+                data: JSON.stringify({ forecastSpend: parsed.value }),
+                contentType: 'application/json; charset=utf-8',
+                headers: { 'RequestVerificationToken': token },
+                success: function (data) {
+                    if (data && data.success) {
+                        var savedValue = (data.forecastSpend === null || data.forecastSpend === undefined) ? '' : data.forecastSpend.toString();
+                        input.value = savedValue;
+                        forecastSpendLastValue = normalizeForecastSpend(savedValue);
+                        forecastSpendLastProject = project;
+                    } else {
+                        showAlertMessage(data?.message || 'Failed to save forecast spend.', AlertType.ERROR);
+                    }
+                },
+                error: function () {
+                    showAlertMessage('An error occurred while saving forecast spend.', AlertType.ERROR);
+                },
+                complete: function () {
+                    forecastSpendSaving = false;
+                }
+            });
+        }
+
+        function onProjectChanged() {
+            var project = document.getElementById('commentProject')?.value || '';
+
+            if (!project) {
+                var topicEl = document.getElementById('filterTopic');
+                if (topicEl) { topicEl.value = ''; }
+
+                var yearEl = document.getElementById('filterYear');
+                if (yearEl) { yearEl.value = ''; }
+
+                document.getElementById('forecastSpend').value = '';
+                forecastSpendLastValue = '';
+                forecastSpendLastProject = '';
+                reloadCommentsGrid();
+                return;
+            }
+
+            reloadCommentsGrid();
+            $.get('/PIMS/Comment/GetForecastSpend', { project: project }, function (data) {
+                var loadedValue = (data && data.forecastSpend !== null && data.forecastSpend !== undefined)
+                    ? data.forecastSpend.toString()
+                    : '';
+                document.getElementById('forecastSpend').value = loadedValue;
+                forecastSpendLastValue = normalizeForecastSpend(loadedValue);
+                forecastSpendLastProject = project;
+            }).fail(function () {
+                document.getElementById('forecastSpend').value = '';
+                forecastSpendLastValue = '';
+                forecastSpendLastProject = project;
+            });
+        }
+
+        // ── Add ─────────────────────────────────────────────────────────────────
+        
+        function addComment() {
+            var project = document.getElementById('commentProject')?.value || '';
+            var year    = document.getElementById('filterYear')?.value     || '';
+            $.get('/PIMS/Comment/GetAddEditCommentPartial',
+                { parentproject: project, commentNo: null, selectedYear: year || null },
+                function (html) {
+                    $('#modaPopupBody').html(html);
+                    $('#modalPopup').addClass('show');
+                });
+        }
+
+        // ── Edit ─────────────────────────────────────────────────────────────────
+        
+        function editComment(btn) {
+            var commentNo = $(btn).data('id');
+            var project   = document.getElementById('commentProject')?.value || '';
+            $.get('/PIMS/Comment/GetAddEditCommentPartial',
+                { parentproject: project, commentNo: commentNo, selectedYear: null },
+                function (html) {
+                    $('#modaPopupBody').html(html);
+                    $('#modalPopup').addClass('show');
+                });
+        }
+
+        // ── Delete ───────────────────────────────────────────────────────────────
+        
+        function deleteComment(btn) {
+            var commentNo = $(btn).data('id');
+            showGovukConfirm('Are you sure you want to delete this comment?').then(function (result) {
+                if (!result) return;
+                var token = $('body > input[name="__RequestVerificationToken"]').val()
+                    || $('input[name="__RequestVerificationToken"]').first().val();
+                $.ajax({
+                    url:     '/PIMS/Comment/DeleteComment?commentNo=' + encodeURIComponent(commentNo),
+                    type:    'DELETE',
+                    headers: { 'RequestVerificationToken': token },
+                    success: function (data) {
+                        if (data.success) {
+                            showAlertMessage(data.message, AlertType.SUCCESS).then(function () {
+                                reloadCommentsGrid();
+                            });
+                        } else {
+                            showAlertMessage(data.errors?.map(function(e) { return e.message; }).join(', ') || 'Delete failed. Please try again.', AlertType.ERROR);
+                        }
+                    },
+                    error: function () { showAlertMessage('An error occurred while deleting the comment.', AlertType.ERROR); }
+                });
+            });
+        }
+
+        // ── Save (called from _AddEditComment partial) ────────────────────────────
+        
+        function saveComment() {
+            var isAddingValue = (document.getElementById('hdnIsAddingNew')?.value || '').toString().toLowerCase();
+            var isAdding      = isAddingValue === 'true' || isAddingValue === '1' || isAddingValue === 'yes';
+            var commentNo     = parseInt(document.getElementById('hdnCommentNo')?.value  || '0', 10);
+            var project       = document.getElementById('hdnProject')?.value             || '';
+            var year          = document.getElementById('selCommentYear')?.value         || null;
+            var topic         = document.getElementById('selCommentTopic')?.value        || '';
+            var commentTxt    = document.getElementById('txtCommentText')?.value         || '';
+
+            // Basic client-side validation
+            var errors = [];
+            if (!year)       { errors.push('Year is required.'); }
+            if (!topic)      { errors.push('Topic is required.'); }
+            if (!commentTxt) { errors.push('Comment is required.'); }
+            if (errors.length > 0) {
+                showAlertMessage(errors.join('\n'), AlertType.ERROR);
+                return;
+            }
+
+            
+            var token = $('#formTblComments input[name="__RequestVerificationToken"]').val();
+
+            var dto = {
+                commentNo:   isAdding ? 0 : commentNo,
+                project:     project,
+                year:        parseInt(year, 10),
+                topic:       topic,
+                comment:     commentTxt,
+                commentText: commentTxt
+            };
+
+            var url  = isAdding ? '/PIMS/Comment/CreateComment' : '/PIMS/Comment/UpdateComment';
+
+            $.ajax({
+                url:         url,
+                type:        'POST',
+                data:        JSON.stringify(dto),
+                contentType: 'application/json; charset=utf-8',
+                headers:     { 'RequestVerificationToken': token },
+                success: function (data) {
+                    if (data.success) {
+                        closeCommentModal();
+                        showAlertMessage(data.message, AlertType.SUCCESS).then(function () {
+                            reloadCommentsGrid();
+                        });
+                    } else {
+                        var msg = (data.errors && data.errors.length > 0)
+                            ? data.errors.map(function(e) { return e.message || e; }).join(', ')
+                            : 'Save failed.';
+                        showAlertMessage('Save failed: ' + msg, AlertType.ERROR);
+                    }
+                },
+                error: function () { showAlertMessage('An error occurred while saving the comment.', AlertType.ERROR); }
+            });
+        }
+
+        // ── Modal helpers ─────────────────────────────────────────────────────────
+        function closeCommentModal() {
+            $('#modaPopupBody').html('');
+            $('#modalPopup').removeClass('show');
+        }
+
+        $(function () {
+            onProjectChanged();
+
+            var forecastSpendInput = document.getElementById('forecastSpend');
+            if (forecastSpendInput) {
+                forecastSpendInput.addEventListener('blur', saveForecastSpendIfChanged);
+                forecastSpendInput.addEventListener('change', saveForecastSpendIfChanged);
+                forecastSpendInput.addEventListener('keydown', function (event) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        saveForecastSpendIfChanged();
+                    }
+                });
+            }
+        });
+    </script>
+}

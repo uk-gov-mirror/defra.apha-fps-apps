@@ -20,5 +20,8 @@ namespace Apha.PACT.Application.Interfaces
             string? owner);
         Task<TestPriceCheckDto?> GetTestPriceCheckByKeyAsync(string testCode, string jobCode);
         Task<bool> UpdateTestPriceCheckAsync(string testCode, string jobCode, TestPriceCheckDto dto);
+
+        // TestFeePlan (Plan test-fee report)
+        Task<PaginatedResult<TestFeePlanDto>> GetTestSnapshotPagedAsync(QueryParameters<string> query);
     }
 }

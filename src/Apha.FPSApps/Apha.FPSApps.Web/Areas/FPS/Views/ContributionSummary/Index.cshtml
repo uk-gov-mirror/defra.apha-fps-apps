@@ -69,6 +69,7 @@
                 return;
             }
             currentSellingPc = sellingPc;
+            showLoader();
             $('#contributionSummaryPrompt').hide();
             $('#contributionSummaryGridArea').show();
             $('#contributionSummaryTotalsArea').empty();
@@ -80,11 +81,13 @@
                 success: function (html) {
                     $('#gridContainer_' + contributionGridId).html(html);
                     refreshTotals(sellingPc);
+                    hideLoader();
                 },
                 error: function () {
                     $('#gridContainer_' + contributionGridId).html(
                         '<div class="govuk-error-message" style="padding:12px;">Failed to load data. Please try again.</div>'
                     );
+                    hideLoader();
                 }
             });
         }

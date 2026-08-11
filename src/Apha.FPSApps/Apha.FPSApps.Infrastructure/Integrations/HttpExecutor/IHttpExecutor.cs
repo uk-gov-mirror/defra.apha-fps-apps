@@ -8,9 +8,16 @@ namespace Apha.FPSApps.Infrastructure.Integrations.HttpExecutor
 
         Task<byte[]> GetFileAsync(string url);
 
+        Task<ApiResponse<T>> PostAsync<T>(string url);
+
         Task<ApiResponse<T>> PostAsync<TRequest, T>(
             string url,
             TRequest body);
+
+        Task<ApiResponse<T>> PostAsync<TRequest, T>(
+            string url,
+            TRequest body,
+            IDictionary<string, string> headers);
 
         Task<ApiResponse<T>> PutAsync<TRequest, T>(
             string url,

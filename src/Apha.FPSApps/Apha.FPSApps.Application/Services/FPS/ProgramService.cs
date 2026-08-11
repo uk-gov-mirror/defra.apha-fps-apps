@@ -30,6 +30,11 @@ namespace Apha.FPSApps.Application.Services.FPS
             return await _fpsApiClient.FpsProgram.GetAllProgramsAsync(query);
         }
 
+        public async Task<ApiResponseDto<List<ProgramPlanCostViewDto>>> GetProgramTimeSnapshotAsync(QueryParameters<string> query)
+        {
+            return await _fpsApiClient.FpsProgram.GetProgramTimeSnapshotAsync(query);
+        }
+
         public async Task<ApiResponseDto<ProgramDto?>> GetProgramByIdAsync(string programNo)
         {
             return await _fpsApiClient.FpsProgram.GetProgramByIdAsync(programNo);

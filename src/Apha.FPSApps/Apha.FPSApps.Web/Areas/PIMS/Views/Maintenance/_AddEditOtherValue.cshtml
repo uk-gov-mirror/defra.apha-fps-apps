@@ -1,0 +1,160 @@
+@{
+    var otherType   = ViewBag.OtherType as string ?? "frequency";
+    var otherIdVal  = ViewBag.OtherId   as string ?? "";
+    var otherValVal = ViewBag.OtherVal  as string ?? "";
+    var isEditMode  = !string.IsNullOrEmpty(otherIdVal) && otherIdVal != "0";
+    var title       = isEditMode ? "Edit Value" : "Add Value";
+    var saveLabel   = isEditMode ? "Update" : "Save";
+    var idLabel     = otherType == "reviewitem" ? "Item ID" : "ID";
+    var valLabel    = otherType == "reviewitem" ? "Item" : "Value";
+}
+
+<div class="modal-header flex-space-center">
+    <h3 class="modal-title" style="margin: 0;">@title</h3>
+    <button type="button" class="btn-close btn-red" onclick="closeModal()">X</button>
+</div>
+<div class="modal-body" style="padding-top: 5px;">
+    <form class="row" id="formOtherValue">
+        @Html.AntiForgeryToken()
+
+        <input type="hidden" id="hdnOtherType"  value="@otherType" />
+        <input type="hidden" id="hdnOtherIsEdit" value="@isEditMode.ToString().ToLower()" />
+
+        <div class="govuk-error-summary ra-form-error-banner ra-hidden"
+             id="otherDbError" role="alert" aria-labelledby="otherDbErrorTitle" tabindex="-1">
+            <h2 class="govuk-error-summary__title govuk-!-font-size-14" id="otherDbErrorTitle">There is a problem</h2>
+            <div class="govuk-error-summary__body">
+                <p class="govuk-body govuk-!-font-size-14" id="otherDbErrorText"></p>
+            </div>
+        </div>
+
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-one-half">
+                <div class="govuk-form-group sup_margin_bottom_10" id="otherEditIdGroup">
+                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" for="otherEditId">
+                        <span id="otherEditIdLabel">@idLabel</span><span class="ra-required-star" aria-hidden="true"> *</span>
+                    </label>
+                    @if (isEditMode)
+                    {
+                        <input class="govuk-input govuk-!-font-size-16"
+                               id="otherEditId"
+                               type="text"
+                               value="@otherIdVal"
+                               aria-label="@idLabel"
+                               disabled />
+                        <input type="hidden" id="hdnOtherIdValue" value="@otherIdVal" />
+                    }
+                    else
+                    {
+                        <input class="govuk-input govuk-!-font-size-16"
+                               id="otherEditId"
+                               name="otherEditId"
+                               type="text"
+                               aria-required="true"
+                               aria-label="@idLabel"
+                               aria-describedby="otherEditIdError"
+                               value="@otherIdVal" />
+                        <input type="hidden" id="hdnOtherIdValue" value="@otherIdVal" />
+                        <span class="govuk-error-message" id="otherEditIdError" style="display:none;"></span>
+                    }
+                </div>
+            </div>
+
+            <div class="govuk-grid-column-one-half">
+                <div class="govuk-form-group sup_margin_bottom_10" id="otherEditValueGroup">
+                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" for="otherEditValue">
+                        <span id="otherEditValueLabel">@valLabel</span><span class="ra-required-star" aria-hidden="true"> *</span>
+                    </label>
+                    <input class="govuk-input govuk-!-font-size-16"
+                           id="otherEditValue"
+                           name="otherEditValue"
+                           type="text"
+                           aria-required="true"
+                           aria-label="@valLabel"
+                           aria-describedby="otherEditValueError"
+                           value="@otherValVal" />
+                    <span class="govuk-error-message" id="otherEditValueError" style="display:none;"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12" style="display: flex; justify-content: space-between; margin-top: 10px;">
+            <button type="button"
+                    class="govuk-button govuk-button--secondary sup_margin_0"
+                    onclick="closeModal()">
+                Cancel
+            </button>
+            <button type="button"
+                    class="govuk-button sup_margin_0"
+                    onclick="saveOtherValue()">
+                @saveLabel
+            </button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        function saveOtherValue() {
+            var dbError     = document.getElementById('otherDbError');
+            var dbErrorText = document.getElementById('otherDbErrorText');
+            var otherErrId  = document.getElementById('otherEditIdError');
+            var otherErrVal = document.getElementById('otherEditValueError');
+            if (dbError)     dbError.classList.add('ra-hidden');
+            if (otherErrVal) otherErrVal.style.display = 'none';
+            if (otherErrId)  otherErrId.style.display  = 'none';
+
+            var otherType   = document.getElementById('hdnOtherType').value;
+            var isEdit      = document.getElementById('hdnOtherIsEdit').value === 'true';
+            var idEl        = document.getElementById('hdnOtherIdValue');
+            var valueEl     = document.getElementById('otherEditValue');
+            var idVal       = idEl ? idEl.value : '';
+            var valueVal    = valueEl ? valueEl.value.trim() : '';
+
+            var hasError = false;
+            if (!valueVal) {
+                if (otherErrVal) { otherErrVal.textContent = 'Value is required.'; otherErrVal.style.display = ''; }
+                hasError = true;
+            }
+            if (hasError) return;
+
+            
+            var url, payload;
+            if (otherType === 'reviewitem') {
+                url = '/PIMS/Maintenance/SaveReviewItem';
+                payload = { Itemid: parseInt(idVal || '0', 10), Item: valueVal };
+            } else {
+                // default: frequency
+                url = '/PIMS/Maintenance/SaveFrequency';
+                payload = { Frequencyid: parseInt(idVal || '0', 10), FrequencyValue: valueVal };
+            }
+
+            // Append anti-forgery token from the form
+            var token = $('input[name="__RequestVerificationToken"]').first().val();
+
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: $.extend({}, payload, { __RequestVerificationToken: token }),
+                success: function (data) {
+                    if (data.success) {
+                        closeModal();
+                        if (otherType === 'reviewitem') {
+                            reloadReviewItemsGrid();
+                        } else {
+                            reloadFrequenciesGrid();
+                        }
+                    } else {
+                        var msg = data.message || 'Save failed.';
+                        if (dbErrorText) dbErrorText.textContent = msg;
+                        if (dbError) dbError.classList.remove('ra-hidden');
+                    }
+                },
+                error: function () {
+                    if (dbErrorText) dbErrorText.textContent = 'An error occurred while saving.';
+                    if (dbError) dbError.classList.remove('ra-hidden');
+                }
+            });
+        }
+    </script>
+}

@@ -87,6 +87,93 @@ namespace Apha.PACT.DataAccess.UnitTests.Repository.TimeCodeValidRepositoryTest
 
         #endregion
 
+        #region GetTimeCodeValidsAsync
+
+        [Fact]
+        public async Task GetTimeCodeValidsAsync_WithMultipleRows_ReturnsAllRows()
+        {
+            var timeCodes = new List<TimeCodeValid>
+            {
+                new() { TimeCode = "TC1", WorkGroup = "WG1", ParentProject = "PRJ1", FpsYear = DefaultTestFpsYear },
+                new() { TimeCode = "TC2", WorkGroup = "WG2", ParentProject = "PRJ2", FpsYear = DefaultTestFpsYear }
+            };
+            var repo = CreateRepository(timeCodes);
+
+            var result = await repo.GetTimeCodeValidsAsync();
+
+            Assert.Equal(2, result.Count);
+            Assert.Contains(result, x => x.TimeCode == "TC1");
+            Assert.Contains(result, x => x.TimeCode == "TC2");
+        }
+
+        #endregion
+
+        #region GetTimeCodeValidsByWorkGroupAsync
+
+        [Fact]
+        public async Task GetTimeCodeValidsByWorkGroupAsync_WithMatchingWorkGroup_ReturnsFilteredOrderedRows()
+        {
+            var timeCodes = new List<TimeCodeValid>
+            {
+                new() { TimeCode = "TC2", WorkGroup = "WG1", ParentProject = "PRJ1", FpsYear = DefaultTestFpsYear },
+                new() { TimeCode = "TC1", WorkGroup = "WG1", ParentProject = "PRJ1", FpsYear = DefaultTestFpsYear },
+                new() { TimeCode = "TC3", WorkGroup = "WG2", ParentProject = "PRJ1", FpsYear = DefaultTestFpsYear }
+            };
+            var repo = CreateRepository(timeCodes);
+
+            var result = (await repo.GetTimeCodeValidsByWorkGroupAsync("WG1")).ToList();
+
+            Assert.Equal(2, result.Count);
+            Assert.Equal("TC1", result[0].TimeCode);
+            Assert.Equal("TC2", result[1].TimeCode);
+            Assert.All(result, x => Assert.Equal("WG1", x.WorkGroup));
+        }
+
+        [Fact]
+        public async Task GetTimeCodeValidsByWorkGroupAsync_WithNoMatch_ReturnsEmptyList()
+        {
+            var repo = CreateRepository([]);
+
+            var result = await repo.GetTimeCodeValidsByWorkGroupAsync("WG_NONE");
+
+            Assert.Empty(result);
+        }
+
+        #endregion
+
+        #region GetTimeCodeValidProjectsByWorkGroupAndTimeCodeAsync
+
+        [Fact]
+        public async Task GetTimeCodeValidProjectsByWorkGroupAndTimeCodeAsync_WithDuplicates_ReturnsDistinctOrderedProjects()
+        {
+            var timeCodes = new List<TimeCodeValid>
+            {
+                new() { TimeCode = "TC1", WorkGroup = "WG1", ParentProject = "PRJ2", FpsYear = DefaultTestFpsYear },
+                new() { TimeCode = "TC1", WorkGroup = "WG1", ParentProject = "PRJ1", FpsYear = DefaultTestFpsYear },
+                new() { TimeCode = "TC1", WorkGroup = "WG1", ParentProject = "PRJ2", FpsYear = DefaultTestFpsYear },
+                new() { TimeCode = "TC2", WorkGroup = "WG1", ParentProject = "PRJ3", FpsYear = DefaultTestFpsYear }
+            };
+            var repo = CreateRepository(timeCodes);
+
+            var result = (await repo.GetTimeCodeValidProjectsByWorkGroupAndTimeCodeAsync("WG1", "TC1")).ToList();
+
+            Assert.Equal(2, result.Count);
+            Assert.Equal("PRJ1", result[0]);
+            Assert.Equal("PRJ2", result[1]);
+        }
+
+        [Fact]
+        public async Task GetTimeCodeValidProjectsByWorkGroupAndTimeCodeAsync_WithNoMatch_ReturnsEmptyList()
+        {
+            var repo = CreateRepository([]);
+
+            var result = await repo.GetTimeCodeValidProjectsByWorkGroupAndTimeCodeAsync("WG_NONE", "TC_NONE");
+
+            Assert.Empty(result);
+        }
+
+        #endregion
+
         #region GetByJobCodeAsync
 
         [Fact]

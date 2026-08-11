@@ -1,4 +1,5 @@
 using Apha.Common.Utilities.ExcelImport;
+using Apha.Common.Utilities.Storage;
 using Apha.FPSApps.Application.Dtos;
 using Apha.FPSApps.Application.Dtos.PACT;
 using Apha.FPSApps.Application.Interfaces.PactApiClients;
@@ -6,6 +7,8 @@ using Apha.FPSApps.Application.Pagination;
 using Apha.FPSApps.Application.Services.PACT;
 using ClosedXML.Excel;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Xunit;
 
@@ -16,6 +19,10 @@ namespace Apha.FPSApps.Application.UnitTests.Services.PACT.ProjectSubContractSer
         private readonly IPactApiClient _pactClient;
         private readonly IPactProjectSubContractApiClient _pactProjectSubContractApiClient;
         private readonly IExcelImportService _excelImportService;
+        private readonly IS3StorageService _s3StorageService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IConfiguration _configuration;
+        private readonly ILogger<ProjectSubContractService> _logger;
         private readonly ProjectSubContractService _service;
 
         public ProjectSubContractServiceTests()
@@ -23,8 +30,18 @@ namespace Apha.FPSApps.Application.UnitTests.Services.PACT.ProjectSubContractSer
             _pactClient = Substitute.For<IPactApiClient>();
             _pactProjectSubContractApiClient = Substitute.For<IPactProjectSubContractApiClient>();
             _excelImportService = Substitute.For<IExcelImportService>();
+            _s3StorageService = Substitute.For<IS3StorageService>();
+            _httpContextAccessor = Substitute.For<IHttpContextAccessor>();
+            _configuration = Substitute.For<IConfiguration>();
+            _logger = Substitute.For<ILogger<ProjectSubContractService>>();
             _pactClient.PactProjectSubContract.Returns(_pactProjectSubContractApiClient);
-            _service = new ProjectSubContractService(_pactClient, _excelImportService);
+            _service = new ProjectSubContractService(
+                _pactClient,
+                _excelImportService,
+                _s3StorageService,
+                _httpContextAccessor,
+                _configuration,
+                _logger);
         }
 
         #region GetPagedProjectSubContractsAsync Tests

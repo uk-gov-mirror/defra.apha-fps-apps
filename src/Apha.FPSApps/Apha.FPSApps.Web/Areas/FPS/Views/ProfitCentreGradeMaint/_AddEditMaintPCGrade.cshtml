@@ -102,7 +102,7 @@
                         <label class="govuk-label" for="DirectRate">Direct Rate</label>
                         <div class="govuk-input__wrapper">
                             <div class="govuk-input__prefix" aria-hidden="true">&pound;</div>
-                            <input type="number" step="0.01" id="DirectRate" name="DirectRate" asp-for="DirectRate" class="govuk-input" min="0">
+                            <input type="text" id="DirectRate" name="DirectRate" asp-for="DirectRate" class="govuk-input js-numeric-decimal" maxlength="20">
                         </div>
                         <span data-valmsg-for="DirectRate" class="govuk-error-message field-validation-valid" style="display:none;"></span>
                     </div>
@@ -115,7 +115,7 @@
                         <label class="govuk-label" for="PayRate">Pay Rate</label>
                         <div class="govuk-input__wrapper">
                             <div class="govuk-input__prefix" aria-hidden="true">&pound;</div>
-                            <input type="number" step="0.01" id="PayRate" name="PayRate" asp-for="PayRate" class="govuk-input" min="0" oninput="enforceNumeric(this); computeChargeRate();">
+                            <input type="text" id="PayRate" name="PayRate" asp-for="PayRate" class="govuk-input js-numeric-decimal" maxlength="20" oninput="enforceNumeric(this); computeChargeRate();">
                         </div>
                         <span data-valmsg-for="PayRate" class="govuk-error-message field-validation-valid" style="display:none;"></span>
                     </div>
@@ -125,7 +125,7 @@
                         <label class="govuk-label" for="NPR">NPR</label>
                         <div class="govuk-input__wrapper">
                             <div class="govuk-input__prefix" aria-hidden="true">&pound;</div>
-                            <input type="number" step="0.01" id="NPR" name="NPR" asp-for="NPR" class="govuk-input" min="0" oninput="enforceNumeric(this); computeChargeRate();">
+                            <input type="text" id="NPR" name="NPR" asp-for="NPR" class="govuk-input js-numeric-decimal" maxlength="20" oninput="enforceNumeric(this); computeChargeRate();">
                         </div>
                         <span data-valmsg-for="NPR" class="govuk-error-message field-validation-valid" style="display:none;"></span>
                     </div>
@@ -138,7 +138,7 @@
                         <label class="govuk-label" for="OHR">OHR</label>
                         <div class="govuk-input__wrapper">
                             <div class="govuk-input__prefix" aria-hidden="true">&pound;</div>
-                            <input type="number" step="0.01" id="OHR" name="OHR" asp-for="OHR" class="govuk-input" min="0" oninput="enforceNumeric(this); computeChargeRate();">
+                            <input type="text" id="OHR" name="OHR" asp-for="OHR" class="govuk-input js-numeric-decimal" maxlength="20" oninput="enforceNumeric(this); computeChargeRate();">
                         </div>
                         <span data-valmsg-for="OHR" class="govuk-error-message field-validation-valid" style="display:none;"></span>
                     </div>

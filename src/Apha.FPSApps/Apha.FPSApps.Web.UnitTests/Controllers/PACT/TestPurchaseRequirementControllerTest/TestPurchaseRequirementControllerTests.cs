@@ -245,7 +245,7 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PACT.TestPurchaseRequirementCon
             Assert.Equal(string.Empty, model.TestCode);
             Assert.False(model.IsEdit);
             Assert.Equal((short?)1, model.Active);
-            Assert.Equal(0, model.NoRequired);
+            Assert.Null(model.NoRequired);
         }
 
         [Fact]

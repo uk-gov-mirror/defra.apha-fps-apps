@@ -3,26 +3,21 @@
 @{
     ViewData["Title"] = "FPS Plan v. PACT Actuals - TESTS Bought";
 }
+@{
+    ViewData["SelectedProjectCode"] = Model.SelectedProjectCode;
+}
 <div class="container-fluid">
     @* <div class="govuk-grid-row">
         <div class="govuk-grid-column-full">
             <div style="padding: 5px 5px; border-bottom: 1px solid #b4b4b4" class="row">
                 <div style="display: flex; font-size: 14px; align-items: center; justify-content: space-between;">
-                    <div class="col-md-6">
-                        
-                    </div>
-                    <div style="display: flex; justify-content: flex-end;" class="col-md-6">
-                        <label class="fw-bold mt-2 me-2" for="projectSelect">Project:</label>
-                        <select id="projectSelect" asp-items="Model.ProjectList" asp-for="SelectedProjectCode"
-                                class="form-select form-select-sm" style="width: auto; min-width: 280px;">
-                            <option value="">-- Select Project --</option>
-                        </select>
-                    </div>
+                    <div class="col-md-6"></div>
+                    @await Html.PartialAsync("_ProjectDropdownSelector")
                 </div>
             </div>
         </div>
-    </div> *@
-    @* <div class="govuk-grid-row">
+    </div>
+    <div class="govuk-grid-row">
         <div class="govuk-grid-column-full">
             <div style="display:flex; align-items:center; justify-content:space-between;"
                  class="sup_border-bottom govuk-!-margin-top-2 govuk-!-padding-bottom-2 govuk-!-padding-left-4">
@@ -61,27 +56,13 @@
             </table>
         </div>
     </div>
-
-    <div class="govuk-grid-row">
-        <div class="govuk-grid-column-full mt-2">
-            <div style="background-color:#edf4ff; border:1px solid #1d70b8; border-radius:5px; padding:8px;">
-                <div class="row">
-                    <div class="col-lg-6">
-                        <div class="row">
-                            <div class="col-lg-5"><label class="govuk-label--s">Project</label><input type="text" id="summary-project-code" asp-for="SelectedProjectCode" class="govuk-input" readonly></div>
-                            <div class="col-lg-7"><label class="govuk-label--s">Project Description</label><input type="text" id="summary-project-description" asp-for="ProjectTitle" class="govuk-input" readonly></div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6">
-                        <div class="row">
-                            <div class="col-lg-5"><label class="govuk-label--s">Program</label><input type="text" id="summary-program" asp-for="Program" class="govuk-input" readonly></div>
-                            <div class="col-lg-7"><label class="govuk-label--s">Contract</label><input type="text" id="summary-contract" asp-for="Contract" class="govuk-input" readonly></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    @{
+        ViewData["SummaryProjectCodeValue"]  = Model.SelectedProjectCode;
+        ViewData["SummaryProjectTitleValue"] = Model.ProjectTitle;
+        ViewData["SummaryProgramValue"]      = Model.Program;
+        ViewData["SummaryContractValue"]     = Model.Contract;
+    }
+    @await Html.PartialAsync("_PvaSummaryCard")
     <div class="govuk-grid-row">
         <div class="govuk-grid-column-one-half mt-2">
             <div id="gridContainer_@Model.TestPlanGrid.GridId" style="padding:5px;">@await Html.PartialAsync("_DataGrid", Model.TestPlanGrid)</div>
@@ -116,34 +97,58 @@
 @section Scripts {
 <script src="~/js/ajax-form-validation.js"></script>
 <script src="~/js/fps_js/TestPlanJob.js"></script>
+<script src="~/js/fps_js/project-dropdown.js" asp-append-version="true"></script>
 <script>
     var currentProjectCode = '@Html.Raw(Model.SelectedProjectCode)';
+    var _loaderPendingGrids = 0;
     TestPlanJobConfig.getJobCode = function () { return currentProjectCode; };
     TestPlanJobConfig.requireJobCodeForAdd = true;
     TestPlanJobConfig.onDeleted = function () { window['gridManager_@Model.TestPlanGrid.GridId'].reloadGrid({ page: 1 }); refreshPlannedCost(); };
     $(document).ready(function () {
         if (currentProjectCode) {
+            showLoader();
+            _loaderPendingGrids = 2;
             window['gridManager_@Model.TestPlanGrid.GridId'].reloadGrid({ page: 1 });
             window['gridManager_@Model.CompareTests2Grid.GridId'].reloadGrid({ page: 1 });
             refreshPlannedCost(); refreshActualTotals();
         }
         var el = document.getElementById('gridContainer_@Model.CompareTests2Grid.GridId');
         if (el) new MutationObserver(function () { refreshActualTotals(); }).observe(el, { childList: true, subtree: true });
+        document.addEventListener('gridReloaded', function (e) {
+            var tracked = ['@Model.TestPlanGrid.GridId', '@Model.CompareTests2Grid.GridId'];
+            if (tracked.indexOf(e.detail.gridId) !== -1 && _loaderPendingGrids > 0) {
+                _loaderPendingGrids--;
+                if (_loaderPendingGrids === 0) hideLoader();
+            }
+        });
     });
     $('#projectSelect').on('change', function () {
         currentProjectCode = $(this).val();
+        onProjectSelected(currentProjectCode, '');
+    });
+    function onProjectSelected(projectCode, projectTitle) {
+        currentProjectCode = projectCode;
+        document.getElementById('projectNameInput').value = projectCode;
         $('#summary-project-code').val(currentProjectCode);
         ['summary-project-description','summary-program','summary-contract'].forEach(function(id){ $('#'+id).val(''); });
         $('#planned-total-cost').val('0.00'); $('#project-total-cost').val('0'); $('#project-percent-plan').val('0%');
         if (currentProjectCode) {
             $.get('@Url.Action("GetProjectInfo","ProjectTestPlanActual",new{area="FPS"})', { projectCode: currentProjectCode }, function (r) { if (r.success) { $('#summary-project-description').val(r.projectTitle); $('#summary-program').val(r.program); $('#summary-contract').val(r.contract); } });
+            showLoader();
+            _loaderPendingGrids = 2;
             window['gridManager_@Model.TestPlanGrid.GridId'].reloadGrid({ page: 1 });
             window['gridManager_@Model.CompareTests2Grid.GridId'].reloadGrid({ page: 1 });
             refreshPlannedCost(); refreshActualTotals();
         }
+    }
+    $(document).ready(function () {
+        initProjectDropdown(
+            '@Url.Action("GetProjectLookup", "ProjectTestPlanActual", new { area = "FPS" })',
+            onProjectSelected
+        );
     });
-    function getTestPlanExtraFilters()    { return { jobCode: currentProjectCode }; }
-    function getCompareTests2ExtraFilters(){ return { projectCode: currentProjectCode }; }
+    function getTestPlanExtraFilters()     { return { jobCode: currentProjectCode }; }
+    function getCompareTests2ExtraFilters() { return { projectCode: currentProjectCode }; }
     function refreshPlannedCost() {
         if (!currentProjectCode) return;
         $.get('@Url.Action("GetTotalPlannedCost","ProjectTestPlanActual",new{area="FPS"})', { projectCode: currentProjectCode }, function (r) { if (r.success) { $('#planned-total-cost').val(formatCurrency(r.totalPlannedCost)); calculatePercentOfPlan(); } });

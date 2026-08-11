@@ -21,8 +21,8 @@ namespace Apha.PACT.DataAccess.Data
                 .HasMaxLength(5)
                 .HasColumnName("chargemethod");
             entity.Property(e => e.DefraUnitPrice)
-                .HasDefaultValueSql("0")
-                .HasColumnType("money")
+                .HasDefaultValue(0m)
+                .HasPrecision(19, 4)
                 .HasColumnName("defraunitprice");
             entity.Property(e => e.ItemDescription)
                 .HasMaxLength(200)
@@ -34,7 +34,7 @@ namespace Apha.PACT.DataAccess.Data
                 .HasMaxLength(2)
                 .HasColumnName("owner");
             entity.Property(e => e.PriceAhvg)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("priceahvg");
             entity.Property(e => e.ShortDescription)
                 .HasMaxLength(18)
@@ -44,8 +44,8 @@ namespace Apha.PACT.DataAccess.Data
                 .HasMaxLength(50)
                 .HasColumnName("testmanager");
             entity.Property(e => e.UnitPriceVla)
-                .HasDefaultValueSql("0")
-                .HasColumnType("money")
+                .HasDefaultValue(0m)
+                .HasPrecision(19, 4)
                 .HasColumnName("unitpricevla");
         }
     }

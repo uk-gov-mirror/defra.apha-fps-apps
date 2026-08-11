@@ -133,7 +133,10 @@
 
         $(document).ready(function () {
             if (currentProgramNo) {
-                window['gridManager_@Model.ProjectsGrid.GridId'].reloadGrid({ page: 1 });
+                showLoader();
+                setTimeout(function () {
+                    window['gridManager_@Model.ProjectsGrid.GridId'].reloadGrid({ page: 1 });
+                }, 0);
             }
 
             var costGridContainer = document.getElementById('gridContainer_@Model.AdditionalCostGrid.GridId');
@@ -148,7 +151,12 @@
                     var firstRow = $('#tbl_@Model.ProjectsGrid.GridId tbody tr.selectable-row:first');
                     if (firstRow.length) {
                         firstRow.trigger('click');
+                    } else {
+                        hideLoader();
                     }
+                }
+                if (e.detail.gridId === '@Model.AdditionalCostGrid.GridId') {
+                    hideLoader();
                 }
             });
 
@@ -194,7 +202,10 @@
                 );
             }
 
-            window['gridManager_@Model.ProjectsGrid.GridId'].reloadGrid({ page: 1 });
+            showLoader();
+            setTimeout(function () {
+                window['gridManager_@Model.ProjectsGrid.GridId'].reloadGrid({ page: 1 });
+            }, 0);
         });
 
         function selectProject(btn) {
@@ -225,7 +236,10 @@
                 }
             );
 
-            window['gridManager_@Model.AdditionalCostGrid.GridId'].reloadGrid({ page: 1 });
+            showLoader();
+            setTimeout(function () {
+                window['gridManager_@Model.AdditionalCostGrid.GridId'].reloadGrid({ page: 1 });
+            }, 0);
         }
 
         function getProjectExtraFilters() {

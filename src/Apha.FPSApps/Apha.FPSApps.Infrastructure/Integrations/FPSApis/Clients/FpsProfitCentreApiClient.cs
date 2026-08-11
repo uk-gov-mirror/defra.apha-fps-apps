@@ -205,5 +205,27 @@ namespace Apha.FPSApps.Infrastructure.Integrations.FPSApis.Clients
                     new ApiMetaDto());
             }
         }
+
+        public async Task<ApiResponseDto<List<WgStaffPlanViewDto>>> GetPagedWgStaffPlanAsync(
+            QueryParameters<string> query, string workGroup)
+        {
+            try
+            {
+                var url = QueryStringHelper.AddQueryString(FpsApiEndpoints.GetPagedWgStaffPlan, query);
+                url = $"{url}&workGroup={Uri.EscapeDataString(workGroup)}";
+                var response = await _http.GetAsync<List<WgStaffPlanViewRes>>(url);
+                if (response.Success)
+                    return _mapper.Map<ApiResponseDto<List<WgStaffPlanViewDto>>>(response);
+
+                var failDto = _mapper.Map<ApiResponseDto<List<WgStaffPlanViewDto>>>(response);
+                return ApiResponseDto<List<WgStaffPlanViewDto>>.FailureResponse(failDto.Errors, failDto.Meta);
+            }
+            catch (Exception)
+            {
+                return ApiResponseDto<List<WgStaffPlanViewDto>>.FailureResponse(
+                    new List<ApiErrorDto> { new ApiErrorDto { Message = "Failed to retrieve WG staff plan", Code = InternalCodeError } },
+                    new ApiMetaDto());
+            }
+        }
     }
 }

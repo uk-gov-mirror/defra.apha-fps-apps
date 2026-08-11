@@ -103,5 +103,14 @@ namespace Apha.FPS.Application.Services
 
             return _mapper.Map<PaginatedResult<ProfitCentreCostDto>>(pagedData);
         }
+
+        public async Task<PaginatedResult<WgStaffPlanViewDto>> GetPagedWgStaffPlanAsync(
+            QueryParameters<string> query, string workGroup)
+        {
+            ArgumentNullException.ThrowIfNull(query);
+            var parameters = _mapper.Map<PaginationParameters<string>>(query);
+            var pagedData = await _repository.GetPagedWgStaffPlanAsync(parameters, workGroup);
+            return _mapper.Map<PaginatedResult<WgStaffPlanViewDto>>(pagedData);
+        }
     }
 }

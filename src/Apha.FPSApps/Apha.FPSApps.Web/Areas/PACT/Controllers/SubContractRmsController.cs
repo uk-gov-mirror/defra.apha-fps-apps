@@ -109,10 +109,10 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
                 return BadRequest(ModelState);
 
             await PopulateProjectsViewBagAsync();
-            await PopulateMonthsViewBagAsync();
 
             if (id == 0)
             {
+                await PopulateMonthsViewBagAsync(month);
                 return PartialView("_AddEditSubContractRms", new SubContractRmsItem
                 {
                     Month = month
@@ -123,6 +123,7 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
             if (!result.Success || result.Data == null) return NotFound();
 
             var item = _mapper.Map<SubContractRmsItem>(result.Data);
+            await PopulateMonthsViewBagAsync(item.Month);
             return PartialView("_AddEditSubContractRms", item);
         }
 
@@ -443,18 +444,21 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
             }
         }
 
-        private async Task<List<SelectListItem>> GetMonthsListAsync()
+        private async Task<List<SelectListItem>> GetMonthsListAsync(double? selectedMonth = null)
         {
             var result = await _monthService.GetAllMonthsAsync();
 
             if (result != null && result.Success && result.Data != null && result.Data.Count > 0)
             {
+                int? selectedMonthInt = selectedMonth.HasValue ? Convert.ToInt32(selectedMonth.Value) : null;
+
                 var monthList = result.Data
                     .OrderBy(m => m.Monthnumber)
                     .Select(m => new SelectListItem
                     {
                         Value = m.Monthnumber.ToString(),
-                        Text = $"{m.Monthnumber} - {m.Monthname}"
+                        Text = $"{m.Monthnumber} - {m.Monthname}",
+                        Selected = selectedMonthInt.HasValue && m.Monthnumber == selectedMonthInt.Value
                     })
                     .ToList();
 
@@ -471,9 +475,9 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
             ViewBag.Projects = await GetProjectsListAsync();
         }
 
-        private async Task PopulateMonthsViewBagAsync()
+        private async Task PopulateMonthsViewBagAsync(double? selectedMonth = null)
         {
-            ViewBag.Months = await GetMonthsListAsync();
+            ViewBag.Months = await GetMonthsListAsync(selectedMonth);
         }
     }
 }

@@ -39,6 +39,13 @@ namespace Apha.FPS.Application.Services
             return _mapper.Map<PaginatedResult<ProgramDto>>(programViews);
         }
 
+        public async Task<PaginatedResult<ProgramPlanCostDto>> GetProgramTimeSnapshotAsync(QueryParameters<string> query)
+        {
+            var filter = _mapper.Map<PaginationParameters<string>>(query);
+            var planCost = await _programRepository.GetProgramTimeSnapshotAsync(filter);
+            return _mapper.Map<PaginatedResult<ProgramPlanCostDto>>(planCost);
+        }
+
         public async Task<ProgramDto?> GetProgramByIdAsync(string programNo)
         {
             var program = await _programRepository.GetProgramByIdAsync(programNo);

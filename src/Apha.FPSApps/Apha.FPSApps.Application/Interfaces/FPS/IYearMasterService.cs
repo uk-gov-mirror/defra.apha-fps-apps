@@ -9,5 +9,6 @@ namespace Apha.FPSApps.Application.Interfaces.FPS
         Task<ApiResponseDto<IEnumerable<YearMasterDto>>> GetAllFpsYearsAsync();
         Task<ApiResponseDto<List<YearMasterDto>>> GetAllFpsYearsPagedAsync(QueryParameters<int> query);
         Task<ApiResponseDto<YearMasterDto>> GetFpsYearByIdAsync(int fpsYear);
+        Task<ApiResponseDto<int>> GetFpsPlannedYearAsync();
     }
 }

@@ -7,6 +7,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Identity.Web;
+using System.Reflection;
 
 namespace Apha.FPSApps.Web.Areas.CostBook.Controllers
 {
@@ -94,6 +95,22 @@ namespace Apha.FPSApps.Web.Areas.CostBook.Controllers
                 return row;
             }).ToList();
 
+            if (!string.IsNullOrWhiteSpace(query.SortBy)
+                && query.SortBy.StartsWith("Y", StringComparison.OrdinalIgnoreCase)
+                && int.TryParse(query.SortBy[1..], out var yearIndex)
+                && yearIndex >= 1 && yearIndex <= yearCount)
+            {
+                rows = query.Descending
+                    ? rows.OrderBy(r => GetYearValue(r, yearIndex).HasValue ? 0 : 1)
+                          .ThenByDescending(r => GetYearValue(r, yearIndex))
+                          .ThenBy(r => r.Category)
+                          .ToList()
+                    : rows.OrderBy(r => GetYearValue(r, yearIndex).HasValue ? 0 : 1)
+                          .ThenBy(r => GetYearValue(r, yearIndex))
+                          .ThenBy(r => r.Category)
+                          .ToList();
+            }
+
             var columns = new List<DataGridColumn>
             {
                 new() { PropertyName = "Project",  DisplayName = "Project",  ColumnType = GridColumnType.Text,     IsFilterable = false, Width = 100 },
@@ -139,6 +156,12 @@ namespace Apha.FPSApps.Web.Areas.CostBook.Controllers
         /// <summary>Rounds to 2dp and strips trailing zeros so ToString() renders like MS Access (e.g. 1500 not 1500.00).</summary>
         private static decimal Fmt(double v)
             => decimal.Parse(Math.Round((decimal)v, 2, MidpointRounding.AwayFromZero).ToString("G29"));
+
+        private static decimal? GetYearValue(ProjectCostsPivotRow row, int yearIndex)
+        {
+            var property = row.GetType().GetProperty($"Y{yearIndex}", BindingFlags.Instance | BindingFlags.Public);
+            return property?.GetValue(row) as decimal?;
+        }
 
         [HttpGet]
         public async Task<IActionResult> ExportToExcel(string projectId)

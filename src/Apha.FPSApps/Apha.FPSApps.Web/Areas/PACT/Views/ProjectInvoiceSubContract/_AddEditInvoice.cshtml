@@ -29,7 +29,7 @@
             <div class="govuk-grid-row sup_margin_top_10" id="divInvoicecounter">
                 <div class="govuk-grid-column-one-half">
                     <div class="govuk-form-group sup_margin_bottom_10">
-                        <label class="govuk-label" asp-for="InvoiceCounter">Invoice Counter</label>
+                        <label class="govuk-label sup_font_weight_700" asp-for="InvoiceCounter">Invoice Counter</label>
                         <div class="govuk-input__wrapper">
                             <input class="govuk-input govuk-!-font-size-16" value="@Model.InvoiceCounter" readonly disabled />
                         </div>
@@ -41,7 +41,7 @@
         <div class="govuk-grid-row sup_margin_top_10">
             <div class="govuk-grid-column-one-half">
                 <div class="govuk-form-group sup_margin_bottom_10">
-                    <label class="govuk-label" asp-for="ProjectParent">
+                    <label class="govuk-label sup_font_weight_700" asp-for="ProjectParent">
                         Project:<span class="sup_color_red">*</span>
                     </label>
                     <select class="govuk-select sup_select_option_width_100 govuk-!-font-size-16"
@@ -55,7 +55,7 @@
             </div>
             <div class="govuk-grid-column-one-half">
                 <div class="govuk-form-group sup_margin_bottom_10">
-                    <label class="govuk-label" asp-for="Month">
+                    <label class="govuk-label sup_font_weight_700" asp-for="Month">
                         Month:<span class="sup_color_red">*</span>
                     </label>
                     <select class="govuk-select sup_select_option_width_100 govuk-!-font-size-16"
@@ -74,25 +74,26 @@
         <div class="govuk-grid-row">
             <div class="govuk-grid-column-one-half">
                 <div class="govuk-form-group sup_margin_bottom_10">
-                    <label class="govuk-label" asp-for="Amount">
+                    <label class="govuk-label sup_font_weight_700" asp-for="Amount">
                         Amount<span class="sup_color_red">*</span>
                     </label>
                     <div class="govuk-input__wrapper">
                         <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                        <input type="number" class="govuk-input govuk-!-font-size-16"
-                               asp-for="Amount" step="0.01" placeholder="e.g., 1000" required  onkeydown="if(['e', 'E', '+', '-'].includes(event.key)) event.preventDefault();" />
+                        <input type="text" class="govuk-input govuk-!-font-size-16 decfmt-input"
+                               asp-for="Amount" placeholder="e.g., 1000" required />
                     </div>
-                    <span data-valmsg-for="Amount" class="govuk-error-message"></span>
+                    <span  asp-validation-for="Amount" class="govuk-error-message"></span>
                 </div>
             </div>
             <div class="govuk-grid-column-one-half">
                 <div class="govuk-form-group sup_margin_bottom_10">
-                    <label class="govuk-label" asp-for="CostOfWork">Cost of Work</label>
+                    <label class="govuk-label sup_font_weight_700" asp-for="CostOfWork">Cost of Work</label>
                     <div class="govuk-input__wrapper">
                         <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                        <input type="number" class="govuk-input govuk-!-font-size-16"
-                               asp-for="CostOfWork" step="0.01" placeholder="e.g., 5000"  onkeydown="if(['e', 'E', '+', '-'].includes(event.key)) event.preventDefault();"/>
+                        <input type="text" class="govuk-input govuk-!-font-size-16 decfmt-input"
+                               asp-for="CostOfWork" placeholder="e.g., 5000" />
                     </div>
+                    <span asp-validation-for="CostOfWork" class="govuk-error-message"></span>
                 </div>
             </div>
         </div>
@@ -100,28 +101,30 @@
         <div class="govuk-grid-row">
             <div class="govuk-grid-column-one-half">
                 <div class="govuk-form-group sup_margin_bottom_10">
-                    <label class="govuk-label" asp-for="Wip">WIP</label>
+                    <label class="govuk-label sup_font_weight_700" asp-for="Wip">WIP</label>
                     <div class="govuk-input__wrapper">
                         <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                        <input type="number" class="govuk-input govuk-!-font-size-16"
-                               asp-for="Wip" step="0.01" placeholder="e.g., 2000"  onkeydown="if(['e', 'E', '+', '-'].includes(event.key)) event.preventDefault();" />
+                        <input type="text" class="govuk-input govuk-!-font-size-16 decfmt-input"
+                               asp-for="Wip" placeholder="e.g., 2000" />
                     </div>
+                    <span asp-validation-for="Wip" class="govuk-error-message"></span>
                 </div>
             </div>
             <div class="govuk-grid-column-one-half">
                 <div class="govuk-form-group sup_margin_bottom_10">
-                    <label class="govuk-label" asp-for="ProfitLoss">Profit/Loss</label>
+                    <label class="govuk-label sup_font_weight_700" asp-for="ProfitLoss">Profit/Loss</label>
                     <div class="govuk-input__wrapper">
                         <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                        <input type="number" class="govuk-input govuk-!-font-size-16"
-                               asp-for="ProfitLoss" step="0.01" placeholder="e.g., 500"  onkeydown="if(['e', 'E', '+', '-'].includes(event.key)) event.preventDefault();"/>
+                        <input type="text" class="govuk-input govuk-!-font-size-16 decfmt-input"
+                               asp-for="ProfitLoss" placeholder="e.g., 500" />
                     </div>
+                    <span asp-validation-for="ProfitLoss" class="govuk-error-message"></span>
                 </div>
             </div>
         </div>
 
         <div class="govuk-form-group sup_margin_bottom_10">
-            <label class="govuk-label" asp-for="Detail">Detail</label>
+            <label class="govuk-label sup_font_weight_700" asp-for="Detail">Detail</label>
             <textarea class="govuk-textarea govuk-!-font-size-16 sup_margin_0"
                       asp-for="Detail" rows="3"
                       placeholder="Enter invoice details..."></textarea>

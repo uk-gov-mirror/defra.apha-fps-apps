@@ -453,5 +453,62 @@ namespace Apha.PACT.Application.UnitTests.Services.TestRequirementServiceTest
         }
 
         #endregion
+
+        #region GetAllActiveAsync
+
+        [Fact]
+        public async Task GetAllActiveAsync_WithActiveItems_ReturnsMappedResult()
+        {
+            // Arrange
+            var entities = new List<TestRequirement>
+            {
+                new() { TestCode = "PT0001", Buyer = "SV3300", Active = 1, FpsYear = 2024 }
+            };
+            var mapped = new List<TestRequirementtDto>
+            {
+                new() { TestCode = "PT0001", Buyer = "SV3300" }
+            };
+
+            _testReqmtRepository.GetAllActiveAsync().Returns(entities);
+            _mapper.Map<IEnumerable<TestRequirementtDto>>(entities).Returns(mapped);
+
+            // Act
+            var result = await _sut.GetAllActiveAsync();
+
+            // Assert
+            result.Should().BeSameAs(mapped);
+            await _testReqmtRepository.Received(1).GetAllActiveAsync();
+            _mapper.Received(1).Map<IEnumerable<TestRequirementtDto>>(entities);
+        }
+
+        [Fact]
+        public async Task GetAllActiveAsync_WithEmptyItems_ReturnsEmptyResult()
+        {
+            // Arrange
+            var entities = new List<TestRequirement>();
+            var mapped = new List<TestRequirementtDto>();
+
+            _testReqmtRepository.GetAllActiveAsync().Returns(entities);
+            _mapper.Map<IEnumerable<TestRequirementtDto>>(entities).Returns(mapped);
+
+            // Act
+            var result = await _sut.GetAllActiveAsync();
+
+            // Assert
+            result.Should().BeEmpty();
+        }
+
+        [Fact]
+        public async Task GetAllActiveAsync_WhenRepositoryThrows_PropagatesException()
+        {
+            // Arrange
+            _testReqmtRepository.GetAllActiveAsync().ThrowsAsync(new Exception("DB error"));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<Exception>(() => _sut.GetAllActiveAsync());
+            _mapper.DidNotReceive().Map<IEnumerable<TestRequirementtDto>>(Arg.Any<IEnumerable<TestRequirement>>());
+        }
+
+        #endregion
     }
 }

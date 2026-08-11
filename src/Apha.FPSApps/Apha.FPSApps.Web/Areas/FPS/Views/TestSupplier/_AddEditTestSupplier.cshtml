@@ -35,7 +35,7 @@
             </div>
             <div class="govuk-grid-column-one-half">
                 <div class="govuk-form-group sup_margin_bottom_10">
-                    <label class="govuk-label govuk-!-font-weight-bold" for="BuyerDisplay">Buyer</label>
+                    <label class="govuk-label govuk-!-font-weight-bold" for="BuyerDisplay">Project</label>
                     <input class="govuk-input govuk-!-font-size-16" id="BuyerDisplay"
                            value="@Model.Buyer" readonly />
                 </div>
@@ -46,12 +46,13 @@
         <div class="govuk-grid-row">
             <div class="govuk-grid-column-one-half">
                 <div class="govuk-form-group sup_margin_bottom_10">
-                    <label class="govuk-label govuk-!-font-weight-bold" for="UnitPrice">Unit Price</label>
+                    <label class="govuk-label govuk-!-font-weight-bold" for="UnitPrice">Test Price</label>
                     <div class="govuk-input__wrapper">
                         <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                        <input class="govuk-input govuk-!-font-size-16" id="UnitPrice" name="UnitPrice"
-                               type="number" step="0.01" min="0"
-                               value="@(Model.UnitPrice.HasValue ? Model.UnitPrice.Value.ToString("F2") : "")" />
+                        <input class="govuk-input govuk-!-font-size-16 js-numeric-decimal" id="UnitPrice" name="UnitPrice"
+                               type="text" maxlength="20"
+                               value="@(Model.UnitPrice.HasValue ? Model.UnitPrice.Value.ToString() : "")"
+                               oninput="calculateTestCost()" />
                     </div>
                     <span data-valmsg-for="UnitPrice"
                           class="govuk-error-message field-validation-valid" style="display:none;"></span>
@@ -59,7 +60,7 @@
             </div>
             <div class="govuk-grid-column-one-half">
                 <div class="govuk-form-group sup_margin_bottom_10">
-                    <label class="govuk-label govuk-!-font-weight-bold" for="NoRequiredDisplay">No. Required</label>
+                    <label class="govuk-label govuk-!-font-weight-bold" for="NoRequiredDisplay">No Tests</label>
                     <input class="govuk-input govuk-!-font-size-16" id="NoRequiredDisplay"
                            value="@Model.NoRequired" readonly />
                 </div>
@@ -81,7 +82,7 @@
                     <div class="govuk-input__wrapper">
                         <div class="govuk-input__prefix" aria-hidden="true">£</div>
                         <input class="govuk-input govuk-!-font-size-16" id="TestCostDisplay"
-                               value="@(Model.TestCost.HasValue ? Model.TestCost.Value.ToString("F2") : "")" readonly />
+                               value="@(Model.TestCost.HasValue ? Model.TestCost.Value.ToString() : "")" readonly />
                     </div>
                 </div>
             </div>
@@ -97,3 +98,14 @@
         Update
     </button>
 </div>
+
+<script>
+    function calculateTestCost() {
+        var unitPrice = parseFloat($('#UnitPrice').val()) || 0;
+        var noRequired = parseFloat($('#NoRequiredDisplay').val()) || 0;
+        var testCost = unitPrice * noRequired;
+
+        // Update the Test Cost display field with formatted value
+        $('#TestCostDisplay').val(testCost > 0 ? testCost.toFixed(2) : '');
+    }
+</script>

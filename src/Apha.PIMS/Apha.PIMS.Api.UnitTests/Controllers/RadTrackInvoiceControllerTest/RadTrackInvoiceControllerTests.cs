@@ -435,11 +435,8 @@ namespace Apha.PIMS.Api.UnitTests.Controllers.RadTrackInvoiceControllerTest
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            var value    = okResult.Value!;
-            Assert.NotNull(value);
-            var successProp = value.GetType().GetProperty("success");
-            Assert.NotNull(successProp);
-            Assert.True((bool)successProp.GetValue(value)!);
+            Assert.NotNull(okResult.Value);
+            Assert.True(Assert.IsType<bool>(okResult.Value));
             await _service.Received(1).DeleteAsync(id);
         }
 
@@ -455,10 +452,8 @@ namespace Apha.PIMS.Api.UnitTests.Controllers.RadTrackInvoiceControllerTest
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            var value    = okResult.Value!;
-            var successProp = value.GetType().GetProperty("success");
-            Assert.NotNull(successProp);
-            Assert.False((bool)successProp.GetValue(value)!);
+            Assert.NotNull(okResult.Value);
+            Assert.False(Assert.IsType<bool>(okResult.Value));
             await _service.Received(1).DeleteAsync(id);
         }
 

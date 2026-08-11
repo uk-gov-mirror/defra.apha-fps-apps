@@ -27,6 +27,8 @@
                         <select class="govuk-select ssr-resource-select"
                                 id="workGroupSelect"
                                 aria-label="Select a Work Group"
+                                asp-for="SelectedWorkGroup"
+                                asp-items="Model.WorkGroupList"
                                 onchange="LoadGradeByGroup()">
                             <option value="">-- Select a Work Group --</option>
                         </select>
@@ -50,7 +52,7 @@
             <div class="cc-container-fluid">
                 <div class="cc-layout-row">
 
-                    @await Html.PartialAsync("_SetUpStaffResourcesSideNav")
+                    @await Html.PartialAsync("_SetUpStaffResourcesSideNav", "ResourceAllocation")
 
                     <div class="cc-content-column">
                         <div class="govuk-grid-row">
@@ -164,8 +166,46 @@
             ztCodeUrl:     '@Url.Action("Index", "PlanStaffZTCode", new { area = "FPS" })'
         };
 
+        // Initialise side nav state from server-selected values.
+        window.sideNavState = {
+            resourceCentre: '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(Model.SelectedResourceCentre))',
+            workGroup:      '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(Model.SelectedWorkGroup))',
+            fpsYear:        '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(ViewBag.FpsYear?.ToString() ?? string.Empty))'
+        };
+
+        // Keep sideNavState in sync when dropdowns change.
+        (function() {
+            function attachDropdownListeners() {
+                const rcSelect = document.getElementById('resourceCentreSelect');
+                const wgSelect = document.getElementById('workGroupSelect');
+
+                if (rcSelect) {
+                    rcSelect.addEventListener('change', function () {
+                        window.sideNavState.resourceCentre = this.value;
+                        window.sideNavState.workGroup = '';
+                        sideNavUpdateLinks();
+                    });
+                }
+
+                if (wgSelect) {
+                    wgSelect.addEventListener('change', function () {
+                        window.sideNavState.workGroup = this.value;
+                        sideNavUpdateLinks();
+                    });
+                }
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', attachDropdownListeners);
+            } else {
+                attachDropdownListeners();
+            }
+        })();
+
         // Initialise the Resource Allocation (Stage 2) module with Razor-generated URLs.
         window.raConfig = {
+            currentCentre:  '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(Model.SelectedResourceCentre))',
+            currentWorkGroup: '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(Model.SelectedWorkGroup))',
             gradesUrl:    '@Url.Action("GetGradesByResourceCentre", "ResourceAllocation", new { area = "FPS" })',
             staffGridUrl: '@Url.Action("LoadStaffAllocationGrid",   "ResourceAllocation", new { area = "FPS" })',
             jobsGridUrl:  '@Url.Action("LoadStaffJobsGrid",         "ResourceAllocation", new { area = "FPS" })',

@@ -1,5 +1,6 @@
 ﻿using Apha.FPSApps.Application.Dtos.FPS;
 using Apha.FPSApps.Application.Interfaces.FPS;
+using Apha.FPSApps.Application.Interfaces.PACT;
 using Apha.FPSApps.Application.Pagination;
 using Apha.FPSApps.Web.Areas.FPS.Models;
 using Apha.FPSApps.Web.Models.Components.DataGrid;
@@ -25,28 +26,50 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
         private readonly IResourceAllocationService _resourceAllocationService;
         private readonly IProfitCentreService _profitCentreService;
         private readonly IWorkGroupGradeService _workGroupGradeService;
+        private readonly IWorkGroupService _workGroupService;
 
         public ResourceAllocationController(
             IMapper mapper,
             IResourceAllocationService resourceAllocationService,
             IProfitCentreService profitCentreService,
-            IWorkGroupGradeService workGroupGradeService)
+            IWorkGroupGradeService workGroupGradeService,
+            IWorkGroupService workGroupService)
         {
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _resourceAllocationService = resourceAllocationService ?? throw new ArgumentNullException(nameof(resourceAllocationService));
             _profitCentreService = profitCentreService ?? throw new ArgumentNullException(nameof(profitCentreService));
             _workGroupGradeService = workGroupGradeService ?? throw new ArgumentNullException(nameof(workGroupGradeService));
+            _workGroupService = workGroupService ?? throw new ArgumentNullException(nameof(workGroupService));
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? resourceCentre = null, string? workGroup = null)
         {
             var viewModel = new ResourceAllocationViewModel
             {
                 ResourceCentres = await PopulateResourceCentresAsync(),
+                SelectedResourceCentre = resourceCentre ?? string.Empty,
+                SelectedWorkGroup = workGroup ?? string.Empty,
                 StaffAllocationGrid = BuildStaffAllocationGridConfig(new List<ResourceStaffAllocationItem>()),
                 StaffJobsGrid = BuildStaffJobsGridConfig(new List<ResourceStaffJobItem>())
             };
+
+            // Populate workgroup dropdown if resource centre is selected
+            if (!string.IsNullOrWhiteSpace(resourceCentre))
+            {
+                var workGroupsResponse = await _workGroupService.GetWorkGroupsByProfitCentreForBudgetAsync(resourceCentre);
+                if (workGroupsResponse.Success && workGroupsResponse.Data != null)
+                {
+                    viewModel.WorkGroupList = workGroupsResponse.Data
+                        .Select(w => new SelectListItem
+                        {
+                            Value = w.WorkGroupName,
+                            Text = w.WorkGroupName
+                        })
+                        .OrderBy(w => w.Text)
+                        .ToList();
+                }
+            }
 
             return View(viewModel);
         }

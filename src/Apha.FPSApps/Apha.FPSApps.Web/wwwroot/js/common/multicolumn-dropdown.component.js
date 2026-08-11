@@ -29,6 +29,15 @@
 
     // Global z-index counter for managing dropdown stacking
     var globalZIndex = 10000;
+    var dropdownInstances = [];
+
+    function closeOtherDropdowns(currentDropdown) {
+        dropdownInstances.forEach(function (dropdownInstance) {
+            if (dropdownInstance && dropdownInstance !== currentDropdown && dropdownInstance.isOpen) {
+                dropdownInstance.closeDropdown();
+            }
+        });
+    }
 
     /**
      * MultiColumnDropdownComponent Constructor
@@ -67,6 +76,8 @@
         this.selectedItem = null;
         this.isOpen = false;
         this.focusedRowIndex = -1; // Track keyboard navigation
+
+        dropdownInstances.push(this);
 
         this.init();
     }
@@ -468,6 +479,8 @@
         var container = document.querySelector(this.config.containerSelector);
 
         if (panel && input) {
+            closeOtherDropdowns(this);
+
             // Increase z-index to ensure this dropdown appears above others
             globalZIndex++;
             panel.style.zIndex = globalZIndex;
@@ -709,6 +722,10 @@
         if (container) {
             container.innerHTML = '';
         }
+
+        dropdownInstances = dropdownInstances.filter(function (dropdownInstance) {
+            return dropdownInstance !== this;
+        }, this);
 
         // Clear references
         this.originalData = [];

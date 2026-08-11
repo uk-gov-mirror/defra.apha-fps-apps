@@ -17,6 +17,6 @@ namespace Apha.PACT.DataAccess.Repository
                 .AsNoTracking()
                 .OrderBy(m => m.MonthNumber)
                 .ToListAsync();
-        }
+        }        
     }
 }

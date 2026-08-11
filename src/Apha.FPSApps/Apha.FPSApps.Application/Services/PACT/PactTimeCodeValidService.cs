@@ -18,6 +18,38 @@ namespace Apha.FPSApps.Application.Services.PACT
         public async Task<ApiResponseDto<List<TimeCodeValidDto>>> GetByJobCodeAsync(string jobCode, string parentProject)
             => await _pactClient.PactTimeCodeValid.GetByJobCodeAsync(jobCode, parentProject);
 
+        public async Task<ApiResponseDto<List<TimeCodeValidDto>>> GetTimeCodeValidsByWorkGroupAsync(string workGroup)
+        {
+            //check if workGroup is not null or empty
+            if (string.IsNullOrEmpty(workGroup))
+            {
+                throw new ArgumentException("WorkGroup cannot be null or empty", nameof(workGroup));
+            }
+            return await _pactClient.PactTimeCodeValid.GetTimeCodeValidsByWorkGroupAsync(workGroup);
+        }
+
+        public async Task<ApiResponseDto<List<string>>> GetTimeCodesProjectsByWorkGroupAndTimeCodeAsync(string workGroup, string timeCode)
+        {
+            //check if workGroup and timeCode are not null or empty
+            if (string.IsNullOrEmpty(workGroup))
+            {
+                throw new ArgumentException("WorkGroup cannot be null or empty", nameof(workGroup));
+            }
+
+            if (string.IsNullOrEmpty(timeCode))
+            {
+                throw new ArgumentException("TimeCode cannot be null or empty", nameof(timeCode));
+            }
+
+            return await _pactClient.PactTimeCodeValid.GetTimeCodesProjectsByWorkGroupAndTimeCodeAsync(workGroup, timeCode);
+        }
+
+        public async Task<ApiResponseDto<List<string>>> GetAllDistinctTimeCodesAsync()
+            => await _pactClient.PactTimeCodeValid.GetAllDistinctTimeCodesAsync();
+
+        public async Task<ApiResponseDto<List<string>>> GetAllDistinctProjectsAsync()
+            => await _pactClient.PactTimeCodeValid.GetAllDistinctProjectsAsync();
+
         public async Task<ApiResponseDto<TimeCodeValidDto>> GetTimeCodeValidAsync(string workGroup, string timeCode, string parentProject)
             => await _pactClient.PactTimeCodeValid.GetTimeCodeValidAsync(workGroup, timeCode, parentProject);
 

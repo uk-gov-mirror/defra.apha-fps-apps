@@ -1,4 +1,4 @@
-ï»¿using Apha.PIMS.Application.Dtos;
+using Apha.PIMS.Application.Dtos;
 using Apha.PIMS.Application.Services;
 using Apha.PIMS.Application.Validation;
 using Apha.PIMS.Core.Entities;
@@ -222,7 +222,7 @@ namespace Apha.PIMS.Application.UnitTests.Services.ProjectDetailsServiceTest
         [Fact]
         public async Task SavePimsDetailAsync_WhenProjectDoesNotExist_SetsUseProjectYearsToFalse()
         {
-            // Arrange â€” dto starts with UseProjectYears = true; service must override it to false
+            // Arrange — dto starts with UseProjectYears = true; service must override it to false
             // before mapping (VBA Form_BeforeInsert: UseProjectYear defaults to False on new records)
             var dto = new ProjectDetailDto
             {
@@ -498,7 +498,7 @@ namespace Apha.PIMS.Application.UnitTests.Services.ProjectDetailsServiceTest
         [Fact]
         public async Task UpdateProposedProjectAsync_WithValidDto_SameTransferTo_ReturnsMappedUpdatedDto()
         {
-            // Arrange â€” transferTo == dto.Parentproject (no project-code change)
+            // Arrange — transferTo == dto.Parentproject (no project-code change)
             var transferTo = "PP001";
             var dto = new ProposedProjectDto
             {
@@ -569,7 +569,7 @@ namespace Apha.PIMS.Application.UnitTests.Services.ProjectDetailsServiceTest
         [Fact]
         public async Task UpdateProposedProjectAsync_WithDifferentTransferTo_PassesTransferToRepository()
         {
-            // Arrange â€” transferTo differs â†’ project-code transfer path
+            // Arrange — transferTo differs ? project-code transfer path
             var transferTo = "PP002";
             var dto = new ProposedProjectDto
             {
@@ -669,16 +669,16 @@ namespace Apha.PIMS.Application.UnitTests.Services.ProjectDetailsServiceTest
             // Arrange
             var riskEntities = new List<Risk>
             {
-                new Risk { Riskid = 1, Riskrating = "Low Risk" },
-                new Risk { Riskid = 2, Riskrating = "Medium Risk" },
-                new Risk { Riskid = 3, Riskrating = "High Risk" }
+                new Risk { RiskId = 1, RiskRating = "Low Risk" },
+                new Risk { RiskId = 2, RiskRating = "Medium Risk" },
+                new Risk { RiskId = 3, RiskRating = "High Risk" }
             };
 
             var expectedDtos = new List<RiskDto>
             {
-                new RiskDto { Riskid = 1, Riskrating = "Low Risk" },
-                new RiskDto { Riskid = 2, Riskrating = "Medium Risk" },
-                new RiskDto { Riskid = 3, Riskrating = "High Risk" }
+                new RiskDto { RiskId = 1, RiskRating = "Low Risk" },
+                new RiskDto { RiskId = 2, RiskRating = "Medium Risk" },
+                new RiskDto { RiskId = 3, RiskRating = "High Risk" }
             };
 
             _mockRepository.GetAllRiskAsync().Returns(Task.FromResult(riskEntities));

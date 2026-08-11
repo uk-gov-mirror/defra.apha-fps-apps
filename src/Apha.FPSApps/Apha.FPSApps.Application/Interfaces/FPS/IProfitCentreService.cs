@@ -15,5 +15,6 @@ namespace Apha.FPSApps.Application.Interfaces.FPS
         Task<ApiResponseDto<IEnumerable<ProfitCentreDto>>> GetAllProfitCentresAsync();        
         Task<ApiResponseDto<bool>> UpdateProfitCentreSettingsAsync(string profitCentre, int timesheet, int outputsheet, short timesheetLayout);
         Task<ApiResponseDto<List<ProfitCentreCostDto>>> GetPagedProfitCenterCostSummaryAsync(QueryParameters<string> query, double monthNumber);
+        Task<ApiResponseDto<List<WgStaffPlanViewDto>>> GetPagedWgStaffPlanAsync(QueryParameters<string> query, string workGroup);
     }
 }

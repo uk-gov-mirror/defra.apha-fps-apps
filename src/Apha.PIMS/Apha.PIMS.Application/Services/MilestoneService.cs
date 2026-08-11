@@ -106,6 +106,41 @@ namespace Apha.PIMS.Application.Services
             return _mapper.Map<MilestoneDto>(updated);
         }
 
+        public async Task<MilestoneDto> UpdateMilestoneAsync_PMD(string project, string number, short underReview, short onTarget, DateTime? dateCompleted, string? projectLeaderComment, string? changedBy = null)
+        {
+            // Validate milestone exists
+            Milestone? existing = await _repository.GetMilestoneAsync(project, number);
+            if (existing is null)
+                throw new BusinessValidationErrorException(
+                    [new BusinessValidationError("Milestone not found.", "NOT_FOUND")]);
+
+            // Validate dateCompleted is not in future
+            if (dateCompleted.HasValue && dateCompleted.Value.Date > DateTime.Today)
+                throw new BusinessValidationErrorException(
+                    [new BusinessValidationError("Date completed cannot be after today.", "DATE_COMPLETED_FUTURE")]);
+
+            // Create a DTO for mutual exclusion logic
+            var dto = new MilestoneDto
+            {
+                UnderSdReview = underReview,
+                OnTarget = onTarget,
+                DateCompleted = dateCompleted,
+                ProjectLeaderComment = projectLeaderComment
+            };
+            ApplyMutualExclusions(dto);
+
+            // Update only PMD-specific fields
+            Milestone updated = await _repository.UpdateMilestoneAsync_PMD(
+                project, number,
+                dto.UnderSdReview,
+                dto.OnTarget ?? 0,
+                dto.DateCompleted,
+                dto.ProjectLeaderComment,
+                changedBy);
+
+            return _mapper.Map<MilestoneDto>(updated);
+        }
+
         private static void ApplyMutualExclusions(MilestoneDto dto)
         {
             if (dto.DateCompleted.HasValue)

@@ -38,39 +38,43 @@
         </div>
     </div>
 
-    <div class="sup_margin_left_right_0 sup_margin_bottom_10 sup_margin_top_10">
-        <div id="gridContainer_@Model.SubContractsGrid.GridId">
-            @await Html.PartialAsync("_DataGrid", Model.SubContractsGrid)
+    <div class="govuk-grid-row sup_margin_left_right_0 sup_margin_top_10 ">
+        <div class="govuk-grid-column-full">
+            <div id="gridContainer_@Model.SubContractsGrid.GridId">
+                @await Html.PartialAsync("_DataGrid", Model.SubContractsGrid)
+            </div>
         </div>
     </div>
 
-    <div class="sup_margin_left_right_0 sup_margin_bottom_10 sup_margin_top_10" style="display:flex; align-items:flex-start; gap:10px;">
-        <div style="flex:1; min-width:0;">
-            <div id="gridContainer_@Model.FailedSubContractsGrid.GridId">
-                @await Html.PartialAsync("_DataGrid", Model.FailedSubContractsGrid)
-            </div>
-        </div>
-
-        <div style="width:fit-content; flex:0 0 auto;">
-            <div style="display:flex; flex-direction:column; gap:10px;">
-                <button class="govuk-button sup_margin_0 sup_gov_blue_bg sup_flex sup_width_140" id="templateExcel" type="button">
-                    <img src="~/images/file-export-solid-full.svg" width="16" alt="icon for download template for import excel file format">&nbsp; Template
-                </button>
-
-                <div class="upload-container sup_width_140">
-                    <input type="file" id="csvInput" class="file-input" accept=".xls,.xlsx,.csv" hidden>
-                    <label for="csvInput" class="govuk-button sup_margin_0 sup_flex">
-                        <img src="~/images/file-import-solid-full.svg" width="16" alt="icon for import excel file">&nbsp; Import
-                    </label>
+    <div class="govuk-grid-column-full">
+        <div class="sup_margin_left_right_0 sup_margin_bottom_10 sup_margin_top_10" style="display:flex; align-items:flex-start; gap:10px;">
+            <div style="flex:1; min-width:0;">
+                <div id="gridContainer_@Model.FailedSubContractsGrid.GridId">
+                    @await Html.PartialAsync("_DataGrid", Model.FailedSubContractsGrid)
                 </div>
+            </div>
 
-                <button class="govuk-button govuk-button--secondary sup_gov_blue_bg sup_margin_0 sup_flex sup_width_140" id="exportFailedBtn" type="button" title="Export failed records to Excel">
-                    <img src="~/images/file-export-solid-full.svg" width="16" alt="icon for export data into excel file">&nbsp; Excel Export
-                </button>
+            <div style="width:fit-content; flex:0 0 auto;">
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    <button class="govuk-button sup_margin_0 sup_gov_blue_bg sup_flex sup_width_140" id="templateExcel" type="button">
+                        <img src="~/images/file-export-solid-full.svg" width="16" alt="icon for download template for import excel file format">&nbsp; Template
+                    </button>
 
-                <button class="govuk-button govuk-button--warning sup_margin_0 sup_flex sup_width_140" id="deleteAllFailedBtn" type="button" title="Delete all failed records">
-                    <img src="~/images/trash-can-regular-full-white.svg" width="16" alt="Delete all failed records">&nbsp; Delete All
-                </button>
+                    <div class="upload-container sup_width_140">
+                        <input type="file" id="csvInput" class="file-input" accept=".xls,.xlsx,.csv" hidden>
+                        <label for="csvInput" class="govuk-button sup_margin_0 sup_flex">
+                            <img src="~/images/file-import-solid-full.svg" width="16" alt="icon for import excel file">&nbsp; Import
+                        </label>
+                    </div>
+
+                    <button class="govuk-button govuk-button--secondary sup_gov_blue_bg sup_margin_0 sup_flex sup_width_140" id="exportFailedBtn" type="button" title="Export failed records to Excel">
+                        <img src="~/images/file-export-solid-full.svg" width="16" alt="icon for export data into excel file">&nbsp; Excel Export
+                    </button>
+
+                    <button class="govuk-button govuk-button--warning sup_margin_0 sup_flex sup_width_140" id="deleteAllFailedBtn" type="button" title="Delete all failed records">
+                        <img src="~/images/trash-can-regular-full-white.svg" width="16" alt="Delete all failed records">&nbsp; Delete All
+                    </button>
+                </div>
             </div>
         </div>
     </div>

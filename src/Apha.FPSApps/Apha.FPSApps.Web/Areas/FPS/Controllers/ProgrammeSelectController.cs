@@ -96,8 +96,14 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
         [HttpPost]
         public async Task<IActionResult> LoadProjectsGrid(PaginationFilter<string> request, string programNo, string? projectName = null)
         {
-            if (!ModelState.IsValid || string.IsNullOrWhiteSpace(programNo))
+            if (!ModelState.IsValid)
                 return BadRequest(ModelState);
+
+            if (string.IsNullOrWhiteSpace(programNo))
+            {
+                var emptyGrid = await BuildProjectsGridAsync(request, string.Empty, projectName);
+                return PartialView("_DataGrid", emptyGrid);
+            }
 
             // projectName may arrive as a standalone param or inside request.Filter as JSON
             if (string.IsNullOrWhiteSpace(projectName) && !string.IsNullOrWhiteSpace(request.Filter))

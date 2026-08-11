@@ -4,13 +4,15 @@
     {
         public IEnumerable<T> Data { get; set; } = Enumerable.Empty<T>();
         public PaginationDto PaginationData { get; set; } = new PaginationDto(); // Initialize to avoid nullability issue
+        public decimal Total { get; set; } = 0; // Initialize to avoid nullability issue
 
         public PaginatedResult() { }       
 
-        public PaginatedResult(IEnumerable<T> items, PaginationDto paginationData)
+        public PaginatedResult(IEnumerable<T> items, PaginationDto paginationData, decimal total = 0)
         {
             Data = items;
             PaginationData = paginationData;
+            Total = total;
         }
     }
 

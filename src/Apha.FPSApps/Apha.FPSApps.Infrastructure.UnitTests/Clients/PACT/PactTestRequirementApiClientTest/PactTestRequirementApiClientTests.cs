@@ -665,6 +665,86 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactTestRequirement
 
         #endregion
 
+        #region GetAllActiveAsync Tests
+
+        [Fact]
+        public async Task GetAllActiveAsync_WithSuccessResponse_ReturnsMappedList()
+        {
+            // Arrange
+            var apiResponse = new ApiResponse<List<TestRequirementtRes>>
+            {
+                Success = true,
+                Data =
+                [
+                    new TestRequirementtRes { TestCode = "PT0001", Buyer = "SV3300" }
+                ]
+            };
+            var expectedDto = ApiResponseDto<List<TestRequirementDto>>.SuccessResponse(
+                [new TestRequirementDto { TestCode = "PT0001", Buyer = "SV3300" }]);
+
+            _http.GetAsync<List<TestRequirementtRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<TestRequirementDto>>>(apiResponse).Returns(expectedDto);
+
+            // Act
+            var result = await _client.GetAllActiveAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Single(result.Data!);
+            await _http.Received(1).GetAsync<List<TestRequirementtRes>>(Arg.Any<string>());
+        }
+
+        [Fact]
+        public async Task GetAllActiveAsync_WithEmptyResult_ReturnsSuccessWithEmptyList()
+        {
+            // Arrange
+            var apiResponse = new ApiResponse<List<TestRequirementtRes>> { Success = true, Data = [] };
+            var expectedDto = ApiResponseDto<List<TestRequirementDto>>.SuccessResponse([]);
+
+            _http.GetAsync<List<TestRequirementtRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<TestRequirementDto>>>(apiResponse).Returns(expectedDto);
+
+            // Act
+            var result = await _client.GetAllActiveAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Empty(result.Data!);
+        }
+
+        [Fact]
+        public async Task GetAllActiveAsync_WhenApiReturnsFailure_ReturnsFailureResponse()
+        {
+            // Arrange
+            var apiResponse = new ApiResponse<List<TestRequirementtRes>>
+            {
+                Success = false,
+                Errors = [new ApiError { Code = "API_ERROR", Message = "error" }]
+            };
+            var mappedResponse = new ApiResponseDto<List<TestRequirementDto>>
+            {
+                Success = false,
+                Errors = [new ApiErrorDto { Code = "API_ERROR", Message = "error" }],
+                Meta = new ApiMetaDto()
+            };
+
+            _http.GetAsync<List<TestRequirementtRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<TestRequirementDto>>>(apiResponse).Returns(mappedResponse);
+
+            // Act
+            var result = await _client.GetAllActiveAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.NotNull(result.Errors);
+            Assert.Single(result.Errors);
+        }
+
+        #endregion
+
         // ── GetPlannedTestsByWorkgroupAsync ───────────────────────────────────
 
         #region GetPlannedTestsByWorkgroupAsync Tests

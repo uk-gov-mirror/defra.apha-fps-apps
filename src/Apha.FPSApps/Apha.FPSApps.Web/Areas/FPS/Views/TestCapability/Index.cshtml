@@ -28,15 +28,51 @@
 <div class="govuk-grid-row sup_margin_left_right_0 sup_flex_left_center sup_padding_bottom_10 sup_border-bottom" style="margin-top:10px;">
 
     <div class="govuk-grid-column-one-third">
-        <label for="portfolioPick" class="govuk-label govuk-!-font-weight-bold">Select a Portfolio:</label>
-        <select id="portfolioPick" class="govuk-select govuk-!-font-size-16" style="width:100%;"
-                onchange="onPortfolioChange(this.value, this.options[this.selectedIndex].text)">
-            <option value="">-- Select --</option>
-            @foreach (var item in Model.PortfolioOptions)
-            {
-                <option value="@item.Value">@item.Text</option>
-            }
-        </select>
+        <label for="portfolioDisplay" class="govuk-label govuk-!-font-weight-bold">Select a Portfolio:</label>
+        <div style="position: relative;">
+            <input type="text" id="portfolioDisplay" placeholder="Select Portfolio" autocomplete="off"
+                   class="govuk-input govuk-!-font-size-16 down-arrow-img" style="width:100%; cursor:pointer;" readonly
+                   onclick="togglePortfolioPanel()" />
+            <div id="PortfolioDropdownPanel" style="display:none; position:absolute; top:100%; left:0; width:100%;
+                    max-height:260px; overflow-y:auto; background:#fff; border:1px solid #b1b4b6;
+                    box-shadow:0 4px 8px rgba(0,0,0,.2); z-index:2000;">
+                <label for="PortfolioSearchBox" class="govuk-visually-hidden">Type to search portfolio</label>
+                <input type="text" id="PortfolioSearchBox" placeholder="Type to search portfolio..."
+                       style="width:100%; padding:6px 8px; border:0; border-bottom:1px solid #b1b4b6; outline:none; box-sizing:border-box;"
+                       oninput="filterPortfolioPanel(this.value)" />
+                <table style="width:100%; border-collapse:collapse; font-size:14px;">
+                    <thead style="background:#f3f2f1; position:sticky; top:0; z-index:10;">
+                        <tr>
+                            <th style="padding:6px 8px; text-align:left;">Portfolio</th>
+                            <th style="padding:6px 8px; text-align:left;">Description</th>
+                        </tr>
+                    </thead>
+                    <tbody id="PortfolioDropdownBody">
+                        @foreach (var item in Model.PortfolioOptions.Where(o => !string.IsNullOrEmpty(o.Value)))
+                        {
+                            var sepIdx = item.Text.IndexOf(" \u2013 ");
+                            var pCode = sepIdx >= 0 ? item.Text.Substring(0, sepIdx).Trim() : item.Value;
+                            var pDesc = sepIdx >= 0 ? item.Text.Substring(sepIdx + 3).Trim() : string.Empty;
+                            <tr data-portfolio="@item.Value" data-code="@pCode" data-description="@pDesc"
+                                tabindex="0"
+                                onclick="selectPortfolio('@item.Value', '@Html.Raw(pCode.Replace("'", "\\'"))', '@Html.Raw(pDesc.Replace("'", "\\'"))', this)"
+                                onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); selectPortfolio('@item.Value', '@Html.Raw(pCode.Replace("'", "\\'"))', '@Html.Raw(pDesc.Replace("'", "\\'"))', this); }"
+                                style="cursor:pointer;">
+                                <td style="padding:6px 8px; border-bottom:1px solid #f3f2f1;">@pCode</td>
+                                <td style="padding:6px 8px; border-bottom:1px solid #f3f2f1;">@pDesc</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <input type="hidden" id="portfolioPick" value="" />
+        <input type="hidden" id="portfolioDescription" value="" />
+    </div>
+    <div class="govuk-grid-column-one-third">
+        <label for="portfolioDescriptionDisplay" class="govuk-label govuk-!-font-weight-bold">Portfolio Description:</label>
+        <input type="text" id="portfolioDescriptionDisplay" readonly
+               class="govuk-input govuk-!-font-size-16" style="width:100%; background-color:#f3f2f1; cursor:default;" />
     </div>
     <div class="govuk-grid-column-one-third">
         <div class="govuk-label" aria-hidden="true">&nbsp;</div>
@@ -63,19 +99,58 @@
 
         // ── Filter ────────────────────────────────────────────────────────────
 
-        function onPortfolioChange(portfolio, labelText) {
+        function onPortfolioChange(portfolio, desc) {
             currentPortfolio = portfolio;
 
-            // Extract description part after ' – ' if present
-            var desc = '';
-            if (labelText) {
-                var sepIdx = labelText.indexOf(' \u2013 ');
-                desc = sepIdx >= 0 ? labelText.substring(sepIdx + 3) : labelText;
-            }
-            $('#portfolioDescription').val(portfolio ? desc : '');
+            $('#portfolioPick').val(portfolio || '');
+            $('#portfolioDescription').val(portfolio ? (desc || '') : '');
 
             window['gridManager_testCapabilityGrid'].reloadGrid({ page: 1 });
         }
+
+        // ── Portfolio panel dropdown ──────────────────────────────────────────
+
+        function togglePortfolioPanel() {
+            var panel = document.getElementById('PortfolioDropdownPanel');
+            if (!panel) return;
+            var isOpen = panel.style.display !== 'none';
+            panel.style.display = isOpen ? 'none' : 'block';
+            if (!isOpen) {
+                var searchBox = document.getElementById('PortfolioSearchBox');
+                if (searchBox) { searchBox.value = ''; filterPortfolioPanel(''); searchBox.focus(); }
+            }
+        }
+
+        function filterPortfolioPanel(query) {
+            var rows = document.querySelectorAll('#PortfolioDropdownBody tr');
+            var q = (query || '').toLowerCase();
+            rows.forEach(function (row) {
+                var code = (row.getAttribute('data-code') || '').toLowerCase();
+                var desc = (row.getAttribute('data-description') || '').toLowerCase();
+                row.style.display = (!q || code.indexOf(q) !== -1 || desc.indexOf(q) !== -1) ? '' : 'none';
+            });
+        }
+
+        function selectPortfolio(portfolio, code, desc, rowEl) {
+            var display = document.getElementById('portfolioDisplay');
+            if (display) display.value = code;
+
+            var descDisplay = document.getElementById('portfolioDescriptionDisplay');
+            if (descDisplay) descDisplay.value = desc || '';
+
+            var panel = document.getElementById('PortfolioDropdownPanel');
+            if (panel) panel.style.display = 'none';
+
+            onPortfolioChange(portfolio, desc);
+        }
+
+        // Close panel when clicking outside
+        $(document).on('click', function (e) {
+            if (!$(e.target).closest('#PortfolioDropdownPanel, #portfolioDisplay').length) {
+                var panel = document.getElementById('PortfolioDropdownPanel');
+                if (panel) panel.style.display = 'none';
+            }
+        });
 
         function getTestCapabilityExtraFilters() {
             return { portfolio: currentPortfolio };

@@ -82,6 +82,11 @@
         populateOwnerDropdown();
         clearValidationErrors('#testModal');
         $('#testModal').modal('show');
+
+        // Initialize form validation after modal is shown
+        setTimeout(function() {
+            initializeFormValidation('#testForm');
+        }, 100);
     }
 
     function editTestOrProduct(btn) {
@@ -143,6 +148,9 @@
                         $('#testModal .govuk-form-group').removeClass('govuk-form-group--error');
                         $('#testModal .govuk-input').removeClass('govuk-input--error');
                         $('#testModal').modal('show');
+
+                        // Initialize form validation (unobtrusive + numeric)
+                        initializeFormValidation('#testForm');
                     }, 50);
                 } else {
                     setRequiredFields();
@@ -170,13 +178,31 @@
     }
 
     function saveTestOrProduct() {
-        clearValidationErrors('#testModal');
         var form = $('#testForm');
 
-        if (!isFormValid(form)) {
+        // Validate all numeric fields before checking isFormValid
+        form.find('.decfmt-input').each(function() {
+            validateRangeOnInput(this);
+        });
+
+        // Check for numeric validation errors
+        if (hasNumericValidationErrors(form)) {
+            // Ensure validation messages are visible
+            if (typeof ensureValidationMessagesVisible === 'function') {
+                ensureValidationMessagesVisible(form);
+            }
             displayClientValidationErrors(form, '#testModal');
             return;
         }
+
+        if (!isFormValid(form)) {
+            // Display validation errors without clearing them first
+            displayClientValidationErrors(form, '#testModal');
+            return;
+        }
+
+        // Clear validation errors only after validation passes
+        clearValidationErrors('#testModal');
 
         var isEdit = $('#isEdit').val() === 'true';
         var itemCode = $('#originalItemCode').val() || $('#itemCode').val();
@@ -189,9 +215,9 @@
             Owner: $('#owner').val(),
             JobStatus: $('#jobStatus').val(),
             ChargeMethod: $('#chargeMethod').val(),
-            DefraUnitPrice: parseFloat($('#defraUnitPrice').val()) || 0,
-            UnitPriceVla: $('#unitPriceVla').val() ? parseFloat($('#unitPriceVla').val()) : null,
-            PriceAhvg: $('#priceAhvg').val() ? parseFloat($('#priceAhvg').val()) : null
+            DefraUnitPrice: parseDefraUnitPrice(),
+            UnitPriceVla: parseOptionalDecimal($('#unitPriceVla').val()),
+            PriceAhvg: parseOptionalDecimal($('#priceAhvg').val())
         };
 
         var url = isEdit
@@ -259,6 +285,23 @@
 
     // ── Utilities ─────────────────────────────────────────────────────────────
 
+    function parseOptionalDecimal(value) {
+        if (value === '' || value === null || value === undefined) {
+            return null;
+        }
+        var parsed = parseFloat(value);
+        return isNaN(parsed) ? null : parsed;
+    }
+
+    function parseDefraUnitPrice() {
+        var value = $('#defraUnitPrice').val();
+        if (value === '' || value === null || value === undefined) {
+            return 0;
+        }
+        var parsed = parseFloat(value);
+        return isNaN(parsed) ? 0 : parsed;
+    }
+
     function reloadGrid(gridId) {
         var gridManager = window['gridManager_' + gridId];
         if (gridManager && typeof gridManager.reloadGrid === 'function') {
@@ -284,6 +327,13 @@
     $(document).ready(function () {
         loadUrls();
         loadOwners();
+
+        // Initialize numeric validation after a short delay to ensure DOM is ready
+        setTimeout(function() {
+            if (typeof initializeNumericInputValidation === 'function') {
+                initializeNumericInputValidation();
+            }
+        }, 100);
 
         // Disable jQuery Unobtrusive Validation for this form
         if ($.validator && $.validator.unobtrusive) {
@@ -313,6 +363,11 @@
             $('#testModal .govuk-input').removeClass('govuk-input--error');
             $('#testModal .govuk-textarea').removeClass('govuk-textarea--error');
             $('#testModal .govuk-error-message').hide().css('display', 'none');
+
+            // Re-initialize numeric validation when modal is shown
+            if (typeof initializeNumericInputValidation === 'function') {
+                initializeNumericInputValidation();
+            }
         });
 
         $('#testModal').on('hidden.bs.modal', function () {

@@ -140,24 +140,31 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.FPS.SetUpStaffResourcesControll
         {
             // Arrange
             var profitCentres = BuildProfitCentreList();
-            var grades        = BuildGradeList();
+            var workGroups = new List<WorkGroupViewDto>
+            {
+                new() { WorkGroupName = "WG001", ProfitCentre = DefaultResourceCentre }
+            };
+            var grades = BuildGradeList();
 
             _profitCentreService.GetProfitCentresAsync()
                 .Returns(ApiResponseDto<List<ProfitCentreDto>>.SuccessResponse(profitCentres));
-            _workGroupGradeService.GetWorkGroupGradeAsync(DefaultResourceCentre)
+            _workGroupService.GetWorkGroupsByProfitCentreForBudgetAsync(DefaultResourceCentre)
+                .Returns(ApiResponseDto<List<WorkGroupViewDto>>.SuccessResponse(workGroups));
+            _workGroupGradeService.GetWorkgroupGradesByWorkGroupAsync("WG001")
                 .Returns(ApiResponseDto<List<WorkgroupGradeDto>>.SuccessResponse(grades));
 
             // Act
-            var result = await _controller.Index(DefaultResourceCentre);
+            var result = await _controller.Index(DefaultResourceCentre, "WG001");
 
             // Assert
             var viewResult = Assert.IsType<ViewResult>(result);
             var model      = Assert.IsType<SetUpStaffResourcesViewModel>(viewResult.Model);
 
             Assert.Equal(DefaultResourceCentre, model.SelectedResourceCentre);
-            Assert.Equal(2,                     model.GradeList.Count);
-            Assert.Contains("WG01",             model.GradeList);
-            await _workGroupGradeService.Received(1).GetWorkGroupGradeAsync(DefaultResourceCentre);
+            Assert.Equal("WG001", model.SelectedWorkgroup);
+            Assert.Equal(2, model.GradeList.Count);
+            Assert.Contains("WG01", model.GradeList);
+            await _workGroupGradeService.Received(1).GetWorkgroupGradesByWorkGroupAsync("WG001");
         }
 
         [Fact]
@@ -182,15 +189,21 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.FPS.SetUpStaffResourcesControll
         {
             // Arrange
             var profitCentres = BuildProfitCentreList();
-            var errors        = new List<ApiErrorDto> { new() { Message = "Error", Code = "ERR" } };
+            var workGroups = new List<WorkGroupViewDto>
+            {
+                new() { WorkGroupName = "WG001", ProfitCentre = DefaultResourceCentre }
+            };
+            var errors = new List<ApiErrorDto> { new() { Message = "Error", Code = "ERR" } };
 
             _profitCentreService.GetProfitCentresAsync()
                 .Returns(ApiResponseDto<List<ProfitCentreDto>>.SuccessResponse(profitCentres));
-            _workGroupGradeService.GetWorkGroupGradeAsync(DefaultResourceCentre)
+            _workGroupService.GetWorkGroupsByProfitCentreForBudgetAsync(DefaultResourceCentre)
+                .Returns(ApiResponseDto<List<WorkGroupViewDto>>.SuccessResponse(workGroups));
+            _workGroupGradeService.GetWorkgroupGradesByWorkGroupAsync("WG001")
                 .Returns(ApiResponseDto<List<WorkgroupGradeDto>>.FailureResponse(errors, new ApiMetaDto()));
 
             // Act
-            var result = await _controller.Index(DefaultResourceCentre);
+            var result = await _controller.Index(DefaultResourceCentre, "WG001");
 
             // Assert
             var viewResult = Assert.IsType<ViewResult>(result);

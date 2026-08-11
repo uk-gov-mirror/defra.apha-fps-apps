@@ -21,11 +21,11 @@ namespace Apha.PACT.DataAccess.Data
                 .HasMaxLength(30)
                 .HasColumnName("acctcode");
             entity.Property(e => e.Amount)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("amount");
             entity.Property(e => e.AnimalDays).HasColumnName("animaldays");
             entity.Property(e => e.DailyRate)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("dailyrate");
             entity.Property(e => e.Description)
                 .HasMaxLength(255)

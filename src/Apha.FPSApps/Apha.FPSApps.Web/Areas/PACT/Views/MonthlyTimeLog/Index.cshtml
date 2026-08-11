@@ -94,13 +94,17 @@
                     </div>
                 </div>
                 <div class="govuk-grid-column-one-third">
-                    <div class="govuk-form-group sup_margin_bottom_10">
+                    <div class="govuk-form-group sup_margin_bottom_10" id="fg-month">
                         <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" for="txtMonth">
                             Month (numeric)
                         </label>
-                        <input id="txtMonth" type="number" min="1" max="12"
-                               class="govuk-input govuk-!-font-size-16"
-                               placeholder="Enter month (1-12)" />
+                        <input id="txtMonth" type="text"
+                               class="govuk-input govuk-!-font-size-16 decfmt-input"
+                               placeholder="Enter month (1-12)"
+                               data-val-range-min="1"
+                               data-val-range-max="12"
+                               aria-describedby="txtMonth-error" />
+                        <span id="txtMonth-error" class="govuk-error-message" style="display:none;"></span>
                     </div>
                 </div>
             </div>

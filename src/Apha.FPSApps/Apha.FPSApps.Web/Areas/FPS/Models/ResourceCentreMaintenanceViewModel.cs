@@ -1,3 +1,4 @@
+using Apha.FPSApps.Web.Validation;
 using Apha.FPSApps.Web.Models.Components.DataGrid;
 using System.ComponentModel.DataAnnotations;
 
@@ -50,7 +51,8 @@ namespace Apha.FPSApps.Web.Areas.FPS.Models
         /// Contribution target monetary value.
         /// </summary>
         [Display(Name = "Contribution Target")]
-        [GridColumn(Width = 160, Type = GridColumnType.Number)]
+        [GridColumn(Width = 160, Type = GridColumnType.GbpValue)]
+        [CurrencyRange]
         public decimal? ContTarget { get; set; }
 
         /// <summary>

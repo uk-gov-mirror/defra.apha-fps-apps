@@ -1,0 +1,138 @@
+@model Apha.FPSApps.Web.Areas.PIMS.Models.ProjectManagerItem
+
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    var isEditMode = !string.IsNullOrEmpty(Model.Projectmanager);
+    var title = isEditMode ? "Edit Manager" : "Add Manager";
+    var saveLabel = isEditMode ? "Update" : "Save";
+    var managerNames = ViewBag.ManagerNames as List<SelectListItem> ?? new List<SelectListItem>();
+}
+
+<div class="modal-header flex-space-center">
+    <h3 class="modal-title" style="margin: 0;">@title</h3>
+    <button type="button" class="btn-close btn-red" onclick="closeModal()">X</button>
+</div>
+<div class="modal-body" style="padding-top: 5px;">
+    <form class="row" id="formProjectManager">
+        @Html.AntiForgeryToken()
+
+        <input type="hidden" id="hdnMgrIsEdit" name="isEditMode" value="@isEditMode.ToString().ToLower()" />
+
+        <div class="govuk-error-summary ra-form-error-banner ra-hidden"
+             id="mgrEditDbError" role="alert" aria-labelledby="mgrEditDbErrorTitle" tabindex="-1">
+            <h2 class="govuk-error-summary__title govuk-!-font-size-14" id="mgrEditDbErrorTitle">There is a problem</h2>
+            <div class="govuk-error-summary__body">
+                <p class="govuk-body govuk-!-font-size-14" id="mgrEditDbErrorText"></p>
+            </div>
+        </div>
+
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <div class="govuk-form-group sup_margin_bottom_10" id="mgrEditNameGroup">
+                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" for="mgrEditName">
+                        Manager Name: <span class="ra-required-star" aria-hidden="true">*</span>
+                    </label>
+                    <select class="govuk-select govuk-!-font-size-16 ra-select-full"
+                            id="mgrEditName"
+                            asp-for="Projectmanager"
+                            asp-items="managerNames"
+                            aria-required="true"
+                            aria-label="Manager Name"
+                            aria-describedby="mgrEditNameError"
+                            required="@(isEditMode ? null : "required")"
+                            disabled="@(isEditMode ? "disabled" : null)">
+                        <option value="">-- Select --</option>
+                    </select>
+                    @if (isEditMode)
+                    {
+                        <input type="hidden" asp-for="Projectmanager" />
+                    }
+                    <span asp-validation-for="Projectmanager" class="govuk-error-message" id="mgrEditNameError" style="display:none;"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-one-half">
+                <div class="govuk-form-group sup_margin_bottom_10" id="mgrEditMNumberGroup">
+                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="Mnumber">
+                        MNumber:
+                    </label>
+                    <input class="govuk-input govuk-!-font-size-16"
+                           asp-for="Mnumber"
+                           id="mgrEditMNumber"
+                           type="text"
+                           aria-label="MNumber"
+                           aria-describedby="mgrEditMNumberError" />
+                    <span asp-validation-for="Mnumber" class="govuk-error-message" id="mgrEditMNumberError" style="display:none;"></span>
+                </div>
+            </div>
+
+            <div class="govuk-grid-column-one-half sup_padding_right_10">
+                <div class="govuk-form-group sup_margin_bottom_10" id="mgrEditEmailGroup">
+                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="Email">
+                        Manager's email:
+                    </label>
+                    <input class="govuk-input govuk-!-font-size-16"
+                           asp-for="Email"
+                           id="mgrEditEmail"
+                           type="text"
+                           aria-label="Manager's email"
+                           aria-describedby="mgrEditEmailError" />
+                    <span asp-validation-for="Email" class="govuk-error-message" id="mgrEditEmailError" style="display:none;"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <div class="govuk-form-group sup_margin_bottom_10" id="mgrEditLoginEmailGroup">
+                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="LoginEmail">
+                        Manager's login email:
+                    </label>
+                    <input class="govuk-input govuk-!-font-size-16"
+                           asp-for="LoginEmail"
+                           id="mgrEditLoginEmail"
+                           type="email"
+                           aria-label="Manager's login email"
+                           aria-describedby="mgrEditLoginEmailError" />
+                    <span asp-validation-for="LoginEmail" class="govuk-error-message" id="mgrEditLoginEmailError" style="display:none;"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-full">
+                <div class="govuk-form-group sup_margin_bottom_10">
+                    <div class="govuk-checkboxes govuk-checkboxes--small">
+                        <div class="govuk-checkboxes__item">
+                            <input class="govuk-checkboxes__input"
+                                   asp-for="Disable"
+                                   id="mgrEditDisabled"
+                                   aria-label="mgrEditDisabled"
+                                   type="checkbox" />
+                            <label class="govuk-label govuk-checkboxes__label govuk-!-font-weight-regular"
+                                   asp-for="Disable">
+                                Disable
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12" style="display: flex; justify-content: space-between; margin-top: 10px;">
+            <button type="button"
+                    class="govuk-button govuk-button--secondary sup_margin_0"
+                    onclick="closeModal()">
+                Cancel
+            </button>
+            <button type="button"
+                    class="govuk-button sup_margin_0"
+                    onclick="saveProjectManager()">
+                @saveLabel
+            </button>
+        </div>
+    </form>
+</div>
+

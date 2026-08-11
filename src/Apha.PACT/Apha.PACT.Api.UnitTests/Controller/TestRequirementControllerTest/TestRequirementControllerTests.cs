@@ -451,5 +451,61 @@ namespace Apha.PACT.Api.UnitTests.Controller.TestRequirementControllerTest
         }
 
         #endregion
+
+        #region GetAllActive
+
+        [Fact]
+        public async Task GetAllActive_WithActiveItems_ReturnsOk()
+        {
+            // Arrange
+            var items = new List<TestRequirementtDto>
+            {
+                new() { TestCode = "PT0001", Buyer = "SV3300" }
+            };
+            var mapped = new List<TestRequirementtRes>
+            {
+                new() { TestCode = "PT0001", Buyer = "SV3300" }
+            };
+
+            _service.GetAllActiveAsync().Returns(items);
+            _mapper.Map<IEnumerable<TestRequirementtRes>>(items).Returns(mapped);
+
+            // Act
+            var action = await _sut.GetAllActive();
+
+            // Assert
+            action.Should().BeOfType<OkObjectResult>()
+                  .Which.Value.Should().Be(mapped);
+        }
+
+        [Fact]
+        public async Task GetAllActive_WithEmptyItems_ReturnsOk()
+        {
+            // Arrange
+            var items = new List<TestRequirementtDto>();
+            var mapped = new List<TestRequirementtRes>();
+
+            _service.GetAllActiveAsync().Returns(items);
+            _mapper.Map<IEnumerable<TestRequirementtRes>>(items).Returns(mapped);
+
+            // Act
+            var action = await _sut.GetAllActive();
+
+            // Assert
+            action.Should().BeOfType<OkObjectResult>()
+                  .Which.Value.Should().Be(mapped);
+        }
+
+        [Fact]
+        public async Task GetAllActive_WhenServiceThrows_PropagatesException()
+        {
+            // Arrange
+            _service.GetAllActiveAsync().ThrowsAsync(new Exception("service error"));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<Exception>(() => _sut.GetAllActive());
+        }
+
+        #endregion
     }
 }

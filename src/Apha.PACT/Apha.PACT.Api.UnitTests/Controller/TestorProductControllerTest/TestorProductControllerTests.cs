@@ -35,8 +35,8 @@ namespace Apha.PACT.Api.UnitTests.Controller.TestorProductControllerTest
         {
             var dtos = new List<TestorProductDto>
             {
-                new() { ItemCode = "T001", ItemDescription = "Test One", DefraUnitPrice = 50m },
-                new() { ItemCode = "T002", ItemDescription = "Test Two", DefraUnitPrice = 100m }
+                new() { ItemCode = "T001", ItemDescription = "Test One", DefraUnitPrice = 50m, UnitPriceVla = 12.34m, FpsYear = 2025 },
+                new() { ItemCode = "T002", ItemDescription = "Test Two", DefraUnitPrice = 100m, UnitPriceVla = 56.78m, FpsYear = 2025 }
             };
             _serviceMock.GetAllTestorProductsAsync().Returns(dtos);
 
@@ -46,7 +46,10 @@ namespace Apha.PACT.Api.UnitTests.Controller.TestorProductControllerTest
             var list = Assert.IsType<List<TestorProductRes>>(ok.Value, exactMatch: false);
             Assert.Equal(2, list.Count);
             Assert.Equal("T001", list[0].ItemCode);
+            Assert.Equal(12.34m, list[0].UnitPriceVla);
+            Assert.Equal(2025, list[0].FpsYear);
             Assert.Equal("T002", list[1].ItemCode);
+            Assert.Equal(56.78m, list[1].UnitPriceVla);
         }
 
         [Fact]

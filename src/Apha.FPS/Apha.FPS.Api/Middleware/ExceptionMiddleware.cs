@@ -41,7 +41,7 @@ namespace Apha.FPS.Api.Middleware
             {
                 Success = false,
                 Data = null,
-                Errors = new List<ApiError>(), // Ensure the Errors list is initialized
+                Errors = new List<ApiError>(), // Ensure the Errors list is  initialized
                 Meta = new ApiMeta
                 {
                     CorrelationId = correlationId,
@@ -50,7 +50,7 @@ namespace Apha.FPS.Api.Middleware
             };
 
             var errorType = _configuration["ExceptionTypes:General"]
-                            ?? "FPS.GENERAL_EXCEPTION";
+                            ?? "FPSAPPS.EXCEPTION.FPS.GENERAL";
 
             switch (ex)
             {

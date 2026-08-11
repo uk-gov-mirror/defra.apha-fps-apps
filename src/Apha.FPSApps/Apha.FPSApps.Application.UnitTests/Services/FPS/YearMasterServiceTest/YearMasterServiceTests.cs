@@ -4,6 +4,7 @@ using Apha.FPSApps.Application.Interfaces.FpsApiClients;
 using Apha.FPSApps.Application.Pagination;
 using Apha.FPSApps.Application.Services.FPS;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using Xunit;
 
 namespace Apha.FPSApps.Application.UnitTests.Services.FPS.YearMasterServiceTest
@@ -576,6 +577,132 @@ namespace Apha.FPSApps.Application.UnitTests.Services.FPS.YearMasterServiceTest
 
             // Assert
             await _fpsYearMasterApiClient.Received(1).GetAllFpsYearsPagedAsync(Arg.Any<QueryParameters<int>>());
+        }
+
+        #endregion
+
+        #region GetFpsPlannedYearAsync
+
+        [Fact]
+        public async Task GetFpsPlannedYearAsync_WhenPlannedYearExists_ReturnsPlannedFpsYear()
+        {
+            // Arrange
+            var yearMasters = new List<YearMasterDto>
+            {
+                new YearMasterDto { FpsYear = 2025, YearStatus = "Planned", Active = true },
+                new YearMasterDto { FpsYear = 2024, YearStatus = "Open",    Active = true }
+            };
+            var expectedResponse = ApiResponseDto<IEnumerable<YearMasterDto>>.SuccessResponse(yearMasters);
+            _fpsYearMasterApiClient.GetAllFpsYearsAsync().Returns(expectedResponse);
+
+            // Act
+            var result = await _yearMasterService.GetFpsPlannedYearAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Equal(2025, result.Data);
+            await _fpsYearMasterApiClient.Received(1).GetAllFpsYearsAsync();
+        }
+
+        [Fact]
+        public async Task GetFpsPlannedYearAsync_WhenNoPlannedYearExists_ReturnsOpenYearPlusOne()
+        {
+            // Arrange
+            var yearMasters = new List<YearMasterDto>
+            {
+                new YearMasterDto { FpsYear = 2024, YearStatus = "Open", Active = true },
+                new YearMasterDto { FpsYear = 2023, YearStatus = "Closed", Active = true }
+            };
+            var expectedResponse = ApiResponseDto<IEnumerable<YearMasterDto>>.SuccessResponse(yearMasters);
+            _fpsYearMasterApiClient.GetAllFpsYearsAsync().Returns(expectedResponse);
+
+            // Act
+            var result = await _yearMasterService.GetFpsPlannedYearAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Equal(2025, result.Data);   // open (2024) + 1
+            await _fpsYearMasterApiClient.Received(1).GetAllFpsYearsAsync();
+        }
+
+        [Fact]
+        public async Task GetFpsPlannedYearAsync_WhenMultiplePlannedYearsExist_ReturnsHighestPlannedYear()
+        {
+            // Arrange
+            var yearMasters = new List<YearMasterDto>
+            {
+                new YearMasterDto { FpsYear = 2027, YearStatus = "Planned", Active = true },
+                new YearMasterDto { FpsYear = 2026, YearStatus = "Planned", Active = true },
+                new YearMasterDto { FpsYear = 2024, YearStatus = "Open",    Active = true }
+            };
+            var expectedResponse = ApiResponseDto<IEnumerable<YearMasterDto>>.SuccessResponse(yearMasters);
+            _fpsYearMasterApiClient.GetAllFpsYearsAsync().Returns(expectedResponse);
+
+            // Act
+            var result = await _yearMasterService.GetFpsPlannedYearAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Equal(2027, result.Data);
+            await _fpsYearMasterApiClient.Received(1).GetAllFpsYearsAsync();
+        }
+
+        [Fact]
+        public async Task GetFpsPlannedYearAsync_WhenApiReturnsFailure_ReturnsFailureResponse()
+        {
+            // Arrange
+            var errors = new List<ApiErrorDto>
+            {
+                new ApiErrorDto { Message = "API Error", Code = "API_ERROR" }
+            };
+            var expectedResponse = ApiResponseDto<IEnumerable<YearMasterDto>>.FailureResponse(errors, new ApiMetaDto());
+            _fpsYearMasterApiClient.GetAllFpsYearsAsync().Returns(expectedResponse);
+
+            // Act
+            var result = await _yearMasterService.GetFpsPlannedYearAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.NotNull(result.Errors);
+            await _fpsYearMasterApiClient.Received(1).GetAllFpsYearsAsync();
+        }
+
+        [Fact]
+        public async Task GetFpsPlannedYearAsync_WhenApiReturnsNullData_ReturnsFailureResponse()
+        {
+            // Arrange
+            var expectedResponse = new ApiResponseDto<IEnumerable<YearMasterDto>>
+            {
+                Success = false,
+                Data = null,
+                Errors = new List<ApiErrorDto> { new ApiErrorDto { Message = "No data", Code = "NO_DATA" } },
+                Meta = new ApiMetaDto()
+            };
+            _fpsYearMasterApiClient.GetAllFpsYearsAsync().Returns(expectedResponse);
+
+            // Act
+            var result = await _yearMasterService.GetFpsPlannedYearAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            await _fpsYearMasterApiClient.Received(1).GetAllFpsYearsAsync();
+        }
+
+        [Fact]
+        public async Task GetFpsPlannedYearAsync_WhenApiClientThrowsException_PropagatesException()
+        {
+            // Arrange
+            _fpsYearMasterApiClient.GetAllFpsYearsAsync().ThrowsAsync(new Exception("API unavailable"));
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<Exception>(() => _yearMasterService.GetFpsPlannedYearAsync());
+            Assert.Equal("API unavailable", exception.Message);
+            await _fpsYearMasterApiClient.Received(1).GetAllFpsYearsAsync();
         }
 
         #endregion

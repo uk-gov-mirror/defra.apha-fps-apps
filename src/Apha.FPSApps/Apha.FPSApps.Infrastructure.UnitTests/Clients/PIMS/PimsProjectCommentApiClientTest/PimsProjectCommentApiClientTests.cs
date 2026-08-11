@@ -53,7 +53,7 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PIMS.PimsProjectCommentA
             _mapper.Map<ApiResponseDto<List<CommentDto>>>(apiResponse).Returns(mappedDto);
 
             // Act
-            var result = await _client.GetCommentsByProjectAsync(project, year, query);
+            var result = await _client.GetCommentsByProjectAsync(project, year, null, query);
 
             // Assert
             Assert.NotNull(result);
@@ -89,7 +89,7 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PIMS.PimsProjectCommentA
             _mapper.Map<ApiResponseDto<List<CommentDto>>>(apiResponse).Returns(mappedDto);
 
             // Act
-            var result = await _client.GetCommentsByProjectAsync(project, year, query);
+            var result = await _client.GetCommentsByProjectAsync(project, year, null, query);
 
             // Assert
             Assert.NotNull(result);
@@ -113,7 +113,7 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PIMS.PimsProjectCommentA
             _http.GetAsync<List<CommentRes>>(url).ThrowsAsync(new Exception("Network error"));
 
             // Act
-            var result = await _client.GetCommentsByProjectAsync(project, year, query);
+            var result = await _client.GetCommentsByProjectAsync(project, year, null, query);
 
             // Assert
             Assert.NotNull(result);
@@ -144,7 +144,7 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PIMS.PimsProjectCommentA
             _mapper.Map<ApiResponseDto<List<CommentDto>>>(apiResponse).Throws(new AutoMapperMappingException("Mapping failed"));
 
             // Act
-            var result = await _client.GetCommentsByProjectAsync(project, year, query);
+            var result = await _client.GetCommentsByProjectAsync(project, year, null, query);
 
             // Assert
             Assert.NotNull(result);
@@ -172,7 +172,30 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PIMS.PimsProjectCommentA
             _mapper.Map<ApiResponseDto<List<CommentDto>>>(apiResponse).Returns(mappedDto);
 
             // Act
-            await _client.GetCommentsByProjectAsync(project, year, query);
+            await _client.GetCommentsByProjectAsync(project, year, null, query);
+
+            // Assert
+            await _http.Received(1).GetAsync<List<CommentRes>>(Arg.Is<string>(s => s == expectedUrl));
+        }
+
+        [Fact]
+        public async Task GetCommentsByProjectAsync_WithTopicFilter_CallsWithTopicInUrl()
+        {
+            // Arrange
+            var project = "PP123";
+            int? year = 2024;
+            var topic = "Financial";
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var expectedUrl = QueryStringHelper.AddQueryString(PimsApiEndpoints.GetCommentsByProject, query);
+            expectedUrl = QueryStringHelper.AddQueryString(expectedUrl, new { project, year, topic });
+            var apiResponse = new ApiResponse<List<CommentRes>> { Success = true, Data = [] };
+            var mappedDto = ApiResponseDto<List<CommentDto>>.SuccessResponse([]);
+
+            _http.GetAsync<List<CommentRes>>(expectedUrl).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<CommentDto>>>(apiResponse).Returns(mappedDto);
+
+            // Act
+            await _client.GetCommentsByProjectAsync(project, year, topic, query);
 
             // Assert
             await _http.Received(1).GetAsync<List<CommentRes>>(Arg.Is<string>(s => s == expectedUrl));
@@ -705,6 +728,181 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PIMS.PimsProjectCommentA
 
             // Assert
             await _http.Received(1).DeleteAsync<bool>(Arg.Is<string>(s => s == expectedUrl));
+        }
+
+        #endregion
+
+        #region GetCommentTopicsAsync Tests
+
+        [Fact]
+        public async Task GetCommentTopicsAsync_WithSuccessResponse_ReturnsMappedTopics()
+        {
+            // Arrange
+            var apiResponse = new ApiResponse<List<CommentTopicRes>>
+            {
+                Success = true,
+                Data =
+                [
+                    new CommentTopicRes { Topic = "Finance" },
+                    new CommentTopicRes { Topic = "Delivery" }
+                ]
+            };
+            var mappedDto = ApiResponseDto<List<CommentTopicDto>>.SuccessResponse(
+            [
+                new CommentTopicDto { Topic = "Finance" },
+                new CommentTopicDto { Topic = "Delivery" }
+            ]);
+
+            _http.GetAsync<List<CommentTopicRes>>(PimsApiEndpoints.GetCommentTopics).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<CommentTopicDto>>>(apiResponse).Returns(mappedDto);
+
+            // Act
+            var result = await _client.GetCommentTopicsAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.NotNull(result.Data);
+            Assert.Equal(2, result.Data.Count);
+            await _http.Received(1).GetAsync<List<CommentTopicRes>>(PimsApiEndpoints.GetCommentTopics);
+            _mapper.Received(1).Map<ApiResponseDto<List<CommentTopicDto>>>(apiResponse);
+        }
+
+        [Fact]
+        public async Task GetCommentTopicsAsync_WhenHttpExecutorThrowsException_ReturnsInternalError()
+        {
+            // Arrange
+            _http.GetAsync<List<CommentTopicRes>>(PimsApiEndpoints.GetCommentTopics).ThrowsAsync(new Exception("Network error"));
+
+            // Act
+            var result = await _client.GetCommentTopicsAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.Null(result.Data);
+            Assert.NotNull(result.Errors);
+            Assert.Single(result.Errors);
+            Assert.Equal("Failed to retrieve comment topics", result.Errors[0].Message);
+            Assert.Equal("INTERNAL_ERROR", result.Errors[0].Code);
+        }
+
+        #endregion
+
+        #region GetForecastSpendByProjectAsync Tests
+
+        [Fact]
+        public async Task GetForecastSpendByProjectAsync_WithSuccessResponse_ReturnsMappedForecastSpend()
+        {
+            // Arrange
+            var project = "PP001";
+            var url = QueryStringHelper.AddQueryString(PimsApiEndpoints.GetCommentForecastSpend, new { project });
+            var apiResponse = new ApiResponse<ProjectCommentForecastSpendRes>
+            {
+                Success = true,
+                Data = new ProjectCommentForecastSpendRes { ForecastSpend = 15000.75 }
+            };
+            var mappedDto = ApiResponseDto<ProjectCommentForecastSpendDto>.SuccessResponse(
+                new ProjectCommentForecastSpendDto { ForecastSpend = 15000.75 });
+
+            _http.GetAsync<ProjectCommentForecastSpendRes>(url).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<ProjectCommentForecastSpendDto>>(apiResponse).Returns(mappedDto);
+
+            // Act
+            var result = await _client.GetForecastSpendByProjectAsync(project);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.NotNull(result.Data);
+            Assert.Equal(15000.75, result.Data.ForecastSpend);
+            await _http.Received(1).GetAsync<ProjectCommentForecastSpendRes>(url);
+            _mapper.Received(1).Map<ApiResponseDto<ProjectCommentForecastSpendDto>>(apiResponse);
+        }
+
+        [Fact]
+        public async Task GetForecastSpendByProjectAsync_WhenHttpExecutorThrowsException_ReturnsInternalError()
+        {
+            // Arrange
+            var project = "PP001";
+            var url = QueryStringHelper.AddQueryString(PimsApiEndpoints.GetCommentForecastSpend, new { project });
+            _http.GetAsync<ProjectCommentForecastSpendRes>(url).ThrowsAsync(new Exception("Network error"));
+
+            // Act
+            var result = await _client.GetForecastSpendByProjectAsync(project);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.Null(result.Data);
+            Assert.NotNull(result.Errors);
+            Assert.Single(result.Errors);
+            Assert.Equal("Failed to retrieve forecast spend", result.Errors[0].Message);
+            Assert.Equal("INTERNAL_ERROR", result.Errors[0].Code);
+        }
+
+        #endregion
+
+        #region UpdateForecastSpendByProjectAsync Tests
+
+        [Fact]
+        public async Task UpdateForecastSpendByProjectAsync_WithSuccessResponse_ReturnsMappedForecastSpend()
+        {
+            // Arrange
+            var project = "PP001";
+            double? forecastSpend = 22000.40;
+            var url = QueryStringHelper.AddQueryString(PimsApiEndpoints.GetCommentForecastSpend, new { project });
+            var apiResponse = new ApiResponse<ProjectCommentForecastSpendRes>
+            {
+                Success = true,
+                Data = new ProjectCommentForecastSpendRes { ForecastSpend = forecastSpend }
+            };
+            var mappedDto = ApiResponseDto<ProjectCommentForecastSpendDto>.SuccessResponse(
+                new ProjectCommentForecastSpendDto { ForecastSpend = forecastSpend });
+
+            _http.PutAsync<ProjectCommentForecastSpendRes, ProjectCommentForecastSpendRes>(
+                Arg.Is<string>(s => s == url),
+                Arg.Any<ProjectCommentForecastSpendRes>())
+                .Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<ProjectCommentForecastSpendDto>>(apiResponse).Returns(mappedDto);
+
+            // Act
+            var result = await _client.UpdateForecastSpendByProjectAsync(project, forecastSpend);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.NotNull(result.Data);
+            Assert.Equal(forecastSpend, result.Data.ForecastSpend);
+            await _http.Received(1).PutAsync<ProjectCommentForecastSpendRes, ProjectCommentForecastSpendRes>(
+                Arg.Is<string>(s => s == url),
+                Arg.Is<ProjectCommentForecastSpendRes>(r => r.ForecastSpend == forecastSpend));
+            _mapper.Received(1).Map<ApiResponseDto<ProjectCommentForecastSpendDto>>(apiResponse);
+        }
+
+        [Fact]
+        public async Task UpdateForecastSpendByProjectAsync_WhenHttpExecutorThrowsException_ReturnsInternalError()
+        {
+            // Arrange
+            var project = "PP001";
+            double? forecastSpend = 22000.40;
+            var url = QueryStringHelper.AddQueryString(PimsApiEndpoints.GetCommentForecastSpend, new { project });
+            _http.PutAsync<ProjectCommentForecastSpendRes, ProjectCommentForecastSpendRes>(
+                Arg.Is<string>(s => s == url),
+                Arg.Any<ProjectCommentForecastSpendRes>())
+                .ThrowsAsync(new Exception("Network error"));
+
+            // Act
+            var result = await _client.UpdateForecastSpendByProjectAsync(project, forecastSpend);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.Null(result.Data);
+            Assert.NotNull(result.Errors);
+            Assert.Single(result.Errors);
+            Assert.Equal("Failed to update forecast spend", result.Errors[0].Message);
+            Assert.Equal("INTERNAL_ERROR", result.Errors[0].Code);
         }
 
         #endregion

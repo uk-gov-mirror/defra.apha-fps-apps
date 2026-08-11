@@ -33,12 +33,12 @@ namespace Apha.FPS.DataAccess.Data
                   .HasColumnName("jobstatus");
 
             entity.Property(e => e.UnitPriceVla)
-                  .HasDefaultValueSql("0")
-                  .HasColumnType("money")
+                  .HasDefaultValue(0m)
+                  .HasPrecision(19, 4)
                   .HasColumnName("unitpricevla");
 
             entity.Property(e => e.PriceAhvg)
-                  .HasColumnType("money")
+                  .HasPrecision(19, 4)
                   .HasColumnName("priceahvg");
 
             //   CHECK constraint (owner IN ('PT','PA','SD','LT')) enforced at service layer
@@ -56,9 +56,9 @@ namespace Apha.FPS.DataAccess.Data
                   .HasColumnName("shortdescription");
 
             entity.Property(e => e.DefraUnitPrice)
-                  .HasDefaultValueSql("0")
-                  .HasColumnType("money")
-                  .HasColumnName("defraunitprice");
+                .HasDefaultValue(0m)
+                .HasPrecision(19, 4)
+                .HasColumnName("defraunitprice");
         }
     }
 }

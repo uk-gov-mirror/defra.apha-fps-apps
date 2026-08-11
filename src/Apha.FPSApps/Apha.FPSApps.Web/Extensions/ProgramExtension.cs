@@ -1,4 +1,6 @@
-﻿using Apha.FPSApps.Infrastructure.Mappings;
+﻿using Amazon;
+using Amazon.S3;
+using Apha.FPSApps.Infrastructure.Mappings;
 using Apha.FPSApps.Web.Mappings;
 using Apha.FPSApps.Web.Middleware;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -66,6 +68,16 @@ namespace Apha.FPSApps.Web.Extensions
 
             // Application services
             services.AddApplicationServices();
+
+            // AWS S3 client
+            var regionName = configuration["S3Storage:Region"]
+                ?? throw new InvalidOperationException("S3Storage:Region is not configured.");
+
+            services.AddSingleton<IAmazonS3>(_ =>
+            {
+                var region = RegionEndpoint.GetBySystemName(regionName);
+                return new AmazonS3Client(region);
+            });
 
             // In-memory cache (used by FpsYearMiddleware)
             services.AddMemoryCache();

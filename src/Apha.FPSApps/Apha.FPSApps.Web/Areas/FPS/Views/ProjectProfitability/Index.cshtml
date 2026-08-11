@@ -243,6 +243,7 @@
                 $('#programNo').on('change', function () {
                     var val = $(this).val() || '';
                     currentProgramNo = val;
+                    showLoader();
                     $.ajax({
                         url: '@Url.Action("SaveProgrammeSession", "ProgrammeSelect", new { area = "FPS" })',
                         type: 'POST',
@@ -256,6 +257,7 @@
                 $('#projectGroup').on('change', function () {
                     var val = $(this).val() || '';
                     currentProjectGroup = val;
+                    showLoader();
                     $.ajax({
                         url: '@Url.Action("SaveProjectGroupSession", "ProgramProject", new { area = "FPS" })',
                         type: 'POST',
@@ -337,10 +339,12 @@
                     document.addEventListener('gridReloaded', function (e) {
                         if (e.detail && e.detail.gridId === 'isProjectProfitGrid') {
                             loadSummary();
+                            hideLoader();
                         }
                     });
 
                     if (isProjectGroupMode ? currentProjectGroup : currentProgramNo) {
+                        showLoader();
                         reloadGrid();
                     }
                 });

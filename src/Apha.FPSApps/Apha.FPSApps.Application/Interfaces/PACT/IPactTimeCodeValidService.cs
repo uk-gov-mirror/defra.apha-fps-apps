@@ -7,6 +7,10 @@ namespace Apha.FPSApps.Application.Interfaces.PACT
     public interface IPactTimeCodeValidService
     {
         Task<ApiResponseDto<List<TimeCodeValidDto>>> GetByJobCodeAsync(string jobCode, string parentProject);
+        Task<ApiResponseDto<List<TimeCodeValidDto>>> GetTimeCodeValidsByWorkGroupAsync(string workGroup);
+        Task<ApiResponseDto<List<string>>> GetTimeCodesProjectsByWorkGroupAndTimeCodeAsync(string workGroup, string timeCode);
+        Task<ApiResponseDto<List<string>>> GetAllDistinctTimeCodesAsync();
+        Task<ApiResponseDto<List<string>>> GetAllDistinctProjectsAsync();
         Task<ApiResponseDto<TimeCodeValidDto>> GetTimeCodeValidAsync(string workGroup, string timeCode, string parentProject);
         Task<ApiResponseDto<List<TimeCodeValidDto>>> GetPagedTimeCodesAsync(QueryParameters<string> query, string? jobCode, string? parentProject);
         Task<ApiResponseDto<List<TimeCodeValidDto>>> GetPagedByProjectAndTestCodeAsync(QueryParameters<string> query, string parentProject, string testCode);

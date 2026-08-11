@@ -220,5 +220,107 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PACT.PactMonthlyOutputAp
         }
 
         #endregion
+
+        #region Live Methods Tests
+
+        [Fact]
+        public async Task GetLiveAsync_WithSuccessResponse_ReturnsMappedData()
+        {
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var apiResponse = new ApiResponse<List<MonthlyOutputRes>>
+            {
+                Success = true,
+                Data = [new MonthlyOutputRes { TestCode = "TC1", Buyer = "B1", WorkGroup = "WG1", Month = 6, Volume = 10 }]
+            };
+            var mapped = ApiResponseDto<List<PactMonthlyOutputDto>>.SuccessResponse(
+            [
+                new PactMonthlyOutputDto { TestCode = "TC1", Buyer = "B1", WorkGroup = "WG1", Month = 6, Volume = 10 }
+            ]);
+
+            _http.GetAsync<List<MonthlyOutputRes>>(Arg.Is<string>(url =>
+                url.Contains("monthlyoutput/live") &&
+                url.Contains("workGroup=WG1") &&
+                url.Contains("testCode=TC1") &&
+                url.Contains("buyer=B1") &&
+                url.Contains("month=6"))).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<PactMonthlyOutputDto>>>(apiResponse).Returns(mapped);
+
+            var result = await _client.GetLiveAsync(query, "WG1", "TC1", "B1", 6);
+
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Single(result.Data!);
+        }
+
+        [Fact]
+        public async Task GetLiveByKeyAsync_WhenApiFails_ReturnsFailureResponse()
+        {
+            var apiResponse = new ApiResponse<MonthlyOutputRes>
+            {
+                Success = false,
+                Errors = [new ApiError { Message = "failed", Code = "ERR" }]
+            };
+            var mapped = new ApiResponseDto<PactMonthlyOutputDto>
+            {
+                Success = false,
+                Errors = [new ApiErrorDto { Message = "failed", Code = "ERR" }],
+                Meta = new ApiMetaDto()
+            };
+
+            _http.GetAsync<MonthlyOutputRes>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<PactMonthlyOutputDto>>(apiResponse).Returns(mapped);
+
+            var result = await _client.GetLiveByKeyAsync("TC1", "B1", 6, "WG1");
+
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.Single(result.Errors!);
+        }
+
+        [Fact]
+        public async Task UpdateLiveAsync_WithSuccessResponse_ReturnsMappedData()
+        {
+            var dto = new PactMonthlyOutputDto { TestCode = "TC1", Buyer = "B1", Month = 6, WorkGroup = "WG1", Volume = 9 };
+            var request = new MonthlyOutputReq { TestCode = "TC1", Buyer = "B1", Month = 6, WorkGroup = "WG1", Volume = 9 };
+            var apiResponse = new ApiResponse<MonthlyOutputRes>
+            {
+                Success = true,
+                Data = new MonthlyOutputRes { TestCode = "TC1", Buyer = "B1", Month = 6, WorkGroup = "WG1", Volume = 9 }
+            };
+            var mapped = ApiResponseDto<PactMonthlyOutputDto>.SuccessResponse(dto);
+
+            _mapper.Map<MonthlyOutputReq>(dto).Returns(request);
+            _http.PutAsync<MonthlyOutputReq, MonthlyOutputRes>(Arg.Any<string>(), request).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<PactMonthlyOutputDto>>(apiResponse).Returns(mapped);
+
+            var result = await _client.UpdateLiveAsync(dto);
+
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            await _http.Received(1).PutAsync<MonthlyOutputReq, MonthlyOutputRes>(Arg.Any<string>(), request);
+        }
+
+        #endregion
+
+        #region Staging Methods Tests
+
+        [Fact]
+        public async Task GetStagingAsync_WithPassedFilter_AppendsPassedQuery()
+        {
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var apiResponse = new ApiResponse<List<StagingMonthlyOutputRes>> { Success = true, Data = [] };
+            var mapped = ApiResponseDto<List<StagingMonthlyOutputDto>>.SuccessResponse([]);
+
+            _http.GetAsync<List<StagingMonthlyOutputRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<StagingMonthlyOutputDto>>>(apiResponse).Returns(mapped);
+
+            var result = await _client.GetStagingAsync(query, true);
+
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            await _http.Received(1).GetAsync<List<StagingMonthlyOutputRes>>(Arg.Is<string>(url => url.Contains("passed=true")));
+        }
+
+        #endregion
     }
 }

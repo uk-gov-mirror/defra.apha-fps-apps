@@ -17,7 +17,7 @@ namespace Apha.Costbook.Api.Controllers
     [ApiController]
     [ApiVersion("1.0")]
     [Route("api/v{version:apiVersion}/maintenance")]
-    [Authorize(Roles = "API-CostbookAdmin,API-CostbookUser")]
+    [Authorize(Roles = "API-CostbookAdmin")]
     public class MaintenanceController : ControllerBase
     {
         private readonly IMaintenanceSettingsService _settingsService;

@@ -60,5 +60,9 @@ namespace Apha.FPSApps.Application.Services.FPS
         public async Task<ApiResponseDto<List<ProfitCentreCostDto>>> GetPagedProfitCenterCostSummaryAsync(
             QueryParameters<string> query, double monthNumber)
             => await _fpsClient.FpsProfitCentre.GetPagedProfitCenterCostSummaryAsync(query, monthNumber);
+
+        public async Task<ApiResponseDto<List<WgStaffPlanViewDto>>> GetPagedWgStaffPlanAsync(
+            QueryParameters<string> query, string workGroup)
+            => await _fpsClient.FpsProfitCentre.GetPagedWgStaffPlanAsync(query, workGroup);
     }
 }

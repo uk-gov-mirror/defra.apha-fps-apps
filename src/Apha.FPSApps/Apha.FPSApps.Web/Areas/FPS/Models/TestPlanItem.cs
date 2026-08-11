@@ -1,3 +1,4 @@
+using Apha.FPSApps.Web.Validation;
 using Apha.FPSApps.Web.Models.Components.DataGrid;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel.DataAnnotations;
@@ -16,7 +17,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Models
         public string? ItemDescription { get; set; }
 
         [Display(Name = "RecPrice")]
-        [DisplayFormat(DataFormatString = "{0:F2}", ApplyFormatInEditMode = true)]
+        [DisplayFormat(DataFormatString = "{0:F4}", ApplyFormatInEditMode = true)]
         [GridColumn(Order = 3, Width = 120, Type = GridColumnType.GbpValue)]
         public decimal? RecUnitPrice { get; set; }
 
@@ -26,13 +27,13 @@ namespace Apha.FPSApps.Web.Areas.FPS.Models
         public double NoRequired { get; set; }
 
         [Display(Name = "AgrPrice")]
-        [Range(0, double.MaxValue, ErrorMessage = "Unit Price must be 0 or greater.")]
-        [DisplayFormat(DataFormatString = "{0:F2}", ApplyFormatInEditMode = true)]
+        [CurrencyRange]
+        [DisplayFormat(DataFormatString = "{0:F4}", ApplyFormatInEditMode = true)]
         [GridColumn(Order = 5, Width = 120, Type = GridColumnType.GbpValue)]
         public decimal? UnitPrice { get; set; }
 
         [Display(Name = "Fee")]
-        [DisplayFormat(DataFormatString = "{0:F2}", ApplyFormatInEditMode = false)]
+        [DisplayFormat(DataFormatString = "{0:F4}", ApplyFormatInEditMode = false)]
         [GridColumn(Order = 6, Width = 110, Type = GridColumnType.GbpValue)]
         public decimal? TestCost => (UnitPrice ?? 0) * (decimal)NoRequired;  
 

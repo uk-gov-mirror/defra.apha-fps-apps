@@ -35,7 +35,7 @@ namespace Apha.FPS.DataAccess.Data
                 .HasColumnName("description");
 
             entity.Property(e => e.ItemCost)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("itemcost");
 
             entity.Property(e => e.Freq)

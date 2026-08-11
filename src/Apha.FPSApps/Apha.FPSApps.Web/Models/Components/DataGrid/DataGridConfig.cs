@@ -6,6 +6,7 @@
         public string Title { get; set; } = string.Empty;
         public List<DataGridColumn> Columns { get; set; }
         public List<T> Data { get; set; }
+        public decimal Total { get; set; }
         public bool ShowCheckboxColumn { get; set; }
         public bool ShowPagination { get; set; }
         public string KeyProperty { get; set; } = string.Empty;
@@ -17,6 +18,7 @@
         public bool AllowBulkCopy { get; set; }
         public bool AllowBulkDelete { get; set; }
         public bool AllowView { get; set; }
+        public bool AllowConfirm { get; set; }
         public bool AllowExport { get; set; }
         public string BulkCopyButtonText { get; set; } = "Copy";
         public string BulkCopyFunction { get; set; } = string.Empty;
@@ -27,6 +29,7 @@
         public string EditFunction { get; set; } = string.Empty;
         public string DeleteFunction { get; set; } = string.Empty;
         public string ViewFunction { get; set; } = string.Empty;
+        public string ConfirmFunction { get; set; } = string.Empty;
         public string ExportUrl { get; set; } = string.Empty;
         public string BindGridUrl { get; set; } = string.Empty;
         public string ExtraFilterMethod { get; set; } = string.Empty;
@@ -56,6 +59,7 @@
             AllowBulkDelete = false;
             AllowView = false;
             AllowExport = false;
+            AllowConfirm = false;
         }
     }
 }

@@ -1,3 +1,4 @@
+using Apha.Common.Utilities.GenericExcelExport;
 using Apha.FPSApps.Application.Dtos;
 using Apha.FPSApps.Application.Dtos.FPS;
 using Apha.FPSApps.Application.Interfaces.FPS;
@@ -20,6 +21,7 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.FPS.AnimalCostsControllerTest
         private readonly IMapper _mapper;
         private readonly IAnimalPlanService _animalPlanService;
         private readonly IAnimalService _animalService;
+        private readonly IGenericExcelExporter _excelExporter;
         private readonly AnimalCostsController _controller;
 
         public AnimalCostsControllerTests()
@@ -27,7 +29,8 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.FPS.AnimalCostsControllerTest
             _mapper = Substitute.For<IMapper>();
             _animalPlanService = Substitute.For<IAnimalPlanService>();
             _animalService = Substitute.For<IAnimalService>();
-            _controller = new AnimalCostsController(_mapper, _animalPlanService, _animalService);
+            _excelExporter = Substitute.For<IGenericExcelExporter>();
+            _controller = new AnimalCostsController(_mapper, _animalPlanService, _animalService, _excelExporter);
         }
 
         private static T? GetJsonResultValue<T>(JsonResult jsonResult)

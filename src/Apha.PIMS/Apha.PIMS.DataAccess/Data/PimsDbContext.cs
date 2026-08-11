@@ -1,8 +1,5 @@
 using Apha.PIMS.Core.Entities;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Apha.PIMS.DataAccess.Data
 {
@@ -21,8 +18,7 @@ namespace Apha.PIMS.DataAccess.Data
         public virtual DbSet<ProposedProject> ProposedProjects { get; set; }
         public virtual DbSet<RadtrackProg> RadtrackProgs { get; set; }
         public virtual DbSet<ProjectDetail> ProjectDetails { get; set; }
-        public virtual DbSet<ProjectLatestDetail> ProjectLatestDetails { get; set; } // New DbSet for ProjectLatestDetail
-                                                                                     // Add these 4 new DbSets alongside the existing ones
+        public virtual DbSet<ProjectLatestDetail> ProjectLatestDetails { get; set; } 
         public virtual DbSet<ProjectRadTrackData> ProjectRadTrackData { get; set; }
         public virtual DbSet<Risk> Risks { get; set; }
         public virtual DbSet<ProjectStatus> ProjectStatuses { get; set; }
@@ -47,11 +43,28 @@ namespace Apha.PIMS.DataAccess.Data
         public virtual DbSet<StagingMilestone> StagingMilestones { get; set; }
         public virtual DbSet<RadTrackInvoice> RadTrackInvoices { get; set; }
 
+       
         public virtual DbSet<RadTrackContract> RadTrackContracts { get; set; }
 
         public virtual DbSet<YearlyFinancialData> YearlyFinancialData { get; set; }
 
         public virtual DbSet<PactProjectYearCosts> PactProjectYearCosts { get; set; }
+
+
+        
+        public virtual DbSet<Report> Reports { get; set; }
+        public virtual DbSet<ReportGroup> ReportGroups { get; set; }
+        public virtual DbSet<ReportGroupLink> ReportGroupLinks { get; set; }
+        public virtual DbSet<ProgramManagerLink> ProgramManagerLinks { get; set; }
+        public virtual DbSet<MabProfitCentre> MyTblProfitCentres { get; set; }
+        public virtual DbSet<ProfitCentreManagerLink> ProfitCentreManagerLinks { get; set; }
+        public virtual DbSet<AccessUser> AccessUsers { get; set; }
+        public virtual DbSet<AccessLevel> AccessLevels { get; set; }
+        public virtual DbSet<AccessUserLevel> AccessUserLevels { get; set; }
+        public virtual DbSet<AccessSystem> AccessSystems { get; set; }
+        public virtual DbSet<Frequency> Frequencies { get; set; }
+        public virtual DbSet<ReviewItem> ReviewItems { get; set; }
+        public virtual DbSet<PublicationType> PublicationTypes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -89,6 +102,22 @@ namespace Apha.PIMS.DataAccess.Data
             modelBuilder.ApplyConfiguration(new RadTrackContractMap());            
             modelBuilder.ApplyConfiguration(new YearlyFinancialDataMap());           
             modelBuilder.ApplyConfiguration(new PactProjectYearCostsMap());
+            modelBuilder.ApplyConfiguration(new RadTrackContractMap());
+
+            
+            modelBuilder.ApplyConfiguration(new ReportMap());
+            modelBuilder.ApplyConfiguration(new ReportGroupMap());
+            modelBuilder.ApplyConfiguration(new ReportGroupLinkMap());
+            modelBuilder.ApplyConfiguration(new ProgramManagerLinkMap());
+            modelBuilder.ApplyConfiguration(new MyTblProfitCentreMap());
+            modelBuilder.ApplyConfiguration(new ProfitCentreManagerLinkMap());
+            modelBuilder.ApplyConfiguration(new AccessUserMap());
+            modelBuilder.ApplyConfiguration(new AccessLevelMap());
+            modelBuilder.ApplyConfiguration(new AccessUserLevelMap());
+            modelBuilder.ApplyConfiguration(new AccessSystemMap());
+            modelBuilder.ApplyConfiguration(new FrequencyMap());
+            modelBuilder.ApplyConfiguration(new ReviewItemMap());
+            modelBuilder.ApplyConfiguration(new PublicationTypeMap());
         }
     }
 }

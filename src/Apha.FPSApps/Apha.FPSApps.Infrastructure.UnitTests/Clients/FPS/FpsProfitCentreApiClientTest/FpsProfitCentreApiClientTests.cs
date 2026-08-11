@@ -771,5 +771,286 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.FPS.FpsProfitCentreApiCl
 
         #endregion
 
+        #region GetPagedWgStaffPlanAsync Tests
+
+        private static WgStaffPlanViewRes BuildWgStaffPlanRes(string workGroup = "WG001", string name = "Staff One") =>
+            new()
+            {
+                WorkGroup = workGroup,
+                GradeCode = "G1",
+                Name = name,
+                Manager = "Manager01",
+                Program = "PROG01",
+                JobCode = "JOB001",
+                ProjectStatus = "Active",
+                PlannedHours = 40.0,
+                Fee = 1000m
+            };
+
+        private static WgStaffPlanViewDto BuildWgStaffPlanDto(string workGroup = "WG001", string name = "Staff One") =>
+            new()
+            {
+                WorkGroup = workGroup,
+                GradeCode = "G1",
+                Name = name,
+                Manager = "Manager01",
+                Program = "PROG01",
+                JobCode = "JOB001",
+                ProjectStatus = "Active",
+                PlannedHours = 40.0,
+                Fee = 1000m
+            };
+
+        [Fact]
+        public async Task GetPagedWgStaffPlanAsync_WithSuccessResponse_ReturnsMappedList()
+        {
+            // Arrange
+            const string workGroup = "WG001";
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var resList = new List<WgStaffPlanViewRes>
+            {
+                BuildWgStaffPlanRes(workGroup, "Staff One"),
+                BuildWgStaffPlanRes(workGroup, "Staff Two")
+            };
+            var apiResponse = new ApiResponse<List<WgStaffPlanViewRes>>
+            {
+                Success = true,
+                Data = resList,
+                Pagination = new Pagination { PageNumber = 1, PageSize = 10, TotalPages = 1, TotalRecords = 2 }
+            };
+            var dtoList = new List<WgStaffPlanViewDto>
+            {
+                BuildWgStaffPlanDto(workGroup, "Staff One"),
+                BuildWgStaffPlanDto(workGroup, "Staff Two")
+            };
+            var mappedDto = ApiResponseDto<List<WgStaffPlanViewDto>>.SuccessResponse(dtoList,
+                new PaginationDto { TotalRecords = 2, PageNumber = 1, PageSize = 10 });
+
+            _http.GetAsync<List<WgStaffPlanViewRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<WgStaffPlanViewDto>>>(apiResponse).Returns(mappedDto);
+
+            // Act
+            var result = await _client.GetPagedWgStaffPlanAsync(query, workGroup);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.NotNull(result.Data);
+            Assert.Equal(2, result.Data.Count);
+            Assert.Equal(2, result?.Pagination?.TotalRecords);
+            await _http.Received(1).GetAsync<List<WgStaffPlanViewRes>>(Arg.Any<string>());
+        }
+
+        [Fact]
+        public async Task GetPagedWgStaffPlanAsync_AppendsWorkGroupParameter()
+        {
+            // Arrange
+            const string workGroup = "WG-TEST-001";
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var apiResponse = new ApiResponse<List<WgStaffPlanViewRes>>
+            {
+                Success = true,
+                Data = new List<WgStaffPlanViewRes>(),
+                Pagination = new Pagination { PageNumber = 1, PageSize = 10, TotalPages = 0 }
+            };
+            var mappedDto = ApiResponseDto<List<WgStaffPlanViewDto>>.SuccessResponse(new List<WgStaffPlanViewDto>());
+
+            _http.GetAsync<List<WgStaffPlanViewRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<WgStaffPlanViewDto>>>(apiResponse).Returns(mappedDto);
+
+            // Act
+            await _client.GetPagedWgStaffPlanAsync(query, workGroup);
+
+            // Assert
+            await _http.Received(1).GetAsync<List<WgStaffPlanViewRes>>(
+                Arg.Is<string>(url => url.Contains($"workGroup={Uri.EscapeDataString(workGroup)}")));
+        }
+
+        [Fact]
+        public async Task GetPagedWgStaffPlanAsync_WithSpecialCharactersInWorkGroup_EscapesCorrectly()
+        {
+            // Arrange
+            const string workGroup = "WG&001/TEST";
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var apiResponse = new ApiResponse<List<WgStaffPlanViewRes>>
+            {
+                Success = true,
+                Data = new List<WgStaffPlanViewRes>()
+            };
+            var mappedDto = ApiResponseDto<List<WgStaffPlanViewDto>>.SuccessResponse(new List<WgStaffPlanViewDto>());
+
+            _http.GetAsync<List<WgStaffPlanViewRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<WgStaffPlanViewDto>>>(apiResponse).Returns(mappedDto);
+
+            // Act
+            await _client.GetPagedWgStaffPlanAsync(query, workGroup);
+
+            // Assert
+            await _http.Received(1).GetAsync<List<WgStaffPlanViewRes>>(
+                Arg.Is<string>(url => url.Contains("workGroup=")));
+        }
+
+        [Fact]
+        public async Task GetPagedWgStaffPlanAsync_WhenApiReturnsFailure_ReturnsFailureResponse()
+        {
+            // Arrange
+            const string workGroup = "WG001";
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var apiResponse = new ApiResponse<List<WgStaffPlanViewRes>>
+            {
+                Success = false,
+                Errors = new List<ApiError> { new() { Message = "API Error", Code = "ERROR" } }
+            };
+            var mappedResponse = new ApiResponseDto<List<WgStaffPlanViewDto>>
+            {
+                Success = false,
+                Errors = new List<ApiErrorDto> { new() { Message = "API Error", Code = "ERROR" } },
+                Meta = new ApiMetaDto()
+            };
+
+            _http.GetAsync<List<WgStaffPlanViewRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<WgStaffPlanViewDto>>>(apiResponse).Returns(mappedResponse);
+
+            // Act
+            var result = await _client.GetPagedWgStaffPlanAsync(query, workGroup);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.Single(result.Errors!);
+        }
+
+        [Fact]
+        public async Task GetPagedWgStaffPlanAsync_WithEmptyResult_ReturnsSuccessWithEmptyData()
+        {
+            // Arrange
+            const string workGroup = "WG001";
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var apiResponse = new ApiResponse<List<WgStaffPlanViewRes>>
+            {
+                Success = true,
+                Data = new List<WgStaffPlanViewRes>(),
+                Pagination = new Pagination { PageNumber = 1, PageSize = 10, TotalPages = 0, TotalRecords = 0 }
+            };
+            var mappedDto = ApiResponseDto<List<WgStaffPlanViewDto>>.SuccessResponse(new List<WgStaffPlanViewDto>());
+
+            _http.GetAsync<List<WgStaffPlanViewRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<WgStaffPlanViewDto>>>(apiResponse).Returns(mappedDto);
+
+            // Act
+            var result = await _client.GetPagedWgStaffPlanAsync(query, workGroup);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result.Success);
+            Assert.Empty(result.Data!);
+        }
+
+        [Fact]
+        public async Task GetPagedWgStaffPlanAsync_UsesQueryStringHelper()
+        {
+            // Arrange
+            const string workGroup = "WG001";
+            var query = new QueryParameters<string>
+            {
+                Page = 2,
+                PageSize = 20,
+                SortBy = "Name",
+                Descending = true
+            };
+            var apiResponse = new ApiResponse<List<WgStaffPlanViewRes>>
+            {
+                Success = true,
+                Data = new List<WgStaffPlanViewRes>()
+            };
+            var mappedDto = ApiResponseDto<List<WgStaffPlanViewDto>>.SuccessResponse(new List<WgStaffPlanViewDto>());
+
+            _http.GetAsync<List<WgStaffPlanViewRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<WgStaffPlanViewDto>>>(apiResponse).Returns(mappedDto);
+
+            // Act
+            await _client.GetPagedWgStaffPlanAsync(query, workGroup);
+
+            // Assert
+            await _http.Received(1).GetAsync<List<WgStaffPlanViewRes>>(
+                Arg.Is<string>(url => 
+                    (url.Contains("page=2") || url.Contains("Page=2")) && 
+                    (url.Contains("pageSize=20") || url.Contains("PageSize=20"))));
+        }
+
+        [Fact]
+        public async Task GetPagedWgStaffPlanAsync_WhenExceptionThrown_ReturnsFailureResponse()
+        {
+            // Arrange
+            const string workGroup = "WG001";
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+
+            _http.GetAsync<List<WgStaffPlanViewRes>>(Arg.Any<string>())
+                 .Returns<ApiResponse<List<WgStaffPlanViewRes>>>(x => throw new Exception("Network error"));
+
+            // Act
+            var result = await _client.GetPagedWgStaffPlanAsync(query, workGroup);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+            Assert.Single(result.Errors!);
+            Assert.Equal("Failed to retrieve WG staff plan", result.Errors![0].Message);
+            Assert.Equal("INTERNAL_ERROR", result.Errors![0].Code);
+        }
+
+        [Fact]
+        public async Task GetPagedWgStaffPlanAsync_WithNullPagination_ReturnsSuccess()
+        {
+            // Arrange
+            const string workGroup = "WG001";
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var resList = new List<WgStaffPlanViewRes> { BuildWgStaffPlanRes(workGroup) };
+            var apiResponse = new ApiResponse<List<WgStaffPlanViewRes>>
+            {
+                Success = true,
+                Data = resList,
+                Pagination = null
+            };
+            var dtoList = new List<WgStaffPlanViewDto> { BuildWgStaffPlanDto(workGroup) };
+            var mappedDto = ApiResponseDto<List<WgStaffPlanViewDto>>.SuccessResponse(dtoList,
+                new PaginationDto { PageNumber = 1, PageSize = 10, TotalRecords = 0 });
+
+            _http.GetAsync<List<WgStaffPlanViewRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<WgStaffPlanViewDto>>>(apiResponse).Returns(mappedDto);
+
+            // Act
+            var result = await _client.GetPagedWgStaffPlanAsync(query, workGroup);
+
+            // Assert
+            Assert.True(result.Success);
+            Assert.Single(result.Data!);
+        }
+
+        [Fact]
+        public async Task GetPagedWgStaffPlanAsync_VerifiesCorrectEndpointUsed()
+        {
+            // Arrange
+            const string workGroup = "WG001";
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10 };
+            var apiResponse = new ApiResponse<List<WgStaffPlanViewRes>>
+            {
+                Success = true,
+                Data = new List<WgStaffPlanViewRes>()
+            };
+            var mappedDto = ApiResponseDto<List<WgStaffPlanViewDto>>.SuccessResponse(new List<WgStaffPlanViewDto>());
+
+            _http.GetAsync<List<WgStaffPlanViewRes>>(Arg.Any<string>()).Returns(apiResponse);
+            _mapper.Map<ApiResponseDto<List<WgStaffPlanViewDto>>>(apiResponse).Returns(mappedDto);
+
+            // Act
+            await _client.GetPagedWgStaffPlanAsync(query, workGroup);
+
+            // Assert
+            await _http.Received(1).GetAsync<List<WgStaffPlanViewRes>>(
+                Arg.Is<string>(url => url.Contains("wgstaffplan") || url.Contains("WgStaffPlan")));
+        }
+
+        #endregion
     }
 }

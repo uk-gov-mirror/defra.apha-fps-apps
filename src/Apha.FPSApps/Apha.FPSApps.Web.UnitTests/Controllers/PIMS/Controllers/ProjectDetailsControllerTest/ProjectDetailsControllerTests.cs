@@ -72,7 +72,7 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PIMS.Controllers.ProjectDetails
             _mapperMock.Map<QueryParameters<string>>(Arg.Any<PaginationFilter<string>>())
                 .Returns(new QueryParameters<string>());
 
-            _commentServiceMock.GetCommentsByProjectAsync(Arg.Any<string>(), Arg.Any<int?>(), Arg.Any<QueryParameters<string>>())
+            _commentServiceMock.GetCommentsByProjectAsync(Arg.Any<string>(), Arg.Any<int?>(), Arg.Any<string?>(), Arg.Any<QueryParameters<string>>())
                 .Returns(new ApiResponseDto<List<CommentDto>> { Success = true, Data = comments ?? [], Pagination = commentPagination });
 
             _mapperMock.Map<List<ProjectCommentItem>>(Arg.Any<List<CommentDto>>())
@@ -95,7 +95,7 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PIMS.Controllers.ProjectDetails
             _mapperMock.Map<QueryParameters<string>>(Arg.Any<PaginationFilter<string>>())
                 .Returns(new QueryParameters<string>());
 
-            _commentServiceMock.GetCommentsByProjectAsync(Arg.Any<string>(), Arg.Any<int?>(), Arg.Any<QueryParameters<string>>())
+            _commentServiceMock.GetCommentsByProjectAsync(Arg.Any<string>(), Arg.Any<int?>(), Arg.Any<string?>(), Arg.Any<QueryParameters<string>>())
                 .Returns(new ApiResponseDto<List<CommentDto>> { Success = true, Data = comments ?? [], Pagination = pagination });
 
             _mapperMock.Map<List<ProjectCommentItem>>(Arg.Any<List<CommentDto>>())
@@ -241,7 +241,7 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PIMS.Controllers.ProjectDetails
 
             // Assert
             await _commentServiceMock.Received(1).GetCommentsByProjectAsync(
-                Arg.Any<string>(), Arg.Any<int?>(), Arg.Any<QueryParameters<string>>());
+                Arg.Any<string>(), Arg.Any<int?>(), Arg.Any<string?>(), Arg.Any<QueryParameters<string>>());
         }
 
         [Fact]
@@ -699,7 +699,7 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PIMS.Controllers.ProjectDetails
 
             // Assert
             await _commentServiceMock.DidNotReceive()
-                .GetCommentsByProjectAsync(Arg.Any<string>(), Arg.Any<int?>(), Arg.Any<QueryParameters<string>>());
+                .GetCommentsByProjectAsync(Arg.Any<string>(), Arg.Any<int?>(), Arg.Any<string?>(), Arg.Any<QueryParameters<string>>());
         }
 
         [Fact]
@@ -758,7 +758,7 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PIMS.Controllers.ProjectDetails
 
             // Assert
             await _commentServiceMock.Received(1)
-                .GetCommentsByProjectAsync(Arg.Any<string>(), Arg.Any<int?>(), Arg.Any<QueryParameters<string>>());
+                .GetCommentsByProjectAsync(Arg.Any<string>(), Arg.Any<int?>(), Arg.Any<string?>(), Arg.Any<QueryParameters<string>>());
         }
 
         [Fact]
@@ -773,7 +773,7 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PIMS.Controllers.ProjectDetails
 
             // Assert
             await _commentServiceMock.Received(1)
-                .GetCommentsByProjectAsync("PP001", 2023, Arg.Any<QueryParameters<string>>());
+                .GetCommentsByProjectAsync("PP001", 2023, Arg.Any<string?>(), Arg.Any<QueryParameters<string>>());
         }
 
         [Fact]
@@ -792,7 +792,7 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PIMS.Controllers.ProjectDetails
 
             _mapperMock.Map<QueryParameters<string>>(Arg.Any<PaginationFilter<string>>())
                 .Returns(new QueryParameters<string>());
-            _commentServiceMock.GetCommentsByProjectAsync(Arg.Any<string>(), Arg.Any<int?>(), Arg.Any<QueryParameters<string>>())
+            _commentServiceMock.GetCommentsByProjectAsync(Arg.Any<string>(), Arg.Any<int?>(), Arg.Any<string?>(), Arg.Any<QueryParameters<string>>())
                 .Returns(new ApiResponseDto<List<CommentDto>> { Success = true, Data = commentData, Pagination = null });
             _mapperMock.Map<List<ProjectCommentItem>>(Arg.Any<List<CommentDto>>())
                 .Returns(mappedItems);
@@ -815,7 +815,7 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PIMS.Controllers.ProjectDetails
 
             _mapperMock.Map<QueryParameters<string>>(Arg.Any<PaginationFilter<string>>())
                 .Returns(new QueryParameters<string>());
-            _commentServiceMock.GetCommentsByProjectAsync(Arg.Any<string>(), Arg.Any<int?>(), Arg.Any<QueryParameters<string>>())
+            _commentServiceMock.GetCommentsByProjectAsync(Arg.Any<string>(), Arg.Any<int?>(), Arg.Any<string?>(), Arg.Any<QueryParameters<string>>())
                 .Returns(new ApiResponseDto<List<CommentDto>> { Success = true, Data = null, Pagination = null });
 
             // Act
@@ -835,7 +835,7 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PIMS.Controllers.ProjectDetails
 
             _mapperMock.Map<QueryParameters<string>>(Arg.Any<PaginationFilter<string>>())
                 .Returns(new QueryParameters<string>());
-            _commentServiceMock.GetCommentsByProjectAsync(Arg.Any<string>(), Arg.Any<int?>(), Arg.Any<QueryParameters<string>>())
+            _commentServiceMock.GetCommentsByProjectAsync(Arg.Any<string>(), Arg.Any<int?>(), Arg.Any<string?>(), Arg.Any<QueryParameters<string>>())
                 .Returns(new ApiResponseDto<List<CommentDto>> { Success = true, Data = null, Pagination = null });
 
             // Act
@@ -1034,7 +1034,7 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.PIMS.Controllers.ProjectDetails
 
             _mapperMock.Map<QueryParameters<string>>(Arg.Any<PaginationFilter<string>>())
                 .Returns(new QueryParameters<string>());
-            _commentServiceMock.GetCommentsByProjectAsync(Arg.Any<string>(), Arg.Any<int?>(), Arg.Any<QueryParameters<string>>())
+            _commentServiceMock.GetCommentsByProjectAsync(Arg.Any<string>(), Arg.Any<int?>(), Arg.Any<string?>(), Arg.Any<QueryParameters<string>>())
                 .Returns(new ApiResponseDto<List<CommentDto>> { Success = true, Data = [], Pagination = paginationDto });
             _mapperMock.Map<List<ProjectCommentItem>>(Arg.Any<List<CommentDto>>())
                 .Returns(new List<ProjectCommentItem>());

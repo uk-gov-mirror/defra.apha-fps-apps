@@ -1,6 +1,7 @@
 using Apha.FPSApps.Application.Dtos;
 using Apha.FPSApps.Application.Dtos.FPS;
 using Apha.FPSApps.Application.Interfaces.FPS;
+using Apha.FPSApps.Application.Interfaces.PACT;
 using Apha.FPSApps.Application.Pagination;
 using Apha.FPSApps.Web.Areas.FPS.Controllers;
 using Apha.FPSApps.Web.Areas.FPS.Models;
@@ -22,6 +23,7 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.FPS.ResourceAllocationControlle
         private readonly IResourceAllocationService _resourceAllocationService;
         private readonly IProfitCentreService _profitCentreService;
         private readonly IWorkGroupGradeService _workGroupGradeService;
+        private readonly IWorkGroupService _workGroupService;
         private readonly ResourceAllocationController _controller;
 
         public ResourceAllocationControllerTests()
@@ -30,12 +32,14 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.FPS.ResourceAllocationControlle
             _resourceAllocationService = Substitute.For<IResourceAllocationService>();
             _profitCentreService = Substitute.For<IProfitCentreService>();
             _workGroupGradeService = Substitute.For<IWorkGroupGradeService>();
+            _workGroupService = Substitute.For<IWorkGroupService>();
 
             _controller = new ResourceAllocationController(
                 _mapper,
                 _resourceAllocationService,
                 _profitCentreService,
-                _workGroupGradeService);
+                _workGroupGradeService,
+                _workGroupService);
         }
 
         private static JsonElement GetJsonResultElement(JsonResult jsonResult)
@@ -76,28 +80,35 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.FPS.ResourceAllocationControlle
         public void Constructor_WithNullMapper_ThrowsArgumentNullException()
         {
             Assert.Throws<ArgumentNullException>(() => new ResourceAllocationController(
-                null!, _resourceAllocationService, _profitCentreService, _workGroupGradeService));
+                null!, _resourceAllocationService, _profitCentreService, _workGroupGradeService, _workGroupService));
         }
 
         [Fact]
         public void Constructor_WithNullResourceAllocationService_ThrowsArgumentNullException()
         {
             Assert.Throws<ArgumentNullException>(() => new ResourceAllocationController(
-                _mapper, null!, _profitCentreService, _workGroupGradeService));
+                _mapper, null!, _profitCentreService, _workGroupGradeService, _workGroupService));
         }
 
         [Fact]
         public void Constructor_WithNullProfitCentreService_ThrowsArgumentNullException()
         {
             Assert.Throws<ArgumentNullException>(() => new ResourceAllocationController(
-                _mapper, _resourceAllocationService, null!, _workGroupGradeService));
+                _mapper, _resourceAllocationService, null!, _workGroupGradeService, _workGroupService));
         }
 
         [Fact]
         public void Constructor_WithNullWorkGroupGradeService_ThrowsArgumentNullException()
         {
             Assert.Throws<ArgumentNullException>(() => new ResourceAllocationController(
-                _mapper, _resourceAllocationService, _profitCentreService, null!));
+                _mapper, _resourceAllocationService, _profitCentreService, null!, _workGroupService));
+        }
+
+        [Fact]
+        public void Constructor_WithNullWorkGroupService_ThrowsArgumentNullException()
+        {
+            Assert.Throws<ArgumentNullException>(() => new ResourceAllocationController(
+                _mapper, _resourceAllocationService, _profitCentreService, _workGroupGradeService, null!));
         }
 
         #endregion

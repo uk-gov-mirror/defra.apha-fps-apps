@@ -333,6 +333,9 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
                 });
 
             var projectdto = _mapper.Map<ProjectDto>(model);
+
+            // we are assigning below property due to mapping limitation in FPS application
+            projectdto.CustIncome = model.BudgetExt??0;
             var result = await _projectService.UpdatePactProjectAsync(projectdto);
 
             if (result.Success)

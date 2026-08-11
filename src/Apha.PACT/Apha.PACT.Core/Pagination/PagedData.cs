@@ -4,11 +4,13 @@
     {
         public IReadOnlyCollection<T> Data { get; }       
         public PaginationData PaginationData { get; }
+        public decimal Total { get; set; } = 0;
 
-        public PagedData(IReadOnlyCollection<T> items, PaginationData paginationData)
+        public PagedData(IReadOnlyCollection<T> items, PaginationData paginationData, decimal total = 0)
         {
             Data = items;           
             PaginationData = paginationData;
+            Total = total;
         }
     }
 

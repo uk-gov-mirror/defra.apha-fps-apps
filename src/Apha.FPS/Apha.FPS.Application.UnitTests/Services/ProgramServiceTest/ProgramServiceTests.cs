@@ -1,4 +1,4 @@
-﻿using Apha.FPS.Application.Dtos;
+using Apha.FPS.Application.Dtos;
 using Apha.FPS.Application.Pagination;
 using Apha.FPS.Application.Services;
 using Apha.FPS.Core.Entities;
@@ -92,6 +92,25 @@ namespace Apha.FPS.Application.UnitTests.Services.ProgramServiceTest
             result.Should().Be(pagedResult);
             _mockMapper.Received(1).Map<PaginationParameters<string>>(query);
             await _mockRepository.Received(1).GetAllProgramsAsync(mappedParams);
+        }
+
+        [Fact]
+        public async Task GetProgramTimeSnapshotAsync_WithQuery_ReturnsPaginatedResult()
+        {
+            var query = new QueryParameters<string>();
+            var mappedParams = new PaginationParameters<string>();
+            var pagedData = new PagedData<ProgramPlanCostView>();
+            var pagedResult = new PaginatedResult<ProgramPlanCostDto>();
+
+            _mockMapper.Map<PaginationParameters<string>>(query).Returns(mappedParams);
+            _mockRepository.GetProgramTimeSnapshotAsync(mappedParams).Returns(pagedData);
+            _mockMapper.Map<PaginatedResult<ProgramPlanCostDto>>(pagedData).Returns(pagedResult);
+
+            var result = await _sut.GetProgramTimeSnapshotAsync(query);
+
+            result.Should().Be(pagedResult);
+            _mockMapper.Received(1).Map<PaginationParameters<string>>(query);
+            await _mockRepository.Received(1).GetProgramTimeSnapshotAsync(mappedParams);
         }
 
         [Fact]

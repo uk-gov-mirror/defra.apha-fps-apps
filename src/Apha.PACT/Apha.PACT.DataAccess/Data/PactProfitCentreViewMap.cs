@@ -1,4 +1,4 @@
-﻿using Apha.PACT.Core.Entities;
+using Apha.PACT.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -13,7 +13,7 @@ namespace Apha.PACT.DataAccess.Data
                 .ToView("vpacttblkpprofitcentre", "fps");
 
             entity.Property(e => e.ContTarget)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("conttarget");
             entity.Property(e => e.Division)
                 .HasMaxLength(10)

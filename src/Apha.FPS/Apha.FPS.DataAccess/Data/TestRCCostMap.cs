@@ -25,8 +25,8 @@ namespace Apha.FPS.DataAccess.Data
                   .HasColumnName("fpsyear");
 
             entity.Property(e => e.Price)
-                  .HasDefaultValueSql("0")
-                  .HasColumnType("money")
+                .HasDefaultValue(0m)
+                  .HasPrecision(19, 4)
                   .HasColumnName("price");
         }
     }

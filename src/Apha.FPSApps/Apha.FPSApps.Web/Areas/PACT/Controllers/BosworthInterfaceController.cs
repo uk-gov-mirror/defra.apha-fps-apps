@@ -77,7 +77,7 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
         [HttpPost]
         public async Task<IActionResult> GenerateTimeSaleWorkgroupReport(string workGroup)
         {
-            var response = await _bosworthInterfaceService.GetTimeSaleProfitCentreAsync(workGroup);
+            var response = await _bosworthInterfaceService.GetTimeSaleWorkGroupAsync(workGroup);
 
             var excelBytes = _excelExportService.ExportToExcel(response.Data ?? [], "TimeSaleWorkgroup");
             var fileName = $"TimeSaleWorkgroup_{workGroup}.xlsx";

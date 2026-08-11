@@ -33,7 +33,7 @@
                 <div class="govuk-grid-row">
                     <div class="govuk-grid-column-one-half">
                         <div class="govuk-form-group govuk-!-margin-bottom-4" id="numberGroup">
-                            <label class="govuk-label font-size-16" asp-for="Number">
+                            <label class="govuk-label font-size-16 sup_font_weight_700" asp-for="Number">
                                 Number <span class="sup_color_red">*</span>
                             </label>
                             <input class="govuk-input" asp-for="Number"
@@ -45,7 +45,7 @@
                     </div>
                     <div class="govuk-grid-column-one-half">
                         <div class="govuk-form-group govuk-!-margin-bottom-4" id="typeGroup">
-                            <label class="govuk-label font-size-16" asp-for="IdType">
+                            <label class="govuk-label font-size-16 sup_font_weight_700" asp-for="IdType">
                                 Type <span class="sup_color_red">*</span>
                             </label>
                             <select class="govuk-select" asp-for="IdType"
@@ -60,13 +60,13 @@
                 </div>
 
                 <div class="govuk-form-group govuk-!-margin-bottom-4">
-                    <label class="govuk-label font-size-16" asp-for="Description">Description</label>
+                    <label class="govuk-label font-size-16 sup_font_weight_700" asp-for="Description">Description</label>
                     <textarea class="govuk-textarea" asp-for="Description"
                               rows="3" style="width: stretch;"></textarea>
                 </div>
 
                 <div class="govuk-form-group govuk-!-margin-bottom-4">
-                    <label class="govuk-label font-size-16" asp-for="ProjectLeaderComment">
+                    <label class="govuk-label font-size-16 sup_font_weight_700" asp-for="ProjectLeaderComment">
                         P Leader's Comment
                     </label>
                     <textarea class="govuk-textarea" asp-for="ProjectLeaderComment"
@@ -74,7 +74,7 @@
                 </div>
 
                 <div class="govuk-form-group govuk-!-margin-bottom-4">
-                    <label class="govuk-label font-size-16" asp-for="CapsComment">
+                    <label class="govuk-label font-size-16 sup_font_weight_700" asp-for="CapsComment">
                         CAP's Comment
                     </label>
                     <textarea class="govuk-textarea" asp-for="CapsComment"
@@ -84,7 +84,7 @@
                 <div class="govuk-grid-row">
                     <div class="govuk-grid-column-one-half">
                         <div class="govuk-form-group govuk-!-margin-bottom-4" id="dueGroup">
-                            <label class="govuk-label font-size-16" asp-for="DateDue">
+                            <label class="govuk-label font-size-16 sup_font_weight_700" asp-for="DateDue">
                                 Due <span class="sup_color_red">*</span>
                             </label>
                             <div style="position:relative; display:flex; align-items:center; width:stretch;">
@@ -120,7 +120,7 @@
                     </div>
                     <div class="govuk-grid-column-one-half">
                         <div class="govuk-form-group govuk-!-margin-bottom-4" id="completedGroup">
-                            <label class="govuk-label font-size-16" asp-for="DateCompleted">
+                            <label class="govuk-label font-size-16 sup_font_weight_700" asp-for="DateCompleted">
                                 Completed/Delivered
                             </label>
                             <div style="position:relative; display:flex; align-items:center; width:stretch;">
@@ -164,7 +164,7 @@
                                        type="checkbox" value="-1"
                                        @(Model.UnderSdReview == -1 ? "checked" : "")
                                        onchange="onUnderReviewChanged(this)" />
-                                <label class="govuk-checkboxes__label font-size-16"
+                                <label class="govuk-checkboxes__label  font-size-16 sup_font_weight_700"
                                        for="underSdReviewChk"
                                        style="font-weight: normal;">
                                     Under Review?
@@ -181,7 +181,7 @@
                                        type="checkbox" value="-1"
                                        @(Model.OnTarget == -1 ? "checked" : "")
                                        onchange="onOnTargetChanged(this)" />
-                                <label class="govuk-checkboxes__label font-size-16"
+                                <label class="govuk-checkboxes__label font-size-16 sup_font_weight_700"
                                        for="onTargetChk"
                                        style="font-weight: normal;">
                                     On Target

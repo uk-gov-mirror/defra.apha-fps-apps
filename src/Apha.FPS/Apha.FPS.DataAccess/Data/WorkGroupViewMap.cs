@@ -16,7 +16,7 @@ namespace Apha.FPS.DataAccess.Data
             builder.Property(e => e.CostCentre).HasColumnName("costcentre");
             builder.Property(e => e.Owner).HasColumnName("owner");
             builder.Property(e => e.Description).HasColumnName("description");
-            builder.Property(e => e.CentralOverhead).HasColumnType("money").HasColumnName("centraloverhead");
+            builder.Property(e => e.CentralOverhead).HasPrecision(19, 4).HasColumnName("centraloverhead");
             builder.Property(e => e.SendEmail).HasColumnName("sendemail");
             builder.Property(e => e.Cos90).HasColumnName("cos90");
             builder.Property(e => e.CostCentreOld).HasColumnName("costcentreold");

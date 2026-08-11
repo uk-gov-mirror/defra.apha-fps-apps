@@ -60,7 +60,7 @@
                             asp-items="Model.ProfitCentreList"
                             class="govuk-select govuk-!-font-size-16"
                             style="width: auto; min-width: 260px;"
-                            onchange="this.form.submit()">
+                            onchange="showLoader(); this.form.submit()">
                         <option value="">-- Select Resource Centre --</option>
                     </select>
                 </form>

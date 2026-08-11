@@ -405,6 +405,46 @@
         restoreSelectionState();
     });
 
+    /* ── Page load initialization ──────────────────────────────────────────── */
+    // When the page loads with a selected workgroup (from side nav query string),
+    // trigger grade list loading.
+    function initializePageLoadState() {
+        const wgSelect = el('workGroupSelect');
+        const rcSelect = el('resourceCentreSelect');
+         // If both resource centre and workgroup are selected on page load (from query string),
+        // the grades are already server-rendered in the HTML
+        if (rcSelect && rcSelect.value && wgSelect && wgSelect.value) {
+            currentCentre = rcSelect.value;
+            currentWorkGroup = wgSelect.value;
+
+            // Update the centre name display
+            const nameEl = el('ssrSelectedCentreName');
+            if (nameEl) nameEl.textContent = currentCentre;
+
+            // Check if grades are already rendered in the HTML (server-side)
+            const gradeList = el('ssrGradeList');
+            if (gradeList && gradeList.children.length > 0) {
+                // Grades are server-rendered, trigger selection of the first grade
+                const firstGradeItem = gradeList.children[0];
+                if (firstGradeItem) {
+                    const firstGrade = firstGradeItem.textContent.trim();
+                    ssrSelectWorkGroup(firstGrade);
+                }
+            } else {
+                // No grades rendered, load them via AJAX
+                LoadGradeByGroup();
+            }
+        }
+    }
+
+    // Execute immediately if DOM is already loaded, otherwise wait for DOMContentLoaded
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializePageLoadState);
+    } else {
+        // DOM is already loaded, execute immediately
+        initializePageLoadState();
+    }
+
     /* ── Grid-reloaded event ────────────────────────────────────────── */
     document.addEventListener('gridReloaded', function (e) {
         if (e.detail && e.detail.gridId === 'ssrStaffGrid') {

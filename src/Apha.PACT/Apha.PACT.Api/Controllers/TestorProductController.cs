@@ -36,7 +36,9 @@ namespace Apha.PACT.Api.Controllers
             return Ok(items.Select(i => new TestorProductRes
             {
                 ItemCode = i.ItemCode,
-                ItemDescription = i.ItemDescription
+                ItemDescription = i.ItemDescription,
+                UnitPriceVla = i.UnitPriceVla,
+                FpsYear = i.FpsYear
             }).ToList());
         }
 
@@ -132,6 +134,14 @@ namespace Apha.PACT.Api.Controllers
             var dto = _mapper.Map<TestPriceCheckDto>(request);
             var updated = await _service.UpdateTestPriceCheckAsync(testCode, jobCode, dto);
             return Ok(updated);
+        }
+
+        /// <summary>Returns paged Test snapshot rows filtered and sorted.</summary>
+        [HttpGet("test-snapshot/paged")]
+        public async Task<IActionResult> GetTestSnapshotPaged([FromQuery] QueryParameters<string> query)
+        {
+            var result = await _service.GetTestSnapshotPagedAsync(query);
+            return Ok(_mapper.Map<PaginationRes<TestFeePlanRes>>(result));
         }
 
     }

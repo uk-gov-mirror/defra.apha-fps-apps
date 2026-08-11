@@ -97,31 +97,36 @@ namespace Apha.FPSApps.Web.Areas.PIMS.Controllers
                 });
             }
 
-            DataGridConfig<MilestoneItem> gridConfig =
+            DataGridConfig<PMDMilestoneItem> gridConfig =
                 await BuildMilestonesGridAsync(parentproject ?? string.Empty, request);
             return PartialView("_DataGrid", gridConfig);
         }
 
-        private async Task<DataGridConfig<MilestoneItem>> BuildMilestonesGridAsync(
+        private async Task<DataGridConfig<PMDMilestoneItem>> BuildMilestonesGridAsync(
             string parentproject, PaginationFilter<string> request)
         {
             Dictionary<string, string> filterDict =
                 JsonConvert.DeserializeObject<Dictionary<string, string>>(request.Filter ?? "{}") ?? new();
 
-            QueryParameters<string> queryParameters = _mapper.Map<QueryParameters<string>>(request);
-            var pagedData = await _milestoneService.GetPMDMilestonesAsync(queryParameters, parentproject);
+            List<PMDMilestoneItem> items = new();
+            PaginationModel paginationModel = new();
 
-            List<MilestoneItem> items = new();
-            if (pagedData.Success && pagedData.Data != null)
-                items = _mapper.Map<List<MilestoneItem>>(pagedData.Data);
+            if (!string.IsNullOrWhiteSpace(parentproject))
+            {
+                QueryParameters<string> queryParameters = _mapper.Map<QueryParameters<string>>(request);
+                var pagedData = await _milestoneService.GetPMDMilestonesAsync(queryParameters, parentproject);
 
-            PaginationModel paginationModel = pagedData.Pagination is null
-                ? new PaginationModel()
-                : _mapper.Map<PaginationModel>(pagedData.Pagination);
+                if (pagedData.Success && pagedData.Data != null)
+                    items = _mapper.Map<List<PMDMilestoneItem>>(pagedData.Data);
+
+                if (pagedData.Pagination is not null)
+                    paginationModel = _mapper.Map<PaginationModel>(pagedData.Pagination);
+            }
+
             paginationModel.SortColumn = request.SortBy;
             paginationModel.SortDirection = request.Descending;
 
-            return new DataGridConfig<MilestoneItem>
+            return new DataGridConfig<PMDMilestoneItem>
             {
                 GridId = "pmdMilestonesGrid",
                 ShowCheckboxColumn = false,
@@ -134,7 +139,7 @@ namespace Apha.FPSApps.Web.Areas.PIMS.Controllers
                 BindGridUrl = "/PIMS/PMDMilestone/LoadMilestoneGrid",
                 ExtraFilterMethod = "getMilestoneExtraFilters",
                 Data = items,
-                Columns = GridDataProvider.GetColumnsDefination<MilestoneItem>(),
+                Columns = GridDataProvider.GetColumnsDefination<PMDMilestoneItem>(),
                 Pagination = paginationModel,
                 CurrentFilters = filterDict
             };
@@ -178,6 +183,59 @@ namespace Apha.FPSApps.Web.Areas.PIMS.Controllers
                 model = _mapper.Map<MilestoneItem>(result.Data);
 
             return View(model);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> EditMilestoneDetails(
+            string project, 
+            string number, 
+            string? datecompleted, 
+            int underreview, 
+            int ontarget, 
+            string? projectleadercomment)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(project) || string.IsNullOrWhiteSpace(number))
+                    return Json(new { success = false, message = "Project and Milestone number are required.", errors = new[] { "Project and Milestone number are required." } });
+
+                if (string.IsNullOrWhiteSpace(projectleadercomment))
+                    return Json(new { success = false, message = "Project Leaders Comment is required.", errors = new[] { "Project Leaders Comment is required." } });
+
+                // Parse date if provided
+                DateTime? dateCompletedValue = null;
+                if (!string.IsNullOrWhiteSpace(datecompleted))
+                {
+                    if (DateTime.TryParse(datecompleted, out DateTime parsedDate))
+                        dateCompletedValue = parsedDate;
+                }
+
+                var milestoneDto = new Apha.FPSApps.Application.Dtos.PIMS.MilestoneDto
+                {
+                    Project = project,
+                    Number = number,
+                    DateCompleted = dateCompletedValue,
+                    UnderSdReview = (short)underreview,
+                    OnTarget = (short)ontarget,
+                    ProjectLeaderComment = projectleadercomment
+                };
+
+                var result = await _milestoneService.UpdateMilestoneAsync_PMD(project, number, milestoneDto);
+
+                if (result?.Success == true)
+                    return Json(new { success = true, message = "Milestone updated successfully." });
+
+                return Json(new 
+                { 
+                    success = false, 
+                    message = "Failed to update milestone.", 
+                    errors = result?.Errors?.Select(e => e.Message).ToList() ?? new List<string> { "An error occurred." }
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "An unexpected error occurred.", errors = new[] { ex.Message } });
+            }
         }
     }
 }

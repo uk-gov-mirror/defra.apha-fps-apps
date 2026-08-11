@@ -1,0 +1,93 @@
+@using Microsoft.AspNetCore.Mvc.Rendering
+@model Apha.FPSApps.Web.Areas.PIMS.Models.AccessUserLevelItem
+
+@{
+    var isAddingNew = (ViewBag.IsAddingNew as bool?) ?? false;
+    var isEditMode = !isAddingNew;
+    var title = isEditMode ? "Edit User Access" : "Add User Access";
+    var saveLabel = isEditMode ? "Update" : "Save";
+}
+
+<div class="modal-header flex-space-center">
+    <h3 class="modal-title" style="margin: 0;">@title</h3>
+    <button type="button" class="btn-close btn-red" onclick="closeModal()">X</button>
+</div>
+<div class="modal-body" style="padding-top: 5px;">
+    <form class="row" id="formAccessUserLevel">
+        @Html.AntiForgeryToken()
+
+        <input type="hidden" asp-for="SystemId" id="hdnAccessSystemid" />
+        <input type="hidden" id="hdnAccessOriginalSystemid" value="@Model.SystemId" />
+        <input type="hidden" id="hdnAccessOriginalNtlogin" value="@Model.NtLogin" />
+        <input type="hidden" id="hdnAccessOriginalAccesslevelid" value="@Model.AccessLevelId" />
+        <input type="hidden" id="hdnAccessIsEdit" value="@isEditMode.ToString().ToLower()" />
+
+        <div class="govuk-error-summary ra-form-error-banner ra-hidden"
+             id="adminAccessDbError" role="alert" aria-labelledby="adminAccessDbErrorTitle" tabindex="-1">
+            <h2 class="govuk-error-summary__title govuk-!-font-size-14" id="adminAccessDbErrorTitle">There is a problem</h2>
+            <div class="govuk-error-summary__body">
+                <ul class="govuk-list govuk-error-summary__list"></ul>
+                <p class="govuk-body govuk-!-font-size-14" id="adminAccessDbErrorText"></p>
+            </div>
+        </div>
+
+        <div class="govuk-grid-row">
+            <div class="govuk-grid-column-one-half">
+                <div class="govuk-form-group sup_margin_bottom_10" id="adminAccessUserGroup">
+                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" for="adminAccessUser">
+                        User<span class="ra-required-star" aria-hidden="true"> *</span>
+                    </label>
+                    <select class="govuk-select govuk-!-font-size-16 ra-select-full"
+                            asp-for="NtLogin"
+                            id="adminAccessUser"
+                            required
+                            aria-required="true"
+                            aria-label="User"
+                            aria-describedby="adminAccessUserError">
+                        <option value="">-- Select User --</option>
+                        @foreach (var user in (IEnumerable<SelectListItem>)(ViewBag.AccessUserOptions ?? new List<SelectListItem>()))
+                        {
+                            <option value="@user.Value" selected="@(user.Selected ? "selected" : null)">@user.Text</option>
+                        }
+                    </select>
+                    <span asp-validation-for="NtLogin" class="govuk-error-message" id="adminAccessUserError" data-valmsg-for="NtLogin" style="display:none;"></span>
+                </div>
+            </div>
+
+            <div class="govuk-grid-column-one-half">
+                <div class="govuk-form-group sup_margin_bottom_10" id="adminAccessLevelGroup">
+                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" for="adminAccessLevel">
+                        Access Level<span class="ra-required-star" aria-hidden="true"> *</span>
+                    </label>
+                    <select class="govuk-select govuk-!-font-size-16"
+                            asp-for="AccessLevelId"
+                            id="adminAccessLevel"
+                            required
+                            aria-required="true"
+                            aria-label="Access Level"
+                            aria-describedby="adminAccessLevelError">
+                        <option value="0">-- Select --</option>
+                        @foreach (var level in (IEnumerable<SelectListItem>)(ViewBag.AccessLevelOptions ?? new List<SelectListItem>()))
+                        {
+                            <option value="@level.Value" selected="@(level.Selected ? "selected" : null)">@level.Text</option>
+                        }
+                    </select>
+                    <span asp-validation-for="AccessLevelId" class="govuk-error-message" id="adminAccessLevelError" data-valmsg-for="AccessLevelId" style="display:none;"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12" style="display: flex; justify-content: space-between; margin-top: 10px;">
+            <button type="button"
+                    class="govuk-button govuk-button--secondary sup_margin_0"
+                    onclick="closeModal()">
+                Cancel
+            </button>
+            <button type="button"
+                    class="govuk-button sup_margin_0"
+                    onclick="saveAccessUserLevel()">
+                @saveLabel
+            </button>
+        </div>
+    </form>
+</div>

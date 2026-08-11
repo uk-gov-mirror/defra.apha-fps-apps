@@ -1,0 +1,235 @@
+@model Apha.FPSApps.Web.Areas.PACT.Models.MonthlyTimeViewModel
+
+@{
+    ViewData["Title"] = "Time Record Data Entry";
+}
+
+<div class="content-wrapper">
+    <div class="govuk-grid-row sup_margin_left_right_0">
+        <div class="govuk-grid-column-full">
+            <h1 class="govuk-grid-row sup_border-bottom page-title">Time Record Data Entry</h1>
+        </div>
+    </div>
+
+    <div class="align-items-start m-10" id="search-grid">
+        <div>
+            <div>
+                <div class="sup_search_panel sup_border_b_0 sup_margin_bottom_left_10">
+                    <div class="input-group searchfiels govuk-!-margin-right-3">
+                        <label class="govuk-label govuk-!-font-weight-bold" for="ddWorkGroup">Work Group</label>
+                        <div id="workGroupSelectDropdown" class="monthly-time-workgroup-dropdown-width"></div>
+                        <input type="hidden" id="ddWorkGroup" value="" />
+                    </div>
+
+                    <div class="input-group searchfiels govuk-!-margin-right-3">
+                        <div id="staffSelectDropdown" class="monthly-time-staff-dropdown-width"></div>
+                        <input type="hidden" id="ddStaff" value="" />
+                    </div>
+
+                    <div class="input-group searchfiels govuk-!-margin-right-3 monthly-time-timecode-filter-width">
+                        <label class="govuk-label govuk-!-font-weight-bold" for="ddTimeCode">Timecode</label>
+                        <div id="timeCodeSelectDropdown"></div>
+                        <input type="hidden" id="ddTimeCode" value="" />
+                    </div>
+
+                    <div class="input-group searchfiels govuk-!-margin-right-3 monthly-time-parentproject-filter-width">
+                        <label class="govuk-label govuk-!-font-weight-bold" for="ddParentProject">Parent Project</label>
+                        <div id="parentProjectSelectDropdown"></div>
+                        <input type="hidden" id="ddParentProject" value="" />
+                    </div>
+
+                    <div class="input-group searchfiels govuk-!-margin-right-3">
+                        <label class="govuk-label govuk-!-font-weight-bold" for="ddMonth">Period</label>
+                        <select id="ddMonth" class="govuk-select govuk-!-font-size-16 monthly-time-period-select-width">
+                            <option value="">--select--</option>
+                            @foreach (var item in Model.MonthOptions)
+                            {
+                                <option value="@item.Value">@item.Value</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="input-group searchfiels govuk-!-margin-right-3">
+                        <div class="govuk-form-group sup_margin_0">
+                            <button id="btnSearchLive" type="button" class="govuk-button sup_margin_0 sup_flex govuk-!-margin-right-1 sup_m-2" allow-edit="true">
+                                <img src="~/images/filter-solid.svg" width="16" alt="Search" />&nbsp;Search
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="input-group searchfiels">
+                        <div class="govuk-form-group sup_margin_0">
+                            <button id="btnClearLiveSearch" type="button" class="govuk-button sup_margin_0 sup_flex sup_m-2" allow-edit="true">
+                                <img src="~/images/filter-circle-xmark-solid.svg" width="16" alt="Clear search" />&nbsp;Clear search
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sup_width_100">
+                    <div id="gridContainer_@Model.LiveGrid.GridId">
+                        @await Html.PartialAsync("_DataGrid", Model.LiveGrid)
+                    </div>
+
+                    <div class="wrapper-makelivehours sup_border">
+                        <div id="divMakeliveTotalhours">
+                            <span class="p-0 total-hours-label">Total Hours:</span>
+                            <input type="text" id="txtMakeliveTotalhours" class="govuk-input govuk-!-font-size-16 make-live-hours-input" style="width:150px;" value="@Model.LiveTotalHours" aria-label="Total Hours" readonly />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid-buttons-wrapper">
+        <div class="align-items-start m-10 sup_search_panel sup_p_0 bottom-grid-wrapper">
+            <div id="gridContainer_@Model.StagingGrid.GridId" class="govuk-grid-column-full sup_p_0">
+                @await Html.PartialAsync("_DataGrid", Model.StagingGrid)
+            </div>
+
+            <div id="hoursBoxContainer" class="sup_surface_bg sup_position_relative ytd_total_div">
+                <div id="divStagingTotalhours">
+                    <label id="lbltotalhours" for="txtTotalhours" class="govuk-label govuk-!-font-weight-bold">Total Hours:</label>
+                    <input type="text" id="txtTotalhours" class="govuk-input govuk-!-font-size-16 sup_margin_tb_5 sup_text_align_right make-live-hours-input" style="width:150px;" value="@Model.StagingTotalHours" readonly>
+                </div>
+            </div>
+        </div>
+
+        <div class="time_record_div_wrapper govuk-!-margin-top-2 buttons-side-wrapper">
+            <div class="time_record_btn_wrapper">
+                <div class="upload-container sup_width_140">
+                    <input type="file" id="csvInput" class="file-input" accept=".xlsx" aria-label="Import File" hidden>
+                    <button type="button" id="importTypeBtn" class="govuk-button sup_width_140 sup_margin_0 sup_flex" allow-edit="true">
+                        <img src="~/images/file-import-solid-full.svg" width="16" alt="Import excel file" />&nbsp;Import
+                    </button>
+                </div>
+
+                <button type="button" id="importExportedBtn" class="govuk-button sup_margin_0 sup_flex sup_width_140" allow-edit="true" onclick="openImportExportedFilePicker()">
+                    <img src="~/images/file-import-solid-full.svg" width="16" alt="Import exported excel file" />&nbsp;Reimport
+                </button>
+
+                <button type="button" id="validateBtn" class="govuk-button sup_margin_0 govuk-button--warning sup_flex sup_width_140" allow-edit="true">
+                    <img src="~/images/triangle-exclamation-solid-full.svg" width="16" alt="Validate records" />&nbsp;Validate
+                </button>
+
+                <button type="button" id="passedBtn" class="govuk-button sup_margin_0 govuk-button--success sup_flex sup_width_140" allow-edit="true">
+                    <img src="~/images/circle-check-regular-full.svg" width="16" alt="Passed records" />&nbsp;Passed
+                </button>
+
+                <button type="button" id="failedBtn" class="govuk-button sup_margin_0 sup_failed_color sup_flex sup_width_140" allow-edit="true">
+                    <img src="~/images/circle-xmark-regular-full.svg" width="16" alt="Failed records" />&nbsp;Failed
+                </button>
+
+                <button type="button" id="allBtn" class="govuk-button sup_flex sup_margin_0 sup_width_140" allow-edit="true">
+                    <img src="~/images/magnifying-glass-chart-solid-full.svg" width="16" alt="All records" />&nbsp;All
+                </button>
+
+                <button type="button" id="moveBtn" class="govuk-button sup_margin_0 sup_flex sup_width_140 make-live-button" allow-edit="true">
+                    <img src="~/images/arrow-up-from-bracket-solid-full.svg" width="16" alt="Make live" />&nbsp;Make Live
+                </button>
+
+                <button type="button" id="deleteAllWGBtn" class="govuk-button sup_margin_0 sup_flex sup_width_140" allow-edit="true">
+                    <img src="~/images/trash-can-regular-full-white.svg" width="16" alt="Delete all" />&nbsp;Delete All
+                </button>
+
+                <button type="button" id="deleteFailedWGBtn" class="govuk-button sup_margin_0 sup_flex sup_width_140" allow-edit="true">
+                    <img src="~/images/trash-can-regular-full-white.svg" width="16" alt="Delete Failed" />&nbsp;Delete Failed
+                </button>
+
+                <button type="button" id="exportExcel" class="govuk-button sup_margin_0 sup_flex sup_width_140" allow-edit="true">
+                    <img src="~/images/file-export-solid-full.svg" width="16" alt="Export excel" />&nbsp;Export Excel
+                </button>
+
+                <div class="govuk-checkboxes govuk-checkboxes--small sup_margin_0">
+                    <div class="govuk-checkboxes__item">
+                        <input class="govuk-checkboxes__input govuk-!-font-size-16" id="chkNameupdating" name="chkNameupdating" type="checkbox" value="true">
+                        <label class="govuk-label govuk-checkboxes__label sup_label_auto_width sup_p_0" for="chkNameupdating">Name updating</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="failed-msg-container" id="failedmsg">
+        <textarea class="govuk-textarea govuk-!-font-size-16 error-textarea" id="txt-description" rows="2" aria-label="Failed message"></textarea>
+    </div>
+</div>
+
+<div class="modal import-type-modal" id="importTypeModal" tabindex="-1" aria-labelledby="importTypeModalTitle" aria-modal="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header flex-space-center">
+                <h3 class="modal-title m-0" id="importTypeModalTitle">Time Record Data Entry</h3>
+                <button type="button" class="btn-close btn-red" onclick="closeImportTypeModal()" aria-label="Close import type dialog">X</button>
+            </div>
+
+            <div class="modal-body">
+                <p class="govuk-body govuk-!-font-weight-bold govuk-!-margin-bottom-4 modal-heading-text">What type of time spreadsheet do you want to import?</p>
+
+                <div class="govuk-form-group govuk-!-margin-bottom-4">
+                    <fieldset class="govuk-fieldset">
+                        <legend class="govuk-visually-hidden">Select spreadsheet type</legend>
+
+                        <div class="govuk-radios govuk-radios--small govuk-radios--inline" data-module="govuk-radios" id="importTypeRadios">
+                            <div class="govuk-radios__item">
+                                <input class="govuk-radios__input" id="importType-flatfile-rd" name="importType" type="radio" value="2">
+                                <label class="govuk-label govuk-radios__label radio-label-nowrap" for="importType-flatfile-rd">Flat-file .xlsx (R&amp;D)</label>
+                            </div>
+
+                            <div class="govuk-radios__item">
+                                <input class="govuk-radios__input" id="importType-flatfile-other" name="importType" type="radio" value="3">
+                                <label class="govuk-label govuk-radios__label radio-label-nowrap" for="importType-flatfile-other">Cross-tab .xlsx</label>
+                            </div>
+
+                            <div class="govuk-radios__item">
+                                <input class="govuk-radios__input" id="importType-otl" name="importType" type="radio" value="1">
+                                <label class="govuk-label govuk-radios__label radio-label-nowrap" for="importType-otl">OTL-data .xlsx</label>
+                            </div>
+                        </div>
+                    </fieldset>
+                </div>
+
+                <p class="govuk-body sup_error_text_color govuk-!-font-size-16 govuk-!-margin-bottom-0">
+                    NB Normally R&amp;D .xlsx files are Flat-file, whilst other work groups tend to be Cross-tab.
+                </p>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="govuk-button govuk-button--secondary sup_margin_0" onclick="closeImportTypeModal()">Cancel</button>
+                <button type="button" class="govuk-button sup_margin_0" onclick="confirmImportType()">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+@section Styles {
+    <link rel="stylesheet" href="~/css/common/multicolumn-dropdown.css" />
+}
+@section Scripts {
+    <script src="~/js/ajax-form-validation.js"></script>
+    <script src="~/js/common/multicolumn-dropdown.component.js"></script>
+    <script>
+        var monthlyTimeLiveGridId = '@Model.LiveGrid.GridId';
+        var monthlyTimeStagingGridId = '@Model.StagingGrid.GridId';
+        document.getElementById('failedmsg').style.display = 'none';
+    </script>
+    <script type="application/json" id="monthly-time-workgroups-data">
+        @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            Model.WorkGroupOptions
+                 .Where(x => !string.IsNullOrWhiteSpace(x.Value))
+                 .Select(x => new { value = x.Value, text = x.Text })))
+    </script>
+    <script type="application/json" id="monthly-time-timecodes-data">
+        @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            Model.TimeCodeOptions
+                 .Where(x => !string.IsNullOrWhiteSpace(x.Value))
+                 .Select(x => new { value = x.Value, text = x.Text })))
+    </script>
+    <script type="application/json" id="monthly-time-projects-data">
+        @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            Model.ProjectOptions
+                 .Where(x => !string.IsNullOrWhiteSpace(x.Value))
+                 .Select(x => new { value = x.Value, text = x.Text })))
+    </script>
+    <script src="~/js/pact_js/monthly-time.js"></script>
+}

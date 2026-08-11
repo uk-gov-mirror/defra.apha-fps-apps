@@ -1,5 +1,8 @@
 @* PIMS navigation items — referenced by Views/Shared/Components/AppNav/Default.cshtml *@
-
+@inject IConfiguration Configuration
+@{
+    var pimsPowerBiReportUrl = Configuration["PowerBiReports:PIMS"];
+}
             <!-- Choose Project -->
             <div class="nav-item">
                 <a class="nav-button" asp-area="PIMS" asp-controller="ProjectList" asp-action="Index">
@@ -21,6 +24,14 @@
                     <div class="align-menu-text"><span>Milestone</span></div>
                 </a>
             </div>
+
+              <!-- Yearly Financial Details -->
+            <div class="nav-item">
+                <a class="nav-button" asp-area="PIMS" asp-controller="YearlyFinancialData" asp-action="Index">
+                    <div class="align-menu-text"><span>Yearly Financial Details</span></div>
+                </a>
+            </div>
+
                 <!-- PMD Milestones -->
             <div class="nav-item dropdown">
     <a class="nav-button" asp-area="PIMS" asp-controller="PMDMilestone" asp-action="Index">
@@ -34,13 +45,19 @@
         <div class="align-menu-text"><span>Invoices</span></div>
     </a>
 </div>
+<!-- Maintenance -->
+<div class="nav-item">
+    <a class="nav-button" asp-area="PIMS" asp-controller="Maintenance" asp-action="Index">
+        <div class="align-menu-text"><span>Maintenance</span></div>
+    </a>
+</div>
 
-            <!-- Maintenance -->
-            <div class="nav-item dropdown">
-                <a class="nav-button" href="#">
-                    <div class="align-menu-text"><span>Maintenance</span></div>
-                </a>
-            </div>
+
+<!-- Power BIReports -->
+<div class="nav-item">
+    <a class="nav-button" href="@pimsPowerBiReportUrl"
+       target="_blank" rel="noopener noreferrer">Power BI Report</a>
+</div>
 
            
             

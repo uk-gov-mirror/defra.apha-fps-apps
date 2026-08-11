@@ -210,6 +210,119 @@ namespace Apha.PACT.DataAccess.UnitTests.Repository.BosworthInterfaceRepositoryT
 
         #endregion
 
+        #region GetTimeSaleWorkGroupAsync
+
+        [Fact]
+        public async Task GetTimeSaleWorkGroupAsync_WithMatchingData_ReturnsJoinedResults()
+        {
+            var gradeViews = new List<PactWorkGroupGradeView>
+            {
+                new() { WgGrade = "WGG1", WorkGroup = "WG1", GradeCode = "GC1", FpsYear = DefaultFpsYear }
+            };
+            var staffViews = new List<WorkGroupStaffView>
+            {
+                new() { PactId = "S1", Name = "John", WorkGroupGrade = "WGG1", FpsYear = DefaultFpsYear }
+            };
+            var timeCostCalcs = new List<TimeCostCalcs>
+            {
+                new() { Project = "PRJ1", StaffId = "S1", WorkGroup = "WG1", JobCode = "JC1", Month = 1, FpsYear = DefaultFpsYear, Time = 8.0, Cost = 100.0 }
+            };
+            var projects = new List<Project>
+            {
+                new() { ParentProject = "PRJ1", Program = "PGM1", Manager = "MGR1", ProjectTitle = "Test", Customer = "C1", Disease = "D1", Contract = "CON1", ProjectStatus = "A", IncomeAccountCode = "IAC1", FpsYear = DefaultFpsYear }
+            };
+
+            var (repo, _) = CreateRepositoryWithData(
+                gradeViews: gradeViews,
+                staffViews: staffViews,
+                timeCostCalcs: timeCostCalcs,
+                projects: projects);
+
+            var result = await repo.GetTimeSaleWorkGroupAsync("WG1");
+
+            Assert.Single(result);
+            var item = result.First();
+            Assert.Equal("WG1", item.SellingWg);
+            Assert.Equal("John", item.Name);
+            Assert.Equal(8.0, item.Time);
+            Assert.Equal(100.0, item.Cost);
+            Assert.Equal(1, item.Month);
+            Assert.Equal(string.Empty, item.PlanCategory);
+            Assert.Equal("PGM1", item.Program);
+            Assert.Equal("PRJ1", item.Project);
+            Assert.Equal("JC1", item.JobCode);
+            Assert.Equal("MGR1", item.Manager);
+        }
+
+        [Fact]
+        public async Task GetTimeSaleWorkGroupAsync_NoMatchingWorkGroup_ReturnsEmpty()
+        {
+            var gradeViews = new List<PactWorkGroupGradeView>
+            {
+                new() { WgGrade = "WGG1", WorkGroup = "WG2", GradeCode = "GC1", FpsYear = DefaultFpsYear }
+            };
+
+            var (repo, _) = CreateRepositoryWithData(gradeViews: gradeViews);
+
+            var result = await repo.GetTimeSaleWorkGroupAsync("WG1");
+
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public async Task GetTimeSaleWorkGroupAsync_NoStaffJoinMatch_ReturnsEmpty()
+        {
+            var gradeViews = new List<PactWorkGroupGradeView>
+            {
+                new() { WgGrade = "WGG1", WorkGroup = "WG1", GradeCode = "GC1", FpsYear = DefaultFpsYear }
+            };
+            var staffViews = new List<WorkGroupStaffView>
+            {
+                new() { PactId = "S1", Name = "John", WorkGroupGrade = "WGG2", FpsYear = DefaultFpsYear }
+            };
+
+            var (repo, _) = CreateRepositoryWithData(
+                gradeViews: gradeViews,
+                staffViews: staffViews);
+
+            var result = await repo.GetTimeSaleWorkGroupAsync("WG1");
+
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public async Task GetTimeSaleWorkGroupAsync_NoProjectJoinMatch_ReturnsEmpty()
+        {
+            var gradeViews = new List<PactWorkGroupGradeView>
+            {
+                new() { WgGrade = "WGG1", WorkGroup = "WG1", GradeCode = "GC1", FpsYear = DefaultFpsYear }
+            };
+            var staffViews = new List<WorkGroupStaffView>
+            {
+                new() { PactId = "S1", Name = "John", WorkGroupGrade = "WGG1", FpsYear = DefaultFpsYear }
+            };
+            var timeCostCalcs = new List<TimeCostCalcs>
+            {
+                new() { Project = "PRJ2", StaffId = "S1", WorkGroup = "WG1", JobCode = "JC1", Month = 1, FpsYear = DefaultFpsYear, Time = 8.0, Cost = 100.0 }
+            };
+            var projects = new List<Project>
+            {
+                new() { ParentProject = "PRJ1", Program = "PGM1", ProjectTitle = "Test", Customer = "C1", Disease = "D1", Contract = "CON1", ProjectStatus = "A", IncomeAccountCode = "IAC1", FpsYear = DefaultFpsYear }
+            };
+
+            var (repo, _) = CreateRepositoryWithData(
+                gradeViews: gradeViews,
+                staffViews: staffViews,
+                timeCostCalcs: timeCostCalcs,
+                projects: projects);
+
+            var result = await repo.GetTimeSaleWorkGroupAsync("WG1");
+
+            Assert.Empty(result);
+        }
+
+        #endregion
+
         #region GetTestSaleSellingWorkgroupAsync
 
         [Fact]

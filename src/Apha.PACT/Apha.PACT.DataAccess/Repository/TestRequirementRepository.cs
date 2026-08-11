@@ -293,22 +293,26 @@ namespace Apha.PACT.DataAccess.Repository
             if (filters is null)
                 return query;
 
-            if (filters.TryGetValue("TestCode", out var testCode) && !string.IsNullOrWhiteSpace(testCode))
-                query = query.Where(x => x.TestCode != null && EF.Functions.ILike(x.TestCode, $"%{testCode}%"));
-            if (filters.TryGetValue("ShortDescription", out var shortDesc) && !string.IsNullOrWhiteSpace(shortDesc))
-                query = query.Where(x => x.ShortDescription != null && EF.Functions.ILike(x.ShortDescription, $"%{shortDesc}%"));
-            if (filters.TryGetValue("Program", out var program) && !string.IsNullOrWhiteSpace(program))
-                query = query.Where(x => x.Program != null && EF.Functions.ILike(x.Program, $"%{program}%"));
-            if (filters.TryGetValue("Buyer", out var buyer) && !string.IsNullOrWhiteSpace(buyer))
-                query = query.Where(x => x.Buyer != null && EF.Functions.ILike(x.Buyer, $"%{buyer}%"));
-            if (filters.TryGetValue("Portfolio", out var portfolio) && !string.IsNullOrWhiteSpace(portfolio))
-                query = query.Where(x => x.Portfolio != null && EF.Functions.ILike(x.Portfolio, $"%{portfolio}%"));
-            if (filters.TryGetValue("WorkGroup", out var workGroup) && !string.IsNullOrWhiteSpace(workGroup))
-                query = query.Where(x => x.WorkGroup != null && EF.Functions.ILike(x.WorkGroup, $"%{workGroup}%"));
-            if (filters.TryGetValue("ProfitCentre", out var profitCentre) && !string.IsNullOrWhiteSpace(profitCentre))
-                query = query.Where(x => x.ProfitCentre != null && EF.Functions.ILike(x.ProfitCentre, $"%{profitCentre}%"));
+            query = ApplyILikeFilter(query, filters, "TestCode",          (q, p) => q.Where(x => x.TestCode != null          && EF.Functions.ILike(x.TestCode, p)));
+            query = ApplyILikeFilter(query, filters, "ShortDescription",  (q, p) => q.Where(x => x.ShortDescription != null  && EF.Functions.ILike(x.ShortDescription, p)));
+            query = ApplyILikeFilter(query, filters, "Program",           (q, p) => q.Where(x => x.Program != null           && EF.Functions.ILike(x.Program, p)));
+            query = ApplyILikeFilter(query, filters, "Buyer",             (q, p) => q.Where(x => x.Buyer != null             && EF.Functions.ILike(x.Buyer, p)));
+            query = ApplyILikeFilter(query, filters, "Portfolio",         (q, p) => q.Where(x => x.Portfolio != null         && EF.Functions.ILike(x.Portfolio, p)));
+            query = ApplyILikeFilter(query, filters, "WorkGroup",         (q, p) => q.Where(x => x.WorkGroup != null         && EF.Functions.ILike(x.WorkGroup, p)));
+            query = ApplyILikeFilter(query, filters, "ProfitCentre",      (q, p) => q.Where(x => x.ProfitCentre != null      && EF.Functions.ILike(x.ProfitCentre, p)));
 
             return query;
+        }
+
+        private static IQueryable<TestActualBreakdownView> ApplyILikeFilter(
+            IQueryable<TestActualBreakdownView> query,
+            Dictionary<string, string> filters,
+            string key,
+            Func<IQueryable<TestActualBreakdownView>, string, IQueryable<TestActualBreakdownView>> applyWhere)
+        {
+            return filters.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value)
+                ? applyWhere(query, $"%{value}%")
+                : query;
         }
 
         public async Task<TestRequirementDetail?> GetPricingAsync(string testCode, string? projectCode)
@@ -364,6 +368,14 @@ namespace Apha.PACT.DataAccess.Repository
             return await _context.MonthlyOutputs
                 .AsNoTracking()
                 .AnyAsync(m => m.TestCode == testCode && m.Buyer == buyer);
+        }
+
+        public async Task<List<TestRequirement>> GetAllActiveAsync()
+        {
+            return await _context.TestRequirements
+                .AsNoTracking()
+                .Where(x => x.Active != 0)
+                .ToListAsync();
         }
 
         public async Task<TestRequirement> AddAsync(TestRequirement entity)

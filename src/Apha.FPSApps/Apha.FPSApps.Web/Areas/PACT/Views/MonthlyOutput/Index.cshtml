@@ -1,0 +1,165 @@
+@model Apha.FPSApps.Web.Areas.PACT.Models.MonthlyOutputViewModel
+
+@{
+    ViewData["Title"] = "Output Record Data Entry";
+}
+
+<div class="content-wrapper">
+    <div class="govuk-grid-row sup_margin_left_right_0">
+        <div class="govuk-grid-column-full">
+            <h1 class="govuk-grid-row sup_border-bottom page-title">Output Record Data Entry</h1>
+        </div>
+    </div>
+
+    <div class="align-items-start m-10 isOutputRecordDataEntry" id="search-grid">
+        <div>
+            <div>
+                <div class="sup_search_panel sup_border_b_0 sup_margin_bottom_left_10" style="width: 98.5%">
+                    <div class="input-group searchfiels govuk-!-margin-right-3">
+                        <label class="govuk-label govuk-!-font-weight-bold" for="ddWorkGroup">Work Group</label>
+                        <div id="workGroupSelectDropdown" class="monthly-output-workgroup-dropdown-width"></div>
+                        <input type="hidden" id="ddWorkGroup" value="" />
+                    </div>
+
+                    <div class="input-group searchfiels govuk-!-margin-right-3 monthly-output-testcode-filter-width">
+                        <label class="govuk-label govuk-!-font-weight-bold" for="ddTestCode">Test Code</label>
+                        <div id="testCodeSelectDropdown"></div>
+                        <input type="hidden" id="ddTestCode" value="" />
+                    </div>
+
+                    <div class="input-group searchfiels govuk-!-margin-right-3 monthly-output-buyer-filter-width">
+                        <label class="govuk-label govuk-!-font-weight-bold" for="ddBuyer">Buyer</label>
+                        <div id="buyerSelectDropdown" style="min-width:340px;"></div>
+                        <input type="hidden" id="ddBuyer" value="" />
+                    </div>
+
+                    <div class="input-group searchfiels govuk-!-margin-right-3">
+                        <label class="govuk-label govuk-!-font-weight-bold" for="ddMonth">Period</label>
+                        <select id="ddMonth" class="govuk-select govuk-!-font-size-16">
+                            <option value="">--select--</option>
+                            @foreach (var item in Model.MonthOptions)
+                            {
+                                <option value="@item.Value">@item.Value</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="input-group searchfiels govuk-!-margin-right-3">
+                        <div class="govuk-form-group sup_margin_0">
+                            <button id="btnSearchLive" type="button" class="govuk-button sup_margin_0 sup_flex govuk-!-margin-right-1 sup_m-2" allow-edit="true">
+                                <img src="~/images/filter-solid.svg" width="16" alt="Search" />&nbsp;Search
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="input-group searchfiels">
+                        <div class="govuk-form-group sup_margin_0">
+                            <button id="btnClearLiveSearch" type="button" class="govuk-button sup_margin_0 sup_flex sup_m-2" allow-edit="true">
+                                <img src="~/images/filter-circle-xmark-solid.svg" width="16" alt="Clear search" />&nbsp;Clear search
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sup_width_100" style="width: 98.5%">
+                    <div id="gridContainer_@Model.LiveGrid.GridId">
+                        @await Html.PartialAsync("_DataGrid", Model.LiveGrid)
+                    </div>
+
+                    <div class="wrapper-makelivehours sup_border">
+                        <div id="divMakeliveTotalvolume">
+                            <span class="p-0 total-volume-label">Total Volume:</span>
+                            <input type="text" id="txtMakeliveTotalvolume" class="govuk-input govuk-!-font-size-16 make-live-hours-input" style="width:150px;" value="@Model.LiveTotalVolume" aria-label="Total Volume" readonly />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid-buttons-wrapper">
+        <div class="align-items-start m-10 sup_search_panel sup_p_0 bottom-grid-wrapper">
+            <div id="gridContainer_@Model.StagingGrid.GridId" class="govuk-grid-column-full sup_p_0 isOutputRecordDataEntryGrid">
+                @await Html.PartialAsync("_DataGrid", Model.StagingGrid)
+            </div>
+
+            <div id="hoursBoxContainer" class="sup_surface_bg sup_position_relative ytd_total_div">
+                <div id="divStagingTotalvolume">
+                    <label id="lbltotalvolume" for="txtTotalvolume" class="govuk-label govuk-!-font-weight-bold">Total Volume:</label>
+                    <input type="text" id="txtTotalvolume" class="govuk-input govuk-!-font-size-16 sup_margin_tb_5 sup_text_align_right make-live-hours-input" style="width:150px;" value="@Model.StagingTotalVolume" readonly>
+                </div>
+            </div>
+        </div>
+
+        <div class="time_record_div_wrapper govuk-!-margin-top-2 buttons-side-wrapper">
+            <div class="time_record_btn_wrapper">
+                <div class="upload-container sup_width_140">
+                    <input type="file" id="csvInput" class="file-input" accept=".xlsx,.xls" aria-label="Import File" hidden>
+                    <button type="button" id="importBtn" class="govuk-button sup_width_140 sup_margin_0 sup_flex" allow-edit="true">
+                        <img src="~/images/file-import-solid-full.svg" width="16" alt="Import excel file" />&nbsp;Import
+                    </button>
+                </div>
+
+                <button type="button" id="importExportedBtn" class="govuk-button sup_margin_0 sup_flex sup_width_140" allow-edit="true" onclick="openImportExportedFilePicker()">
+                    <img src="~/images/file-import-solid-full.svg" width="16" alt="Import exported excel file" />&nbsp;Reimport
+                </button>
+
+                <button type="button" id="validateBtn" class="govuk-button sup_margin_0 govuk-button--warning sup_flex sup_width_140" allow-edit="true">
+                    <img src="~/images/triangle-exclamation-solid-full.svg" width="16" alt="Validate records" />&nbsp;Validate
+                </button>
+
+                <button type="button" id="passedBtn" class="govuk-button sup_margin_0 govuk-button--success sup_flex sup_width_140" allow-edit="true">
+                    <img src="~/images/circle-check-regular-full.svg" width="16" alt="Passed records" />&nbsp;Passed
+                </button>
+
+                <button type="button" id="failedBtn" class="govuk-button sup_margin_0 sup_failed_color sup_flex sup_width_140" allow-edit="true">
+                    <img src="~/images/circle-xmark-regular-full.svg" width="16" alt="Failed records" />&nbsp;Failed
+                </button>
+
+                <button type="button" id="allBtn" class="govuk-button sup_flex sup_margin_0 sup_width_140" allow-edit="true">
+                    <img src="~/images/magnifying-glass-chart-solid-full.svg" width="16" alt="All records" />&nbsp;All
+                </button>
+
+                <button type="button" id="moveBtn" class="govuk-button sup_margin_0 sup_flex sup_width_140 make-live-button" allow-edit="true">
+                    <img src="~/images/arrow-up-from-bracket-solid-full.svg" width="16" alt="Make live" />&nbsp;Make Live
+                </button>
+
+                <button type="button" id="deleteAllWGBtn" class="govuk-button sup_margin_0 sup_flex sup_width_140" allow-edit="true">
+                    <img src="~/images/trash-can-regular-full-white.svg" width="16" alt="Delete all" />&nbsp;Delete All
+                </button>
+
+                <button type="button" id="deleteFailedWGBtn" class="govuk-button sup_margin_0 sup_flex sup_width_140" allow-edit="true">
+                    <img src="~/images/trash-can-regular-full-white.svg" width="16" alt="Delete Failed" />&nbsp;Delete Failed
+                </button>
+
+                <button type="button" id="exportExcel" class="govuk-button sup_margin_0 sup_flex sup_width_140" allow-edit="true">
+                    <img src="~/images/file-export-solid-full.svg" width="16" alt="Export excel" />&nbsp;Export Excel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="failed-msg-container" id="failedmsg">
+        <textarea class="govuk-textarea govuk-!-font-size-16 error-textarea" id="txt-description" rows="2" aria-label="Failed message"></textarea>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/common/multicolumn-dropdown.css" />
+}
+@section Scripts {
+    <script src="~/js/ajax-form-validation.js"></script>
+    <script src="~/js/common/multicolumn-dropdown.component.js"></script>
+    <script>
+        var monthlyOutputLiveGridId = '@Model.LiveGrid.GridId';
+        var monthlyOutputStagingGridId = '@Model.StagingGrid.GridId';
+        document.getElementById('failedmsg').style.display = 'none';
+    </script>
+    <script type="application/json" id="monthly-output-workgroups-data">
+        @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            Model.WorkGroupOptions
+                 .Where(x => !string.IsNullOrWhiteSpace(x.Value))
+                 .Select(x => new { value = x.Value, text = x.Text })))
+    </script>
+    <script src="~/js/pact_js/monthly-output.js"></script>
+}

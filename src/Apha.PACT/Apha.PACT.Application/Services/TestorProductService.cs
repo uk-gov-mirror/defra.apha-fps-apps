@@ -210,23 +210,6 @@ namespace Apha.PACT.Application.Services
                 validationErrors.Add("Charge Method cannot exceed 2 characters.");
             }
 
-            // Validate DefraUnitPrice is non-negative
-            if (dto.DefraUnitPrice < 0)
-            {
-                validationErrors.Add("DEFRA Unit Price cannot be negative.");
-            }
-
-            // Validate UnitPriceVla is non-negative if provided
-            if (dto.UnitPriceVla.HasValue && dto.UnitPriceVla.Value < 0)
-            {
-                validationErrors.Add("Unit Price VLA cannot be negative.");
-            }
-
-            // Validate PriceAhvg is non-negative if provided
-            if (dto.PriceAhvg.HasValue && dto.PriceAhvg.Value < 0)
-            {
-                validationErrors.Add("Price AHVG cannot be negative.");
-            }
 
             // Validate FpsYear is within reasonable range
             if (dto.FpsYear < 2000 || dto.FpsYear > 2100)
@@ -261,6 +244,15 @@ namespace Apha.PACT.Application.Services
 
         public async Task<bool> UpdateTestPriceCheckAsync(string testCode, string jobCode, TestPriceCheckDto dto)
             => await _repository.UpdateTestPriceCheckAsync(testCode, jobCode, dto.IsDefraProject, dto.TestPrice, dto.DefraUnitPrice);
+
+        // ── TestSnapshot (Plan test-fee report) ─────────────────────────────────────
+
+        public async Task<PaginatedResult<TestFeePlanDto>> GetTestSnapshotPagedAsync(QueryParameters<string> query)
+        {
+            var parameters = _mapper.Map<PaginationParameters<string>>(query);
+            var pagedData = await _repository.GetTestSnapshotPagedAsync(parameters);
+            return _mapper.Map<PaginatedResult<TestFeePlanDto>>(pagedData);
+        }
 
         }
 }

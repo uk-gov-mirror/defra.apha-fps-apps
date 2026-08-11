@@ -1,0 +1,98 @@
+@model Apha.FPSApps.Web.Areas.PACT.Models.StagingMonthlyOutputItem
+
+@{
+    var isEdit          = Model.Id != 0;
+    var workGroups      = ViewBag.WorkGroups      as IEnumerable<SelectListItem> ?? new List<SelectListItem>();
+    var monthOptions    = ViewBag.MonthOptions    as IEnumerable<SelectListItem> ?? new List<SelectListItem>();
+    var testCodeOptions = ViewBag.TestCodeOptions as IEnumerable<SelectListItem> ?? new List<SelectListItem>();
+    var buyerOptions    = ViewBag.BuyerOptions    as IEnumerable<SelectListItem> ?? new List<SelectListItem>();
+}
+
+<script type="application/json" id="staging-modal-workgroups-data">
+    @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+        workGroups.Where(x => !string.IsNullOrWhiteSpace(x.Value))
+                  .Select(x => new { value = x.Value, text = x.Text })))
+</script>
+<script type="application/json" id="staging-modal-testcodes-data">
+    @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+        testCodeOptions.Where(x => !string.IsNullOrWhiteSpace(x.Value))
+                       .Select(x => new { value = x.Value, text = x.Text })))
+</script>
+<script type="application/json" id="staging-modal-buyers-data">
+    @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+        buyerOptions.Where(x => !string.IsNullOrWhiteSpace(x.Value))
+                    .Select(x => new { value = x.Value, text = x.Text })))
+</script>
+
+<div class="modal-header flex-space-center">
+    <h3 class="modal-title m-0" id="stagingModalTitle">@(isEdit ? "Edit Imported Output Record" : "Add Output Record")</h3>
+    <button type="button" class="btn-close btn-red" onclick="$('#modalPopup').removeClass('show')" aria-label="Close">X</button>
+</div>
+
+<div class="modal-body modal-body-custom" style="max-height: 500px;">
+    <form id="stagingMonthlyOutputForm" class="govuk-grid-column-full" novalidate>
+        <input type="hidden" asp-for="Id" />
+
+        <div id="stagingForm-db-error" class="govuk-error-summary sup_margin_0" role="alert"
+             aria-labelledby="stagingForm-db-error-title" hidden>
+            <h2 class="govuk-error-summary__title" id="stagingForm-db-error-title">There is a problem</h2>
+            <div class="govuk-error-summary__body">
+                <ul class="govuk-list govuk-error-summary__list"></ul>
+            </div>
+        </div>
+
+        <fieldset class="govuk-fieldset">
+            <legend class="govuk-visually-hidden">Output Record</legend>
+
+            <div class="govuk-form-group sup_margin_bottom_10" id="fg-staging-workgroup">
+                <div id="staging-modal-workgroup-dropdown-container" class="modal-dropdown-container"></div>
+                <input type="hidden" asp-for="WorkGroup" id="StagingWorkGroup" name="WorkGroup" required />
+                <span data-valmsg-for="WorkGroup" class="govuk-error-message" style="display:none;"></span>
+            </div>
+
+            <div class="govuk-form-group sup_margin_bottom_10" id="fg-staging-testcode">
+                <div id="staging-modal-testcode-dropdown" class="modal-dropdown-container"></div>
+                <input type="hidden" asp-for="TestCode" id="StagingTestCode" name="TestCode"
+                       aria-required="true" required />
+                <span data-valmsg-for="TestCode" class="govuk-error-message" style="display:none;"></span>
+            </div>
+
+            <div class="govuk-form-group sup_margin_bottom_10" id="fg-staging-buyer">
+                <div id="staging-modal-buyer-dropdown" class="modal-dropdown-container"></div>
+                <input type="hidden" asp-for="Buyer" id="StagingBuyer" name="Buyer"
+                       aria-required="true" required />
+                <span data-valmsg-for="Buyer" class="govuk-error-message" style="display:none;"></span>
+            </div>
+
+            <div class="modal-form-row">
+                <div class="govuk-form-group sup_margin_bottom_10 modal-form-col" id="fg-staging-period">
+                    <label for="StagingMonth" class="govuk-label govuk-!-font-weight-bold">
+                        Period <span class="app-required" aria-hidden="true">*</span>
+                    </label>
+                    <select class="govuk-select govuk-!-font-size-16 sup_width_100" asp-for="Month"
+                            asp-items="@monthOptions" id="StagingMonth" name="Month"
+                            aria-required="true" required>
+                        <option value="">--select--</option>
+                    </select>
+                    <span data-valmsg-for="Month" class="govuk-error-message" style="display:none;"></span>
+                </div>
+
+                <div class="govuk-form-group sup_margin_bottom_10 modal-form-col" id="fg-staging-volume">
+                    <label for="StagingVolume" class="govuk-label govuk-!-font-weight-bold">
+                        Volume <span class="app-required" aria-hidden="true">*</span>
+                    </label>
+                    <input type="text" class="govuk-input govuk-!-font-size-16 decfmt-input"
+                           asp-for="Volume" id="StagingVolume" name="Volume"
+                           placeholder="Enter Volume" autocomplete="off" aria-required="true" required />
+                    <span data-valmsg-for="Volume" class="govuk-error-message" style="display:none;"></span>
+                </div>
+            </div>
+
+            </fieldset>
+    </form>
+</div>
+
+<div class="modal-footer">
+    <button type="button" class="govuk-button govuk-button--secondary sup_margin_0" onclick="$('#modalPopup').removeClass('show')">Cancel</button>
+    <button type="button" class="govuk-button sup_margin_0" id="saveStagingOutputBtn" onclick="saveStagingMonthlyOutput()">Save</button>
+</div>

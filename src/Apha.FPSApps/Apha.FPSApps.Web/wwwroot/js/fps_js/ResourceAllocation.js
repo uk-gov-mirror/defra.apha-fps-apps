@@ -359,6 +359,38 @@ function ajaxPost(url, params) {
     // pageshow fires on both normal page load and bfcache restore
     window.addEventListener('pageshow', restoreReturnState);
 
+    // Page load initialization: When the page loads with selected resource centre and workgroup
+    // (from side nav query string), trigger grade dropdown population.
+    function initializePageLoadState() {
+        const rcSelect = el('resourceCentreSelect');
+        const wgSelect = el('workGroupSelect');
+
+        // If both resource centre and workgroup are selected on page load,
+        // trigger the grade dropdown loading via LoadGradeByGroup
+        if (rcSelect && rcSelect.value && wgSelect && wgSelect.value) {
+            // Update the display elements
+            setText('stage2SelectedWorkGroup', wgSelect.value);
+
+            // Trigger grade dropdown population (from the SSR cascade module)
+            // Use setTimeout to ensure the SSR cascade module has fully initialized
+            setTimeout(function() {
+                if (typeof window.LoadGradeByGroup === 'function') {
+                    window.LoadGradeByGroup();
+                } else {
+                    console.error('window.LoadGradeByGroup is not defined');
+                }
+            }, 100);
+        }
+    }
+
+    // Execute immediately if DOM is already loaded, otherwise wait for DOMContentLoaded
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializePageLoadState);
+    } else {
+        // DOM is already loaded, execute immediately
+        initializePageLoadState();
+    }
+
     /* ── Public API ─────────────────────────────────────────────────────── */
     Object.assign(window, {
         OnResourceCenterChange,

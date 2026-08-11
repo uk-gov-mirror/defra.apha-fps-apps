@@ -31,6 +31,8 @@ function initializeProjectMaintenanceDetails(config) {
     $(document).ready(function () {
         initializeProgramDropdown();
         initializeContractDropdown();
+        // Initialize form validation (unobtrusive + numeric)
+        initializeFormValidation('#projectDetailForm');
     });
 }
 
@@ -53,48 +55,34 @@ function saveProjectDetail() {
     var form = $('#projectDetailForm');
     var data = {};
     var decimalFields = ['BudgetCvl', 'TransferIncome', 'BudgetExt', 'PvsIncome', 'WipEoy', 'WipLimit', 'WipCurrent', 'FecCost'];
-    var editableDecimalFields = ['TransferIncome', 'BudgetExt', 'PvsIncome', 'WipEoy', 'WipLimit', 'WipCurrent', 'FecCost'];
-    var maxMoney = 92233720368547758.07;
-    var validationError = null;
 
+    // Serialize all form fields
     form.serializeArray().forEach(function(item) {
-        if (validationError) return; // Skip if already failed
-
         var key = item.name.startsWith('Project.') ? item.name.substring('Project.'.length) : item.name;
         if (decimalFields.indexOf(key) !== -1) {
+            // Parse decimal fields as numbers
             var parsed = parseFloat(item.value);
-
-            // Only validate editable fields (skip BudgetCvl as it's readonly)
-            if (editableDecimalFields.indexOf(key) !== -1 && !isNaN(parsed)) {
-                if (parsed < 0 || parsed > maxMoney) {
-                    validationError = key + '  value you enter is not valid for this fields. The entered value is larger than the fieldsize permit.';
-                    return;
-                }
-
-                // Check decimal places
-                var decimalPart = parsed.toString().split('.')[1];
-                if (decimalPart && decimalPart.length > 2) {
-                    validationError = key + '  value you enter is not valid for this fields. The entered value is larger than the fieldsize permit.';
-                    return;
-                }
-            }
-
-            data[key] = isNaN(parsed) ? 0 : parsed;
+            data[key] = isNaN(parsed) ? null : parsed;
         } else {
-            data[key] = item.value;
+            // Don't include empty values for required fields - let them be sent as empty string
+            data[key] = item.value || '';
         }
     });
 
-    // Stop if validation failed
-    if (validationError) {
-        showAlertMessage(validationError, AlertType.INFO);
-        return;
-    }
+    // Explicitly add critical dropdown values to ensure they're included
+    data.ProjectStatus = $('#Project_ProjectStatus').val() || '';
+    data.Customer = $('#Project_Customer').val() || '';
+    data.Disease = $('#Project_Disease').val() || '';
+    data.Manager = $('#Project_Manager').val() || '';
 
-    // Add multicolumn dropdown values from hidden inputs
-    data.Program = $('#Project_Program').val();
-    data.Contract = $('#Project_Contract').val();
+    // Add multicolumn dropdown values from hidden inputs (override if present)
+    var programValue = $('#Project_Program').val();
+    var contractValue = $('#Project_Contract').val();
 
+    if (programValue) data.Program = programValue;
+    if (contractValue) data.Contract = contractValue;
+
+    // Add checkbox values
     data.IsDefraProject = $('#IsDefraProject').is(':checked') ? -1 : 0;
     data.Finished = $('#Finished').is(':checked') ? 1 : 0;
 

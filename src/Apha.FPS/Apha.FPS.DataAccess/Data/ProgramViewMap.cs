@@ -40,7 +40,7 @@ namespace Apha.FPS.DataAccess.Data
                 .HasMaxLength(50)
                 .HasColumnName("sector_name");
             entity.Property(e => e.Target)
-                .HasColumnType("money")
+                .HasPrecision(19, 4)
                 .HasColumnName("target");
             entity.Property(e => e.UserId).HasColumnName("user_id");
             entity.Property(e => e.UserEmail)

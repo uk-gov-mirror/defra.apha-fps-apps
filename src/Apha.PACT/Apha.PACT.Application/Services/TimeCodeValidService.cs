@@ -39,6 +39,30 @@ namespace Apha.PACT.Application.Services
             return _mapper.Map<IEnumerable<TimeCodeValidDto>>(items);
         }
 
+        public async Task<IEnumerable<TimeCodeValidDto>> GetTimeCodeValidsByWorkGroupAsync(string workGroup)
+        {
+            var items = await _repository.GetTimeCodeValidsByWorkGroupAsync(workGroup);
+            return _mapper.Map<IEnumerable<TimeCodeValidDto>>(items);
+        }
+
+        public async Task<IEnumerable<string>> GetTimeCodeValidProjectsByWorkGroupAndTimeCodeAsync(string workGroup, string timeCode)
+        {
+            var items = await _repository.GetTimeCodeValidProjectsByWorkGroupAndTimeCodeAsync(workGroup, timeCode);
+            return items;
+        }
+
+        public async Task<IEnumerable<string>> GetAllDistinctTimeCodesAsync()
+        {
+            var items = await _repository.GetTimeCodeValidsAsync();
+            return items.Select(x => x.TimeCode).Distinct().OrderBy(x => x);
+        }
+
+        public async Task<IEnumerable<string>> GetAllDistinctProjectsAsync()
+        {
+            var items = await _repository.GetTimeCodeValidsAsync();
+            return items.Select(x => x.ParentProject).Distinct().OrderBy(x => x);
+        }
+
         public async Task<PaginatedResult<TimeCodeValidDto>> GetPagedTimeCodesAsync(QueryParameters<string> query, string? jobCode, string? parentProject)
         {
             var parameters = _mapper.Map<PaginationParameters<string>>(query);

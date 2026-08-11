@@ -41,6 +41,17 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PACTApis.Clients
             return ApiResponseDto<List<TimeSaleProfitCentreDto>>.FailureResponse(failureResponse.Errors, failureResponse.Meta);
         }
 
+        public async Task<ApiResponseDto<List<TimeSaleWorkGroupDto>>> GetTimeSaleWorkGroupAsync(string workGroup)
+        {
+            var url = $"{PactApiEndpoints.GetTimeSaleWorkGroup}?workGroup={Uri.EscapeDataString(workGroup)}";
+            var response = await _http.GetAsync<List<TimeSaleWorkGroupRes>>(url);
+            if (response.Success)
+                return _mapper.Map<ApiResponseDto<List<TimeSaleWorkGroupDto>>>(response);
+
+            var failureResponse = _mapper.Map<ApiResponseDto<List<TimeSaleWorkGroupDto>>>(response);
+            return ApiResponseDto<List<TimeSaleWorkGroupDto>>.FailureResponse(failureResponse.Errors, failureResponse.Meta);
+        }
+
         public async Task<ApiResponseDto<List<TestSaleSellingWorkgroupDto>>> GetTestSaleSellingWorkgroupAsync(string workGroup)
         {
             var url = $"{PactApiEndpoints.GetTestSaleSellingWorkgroup}?workGroup={Uri.EscapeDataString(workGroup)}";

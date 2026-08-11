@@ -1,3 +1,5 @@
+using Apha.Common.Utilities.GenericExcelExport.Attributes;
+
 namespace Apha.FPSApps.Application.Dtos.FPS
 {
     public class AnimalDto
@@ -13,7 +15,8 @@ namespace Apha.FPSApps.Application.Dtos.FPS
         public bool PlanByWeek { get; set; }
 
         public decimal? DefraDailyRate { get; set; }
-
+        
+        [ExcelIgnore]
         public int? FpsCalYear { get; set; }
     }
 }

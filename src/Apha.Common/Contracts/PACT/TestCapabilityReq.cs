@@ -4,6 +4,7 @@ namespace Apha.Common.Contracts.PACT
     {
         public string TestCode { get; set; } = null!;
         public string WorkGroup { get; set; } = null!;
+        public string? OriginalWorkGroup { get; set; }
         public string PlanPortfolio { get; set; } = null!;
         public decimal? UnitCost { get; set; }
         public double? PredOutturn { get; set; }

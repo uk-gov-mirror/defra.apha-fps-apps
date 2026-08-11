@@ -956,6 +956,27 @@ namespace Apha.Costbook.DataAccess.UnitTests.Repository.ProjectRepositoryTest
         }
 
         [Fact]
+        public async Task GetStaffYearsPivotAsync_WithSortByGradeDescending_ReturnsSortedRows()
+        {
+            // Arrange
+            var staffRequirements = new List<StaffRequirement>
+            {
+                new() { Project = "2024/001", WgGrade = "A1", Year = 2024, Nodays = 110.0 },
+                new() { Project = "2024/001", WgGrade = "C1", Year = 2024, Nodays = 220.0 },
+                new() { Project = "2024/001", WgGrade = "B1", Year = 2024, Nodays = 330.0 }
+            };
+            var repo = CreateRepositoryWithPivotData(staffRequirements);
+            var parameters = new PaginationParameters<string> { Page = 1, PageSize = 10, SortBy = "grade", Descending = true };
+
+            // Act
+            var result = await repo.GetStaffYearsPivotAsync("2024/001", parameters);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(new[] { "C", "B", "A" }, result.Rows.Select(r => r.Grade).ToArray());
+        }
+
+        [Fact]
         public async Task GetStaffYearsPivotAsync_WithPaging_ReturnsCorrectPage()
         {
             // Arrange — 3 distinct grade groups; request page 2 with page size 1
@@ -1268,6 +1289,48 @@ namespace Apha.Costbook.DataAccess.UnitTests.Repository.ProjectRepositoryTest
         }
 
         [Fact]
+        public async Task GetStaffEffortAsync_WithSortByNameAscending_ReturnsSortedRows()
+        {
+            // Arrange
+            var staffRequirements = new List<StaffRequirement>
+            {
+                new() { Project = "2024/001", WgGrade = "A1", Name = "Charlie", Year = 2024, Nodays = 10.0 },
+                new() { Project = "2024/001", WgGrade = "A1", Name = "Alice",   Year = 2024, Nodays = 10.0 },
+                new() { Project = "2024/001", WgGrade = "A1", Name = "Bob",     Year = 2024, Nodays = 10.0 }
+            };
+            var repo = CreateRepositoryWithPivotData(staffRequirements, new List<WorkGroupGrade>());
+            var parameters = new PaginationParameters<string> { Page = 1, PageSize = 10, SortBy = "name", Descending = false };
+
+            // Act
+            var result = await repo.GetStaffEffortAsync("2024/001", parameters);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(new[] { "Alice", "Bob", "Charlie" }, result.Rows.Select(r => r.Name).ToArray());
+        }
+
+        [Fact]
+        public async Task GetStaffEffortAsync_WithSortByNameDescending_ReturnsSortedRows()
+        {
+            // Arrange
+            var staffRequirements = new List<StaffRequirement>
+            {
+                new() { Project = "2024/001", WgGrade = "A1", Name = "Charlie", Year = 2024, Nodays = 10.0 },
+                new() { Project = "2024/001", WgGrade = "A1", Name = "Alice",   Year = 2024, Nodays = 10.0 },
+                new() { Project = "2024/001", WgGrade = "A1", Name = "Bob",     Year = 2024, Nodays = 10.0 }
+            };
+            var repo = CreateRepositoryWithPivotData(staffRequirements, new List<WorkGroupGrade>());
+            var parameters = new PaginationParameters<string> { Page = 1, PageSize = 10, SortBy = "name", Descending = true };
+
+            // Act
+            var result = await repo.GetStaffEffortAsync("2024/001", parameters);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(new[] { "Charlie", "Bob", "Alice" }, result.Rows.Select(r => r.Name).ToArray());
+        }
+
+        [Fact]
         public async Task GetStaffEffortAsync_WithPaging_ReturnsCorrectPage()
         {
             // Arrange — 3 distinct name rows; request page 2 with page size 1
@@ -1551,6 +1614,35 @@ namespace Apha.Costbook.DataAccess.UnitTests.Repository.ProjectRepositoryTest
             Assert.NotNull(result);
             Assert.Single(result.Rows);
             Assert.Equal("Pay", result.Rows[0].Category);
+        }
+
+        [Fact]
+        public async Task GetProjectCostsPivotAsync_WithSortByCategoryDescending_ReturnsSortedRows()
+        {
+            // Arrange — generate Pay + Overheads + Other Costs categories
+            var staffRequirements = new List<StaffRequirement>
+            {
+                new()
+                {
+                    Project = "2024/001", WgGrade = "A1", Year = 2024,
+                    Nohours = 10.0, Chargerate = 50.0, Payrate = 30.0, Ohr = 0.2, Npr = 0.1, Nodays = 0.0
+                }
+            };
+            var animalRequirements = new List<AnimalRequirement>
+            {
+                new() { Project = "2024/001", Year = 2024, NumberOfDays = 1, NumberOfAnimals = 1, DailyRate = 100.0 }
+            };
+            var repo = CreateRepositoryWithPivotData(
+                staffRequirements,
+                animalRequirements: animalRequirements);
+            var parameters = new PaginationParameters<string> { Page = 1, PageSize = 10, SortBy = "category", Descending = true };
+
+            // Act
+            var result = await repo.GetProjectCostsPivotAsync("2024/001", parameters);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(new[] { "Pay", "Overheads", "Other Costs" }, result.Rows.Select(r => r.Category).ToArray());
         }
 
         [Fact]

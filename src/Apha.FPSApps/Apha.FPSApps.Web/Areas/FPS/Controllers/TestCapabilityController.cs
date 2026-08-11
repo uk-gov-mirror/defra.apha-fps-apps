@@ -97,6 +97,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
         {
             ViewBag.WorkGroupOptions = await GetWorkGroupSelectListAsync();
             ViewBag.TestorProductOptions = await GetTestorProductSelectListAsync();
+            ViewBag.TestorProductUnitCosts = await GetTestorProductUnitCostsAsync();
             var model = new TestCapabilityItem { PlanPortfolio = portfolio ?? string.Empty };
             return PartialView("_AddEditTestCapability", model);
         }
@@ -146,6 +147,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             // from the TestorProduct list (which uses "Code – Description" text format).
             var testorProductOptions = await GetTestorProductSelectListAsync();
             ViewBag.TestorProductOptions = testorProductOptions;
+            ViewBag.TestorProductUnitCosts = await GetTestorProductUnitCostsAsync();
 
             var item = _mapper.Map<TestCapabilityItem>(result.Data);
 
@@ -286,6 +288,16 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
                         t.ItemCode))
                     .ToList()
                 : new List<SelectListItem>();
+        }
+
+        private async Task<Dictionary<string, decimal?>> GetTestorProductUnitCostsAsync()
+        {
+            var response = await _testorProductService.GetAllTestorProductsAsync();
+            return response.Success && response.Data != null
+                ? response.Data
+                    .GroupBy(t => t.ItemCode)
+                    .ToDictionary(g => g.Key, g => g.First().UnitPriceVla)
+                : new Dictionary<string, decimal?>();
         }
     }
 }

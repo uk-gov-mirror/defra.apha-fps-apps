@@ -56,7 +56,14 @@
             pc.addEventListener('change', function () {
                 var gm = window['gridManager_staffPlanDetailsGrid'];
                 if (gm) {
+                    showLoader();
                     gm.reloadGrid({ filter: '{}', sortBy: '', descending: false, page: 1 });
+                }
+            });
+
+            document.addEventListener('gridReloaded', function (e) {
+                if (e.detail && e.detail.gridId === 'staffPlanDetailsGrid') {
+                    hideLoader();
                 }
             });
         });

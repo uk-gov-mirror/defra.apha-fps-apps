@@ -30,9 +30,11 @@ namespace Apha.FPSApps.Web.Areas.PACT.Models
         public string? ProjectManager { get; set; }
 
         [Display(Name = "Budget-cvt")]
+        [Range(typeof(decimal), "-999999999999999.9999", "999999999999999.9999", ErrorMessage = "Budget-cvt must be between -999,999,999,999,999.9999 and 999,999,999,999,999.9999.")]
         public decimal? BudgetCvl { get; set; }
 
         [Display(Name = "Transfer Income")]
+        [Range(typeof(decimal), "-999999999999999.9999", "999999999999999.9999", ErrorMessage = "Transfer Income must be between -999,999,999,999,999.9999 and 999,999,999,999,999.9999.")]
         public decimal? TransferIncome { get; set; }
 
         [Display(Name = "Comments")]

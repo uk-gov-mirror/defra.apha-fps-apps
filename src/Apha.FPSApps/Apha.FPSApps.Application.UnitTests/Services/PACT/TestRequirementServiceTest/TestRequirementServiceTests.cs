@@ -306,6 +306,47 @@ namespace Apha.FPSApps.Application.UnitTests.Services.PACT.TestRequirementServic
 
         #endregion
 
+        #region GetAllActiveAsync
+
+        [Fact]
+        public async Task GetAllActiveAsync_WhenApiReturnsSuccess_DelegatesAndReturnsResponse()
+        {
+            var expected = ApiResponseDto<List<TestRequirementDto>>.SuccessResponse(
+                [new TestRequirementDto { TestCode = "PT0001", Buyer = "SV3300" }]);
+            _apiClient.GetAllActiveAsync().Returns(expected);
+
+            var result = await _service.GetAllActiveAsync();
+
+            Assert.Equal(expected, result);
+            await _apiClient.Received(1).GetAllActiveAsync();
+        }
+
+        [Fact]
+        public async Task GetAllActiveAsync_WhenApiReturnsEmptyList_ReturnsSuccessWithEmptyData()
+        {
+            var expected = ApiResponseDto<List<TestRequirementDto>>.SuccessResponse([]);
+            _apiClient.GetAllActiveAsync().Returns(expected);
+
+            var result = await _service.GetAllActiveAsync();
+
+            Assert.True(result.Success);
+            Assert.Empty(result.Data!);
+        }
+
+        [Fact]
+        public async Task GetAllActiveAsync_WhenApiFails_ReturnsFailureResponse()
+        {
+            var errors = new List<ApiErrorDto> { new() { Code = "API_ERROR" } };
+            var expected = ApiResponseDto<List<TestRequirementDto>>.FailureResponse(errors, new ApiMetaDto());
+            _apiClient.GetAllActiveAsync().Returns(expected);
+
+            var result = await _service.GetAllActiveAsync();
+
+            Assert.False(result.Success);
+        }
+
+        #endregion
+
         #region GetTestReqmtPricingAsync
 
         [Fact]

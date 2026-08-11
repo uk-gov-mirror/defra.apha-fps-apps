@@ -1,0 +1,126 @@
+@model Apha.FPSApps.Web.Areas.PIMS.Models.ProfitCentreManagerLinkItem
+
+@{
+    var isEditMode = ViewBag.IsEditMode as bool? ?? false;
+    var originalProfitCentre = ViewBag.OriginalProfitCentre as string;
+    var title = isEditMode ? "Edit Resource Centre" : "Add Resource Centre";
+}
+
+<div class="modal-header flex-space-center">
+    <h3 class="modal-title" style="margin: 0;">@title</h3>
+    <button type="button" class="btn-close btn-red" onclick="closeModal()">X</button>
+</div>
+<div class="modal-body" style="padding-top: 5px;">
+    <form class="row" id="formProfitCentreManagerLink">
+        @Html.AntiForgeryToken()
+
+        <input type="hidden" asp-for="Manager" id="hdnPcLinkManager" />
+        <input type="hidden" id="hdnOriginalProfitCentre" value="@originalProfitCentre" />
+        <input type="hidden" id="hdnIsProfitCentreEditMode" value="@(isEditMode ? "true" : "false")" />
+
+        <div class="govuk-error-summary ra-form-error-banner ra-hidden"
+             id="pcAssignDbError" role="alert" aria-labelledby="pcAssignDbErrorTitle" tabindex="-1">
+            <h2 class="govuk-error-summary__title govuk-!-font-size-14" id="pcAssignDbErrorTitle">There is a problem</h2>
+            <div class="govuk-error-summary__body">
+                <ul class="govuk-list govuk-error-summary__list"></ul>
+                <p class="govuk-body govuk-!-font-size-14" id="pcAssignDbErrorText"></p>
+            </div>
+        </div>
+
+        <div class="govuk-form-group" id="pcAssignValueGroup">
+            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" for="pcAssignValue">
+                <span id="pcAssignLabel">Resource Centre:</span> <span class="ra-required-star" aria-hidden="true">*</span>
+            </label>
+            <select class="govuk-select govuk-!-font-size-16 ra-select-full"
+                    asp-for="ProfitCentre"
+                    asp-items="ViewBag.ProfitCentreOptions"
+                    id="pcAssignValue"
+                    required
+                    aria-required="true"
+                    aria-label="Resource Centre"
+                    aria-describedby="pcAssignValueError">
+                <option value="">Select resource centre</option>
+            </select>
+            <span asp-validation-for="ProfitCentre" 
+                  data-valmsg-for="ProfitCentre"
+                  class="govuk-error-message" 
+                  id="pcAssignValueError" 
+                  style="display:none;"></span>
+        </div>
+
+        <div class="col-12" style="display: flex; justify-content: space-between; margin-top: 10px;">
+            <button type="button"
+                    class="govuk-button govuk-button--secondary sup_margin_0"
+                    onclick="closeModal()">
+                Cancel
+            </button>
+            <button type="button"
+                    class="govuk-button sup_margin_0"
+                    onclick="saveProfitCentreManagerLink()">
+                Save
+            </button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        function saveProfitCentreManagerLink() {
+            var $form = $('#formProfitCentreManagerLink');
+
+            // Clear and validate form using existing helper functions
+            displayClientValidationErrors($form, $form);
+            if (!isFormValid($form)) return;
+
+            var dbError     = document.getElementById('pcAssignDbError');
+            var dbErrorText = document.getElementById('pcAssignDbErrorText');
+            if (dbError) dbError.classList.add('ra-hidden');
+
+            var profitcentre = document.getElementById('pcAssignValue')?.value?.trim() || '';
+            var manager      = document.getElementById('hdnPcLinkManager')?.value || '';
+
+            var isEditMode = (document.getElementById('hdnIsProfitCentreEditMode')?.value || '').toLowerCase() === 'true';
+            var originalProfitCentre = document.getElementById('hdnOriginalProfitCentre')?.value || '';
+            var url = isEditMode
+                ? '/PIMS/Maintenance/UpdateProfitCentreManagerLink'
+                : '/PIMS/Maintenance/SaveProfitCentreManagerLink';
+
+            var payload = isEditMode
+                ? {
+                    originalProfitcentre: originalProfitCentre,
+                    originalManager: manager,
+                    profitcentre: profitcentre,
+                    manager: manager
+                }
+                : {
+                    profitcentre: profitcentre,
+                    manager: manager
+                };
+
+            $.ajax({
+                url: url,
+                type: 'POST',
+                contentType: 'application/json; charset=utf-8',
+                data: JSON.stringify(payload),
+                headers: { 'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').first().val() },
+                success: function (data) {
+                    if (data.success) {
+                        showAlertMessage(data.message || (isEditMode ? 'Resource Centre assignment updated successfully.' : 'Resource Centre assignment added successfully.'), AlertType.SUCCESS)
+                            .then(function () {
+                                closeModal();
+                                reloadProfitCentreManagerLinksGrid();
+                            });
+                    } else {
+                        var msg = data.message || 'Save failed.';
+                        if (dbErrorText) dbErrorText.textContent = msg;
+                        if (dbError) dbError.classList.remove('ra-hidden');
+                    }
+                },
+                error: function () {
+                    if (dbErrorText) dbErrorText.textContent = 'An error occurred while saving.';
+                    if (dbError) dbError.classList.remove('ra-hidden');
+                }
+            });
+        }
+    </script>
+}

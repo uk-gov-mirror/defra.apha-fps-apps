@@ -5,6 +5,7 @@
     var isEdit = !string.IsNullOrEmpty(Model.TestCode) && !string.IsNullOrEmpty(Model.WorkGroup);
     var workGroupOptions = ViewBag.WorkGroupOptions as List<SelectListItem> ?? new List<SelectListItem>();
     var testorProductOptions = ViewBag.TestorProductOptions as List<SelectListItem> ?? new List<SelectListItem>();
+    var testorProductUnitCosts = ViewBag.TestorProductUnitCosts as Dictionary<string, decimal?> ?? new Dictionary<string, decimal?>();
 }
 
 <div class="modal-header flex-space-center">
@@ -17,6 +18,10 @@
 
         <input type="hidden" name="PlanPortfolio" value="@Model.PlanPortfolio" />
         <input type="hidden" name="FpsYear" value="@Model.FpsYear" />
+        @if (isEdit)
+        {
+            <input type="hidden" name="OriginalWorkGroup" value="@Model.WorkGroup" />
+        }
 
         <!-- Validation error summary -->
         <div class="govuk-error-summary" role="alert"
@@ -48,13 +53,16 @@
                             {
                                 var sepIdx = opt.Text.IndexOf(" \u2013 ");
                                 var optDesc = sepIdx >= 0 ? opt.Text.Substring(sepIdx + 3) : "";
+                                var optUnitCost = testorProductUnitCosts.TryGetValue(opt.Value, out var uc) && uc.HasValue
+                                    ? uc.Value.ToString("F2")
+                                    : "";
                                 if (opt.Value == Model.TestCode)
                                 {
-                                    <option value="@opt.Value" data-description="@optDesc" selected>@opt.Value</option>
+                                    <option value="@opt.Value" data-description="@optDesc" data-unitcost="@optUnitCost" selected>@opt.Value</option>
                                 }
                                 else
                                 {
-                                    <option value="@opt.Value" data-description="@optDesc">@opt.Value</option>
+                                    <option value="@opt.Value" data-description="@optDesc" data-unitcost="@optUnitCost">@opt.Value</option>
                                 }
                             }
                         </select>
@@ -68,11 +76,11 @@
                     <label class="govuk-label govuk-!-font-weight-bold" for="WorkGroup">Work Group <span class="sup_color_red">*</span></label>
                     @if (isEdit)
                     {
-                        var selectedWg = workGroupOptions.FirstOrDefault(o => o.Value == Model.WorkGroup);
-                        var wgDisplay = selectedWg?.Text ?? Model.WorkGroup;
+                        var selectedWorkGroupText = workGroupOptions
+                            .FirstOrDefault(o => o.Value == Model.WorkGroup)?.Text ?? Model.WorkGroup;
                         <input type="hidden" name="WorkGroup" value="@Model.WorkGroup" />
                         <input class="govuk-input govuk-!-font-size-16" id="WorkGroup"
-                               value="@wgDisplay" readonly
+                               value="@selectedWorkGroupText" readonly
                                style="width:100%; background-color:#f3f2f1; cursor:default;" />
                     }
                     else
@@ -118,9 +126,19 @@
                     <label class="govuk-label govuk-!-font-weight-bold" for="UnitCost">Unit Cost</label>
                     <div class="govuk-input__wrapper">
                         <div class="govuk-input__prefix" aria-hidden="true">£</div>
-                        <input class="govuk-input govuk-!-font-size-16" id="UnitCost" name="UnitCost"
-                               type="number" step="0.01" min="0"
-                               value="@(Model.UnitCost.HasValue ? Model.UnitCost.Value.ToString("F2") : "")" />
+                        @if (isEdit)
+                        {
+                            <input class="govuk-input govuk-!-font-size-16 js-numeric-decimal" id="UnitCost" name="UnitCost"
+                                   type="text" maxlength="20"
+                                   value="@(Model.UnitCost.HasValue ? Model.UnitCost.Value.ToString() : "")" />
+                        }
+                        else
+                        {
+                            <input class="govuk-input govuk-!-font-size-16" id="UnitCost" name="UnitCost"
+                                   type="number" step="0.01" min="0" readonly
+                                   style="background-color:#f3f2f1; cursor:default;"
+                                   value="@(Model.UnitCost.HasValue ? Model.UnitCost.Value.ToString() : "")" />
+                        }
                     </div>
                 </div>
             </div>
@@ -159,8 +177,11 @@
     function onTestCodeSelected(value) {
         if (!value) {
             $('#ItemDescriptionDisplay').val('');
+            $('#UnitCost').val('');
             return;
         }
-        $('#ItemDescriptionDisplay').val($('#TestCode option:selected').data('description') || '');
+        var selectedOption = $('#TestCode option:selected');
+        $('#ItemDescriptionDisplay').val(selectedOption.data('description') || '');
+        $('#UnitCost').val(selectedOption.data('unitcost') || '');
     }
 </script>

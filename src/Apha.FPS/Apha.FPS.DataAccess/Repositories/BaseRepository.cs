@@ -1,6 +1,6 @@
 ﻿using Apha.FPS.Core.Pagination;
 using Apha.FPS.DataAccess.Data;
-using System.Collections.ObjectModel;
+using Microsoft.EntityFrameworkCore;
 
 namespace Apha.FPS.DataAccess.Repositories
 {
@@ -24,6 +24,29 @@ namespace Apha.FPS.DataAccess.Repositories
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToList();
+
+            var pagination = new PaginationData
+            {
+                PageNumber = page,
+                PageSize = pageSize,
+                TotalPages = (int)Math.Ceiling((double)totalRecords / pageSize),
+                TotalRecords = totalRecords
+            };
+
+            return new PagedData<T>(result, pagination);
+        }
+
+        public async Task<PagedData<T>> ApplyPagingAsync<T>(
+                    IQueryable<T> source,
+                    int page,
+                    int pageSize)
+        {
+            var totalRecords = await source.CountAsync();
+
+            var result = await source
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
 
             var pagination = new PaginationData
             {

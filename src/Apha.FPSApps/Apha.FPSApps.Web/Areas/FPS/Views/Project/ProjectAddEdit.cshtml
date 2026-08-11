@@ -179,7 +179,7 @@
                                     <label class="govuk-label required" asp-for="CustIncome">Customer Income:</label>
                                     <div class="govuk-input__wrapper">
                                         <div class="govuk-input__prefix" aria-hidden="true">&pound;</div>
-                                        <input type="text" asp-for="CustIncome" class="govuk-input" required />
+                                        <input type="text" asp-for="CustIncome" class="govuk-input js-numeric-decimal" maxlength="20" required />
                                     </div>
                                     <span asp-validation-for="CustIncome" class="govuk-error-message" style="display:none;"></span>
                                 </div>
@@ -188,7 +188,7 @@
                                     <label class="govuk-label required" asp-for="TransferIncome">Transfer Income:</label>
                                     <div class="govuk-input__wrapper">
                                         <div class="govuk-input__prefix" aria-hidden="true">&pound;</div>
-                                        <input type="text" asp-for="TransferIncome" class="govuk-input" required />
+                                        <input type="text" asp-for="TransferIncome" class="govuk-input js-numeric-decimal" maxlength="20" required />
                                     </div>
                                     <span asp-validation-for="TransferIncome" class="govuk-error-message" style="display:none;"></span>
                                 </div>
@@ -197,7 +197,7 @@
                                     <label class="govuk-label" asp-for="Profit">Target Profit:</label>
                                     <div class="govuk-input__wrapper">
                                         <div class="govuk-input__prefix" aria-hidden="true">&pound;</div>
-                                        <input type="text" asp-for="Profit" class="govuk-input" />
+                                        <input type="text" asp-for="Profit" class="govuk-input js-numeric-decimal" maxlength="20" />
                                     </div>
                                     <span asp-validation-for="Profit" class="govuk-error-message" style="display:none;"></span>
                                 </div>
@@ -296,7 +296,7 @@
                                     <label class="govuk-label required" asp-for="BudgetCvl">Budget:</label>
                                     <div class="govuk-input__wrapper">
                                         <div class="govuk-input__prefix" aria-hidden="true">&pound;</div>
-                                        <input type="text" asp-for="BudgetCvl" class="govuk-input" required />
+                                        <input type="text" asp-for="BudgetCvl" class="govuk-input js-numeric-decimal" maxlength="20" required />
                                     </div>
                                     <span asp-validation-for="BudgetCvl" class="govuk-error-message" style="display:none;"></span>
                                 </div>
@@ -305,7 +305,7 @@
                                     <label class="govuk-label" asp-for="PvsIncome">PVS Income: (Surv Only)</label>
                                     <div class="govuk-input__wrapper">
                                         <div class="govuk-input__prefix" aria-hidden="true">&pound;</div>
-                                        <input type="text" asp-for="PvsIncome" class="govuk-input" />
+                                        <input type="text" asp-for="PvsIncome" class="govuk-input js-numeric-decimal" maxlength="20" />
                                     </div>
                                     <span asp-validation-for="PvsIncome" class="govuk-error-message" style="display:none;"></span>
                                 </div>
@@ -314,7 +314,7 @@
                                     <label class="govuk-label" asp-for="PlanCaseWorkDebit">Plan CW Debit: (Surv Only)</label>
                                     <div class="govuk-input__wrapper">
                                         <div class="govuk-input__prefix" aria-hidden="true">&pound;</div>
-                                        <input type="text" asp-for="PlanCaseWorkDebit" class="govuk-input" />
+                                        <input type="text" asp-for="PlanCaseWorkDebit" class="govuk-input js-numeric-decimal" maxlength="20" />
                                     </div>
                                     <span asp-validation-for="PlanCaseWorkDebit" class="govuk-error-message" style="display:none;"></span>
                                 </div>
@@ -323,7 +323,7 @@
                                     <label class="govuk-label" asp-for="CarryOver">CarryOver:</label>
                                     <div class="govuk-input__wrapper">
                                         <div class="govuk-input__prefix" aria-hidden="true">&pound;</div>
-                                        <input type="text" asp-for="CarryOver" class="govuk-input" />
+                                        <input type="text" asp-for="CarryOver" class="govuk-input js-numeric-decimal" maxlength="20" />
                                     </div>
                                     <span asp-validation-for="CarryOver" class="govuk-error-message" style="display:none;"></span>
                                 </div>
@@ -332,7 +332,7 @@
                                     <label class="govuk-label" asp-for="CarryOverSeed">CarryOverSeed:</label>
                                     <div class="govuk-input__wrapper">
                                         <div class="govuk-input__prefix" aria-hidden="true">&pound;</div>
-                                        <input type="text" asp-for="CarryOverSeed" class="govuk-input" />
+                                        <input type="text" asp-for="CarryOverSeed" class="govuk-input js-numeric-decimal" maxlength="20" />
                                     </div>
                                     <span asp-validation-for="CarryOverSeed" class="govuk-error-message" style="display:none;"></span>
                                 </div>
@@ -354,18 +354,6 @@
 @section Scripts {
     <script src="~/js/ajax-form-validation.js"></script>
     <script>
-        // ── Currency helpers (top-level so they are always available) ──────────
-
-        function formatCurrency(value) {
-            return parseFloat(value || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-        }
-
-        function parseCurrencyValue(val) {
-            return (val || '').toString().replace(/[\u00A3,\s]/g, '').trim();
-        }
-
-        var currencyFieldNames = ['CustIncome', 'TransferIncome', 'Profit', 'BudgetCvl', 'PvsIncome', 'PlanCaseWorkDebit', 'CarryOver', 'CarryOverSeed'];
-
         function scrollToFirstError() {
             // Wait one tick for the DOM to render error messages
             setTimeout(function () {
@@ -382,11 +370,7 @@
         }
 
         function stripCurrencyFormatting() {
-            currencyFieldNames.forEach(function (name) {
-                var $field = $('[name="' + name + '"]');
-                var raw = parseCurrencyValue($field.val());
-                $field.val(raw);
-            });
+            // No-op: numeric fields are already plain numbers (enforced by js-numeric-decimal).
         }
 
         // ── Button handlers (top-level so onclick="..." always resolves them) ──
@@ -402,13 +386,6 @@
                 var $form = $('#' + formId);
                 if ($form.data('validator') && !$form.valid()) {
                     if (typeof displayClientValidationErrors === 'function') displayClientValidationErrors($form, '#main-content');
-                    currencyFieldNames.forEach(function (name) {
-                        var $field = $('[name="' + name + '"]');
-                        var raw = parseCurrencyValue($field.val());
-                        if (raw !== '' && !isNaN(parseFloat(raw))) {
-                            $field.val(formatCurrency(raw));
-                        }
-                    });
                     scrollToFirstError();
                     return;
                 }
@@ -492,12 +469,11 @@
             var numericFields = ['CustIncome', 'TransferIncome', 'Profit', 'BudgetCvl', 'PvsIncome',
                                  'PlanCaseWorkDebit', 'CarryOver', 'CarryOverSeed', 'CostCentre', 'IsDefraProject'];
             numericFields.forEach(function (field) {
-                var raw = parseCurrencyValue(data[field]);
+                var raw = (data[field] || '').toString().trim();
                 if (raw === '') {
                     data[field] = null;
                 } else {
-                    var parsed = Number(raw);
-                    data[field] = isNaN(parsed) ? null : parsed;
+                    data[field] = isNaN(raw) ? null : raw;
                 }
             });
             ['TransferIncome', 'CustIncome', 'IsDefraProject'].forEach(function (field) {
@@ -528,13 +504,6 @@
             .then(function (result) {
                 hideLoader();
                 if (result.success) {
-                    currencyFieldNames.forEach(function (name) {
-                        var $field = $('[name="' + name + '"]');
-                        var raw = parseCurrencyValue($field.val());
-                        if (raw !== '' && !isNaN(parseFloat(raw))) {
-                            $field.val(formatCurrency(raw));
-                        }
-                    });
                     if (!isEdit && result.data && result.data.parentProject) {
                         showAlertMessage(result.message || 'Project created successfully.', AlertType.SUCCESS).then(function () {
                             window.location.href = '@Url.Action("Edit", "Project", new { area = "FPS" })' + '?parentProject=' + encodeURIComponent(result.data.parentProject);
@@ -572,35 +541,6 @@
             }
             var _ccEl = document.getElementById('CostCentre');
             if (_ccEl) _ccEl.addEventListener('change', syncResourceCentreFromCostCentre);
-
-            // Format currency fields on page load
-            currencyFieldNames.forEach(function (name) {
-                var $field = $('[name="' + name + '"]');
-                var raw = parseCurrencyValue($field.val());
-                if (raw !== '' && !isNaN(parseFloat(raw))) {
-                    $field.val(formatCurrency(raw));
-                }
-            });
-
-            // Re-format on blur, strip on focus, restrict input
-            currencyFieldNames.forEach(function (name) {
-                var $field = $('[name="' + name + '"]');
-                $field.on('blur', function () {
-                    var raw = parseCurrencyValue($(this).val());
-                    if (raw !== '' && !isNaN(parseFloat(raw))) {
-                        $(this).val(formatCurrency(raw));
-                    }
-                });
-                $field.on('focus', function () {
-                    $(this).val(parseCurrencyValue($(this).val()));
-                });
-                $field.on('input', function () {
-                    var raw = $(this).val();
-                    if (raw !== '' && raw !== '-' && !/^-?\d*\.?\d*$/.test(raw)) {
-                        $(this).val(raw.replace(/[^0-9.\-]/g, ''));
-                    }
-                });
-            });
 
             // Programme multi-column dropdown
             var programDisplay = document.getElementById('ProgramDisplay');

@@ -95,17 +95,16 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
                     errors = ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage))
                 });
 
+            // If no search criteria provided, return empty grid (similar to initial page load)
             if (!HasSearchCriteria(workGroup, testCode, buyer, buyingTest, dateImported, month, userId, insertDelete))
             {
-                return Json(new
-                {
-                    success = false,
-                    message = "Please enter some criteria"
-                });
+                var emptyGridConfig = await BuildLogGrid(request, null, null, null, null, null, null, null, null);
+                return PartialView("_DataGrid", emptyGridConfig);
             }
+
             var gridConfig = await BuildLogGrid(request, workGroup, testCode, buyer, buyingTest,
                 dateImported, month, userId, insertDelete);
-        
+
             return PartialView("_DataGrid", gridConfig);
         }
 
