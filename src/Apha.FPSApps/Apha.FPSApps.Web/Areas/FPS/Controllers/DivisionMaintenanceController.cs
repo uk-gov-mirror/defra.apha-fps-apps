@@ -170,10 +170,41 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
         }
 
         /// <summary>
+        /// Checks whether a division name already exists, ignoring letter casing.
+        /// Used for inline client-side validation before submitting the add/edit modal.
+        /// </summary>
+        /// <param name="divName">The division name to check.</param>
+        /// <param name="originalDivName">The current name when editing, excluded from the duplicate check.</param>
+        [HttpGet]
+        public async Task<IActionResult> CheckDivisionNameExists(string divName, string? originalDivName = null)
+        {
+            if (string.IsNullOrWhiteSpace(divName))
+            {
+                return Json(new { exists = false });
+            }
+
+            // When editing, re-casing the division's own name is allowed and must not count as a conflict.
+            if (!string.IsNullOrWhiteSpace(originalDivName)
+                && divName.Equals(originalDivName, StringComparison.OrdinalIgnoreCase))
+            {
+                return Json(new { exists = false });
+            }
+
+            var result = await _divisionService.GetAllDivisionsAsync();
+            var exists = result.Success
+                && result.Data != null
+                && result.Data.Any(d =>
+                    !string.IsNullOrWhiteSpace(d.DivName)
+                    && d.DivName.Equals(divName, StringComparison.OrdinalIgnoreCase));
+
+            return Json(new { exists });
+        }
+
+        /// <summary>
         /// Displays the edit division modal.
         /// </summary>
         [HttpGet]
-      
+
         public async Task<IActionResult> Edit(string divName)
         {
             if (string.IsNullOrWhiteSpace(divName))

@@ -1,3 +1,4 @@
+using Apha.Common.Constants;
 using Apha.Common.Contracts;
 using Apha.Common.Contracts.PIMS;
 using Apha.FPSApps.Application.Dtos;
@@ -16,8 +17,6 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PIMS.PimsAccessLevelApiC
         private readonly IPimsHttpExecutor _http;
         private readonly IMapper _mapper;
         private readonly PimsAccessLevelApiClient _client;
-
-        private const string BaseUrl = "api/v1/accesslevel";
 
         public PimsAccessLevelApiClientTests()
         {
@@ -58,14 +57,14 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PIMS.PimsAccessLevelApiC
             var resList = new List<AccessLevelRes> { MakeRes() };
             var apiResp = SuccessApiResponse(resList);
             var dto     = SuccessDto(new List<AccessLevelDto> { MakeDto() });
-            _http.GetAsync<List<AccessLevelRes>>(BaseUrl).Returns(apiResp);
+            _http.GetAsync<List<AccessLevelRes>>(PimsApiEndpoints.GetAllAccessLevels).Returns(apiResp);
             _mapper.Map<ApiResponseDto<List<AccessLevelDto>>>(apiResp).Returns(dto);
 
             var result = await _client.GetAllAsync();
 
             Assert.True(result.Success);
             Assert.Single(result.Data!);
-            await _http.Received(1).GetAsync<List<AccessLevelRes>>(BaseUrl);
+            await _http.Received(1).GetAsync<List<AccessLevelRes>>(PimsApiEndpoints.GetAllAccessLevels);
             _mapper.Received(1).Map<ApiResponseDto<List<AccessLevelDto>>>(apiResp);
         }
 
@@ -74,7 +73,7 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PIMS.PimsAccessLevelApiC
         {
             var apiResp = FailureApiResponse<List<AccessLevelRes>>();
             var dto = FailureDto<List<AccessLevelDto>>();
-            _http.GetAsync<List<AccessLevelRes>>(BaseUrl).Returns(apiResp);
+            _http.GetAsync<List<AccessLevelRes>>(PimsApiEndpoints.GetAllAccessLevels).Returns(apiResp);
             _mapper.Map<ApiResponseDto<List<AccessLevelDto>>>(apiResp).Returns(dto);
 
             var result = await _client.GetAllAsync();
@@ -101,7 +100,7 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PIMS.PimsAccessLevelApiC
         public async Task GetBySystemIdAsync_HttpReturnsSuccess_ReturnsMappedResponse()
         {
             const int systemid = 2;
-            var expectedUrl = $"{BaseUrl}/{systemid}";
+            var expectedUrl = string.Format(PimsApiEndpoints.GetAccessLevelsBySystemId, systemid);
             var resList = new List<AccessLevelRes> { MakeRes(systemid, 1) };
             var apiResp = SuccessApiResponse(resList);
             var dto = SuccessDto(new List<AccessLevelDto> { MakeDto(systemid, 1) });
@@ -112,6 +111,23 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PIMS.PimsAccessLevelApiC
 
             Assert.True(result.Success);
             await _http.Received(1).GetAsync<List<AccessLevelRes>>(expectedUrl);
+        }
+
+        [Fact]
+        public async Task GetBySystemIdAsync_HttpReturnsFailure_ReturnsFailureResponse()
+        {
+            const int systemid = 2;
+            var expectedUrl = string.Format(PimsApiEndpoints.GetAccessLevelsBySystemId, systemid);
+            var apiResp = FailureApiResponse<List<AccessLevelRes>>();
+            var dto = FailureDto<List<AccessLevelDto>>();
+            _http.GetAsync<List<AccessLevelRes>>(expectedUrl).Returns(apiResp);
+            _mapper.Map<ApiResponseDto<List<AccessLevelDto>>>(apiResp).Returns(dto);
+
+            var result = await _client.GetBySystemIdAsync(systemid);
+
+            Assert.False(result.Success);
+            await _http.Received(1).GetAsync<List<AccessLevelRes>>(expectedUrl);
+            _mapper.Received(1).Map<ApiResponseDto<List<AccessLevelDto>>>(apiResp);
         }
 
         [Fact]
@@ -134,7 +150,7 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PIMS.PimsAccessLevelApiC
         {
             const int systemid = 1;
             const int accesslevelid = 10;
-            var expectedUrl = $"{BaseUrl}/{systemid}/{accesslevelid}";
+            var expectedUrl = string.Format(PimsApiEndpoints.GetAccessLevelById, systemid, accesslevelid);
             var apiResp = SuccessApiResponse(MakeRes(systemid, accesslevelid));
             var dto = SuccessDto(MakeDto(systemid, accesslevelid));
             _http.GetAsync<AccessLevelRes>(expectedUrl).Returns(apiResp);
@@ -183,14 +199,33 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PIMS.PimsAccessLevelApiC
             var apiResp = SuccessApiResponse(MakeRes(1, 7, "Editor"));
             var dto = SuccessDto(MakeDto(1, 7, "Editor"));
             _mapper.Map<AccessLevelRes>(inputDto).Returns(req);
-            _http.PostAsync<AccessLevelRes, AccessLevelRes>(BaseUrl, req).Returns(apiResp);
+            _http.PostAsync<AccessLevelRes, AccessLevelRes>(PimsApiEndpoints.CreateAccessLevel, req).Returns(apiResp);
             _mapper.Map<ApiResponseDto<AccessLevelDto>>(apiResp).Returns(dto);
 
             var result = await _client.CreateAsync(inputDto);
 
             Assert.True(result.Success);
             _mapper.Received(1).Map<AccessLevelRes>(inputDto);
-            await _http.Received(1).PostAsync<AccessLevelRes, AccessLevelRes>(BaseUrl, req);
+            await _http.Received(1).PostAsync<AccessLevelRes, AccessLevelRes>(PimsApiEndpoints.CreateAccessLevel, req);
+            _mapper.Received(1).Map<ApiResponseDto<AccessLevelDto>>(apiResp);
+        }
+
+        [Fact]
+        public async Task CreateAsync_HttpReturnsFailure_ReturnsFailureResponse()
+        {
+            var inputDto = MakeDto(1, 7, "Editor");
+            var req = MakeRes(1, 7, "Editor");
+            var apiResp = FailureApiResponse<AccessLevelRes>();
+            var dto = FailureDto<AccessLevelDto>();
+            _mapper.Map<AccessLevelRes>(inputDto).Returns(req);
+            _http.PostAsync<AccessLevelRes, AccessLevelRes>(PimsApiEndpoints.CreateAccessLevel, req).Returns(apiResp);
+            _mapper.Map<ApiResponseDto<AccessLevelDto>>(apiResp).Returns(dto);
+
+            var result = await _client.CreateAsync(inputDto);
+
+            Assert.False(result.Success);
+            _mapper.Received(1).Map<AccessLevelRes>(inputDto);
+            await _http.Received(1).PostAsync<AccessLevelRes, AccessLevelRes>(PimsApiEndpoints.CreateAccessLevel, req);
             _mapper.Received(1).Map<ApiResponseDto<AccessLevelDto>>(apiResp);
         }
 
@@ -216,7 +251,7 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PIMS.PimsAccessLevelApiC
         {
             const int systemid = 1;
             const int accesslevelid = 7;
-            var expectedUrl = $"{BaseUrl}/{systemid}/{accesslevelid}";
+            var expectedUrl = string.Format(PimsApiEndpoints.UpdateAccessLevel, systemid, accesslevelid);
             var inputDto = MakeDto(systemid, accesslevelid, "Editor+");
             var req = MakeRes(systemid, accesslevelid, "Editor+");
             var apiResp = SuccessApiResponse(MakeRes(systemid, accesslevelid, "Editor+"));
@@ -229,6 +264,28 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PIMS.PimsAccessLevelApiC
 
             Assert.True(result.Success);
             await _http.Received(1).PutAsync<AccessLevelRes, AccessLevelRes>(expectedUrl, req);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_HttpReturnsFailure_ReturnsFailureResponse()
+        {
+            const int systemid = 1;
+            const int accesslevelid = 7;
+            var expectedUrl = string.Format(PimsApiEndpoints.UpdateAccessLevel, systemid, accesslevelid);
+            var inputDto = MakeDto(systemid, accesslevelid, "Editor+");
+            var req = MakeRes(systemid, accesslevelid, "Editor+");
+            var apiResp = FailureApiResponse<AccessLevelRes>();
+            var dto = FailureDto<AccessLevelDto>();
+            _mapper.Map<AccessLevelRes>(inputDto).Returns(req);
+            _http.PutAsync<AccessLevelRes, AccessLevelRes>(expectedUrl, req).Returns(apiResp);
+            _mapper.Map<ApiResponseDto<AccessLevelDto>>(apiResp).Returns(dto);
+
+            var result = await _client.UpdateAsync(systemid, accesslevelid, inputDto);
+
+            Assert.False(result.Success);
+            _mapper.Received(1).Map<AccessLevelRes>(inputDto);
+            await _http.Received(1).PutAsync<AccessLevelRes, AccessLevelRes>(expectedUrl, req);
+            _mapper.Received(1).Map<ApiResponseDto<AccessLevelDto>>(apiResp);
         }
 
         [Fact]
@@ -253,7 +310,7 @@ namespace Apha.FPSApps.Infrastructure.UnitTests.Clients.PIMS.PimsAccessLevelApiC
         {
             const int systemid = 1;
             const int accesslevelid = 7;
-            var expectedUrl = $"{BaseUrl}/{systemid}/{accesslevelid}";
+            var expectedUrl = string.Format(PimsApiEndpoints.DeleteAccessLevel, systemid, accesslevelid);
             var apiResp = SuccessApiResponse(true);
             var dto = SuccessDto(true);
             _http.DeleteAsync<bool>(expectedUrl).Returns(apiResp);

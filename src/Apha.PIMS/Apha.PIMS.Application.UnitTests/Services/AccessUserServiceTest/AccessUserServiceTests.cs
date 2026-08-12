@@ -260,6 +260,7 @@ namespace Apha.PIMS.Application.UnitTests.Services.AccessUserServiceTest
             var created = MakeEntity(1, ntlogin);
             var result_dto = MakeDto(1, ntlogin);
             _repository.ExistsAsync(1, ntlogin).Returns(false);
+            _repository.GetBySystemIdAsync(1).Returns(new List<AccessUser>());
             _mapper.Map<AccessUser>(dto).Returns(entity);
             _repository.AddAsync(entity).Returns(created);
             _mapper.Map<AccessUserDto>(created).Returns(result_dto);
@@ -282,6 +283,23 @@ namespace Apha.PIMS.Application.UnitTests.Services.AccessUserServiceTest
 
             // Act & Assert
             await Assert.ThrowsAsync<InvalidOperationException>(() => _service.CreateAsync(dto));
+        }
+
+        [Fact]
+        public async Task CreateAsync_DuplicateEmailExists_ThrowsInvalidOperationException()
+        {
+            // Arrange
+            var dto = MakeDto(1, "dom\\newuser");
+            dto.UserEmail = "user1@example.com";
+            _repository.ExistsAsync(1, "dom\\newuser").Returns(false);
+            _repository.GetBySystemIdAsync(1).Returns(new List<AccessUser>
+            {
+                MakeEntity(1, "dom\\existing")
+            });
+
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _service.CreateAsync(dto));
+            Assert.Equal("UserEmail already exists.", ex.Message);
         }
 
         [Fact]
@@ -327,6 +345,7 @@ namespace Apha.PIMS.Application.UnitTests.Services.AccessUserServiceTest
             var updated = MakeEntity(1, ntlogin);
             var result_dto = MakeDto(1, ntlogin);
             _repository.ExistsAsync(1, ntlogin).Returns(true);
+            _repository.GetBySystemIdAsync(1).Returns(new List<AccessUser> { MakeEntity(1, ntlogin) });
             _mapper.Map<AccessUser>(dto).Returns(entity);
             _repository.UpdateAsync(entity).Returns(updated);
             _mapper.Map<AccessUserDto>(updated).Returns(result_dto);
@@ -347,6 +366,24 @@ namespace Apha.PIMS.Application.UnitTests.Services.AccessUserServiceTest
 
             // Act & Assert
             await Assert.ThrowsAsync<KeyNotFoundException>(() => _service.UpdateAsync(MakeDto(99, "dom\\x")));
+        }
+
+        [Fact]
+        public async Task UpdateAsync_DuplicateEmailExistsOnAnotherUser_ThrowsInvalidOperationException()
+        {
+            // Arrange
+            var dto = MakeDto(1, "dom\\user");
+            dto.UserEmail = "user1@example.com";
+            _repository.ExistsAsync(1, "dom\\user").Returns(true);
+            _repository.GetBySystemIdAsync(1).Returns(new List<AccessUser>
+            {
+                MakeEntity(1, "dom\\user"),
+                MakeEntity(1, "dom\\other")
+            });
+
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _service.UpdateAsync(dto));
+            Assert.Equal("UserEmail already exists.", ex.Message);
         }
 
         [Fact]

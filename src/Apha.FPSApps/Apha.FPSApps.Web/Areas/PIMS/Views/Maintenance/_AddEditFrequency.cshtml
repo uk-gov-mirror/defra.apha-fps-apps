@@ -37,10 +37,12 @@
                                asp-for="Frequencyid"
                                id="editName"
                                type="number"
+                               min="0"
+                               step="1"
                                readonly
                                aria-required="true"
-                               aria-label="Frequency Id"
-                               aria-describedby="editNameError" />
+                               aria-describedby="editNameError"
+                               data-val-required="Frequency Id is required" />
                     }
                     else
                     {
@@ -48,9 +50,11 @@
                                asp-for="Frequencyid"
                                id="editName"
                                type="number"
+                               min="0"
+                               step="1"
+                               value=""
                                required
                                aria-required="true"
-                               aria-label="Frequency Id"
                                aria-describedby="editNameError" />
                     }
                     <span asp-validation-for="Frequencyid"

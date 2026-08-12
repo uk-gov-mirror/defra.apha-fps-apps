@@ -1884,3 +1884,8 @@ textarea {
         padding: 10px;
     }
 }
+.modal-dialog {
+    .govuk-label{
+        font-weight:bold;
+    }
+}

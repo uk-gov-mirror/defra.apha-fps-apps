@@ -68,27 +68,54 @@ namespace Apha.PIMS.Application.Services
             if (string.IsNullOrWhiteSpace(dto.NtLogin))
                 throw new ArgumentException("NT login is required.", nameof(dto));
 
+            dto.UserEmail = string.IsNullOrWhiteSpace(dto.UserEmail) ? null : dto.UserEmail.Trim();
+
             bool alreadyExists = await _repository.ExistsAsync(dto.SystemId, dto.NtLogin);
             if (alreadyExists)
                 throw new InvalidOperationException(
                     $"AccessUser (systemid={dto.SystemId}, ntlogin='{dto.NtLogin}') already exists.");
+
+            if (!string.IsNullOrWhiteSpace(dto.UserEmail))
+            {
+                var usersForSystem = await _repository.GetBySystemIdAsync(dto.SystemId);
+                bool duplicateEmailExists = usersForSystem.Any(u =>
+                    !string.IsNullOrWhiteSpace(u.UserEmail)
+                    && string.Equals(u.UserEmail.Trim(), dto.UserEmail, StringComparison.OrdinalIgnoreCase));
+
+                if (duplicateEmailExists)
+                    throw new InvalidOperationException("UserEmail already exists.");
+            }
 
             AccessUser entity = _mapper.Map<AccessUser>(dto);
             AccessUser created = await _repository.AddAsync(entity);
             return _mapper.Map<AccessUserDto>(created);
         }
 
-        
+
         public async Task<AccessUserDto> UpdateAsync(AccessUserDto dto)
         {
             if (dto is null) throw new ArgumentNullException(nameof(dto));
             if (string.IsNullOrWhiteSpace(dto.NtLogin))
                 throw new ArgumentException("NT login is required.", nameof(dto));
 
+            dto.UserEmail = string.IsNullOrWhiteSpace(dto.UserEmail) ? null : dto.UserEmail.Trim();
+
             bool exists = await _repository.ExistsAsync(dto.SystemId, dto.NtLogin);
             if (!exists)
                 throw new KeyNotFoundException(
                     $"AccessUser (systemid={dto.SystemId}, ntlogin='{dto.NtLogin}') was not found.");
+
+            if (!string.IsNullOrWhiteSpace(dto.UserEmail))
+            {
+                var usersForSystem = await _repository.GetBySystemIdAsync(dto.SystemId);
+                bool duplicateEmailExists = usersForSystem.Any(u =>
+                    !string.IsNullOrWhiteSpace(u.UserEmail)
+                    && string.Equals(u.UserEmail.Trim(), dto.UserEmail, StringComparison.OrdinalIgnoreCase)
+                    && !string.Equals(u.NtLogin, dto.NtLogin, StringComparison.OrdinalIgnoreCase));
+
+                if (duplicateEmailExists)
+                    throw new InvalidOperationException("UserEmail already exists.");
+            }
 
             AccessUser entity = _mapper.Map<AccessUser>(dto);
             AccessUser updated = await _repository.UpdateAsync(entity);

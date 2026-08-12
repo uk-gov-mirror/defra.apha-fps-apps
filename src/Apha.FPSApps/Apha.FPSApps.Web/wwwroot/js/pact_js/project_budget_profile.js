@@ -31,7 +31,7 @@ function loadCostProfileGrid(parentProject) {
             updateTotalCostProfile(parentProject);
         },
         error: function () {
-            console.error('Failed to load cost profile grid.');
+            showAlertMessage('Failed to load cost profile grid.', AlertType.ERROR);
         }
     });
 }
@@ -238,6 +238,8 @@ function editProjectMonth(btn) {
     const monthNo = parseInt(btn.getAttribute('data-id')) || 0;
     const project = document.getElementById('ParentProject').value;
     openCostProfileModal(project, monthNo);
+    // Initialize form validation (unobtrusive + numeric)
+    initializeFormValidation('#projectMonthForm');
 }
 
 function openCostProfileModal(project, monthNo) {
@@ -263,15 +265,20 @@ function openCostProfileModal(project, monthNo) {
 }
 
 function saveProjectMonth() {
-    const form = document.getElementById('projectMonthForm');
-    if (!form) return;
+    const form = $('#projectMonthForm');
+    if (!form.length) return;
 
-    const costProfileInput = form.querySelector('[name="CostProfile"]')?.value || '';
+    // Validate all numeric fields before checking isFormValid
+    form.find('.decfmt-input').each(function() {
+        validateRangeOnInput(this);
+    });
+
+    const costProfileInput = form.find('[name="CostProfile"]').val() || '';
     const costProfileValue = costProfileInput.trim() === '' ? null : parseFloat(costProfileInput);
 
     const payload = {
-        project:     form.querySelector('[name="Project"]')?.value,
-        monthNo:     parseInt(form.querySelector('[name="MonthNo"]')?.value) || 0,
+        project:     form.find('[name="Project"]').val(),
+        monthNo:     parseInt(form.find('[name="MonthNo"]').val()) || 0,
         costProfile: costProfileValue
     };
 
@@ -288,8 +295,19 @@ function saveProjectMonth() {
                 loadCostProfileGrid(_modalProject);
                 loadProfileData(_modalProject);
                 loadCumulativeData(_modalProject);
+                showAlertMessage(res.message || 'Saved successfully.', AlertType.SUCCESS);
+            } else if (res.errors) {
+                displayServerValidationErrors(res.errors, res.message || 'Validation failed.', form);
             } else {
                 showAlertMessage(res.message || 'Failed to save.', AlertType.ERROR);
+            }
+        },
+        error: function (xhr) {
+            if (xhr.status === 400 && xhr.responseJSON) {
+                displayServerValidationErrors(xhr.responseJSON.errors, xhr.responseJSON.message || 'There is a problem', form);
+            } else {
+                var message = xhr.responseJSON ? xhr.responseJSON.message : 'An error occurred while saving';
+                showAlertMessage('Error: ' + message, AlertType.ERROR);
             }
         }
     });

@@ -23,6 +23,7 @@
              id="adminUserDbError" role="alert" aria-labelledby="adminUserDbErrorTitle" tabindex="-1">
             <h2 class="govuk-error-summary__title govuk-!-font-size-14" id="adminUserDbErrorTitle">There is a problem</h2>
             <div class="govuk-error-summary__body">
+                <ul class="govuk-list govuk-error-summary__list"></ul>
                 <p class="govuk-body govuk-!-font-size-14" id="adminUserDbErrorText"></p>
             </div>
         </div>
@@ -60,15 +61,17 @@
 
         <div class="govuk-form-group sup_margin_bottom_10" id="adminUserEmailGroup">
             <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="UserEmail">
-                UserEmail
+                UserEmail<span class="ra-required-star" aria-hidden="true"> *</span>
             </label>
             <input class="govuk-input govuk-!-font-size-16"
                    asp-for="UserEmail"
                    id="adminUserEmail"
                    type="email"
+                   aria-required="true"
                    aria-label="UserEmail"
                    aria-describedby="adminUserEmailError"
-                   autocomplete="off" />
+                   autocomplete="off"
+                   required="required" />
             <span asp-validation-for="UserEmail" class="govuk-error-message" id="adminUserEmailError" style="display:none;"></span>
         </div>
 

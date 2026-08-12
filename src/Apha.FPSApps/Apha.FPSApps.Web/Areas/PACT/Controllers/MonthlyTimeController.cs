@@ -213,7 +213,18 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
         public async Task<IActionResult> SaveLiveRecord([FromBody] MonthlyTimeLiveItem model)
         {
             if (!ModelState.IsValid)
-                return Json(new { success = false, message = "Invalid request data." });
+                return Json(new
+                {
+                    success = false,
+                    message = "Please correct the errors below.",
+                    errors = ModelState
+                        .Where(kvp => kvp.Value!.Errors.Any() && kvp.Key != "$")
+                        .SelectMany(kvp => kvp.Value!.Errors.Select(e => new
+                        {
+                            field = kvp.Key.StartsWith("$.") ? kvp.Key[2..] : kvp.Key,
+                            message = e.ErrorMessage
+                        }))
+                });
 
             var dto = _mapper.Map<MonthlyTimeDto>(model);
 
@@ -239,8 +250,12 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
             return Json(new
             {
                 success = false,
-                message = response.Errors?.FirstOrDefault()?.Message ?? "Failed to update monthly time record.",
-                errors = response.Errors?.Select(e => new { field = e.Code ?? string.Empty, message = e.Message ?? "Validation error" })
+                message = "Failed to update monthly time record.",
+                errors = (response.Errors ?? new List<ApiErrorDto>()).Select(e => new
+                {
+                    field = e.Code ?? string.Empty,
+                    message = e.Message ?? "An unexpected error occurred."
+                })
             });
         }
 
@@ -289,7 +304,18 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
         public async Task<IActionResult> SaveStagingRecord([FromBody] StagingMonthlyTimeItem model)
         {
             if (!ModelState.IsValid)
-                return Json(new { success = false, message = "Invalid request data." });
+                return Json(new
+                {
+                    success = false,
+                    message = "Please correct the errors below.",
+                    errors = ModelState
+                        .Where(kvp => kvp.Value!.Errors.Any() && kvp.Key != "$")
+                        .SelectMany(kvp => kvp.Value!.Errors.Select(e => new
+                        {
+                            field = kvp.Key.StartsWith("$.") ? kvp.Key[2..] : kvp.Key,
+                            message = e.ErrorMessage
+                        }))
+                });
 
             StagingMonthlyTimeDto? existingRecord = null;
             if (model.Id != 0)
@@ -305,7 +331,16 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
                 : await _monthlyTimeService.UpdateStagingAsync(model.Id, dto);
 
             if (!response.Success)
-                return Json(new { success = false, message = response.Errors?.FirstOrDefault()?.Message ?? "Failed to save staging record." });
+                return Json(new
+                {
+                    success = false,
+                    message = "Failed to save staging record.",
+                    errors = (response.Errors ?? new List<ApiErrorDto>()).Select(e => new
+                    {
+                        field = e.Code ?? string.Empty,
+                        message = e.Message ?? "An unexpected error occurred."
+                    })
+                });
 
             var shouldApplyNameUpdating = model.Id != 0
                 && model.NameUpdating
@@ -332,7 +367,16 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
             });
 
             if (!bulkUpdateResponse.Success)
-                return Json(new { success = false, message = bulkUpdateResponse.Errors?.FirstOrDefault()?.Message ?? "Failed to apply name updates to related records." });
+                return Json(new
+                {
+                    success = false,
+                    message = "Failed to apply name updates to related records.",
+                    errors = (bulkUpdateResponse.Errors ?? new List<ApiErrorDto>()).Select(e => new
+                    {
+                        field = e.Code ?? string.Empty,
+                        message = e.Message ?? "An unexpected error occurred."
+                    })
+                });
 
             var updatedCount = bulkUpdateResponse.Data?.UpdatedCount ?? 0;
             return Json(new

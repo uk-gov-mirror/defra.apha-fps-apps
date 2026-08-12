@@ -109,6 +109,7 @@ function saveProjectCost() {
     clearValidationErrors('#modaPopupBody');
     const form = $('#formAddProjectCost');
 
+    // Check basic form validity (required fields)
     if (!isFormValid(form)) {
         displayClientValidationErrors(form, '#modaPopupBody');
         return;
@@ -252,7 +253,7 @@ function editFailedSubContractRms(btn) {
             $('#modalPopup').addClass('show');
             // Initialize form validation after modal is shown
             setTimeout(function() {
-                initializeFormValidation('#formAddProjectCost');
+                initializeFormValidation('#formEditFailedSubContractRms');
             }, 50);
         },
         error: function () {
@@ -289,6 +290,7 @@ function saveFailedSubContractRms() {
     clearValidationErrors('#modaPopupBody');
     const form = $('#formEditFailedSubContractRms');
 
+    // Check basic form validity (required fields)
     if (!isFormValid(form)) {
         displayClientValidationErrors(form, '#modaPopupBody');
         return;
@@ -296,7 +298,9 @@ function saveFailedSubContractRms() {
 
     const data = form.serializeObject ? form.serializeObject() : Object.fromEntries(new FormData(form[0]));
 
-    // Convert empty strings to null for optional numeric fields
+    // Note: SubContractRmsFailedItem model uses string? for all fields
+    // Do NOT parse to numbers - keep as strings and let server handle validation
+    // Only convert empty strings to null for optional fields
     ['SupplierNumber', 'DailyRate', 'AnimalDays'].forEach(function (field) {
         if (data[field] === '' || data[field] === undefined) {
             data[field] = null;

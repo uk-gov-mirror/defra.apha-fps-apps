@@ -50,7 +50,7 @@ namespace Apha.FPS.DataAccess.Repositories
 
             var exists = await _context.Grades
                 .AsNoTracking()
-                .AnyAsync(g => g.GradeCode == grade.GradeCode);
+                .AnyAsync(g => EF.Functions.ILike(g.GradeCode, grade.GradeCode));
 
             if (exists)
             {

@@ -43,7 +43,7 @@ namespace Apha.FPSApps.Web.Areas.PACT.Models
         public string? Description { get; set; }
 
         [Display(Name = "Supplier Number")]
-        [Range(typeof(decimal), "-999999999999999.9999", "999999999999999.9999", ErrorMessage = "Supplier Number must be between -999,999,999,999,999.9999 and 999,999,999,999,999.9999.")]
+        [Range(-2147483648, 2147483647, ErrorMessage = "Supplier Number must be a valid integer between -2,147,483,648 and 2,147,483,647.")]
         [GridColumn(Order = 9, Width = 120, Type = GridColumnType.Text)]
         public string? SupplierNumber { get; set; }
 
@@ -53,7 +53,7 @@ namespace Apha.FPSApps.Web.Areas.PACT.Models
         public string? DailyRate { get; set; }
 
         [Display(Name = "Animal Days")]
-        [Range(typeof(decimal), "-999999999999999.9999", "999999999999999.9999", ErrorMessage = "Animal Days must be between -999,999,999,999,999.9999 and 999,999,999,999,999.9999.")]
+        [Range(-2147483648, 2147483647, ErrorMessage = "Animal Days must be a valid integer between -2,147,483,648 and 2,147,483,647.")]
         [GridColumn(Order = 11, Width = 110, Type = GridColumnType.Text)]
         public string? AnimalDays { get; set; }
 

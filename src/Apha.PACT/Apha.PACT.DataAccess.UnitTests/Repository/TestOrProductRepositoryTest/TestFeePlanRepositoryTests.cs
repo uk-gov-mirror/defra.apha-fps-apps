@@ -134,6 +134,137 @@ namespace Apha.PACT.DataAccess.UnitTests.Repository.TestOrProductRepositoryTest
             Assert.Equal("T001", row.TestCode);
         }
 
+        [Theory]
+        [InlineData("Directorate", "Dir1", "T001")]
+        [InlineData("Customer", "CUST1", "T001")]
+        [InlineData("Program", "PROG1", "T001")]
+        [InlineData("Contract", "CON1", "T001")]
+        [InlineData("Project", "JOB001", "T001")]
+        [InlineData("Status", "A", "T001")]
+        [InlineData("Owner", "AB", "T001")]
+        [InlineData("Directorate", "Dir2", "T003")]
+        [InlineData("Owner", "EF", "T003")]
+        public async Task GetTestSnapshotPagedAsync_FilterByTextField_ReturnsOnlyMatching(
+            string field, string value, string expectedTestCode)
+        {
+            var repo = CreateRepositoryWithMocks(SeedTestorProducts(), SeedRequirements(), SeedProjects(), SeedPrograms());
+            var parameters = new PaginationParameters<string>
+            {
+                Page = 1,
+                PageSize = 10,
+                Filter = $"{{\"{field}\":\"{value}\"}}"
+            };
+
+            var result = await repo.GetTestSnapshotPagedAsync(parameters);
+
+            var row = Assert.Single(result.Data);
+            Assert.Equal(expectedTestCode, row.TestCode);
+        }
+
+        [Fact]
+        public async Task GetTestSnapshotPagedAsync_FilterByVersion_ReturnsMatchingRows()
+        {
+            var repo = CreateRepositoryWithMocks(SeedTestorProducts(), SeedRequirements(), SeedProjects(), SeedPrograms());
+            var parameters = new PaginationParameters<string>
+            {
+                Page = 1,
+                PageSize = 10,
+                // Version is projected as "Plan - ..."; a partial match should return the included rows.
+                Filter = "{\"Version\":\"Plan\"}"
+            };
+
+            var result = await repo.GetTestSnapshotPagedAsync(parameters);
+
+            Assert.Equal(2, result.Data.Count);
+            Assert.All(result.Data, row => Assert.StartsWith("Plan - ", row.Version));
+        }
+
+        [Fact]
+        public async Task GetTestSnapshotPagedAsync_FilterByTextField_NoMatch_ReturnsEmpty()
+        {
+            var repo = CreateRepositoryWithMocks(SeedTestorProducts(), SeedRequirements(), SeedProjects(), SeedPrograms());
+            var parameters = new PaginationParameters<string>
+            {
+                Page = 1,
+                PageSize = 10,
+                Filter = "{\"Owner\":\"ZZ\"}"
+            };
+
+            var result = await repo.GetTestSnapshotPagedAsync(parameters);
+
+            Assert.Empty(result.Data);
+        }
+
+        [Fact]
+        public async Task GetTestSnapshotPagedAsync_EmptyFilter_ReturnsAllRows()
+        {
+            var repo = CreateRepositoryWithMocks(SeedTestorProducts(), SeedRequirements(), SeedProjects(), SeedPrograms());
+            var parameters = new PaginationParameters<string>
+            {
+                Page = 1,
+                PageSize = 10,
+                Filter = string.Empty
+            };
+
+            var result = await repo.GetTestSnapshotPagedAsync(parameters);
+
+            Assert.Equal(2, result.Data.Count);
+        }
+
+        [Fact]
+        public async Task GetTestSnapshotPagedAsync_InvalidTestFeeValue_IsIgnored()
+        {
+            var repo = CreateRepositoryWithMocks(SeedTestorProducts(), SeedRequirements(), SeedProjects(), SeedPrograms());
+            var parameters = new PaginationParameters<string>
+            {
+                Page = 1,
+                PageSize = 10,
+                // Non-numeric TestFee cannot be parsed and should be ignored, leaving all rows.
+                Filter = "{\"TestFee\":\"abc\"}"
+            };
+
+            var result = await repo.GetTestSnapshotPagedAsync(parameters);
+
+            Assert.Equal(2, result.Data.Count);
+        }
+
+        [Fact]
+        public async Task GetTestSnapshotPagedAsync_FilterByTestFee_ReturnsRowsWithinTolerance()
+        {
+            var repo = CreateRepositoryWithMocks(SeedTestorProducts(), SeedRequirements(), SeedProjects(), SeedPrograms());
+            var parameters = new PaginationParameters<string>
+            {
+                Page = 1,
+                PageSize = 10,
+                // T001 has TestFee = 250; a near-exact value should still match via the tolerance range.
+                Filter = "{\"TestFee\":\"249.9995\"}"
+            };
+
+            var result = await repo.GetTestSnapshotPagedAsync(parameters);
+
+            var row = Assert.Single(result.Data);
+            Assert.Equal("T001", row.TestCode);
+            Assert.NotNull(row.TestFee);
+            Assert.Equal(250d, row.TestFee!.Value, 3);
+        }
+
+        [Fact]
+        public async Task GetTestSnapshotPagedAsync_FilterByTestFee_NoMatch_ReturnsEmpty()
+        {
+            var repo = CreateRepositoryWithMocks(SeedTestorProducts(), SeedRequirements(), SeedProjects(), SeedPrograms());
+            var parameters = new PaginationParameters<string>
+            {
+                Page = 1,
+                PageSize = 10,
+                // No seeded row has a TestFee anywhere near this value.
+                Filter = "{\"TestFee\":\"9999\"}"
+            };
+
+            var result = await repo.GetTestSnapshotPagedAsync(parameters);
+
+            Assert.Empty(result.Data);
+        }
+
         [Fact]
         public async Task GetTestSnapshotPagedAsync_SortByTestCodeDescending_OrdersRows()
         {

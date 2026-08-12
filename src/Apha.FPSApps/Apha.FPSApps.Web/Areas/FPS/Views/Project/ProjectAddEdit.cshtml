@@ -15,7 +15,7 @@
             <div class="govuk-grid-column-full">
                 <div class="row" style="display:flex; align-items: center;">
                     <div class="col-sm-12" style="padding:0px;">
-                        <div style="border-bottom: 2px solid #1d70b8; min-height:42px;">
+                        <div class="sup_border-bottom" style="min-height:42px;">
                             <h1 style="padding: 0 17px; height:42px; font-size:16px; font-weight: 700; margin: 0; display:flex; align-items:center; justify-content:space-between;">
                                 <span>2025-2026 : @(isEditMode ? $"Edit Project - {Model.ParentProject}" : "Set Up New Project")</span>
                                 <a href="@(Context.Request.Query.ContainsKey("returnUrl") ? Context.Request.Query["returnUrl"].ToString() : "javascript:history.back()")" class="govuk-back-link sup_align_right sup_back_link_center_right">Back</a>

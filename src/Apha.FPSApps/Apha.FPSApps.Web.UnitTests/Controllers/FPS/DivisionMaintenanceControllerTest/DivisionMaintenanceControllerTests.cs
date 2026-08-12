@@ -521,6 +521,86 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.FPS.DivisionMaintenanceControll
 
         #endregion
 
+        #region CheckDivisionNameExists Tests
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        [InlineData(null)]
+        public async Task CheckDivisionNameExists_ReturnsFalse_WhenNameIsEmpty(string? divName)
+        {
+            // Act
+            var result = await _controller.CheckDivisionNameExists(divName!);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            var value = GetJsonResultValue<ExistsResponse>(jsonResult);
+            Assert.NotNull(value);
+            Assert.False(value.exists);
+            await _divisionService.DidNotReceive().GetAllDivisionsAsync();
+        }
+
+        [Fact]
+        public async Task CheckDivisionNameExists_ReturnsFalse_WhenNameMatchesOriginalIgnoringCase()
+        {
+            // Act
+            var result = await _controller.CheckDivisionNameExists("AAP", "aap");
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            var value = GetJsonResultValue<ExistsResponse>(jsonResult);
+            Assert.NotNull(value);
+            Assert.False(value.exists);
+            await _divisionService.DidNotReceive().GetAllDivisionsAsync();
+        }
+
+        [Theory]
+        [InlineData("aap")]
+        [InlineData("AAP")]
+        [InlineData("Aap")]
+        public async Task CheckDivisionNameExists_ReturnsTrue_WhenDuplicateRegardlessOfCase(string divName)
+        {
+            // Arrange
+            var divisions = new List<DivisionDto>
+            {
+                new DivisionDto { DivName = "aap", DivisionId = 1, AgencyId = 1 }
+            };
+            _divisionService.GetAllDivisionsAsync()
+                .Returns(ApiResponseDto<IEnumerable<DivisionDto>>.SuccessResponse(divisions));
+
+            // Act
+            var result = await _controller.CheckDivisionNameExists(divName);
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            var value = GetJsonResultValue<ExistsResponse>(jsonResult);
+            Assert.NotNull(value);
+            Assert.True(value.exists);
+        }
+
+        [Fact]
+        public async Task CheckDivisionNameExists_ReturnsFalse_WhenNameIsUnique()
+        {
+            // Arrange
+            var divisions = new List<DivisionDto>
+            {
+                new DivisionDto { DivName = "VSD", DivisionId = 1, AgencyId = 1 }
+            };
+            _divisionService.GetAllDivisionsAsync()
+                .Returns(ApiResponseDto<IEnumerable<DivisionDto>>.SuccessResponse(divisions));
+
+            // Act
+            var result = await _controller.CheckDivisionNameExists("ACDP");
+
+            // Assert
+            var jsonResult = Assert.IsType<JsonResult>(result);
+            var value = GetJsonResultValue<ExistsResponse>(jsonResult);
+            Assert.NotNull(value);
+            Assert.False(value.exists);
+        }
+
+        #endregion
+
         // Helper class for JSON parsing
         private class JsonResponse
         {
@@ -528,6 +608,11 @@ namespace Apha.FPSApps.Web.UnitTests.Controllers.FPS.DivisionMaintenanceControll
             public string? message { get; set; }
             public object? data { get; set; }
             public object? errors { get; set; }
+        }
+
+        private class ExistsResponse
+        {
+            public bool exists { get; set; }
         }
     }
 }

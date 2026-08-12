@@ -4,41 +4,40 @@
 @{
     ViewData["Title"] = Model.IsProjectGroupMode ? "Project Group Profitability" : "Project Profitability";
 }
-
 <div class="govuk-grid-row">
-    <div class="govuk-grid-column-full">
-        <div style="padding: 5px 5px; border-bottom: 1px solid #b4b4b4" class="row">
-            <div style="display: flex; font-size: 14px; align-items: center; justify-content: space-between;">
-                <div class="col-md-6">
-                </div>
-                <div style="display: flex; justify-content: flex-end;" class="col-md-6">
-                    @if (Model.IsProjectGroupMode)
-                    {
-                        <label class="fw-bold mt-2" for="projectGroup">Project Group:</label>
-                        <select id="projectGroup" asp-items="Model.ProjectGroupList" asp-for="SelectedProjectGroup"
-                                class="govuk-select govuk-!-font-size-16" style="width: auto; min-width: 260px;">
-                            <option value="">-- Select Project Group --</option>
-                        </select>
-                    }
-                    else
-                    {
-                        <label class="fw-bold mt-2" for="programNo">Programme:</label>
-                        <select id="programNo" asp-items="Model.ProgrammeList" asp-for="SelectedProgramNo"
-                                class="govuk-select govuk-!-font-size-16" style="width: auto; min-width: 260px;">
-                            <option value="">-- Select Programme --</option>
-                        </select>
-                    }
-                </div>
-            </div>
+    <div class="govuk-grid-column-one-full isClearFix sup_border-bottom govuk-!-margin-bottom-2">
+        <div class="govuk-grid-column-one-half isFloatLeft">
+            <h1 class="govuk-grid-row govuk-heading-s govuk-!-margin-bottom-0 govuk-!-margin-top-3 govuk-!-margin-left-3 govuk-!-margin-left-0 isCustomPageHeadings">
+                @(Model.IsProjectGroupMode ? "Project Group Profitability" : "Project Profitability")
+            </h1>
         </div>
-    </div>
-</div>
-<!-- Title -->
-<div class="govuk-grid-row">
-    <div class="govuk-grid-column-full">
-        <h1 class="govuk-heading-s sup_border-bottom govuk-!-margin-top-2 govuk-!-padding-bottom-2 govuk-!-padding-left-4">
-            @(Model.IsProjectGroupMode ? "Project Group Profitability" : "Project Profitability")
-        </h1>
+
+        <div class="govuk-grid-column-one-half isFloatRight">
+            <table class="govuk-table govuk-!-margin-bottom-2 govuk-!-margin-top-2 govuk-!-margin-right-2 isFloatRight isHalfGrid isPlanAllAdditionalCosts">
+                <tbody class="govuk-table__body">
+                    <tr class="govuk-table__row">
+                        <td class="govuk-table__cell govuk-!-padding-bottom-0 govuk-!-padding-top-0 govuk-!-padding-right-1 isNoBottomBorder govuk-!-text-align-right">
+                            @if (Model.IsProjectGroupMode)
+                            {
+                                <label class="fw-bold me-2" for="projectGroup">Project Group:</label>
+                                <select id="projectGroup" asp-items="Model.ProjectGroupList" asp-for="SelectedProjectGroup"
+                                        class="govuk-select govuk-!-font-size-16 govuk-input--width-10">
+                                    <option value="">-- Select Project Group --</option>
+                                </select>
+                            }
+                            else
+                            {
+                                <label class="fw-bold mt-2" for="programNo">Programme:</label>
+                                <select id="programNo" asp-items="Model.ProgrammeList" asp-for="SelectedProgramNo"
+                                        class="govuk-select govuk-!-font-size-16 govuk-input--width-10">
+                                    <option value="">-- Select Programme --</option>
+                                </select>
+                            }
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 

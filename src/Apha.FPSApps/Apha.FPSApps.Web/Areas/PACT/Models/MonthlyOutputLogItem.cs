@@ -26,6 +26,7 @@ namespace Apha.FPSApps.Web.Areas.PACT.Models
         public string WorkGroup { get; set; } = null!;
 
         [Display(Name = "Vol")]
+        [Range(typeof(decimal), "-999999999999999.9999", "999999999999999.9999", ErrorMessage = "Volume must be between -999,999,999,999,999.9999 and 999,999,999,999,999.9999.")]
         [GridColumn(Order = 6, Width = 70, Type = GridColumnType.Number)]
         public double? Volume { get; set; }
 

@@ -10,27 +10,24 @@
 <div class="container-fluid">
     <!-- Project selector -->
     <div class="govuk-grid-row">
-        <div class="govuk-grid-column-full">
-            <div class="row fps-sr-breadcrumb-row">
-                <div class="fps-sr-breadcrumb-flex" style="display: flex; justify-content: flex-end;">
-                    <div class="col-md-6"></div>
-                    @await Html.PartialAsync("_ProjectDropdownSelector")
-                </div>
+        <div class="govuk-grid-column-one-full isClearFix sup_border-bottom">
+            <div class="govuk-grid-column-one-half isFloatLeft">
+                <h1 class="govuk-grid-row govuk-heading-s govuk-!-margin-bottom-0 govuk-!-margin-top-2 govuk-!-margin-left-0 isCustomPageHeadings">Plan All Staff Cost for Programme</h1>
+            </div>
+
+            <div class="govuk-grid-column-one-half isFloatRight">
+                <table class="govuk-table govuk-!-margin-bottom-0 isFloatRight isHalfGrid isCompareFPSPlan govuk-!-margin-top-2">
+                    <tbody class="govuk-table__body">
+                        <tr class="govuk-table__row">
+                            <td class="govuk-table__cell govuk-!-padding-bottom-0 govuk-!-padding-top-0 govuk-!-padding-right-1 isNoBottomBorder govuk-!-text-align-right">
+                                @await Html.PartialAsync("_ProjectDropdownSelector")
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
-
-    <!-- Title section -->
-    <div class="govuk-grid-row">        
-        <div class="govuk-grid-column-full">
-            <h1 class="govuk-grid-row govuk-heading-s sup_border-bottom govuk-!-margin-top-2 
-                        govuk-!-padding-bottom-2 govuk-!-padding-left-4 ">
-                Compare FPS Plan with PACT Actuals
-                <a asp-area="FPS" asp-controller="ProgramProject" asp-action="Index" class="govuk-back-link
-                        sup_align_right govuk-!-margin-bottom-0 ">Back</a>
-            </h1>
-        </div>
-    </div>    
 
     <!-- Summary card -->
     @{

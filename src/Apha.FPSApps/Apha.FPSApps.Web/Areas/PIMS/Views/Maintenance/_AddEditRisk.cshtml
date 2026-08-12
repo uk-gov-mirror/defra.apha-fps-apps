@@ -30,6 +30,33 @@
                     <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="Riskid">
                         RiskID: <span class="ra-required-star" aria-hidden="true">*</span>
                     </label>
+                    @if (isEditMode)
+                    {
+                        <input class="govuk-input govuk-!-font-size-16"
+                               asp-for="Riskid"
+                               id="editRiskid"
+                               type="number"
+                               min="1"
+                               step="1"
+                               readonly
+                               aria-required="true"
+                               aria-describedby="editRiskidError"
+                               data-val-required="RiskID is required" />
+                    }
+                    else
+                    {
+                        <input class="govuk-input govuk-!-font-size-16"
+                               asp-for="Riskid"
+                               id="editRiskid"
+                               type="number"
+                               min="1"
+                               step="1"
+                               value=""
+                               required
+                               aria-required="true"
+                               aria-describedby="editRiskidError"
+                               data-val-required="RiskID is required" />
+                    }
                     <input class="govuk-input govuk-!-font-size-16"
                            asp-for="Riskid"
                            id="editRiskid"

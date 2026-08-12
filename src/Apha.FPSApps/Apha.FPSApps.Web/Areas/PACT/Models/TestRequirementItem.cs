@@ -24,7 +24,7 @@ namespace Apha.FPSApps.Web.Areas.PACT.Models
         public string Buyer { get; set; } = null!;
 
         [Display(Name = "Unit Price")]
-        [Range(0, double.MaxValue, ErrorMessage = "Unit Price must be 0 or greater.")]
+        [Range(typeof(decimal), "-999999999999999.9999", "999999999999999.9999", ErrorMessage = "Unit Price must be between -999,999,999,999,999.9999 and 999,999,999,999,999.9999.")]
         [GridColumn(Order = 4, Width = 110, Type = GridColumnType.GbpValue)]
         public decimal? UnitPrice { get; set; }
 
@@ -42,6 +42,7 @@ namespace Apha.FPSApps.Web.Areas.PACT.Models
         public short IsDefraProject { get; set; }
 
         [Display(Name = "RecUnitPrice")]
+        [Range(typeof(decimal), "-999999999999999.9999", "999999999999999.9999", ErrorMessage = "Rec Unit Price must be between -999,999,999,999,999.9999 and 999,999,999,999,999.9999.")]
         [GridColumn(Order = 8, Width = 110, Type = GridColumnType.GbpValue)]
         public decimal? RecUnitPrice { get; set; }
 

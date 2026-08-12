@@ -188,7 +188,18 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
         public async Task<IActionResult> SaveLiveRecord([FromBody] MonthlyOutputLiveItem model)
         {
             if (!ModelState.IsValid)
-                return Json(new { success = false, message = "Invalid request data." });
+                return Json(new
+                {
+                    success = false,
+                    message = "Please correct the errors below.",
+                    errors = ModelState
+                        .Where(kvp => kvp.Value!.Errors.Any() && kvp.Key != "$")
+                        .SelectMany(kvp => kvp.Value!.Errors.Select(e => new
+                        {
+                            field = kvp.Key.StartsWith("$.") ? kvp.Key[2..] : kvp.Key,
+                            message = e.ErrorMessage
+                        }))
+                });
 
             var dto = _mapper.Map<PactMonthlyOutputDto>(model);
 
@@ -210,10 +221,14 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
             return Json(new
             {
                 success = false,
-                message = response.Errors?.FirstOrDefault()?.Message ?? "Failed to update monthly output record.",
-                errors = response.Errors?.Select(e => new { field = e.Code ?? string.Empty, message = e.Message ?? "Validation error" })
+                message = "Failed to update monthly output record.",
+                errors = (response.Errors ?? new List<ApiErrorDto>()).Select(e => new
+                {
+                    field = e.Code ?? string.Empty,
+                    message = e.Message ?? "An unexpected error occurred."
+                })
             });
-        }       
+        }
 
         /// <summary>
         /// Gets a staging monthly output record by id and returns the edit partial view.
@@ -257,7 +272,18 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
         public async Task<IActionResult> SaveStagingRecord([FromBody] StagingMonthlyOutputItem model)
         {
             if (!ModelState.IsValid)
-                return Json(new { success = false, message = "Invalid request data." });
+                return Json(new
+                {
+                    success = false,
+                    message = "Please correct the errors below.",
+                    errors = ModelState
+                        .Where(kvp => kvp.Value!.Errors.Any() && kvp.Key != "$")
+                        .SelectMany(kvp => kvp.Value!.Errors.Select(e => new
+                        {
+                            field = kvp.Key.StartsWith("$.") ? kvp.Key[2..] : kvp.Key,
+                            message = e.ErrorMessage
+                        }))
+                });
 
             var dto = _mapper.Map<StagingMonthlyOutputDto>(model);
 
@@ -275,7 +301,12 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
                 return Json(new
                 {
                     success = false,
-                    message = response.Errors?.FirstOrDefault()?.Message ?? "Failed to save staging record."
+                    message = "Failed to save staging record.",
+                    errors = (response.Errors ?? new List<ApiErrorDto>()).Select(e => new
+                    {
+                        field = e.Code ?? string.Empty,
+                        message = e.Message ?? "An unexpected error occurred."
+                    })
                 });
 
             return Json(new

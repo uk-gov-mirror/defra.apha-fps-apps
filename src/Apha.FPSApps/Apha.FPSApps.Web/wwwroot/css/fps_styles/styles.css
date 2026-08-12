@@ -5287,3 +5287,98 @@ body,
     min-height: 600px !important;
     max-height: 600px !important;
 }
+#gridContainer_asuUsageList .grid-scroll-container {
+    height: 340px;
+    max-height: 340px;
+}
+
+.isFloatRight {
+    float: right;
+}
+
+.isFloatLeft {
+    float: left;
+}
+
+.isDisplayBlock {
+    display: block;
+}
+
+.isNoWrap {
+    white-space: nowrap;
+}
+
+.isNoBottomBorder {
+    border-bottom: 0;
+}
+
+.isProjectMgtGrid {
+    .custom-table thead th {
+        width: calc(95%/2);
+    }
+
+        .custom-table thead th:last-child {
+            width: 1vw !important;
+        }
+}
+
+.isHalfGrid {
+    width: 51%;
+}
+
+.isPlanAllStaff.isHalfGrid,
+.isCompareFPSPlan.isHalfGrid,
+.isAnimalBookedGrid.isHalfGrid {
+    width: 19.5vw;
+}
+
+.isPlanAllStaff.isHalfGrid {
+    width: 14.5vw;
+}
+
+.isProjectProfitability.isHalfGrid,
+.isPlanAllAnimalCosts.isHalfGrid,
+.isPlanAllTestPurchases.isHalfGrid {
+    width: 26vw;
+}
+
+.isPlanAllAdditionalCosts.isHalfGrid {
+    width: 54%;
+}
+
+.isCompareFPSPlanAnimal.isHalfGrid,
+.isCompareFPSPlan.isHalfGrid {
+    td:nth-child(1) {
+        .col-md-6 {
+            width: auto !important;
+        }
+    }
+}
+.isCompareFPSPlanAnimal.isHalfGrid{
+    width:50%;
+}
+#gridContainer_programProjectGrid {
+    .grid-scroll-container {
+        max-height: 400px;
+        height: 283px;
+        overflow-y: auto;
+    }
+}
+
+#gridContainer_staffBookedGrid .grid-scroll-container {
+    height: 255px;
+    max-height: 255px;
+}
+
+#gridContainer_animalBookedGrid .grid-scroll-container {
+    height: 255px;
+    max-height: 255px;
+}
+#gridContainer_testPlanGrid .grid-scroll-container {
+    height: 255px;
+    max-height: 255px;
+}
+#gridContainer_@Model.AdditionalCostGrid.GridId .grid-scroll-container {
+    height: 255px;
+    max-height: 255px;
+} 

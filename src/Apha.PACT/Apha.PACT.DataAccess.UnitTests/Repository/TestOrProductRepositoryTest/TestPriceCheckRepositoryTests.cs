@@ -117,6 +117,8 @@ namespace Apha.PACT.DataAccess.UnitTests.Repository.TestOrProductRepositoryTest
 
             Assert.NotNull(result);
             Assert.True(result.Data.Count > 0);
+            // "Both" must return only zero-rated or non-standard rows, never standard-priced rows.
+            Assert.All(result.Data, row => Assert.True(row.IsZeroPrice || row.IsNotStandard));
         }
 
         [Fact]

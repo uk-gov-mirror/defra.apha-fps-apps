@@ -36,10 +36,13 @@
                                asp-for="Itemid"
                                id="editReviewItemid"
                                type="number"
+                               min="1"
+                               step="1"
                                readonly
                                aria-required="true"
-                               aria-label="Item Id"
-                               aria-describedby="editReviewItemidError" />
+                               aria-describedby="editReviewItemidError"
+                               data-val-required="Item Id is required" 
+                               aria-label="Item Id" />
                     }
                     else
                     {
@@ -47,10 +50,14 @@
                                asp-for="Itemid"
                                id="editReviewItemid"
                                type="number"
+                               min="1"
+                               step="1"
+                               value=""
                                required
                                aria-required="true"
-                               aria-label="Item Id"
-                               aria-describedby="editReviewItemidError" />
+                               aria-describedby="editReviewItemidError"
+                               data-val-required="Item Id is required" 
+                               aria-label="Item Id"/>
                     }   
                     <span asp-validation-for="Itemid"
                           data-valmsg-for="Itemid"

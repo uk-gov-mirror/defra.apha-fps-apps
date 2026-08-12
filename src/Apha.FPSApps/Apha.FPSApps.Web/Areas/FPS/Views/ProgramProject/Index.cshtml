@@ -7,42 +7,40 @@
 
 <main id="main-content">
     <div class="container-fluid">
-        <div class="govuk-grid-row">
-            <div class="govuk-grid-column-full">
-                <div style="padding: 5px 5px; border-bottom: 1px solid #b4b4b4" class="row">
-                    <div style="display: flex; font-size: 14px; align-items: center; justify-content: space-between;">
-                        <div class="col-md-8">
-                            
-                        </div>
-                        <div style="display: flex; justify-content: flex-end;" class="col-md-4">
-                            @if (Model.IsProjectGroupMode)
-                            {
-                                <label class="fw-bold mt-2" for="projectGroupSelect">Project Group: </label>
-                                <select id="projectGroupSelect" asp-items="Model.ProjectGroupList" asp-for="SelectedProjectGroup"
-                                        class="govuk-select govuk-!-font-size-16" style="width: auto; min-width: 260px;">
-                                    <option value="">-- Select Project Group --</option>
-                                </select>
-                            }
-                            else
-                            {
-                                <label class="fw-bold mt-2" for="programmeSelect">Programme: </label>
-                                <select id="programmeSelect" asp-items="Model.ProgrammeList" asp-for="SelectedProgramNo"
-                                        class="govuk-select govuk-!-font-size-16" style="width: auto; min-width: 260px;">
-                                    <option value="">-- Select Programme --</option>
-                                </select>
-                            }
-                        </div>
-                    </div>
+        <div class="">
+            <div class="govuk-grid-column-one-full sup_border-bottom isClearFix">
+                <div class="govuk-grid-column-one-half govuk-!-padding-left-0">
+                    <h1 class="govuk-heading-s govuk-!-margin-top-3 govuk-!-margin-bottom-2 govuk-!-padding-bottom-0 govuk-!-padding-left-0">
+                        @(Model.IsProjectGroupMode ? "Plan Project Group Individually" : "Plan Projects Individually")
+                    </h1>
                 </div>
-            </div>
-        </div>
 
-        <!-- Title section -->
-        <div class="govuk-grid-row">
-            <div class="govuk-grid-column-full">
-                <h1 class="govuk-heading-s sup_border-bottom govuk-!-margin-top-2 govuk-!-padding-bottom-2 govuk-!-padding-left-4">
-                    @(Model.IsProjectGroupMode ? "Plan Project Group Individually" : "Plan Projects Individually")
-                </h1>
+                <div class="govuk-grid-column-one-third isFloatRight govuk-!-padding-right-0">
+                    <table class="govuk-table govuk-!-margin-bottom-0">
+                        <tbody class="govuk-table__body">
+                            <tr class="govuk-table__row">
+                                <td class="govuk-table__cell govuk-!-padding-bottom-2 govuk-!-padding-right-1 isNoBottomBorder govuk-!-text-align-right">
+                                    @if (Model.IsProjectGroupMode)
+                                    {
+                                        <label class="govuk-label govuk-!-margin-bottom-0 govuk-!-padding-right-0 govuk-!-font-weight-bold isNoWrap" for="projectGroupSelect">Project Group: </label>
+                                        <select id="projectGroupSelect" asp-items="Model.ProjectGroupList" asp-for="SelectedProjectGroup"
+                                                class="govuk-select govuk-!-font-size-16 govuk-input--width-10">
+                                            <option value="">-- Select Project Group --</option>
+                                        </select>
+                                    }
+                                    else
+                                    {
+                                        <label class="fw-bold mt-2" for="programmeSelect">Programme: </label>
+                                        <select id="programmeSelect" asp-items="Model.ProgrammeList" asp-for="SelectedProgramNo"
+                                                class="govuk-select govuk-!-font-size-16 govuk-input--width-10">
+                                            <option value="">-- Select Programme --</option>
+                                        </select>
+                                    }
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 

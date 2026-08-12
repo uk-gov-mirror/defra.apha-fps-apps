@@ -4,6 +4,7 @@
     var isEditMode = ViewBag.IsEditMode as bool? ?? false;
     var originalProfitCentre = ViewBag.OriginalProfitCentre as string;
     var title = isEditMode ? "Edit Resource Centre" : "Add Resource Centre";
+    var profitCentreDropdownData = ViewBag.ProfitCentreDropdownData as dynamic ?? new List<object>();
 }
 
 <div class="modal-header flex-space-center">
@@ -28,19 +29,18 @@
         </div>
 
         <div class="govuk-form-group" id="pcAssignValueGroup">
-            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" for="pcAssignValue">
+            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" for="pcAssignProfitCentreDropdown_input">
                 <span id="pcAssignLabel">Resource Centre:</span> <span class="ra-required-star" aria-hidden="true">*</span>
             </label>
-            <select class="govuk-select govuk-!-font-size-16 ra-select-full"
-                    asp-for="ProfitCentre"
-                    asp-items="ViewBag.ProfitCentreOptions"
-                    id="pcAssignValue"
-                    required
-                    aria-required="true"
-                    aria-label="Resource Centre"
-                    aria-describedby="pcAssignValueError">
-                <option value="">Select resource centre</option>
-            </select>
+            <!-- Multi-column dropdown container -->
+            <div id="pcAssignProfitCentreDropdownContainer" class="ra-select-full"></div>
+
+            <!-- Hidden input to store selected profit centre value -->
+            <input type="hidden" id="pcAssignValue" name="ProfitCentre" value="@Model.ProfitCentre" />
+
+            <!-- Hidden data element with dropdown options -->
+            <script type="application/json" id="pcAssignProfitCentreOptionsData">@Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(profitCentreDropdownData))</script>
+
             <span asp-validation-for="ProfitCentre" 
                   data-valmsg-for="ProfitCentre"
                   class="govuk-error-message" 
@@ -63,64 +63,3 @@
     </form>
 </div>
 
-@section Scripts {
-    <script>
-        function saveProfitCentreManagerLink() {
-            var $form = $('#formProfitCentreManagerLink');
-
-            // Clear and validate form using existing helper functions
-            displayClientValidationErrors($form, $form);
-            if (!isFormValid($form)) return;
-
-            var dbError     = document.getElementById('pcAssignDbError');
-            var dbErrorText = document.getElementById('pcAssignDbErrorText');
-            if (dbError) dbError.classList.add('ra-hidden');
-
-            var profitcentre = document.getElementById('pcAssignValue')?.value?.trim() || '';
-            var manager      = document.getElementById('hdnPcLinkManager')?.value || '';
-
-            var isEditMode = (document.getElementById('hdnIsProfitCentreEditMode')?.value || '').toLowerCase() === 'true';
-            var originalProfitCentre = document.getElementById('hdnOriginalProfitCentre')?.value || '';
-            var url = isEditMode
-                ? '/PIMS/Maintenance/UpdateProfitCentreManagerLink'
-                : '/PIMS/Maintenance/SaveProfitCentreManagerLink';
-
-            var payload = isEditMode
-                ? {
-                    originalProfitcentre: originalProfitCentre,
-                    originalManager: manager,
-                    profitcentre: profitcentre,
-                    manager: manager
-                }
-                : {
-                    profitcentre: profitcentre,
-                    manager: manager
-                };
-
-            $.ajax({
-                url: url,
-                type: 'POST',
-                contentType: 'application/json; charset=utf-8',
-                data: JSON.stringify(payload),
-                headers: { 'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').first().val() },
-                success: function (data) {
-                    if (data.success) {
-                        showAlertMessage(data.message || (isEditMode ? 'Resource Centre assignment updated successfully.' : 'Resource Centre assignment added successfully.'), AlertType.SUCCESS)
-                            .then(function () {
-                                closeModal();
-                                reloadProfitCentreManagerLinksGrid();
-                            });
-                    } else {
-                        var msg = data.message || 'Save failed.';
-                        if (dbErrorText) dbErrorText.textContent = msg;
-                        if (dbError) dbError.classList.remove('ra-hidden');
-                    }
-                },
-                error: function () {
-                    if (dbErrorText) dbErrorText.textContent = 'An error occurred while saving.';
-                    if (dbError) dbError.classList.remove('ra-hidden');
-                }
-            });
-        }
-    </script>
-}

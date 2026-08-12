@@ -26,7 +26,8 @@ namespace Apha.FPSApps.Web.Areas.PACT.Models
 
         [Display(Name = "Volume")]
         [GridColumn(Order = 5, Width = 90, Type = GridColumnType.Number)]
-        public double? Volume { get; set; }
+        [Range(typeof(decimal), "-999999999999999.9999", "999999999999999.9999", ErrorMessage = "Volume must be between -999,999,999,999,999.9999 and 999,999,999,999,999.9999.")]
+        public decimal? Volume { get; set; }
 
         [Display(Name = "Pass")]
         [GridColumn(Order = 6, Width = 70, Type = GridColumnType.Checkbox)]

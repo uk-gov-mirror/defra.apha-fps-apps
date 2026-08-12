@@ -21,8 +21,8 @@ namespace Apha.FPSApps.Web.Areas.PIMS.Models
         [GridColumn(Type = GridColumnType.ReadOnly, IsVisible = false)]
         public string? Dt2Login { get; set; }
 
+        [Required(ErrorMessage = "UserEmail is required")]
         [Display(Name = "Email")]
-        [EmailAddress(ErrorMessage = "Invalid email address")]
         [GridColumn(Order = 3, Width = 250, Type = GridColumnType.Text, IsFilterable = true)]
         public string? UserEmail { get; set; }
 

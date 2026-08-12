@@ -119,8 +119,9 @@
             <div class="govuk-grid-column-one-half">
                 <div class="govuk-form-group sup_margin_bottom_10">
                     <label class="govuk-label sup_font_weight_700" asp-for="SupplierNumber">Supplier Number</label>
-                    <input type="number" class="govuk-input govuk-!-font-size-16"
+                    <input maxlength="9" type="text" class="govuk-input govuk-!-font-size-16 intfmt-input"
                            asp-for="SupplierNumber" placeholder="Enter supplier number" />
+                    <span asp-validation-for="SupplierNumber" class="govuk-error-message"></span>
                 </div>
             </div>
         </div>

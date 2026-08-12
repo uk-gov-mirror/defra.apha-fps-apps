@@ -54,10 +54,23 @@ namespace Apha.PIMS.Application.Services
             if (string.IsNullOrWhiteSpace(dto.ProjectManager))
                 throw new ArgumentException("Project manager name is required.", nameof(dto));
 
+            dto.LoginEmail = string.IsNullOrWhiteSpace(dto.LoginEmail) ? null : dto.LoginEmail.Trim();
+
             bool alreadyExists = await _repository.ProjectManagerExistsAsync(dto.ProjectManager);
             if (alreadyExists)
                 throw new InvalidOperationException(
                     $"ProjectManager '{dto.ProjectManager}' already exists.");
+
+            if (!string.IsNullOrWhiteSpace(dto.LoginEmail))
+            {
+                var existingManagers = await _repository.GetAllProjectManagersAsync();
+                bool duplicateLoginEmailExists = existingManagers.Any(m =>
+                    !string.IsNullOrWhiteSpace(m.LoginEmail)
+                    && string.Equals(m.LoginEmail.Trim(), dto.LoginEmail, StringComparison.OrdinalIgnoreCase));
+
+                if (duplicateLoginEmailExists)
+                    throw new InvalidOperationException("Manager's login email already exists.");
+            }
 
             ProjectManager entity = _mapper.Map<ProjectManager>(dto);
             ProjectManager created = await _repository.AddProjectManagerAsync(entity);
@@ -70,9 +83,23 @@ namespace Apha.PIMS.Application.Services
             if (string.IsNullOrWhiteSpace(dto.ProjectManager))
                 throw new ArgumentException("Project manager name is required.", nameof(dto));
 
+            dto.LoginEmail = string.IsNullOrWhiteSpace(dto.LoginEmail) ? null : dto.LoginEmail.Trim();
+
             bool exists = await _repository.ProjectManagerExistsAsync(dto.ProjectManager);
             if (!exists)
                 throw new KeyNotFoundException($"ProjectManager '{dto.ProjectManager}' was not found.");
+
+            if (!string.IsNullOrWhiteSpace(dto.LoginEmail))
+            {
+                var existingManagers = await _repository.GetAllProjectManagersAsync();
+                bool duplicateLoginEmailExists = existingManagers.Any(m =>
+                    !string.IsNullOrWhiteSpace(m.LoginEmail)
+                    && string.Equals(m.LoginEmail.Trim(), dto.LoginEmail, StringComparison.OrdinalIgnoreCase)
+                    && !string.Equals(m.Projectmanager, dto.ProjectManager, StringComparison.OrdinalIgnoreCase));
+
+                if (duplicateLoginEmailExists)
+                    throw new InvalidOperationException("Manager's login email already exists.");
+            }
 
             ProjectManager entity = _mapper.Map<ProjectManager>(dto);
             ProjectManager updated = await _repository.UpdateProjectManagerAsync(entity);

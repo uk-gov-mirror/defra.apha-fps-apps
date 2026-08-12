@@ -153,49 +153,49 @@
         </div>
 
         <!-- Load JavaScript -->
-<script src="~/js/pact_js/project_budget_profile.js"></script>
-<script src="~/js/pact_js/chart.js"></script>
+        <script src="~/js/ajax-form-validation.js"></script>
+        <script src="~/js/pact_js/project_budget_profile.js"></script>
+        <script src="~/js/pact_js/chart.js"></script>
 
+<script>
+    // ── PACT Graph Tab switching ──────────────────────────────────────────────────
+    // Handles tab click events for the Project Budget Profile graph tabs.
 
-        <script>
-            // ── PACT Graph Tab switching ──────────────────────────────────────────────────
-            // Handles tab click events for the Project Budget Profile graph tabs.
+    (function initTabClickHandlers() {
+    document.addEventListener('DOMContentLoaded', function () {
+    var tabLinks = document.querySelectorAll('#pactGraphTabs .govuk-tabs__tab');
 
-            (function initTabClickHandlers() {
-            document.addEventListener('DOMContentLoaded', function () {
-            var tabLinks = document.querySelectorAll('#pactGraphTabs .govuk-tabs__tab');
+    tabLinks.forEach(function (link) {
+    link.addEventListener('click', function (e) {
+    e.preventDefault();
 
-            tabLinks.forEach(function (link) {
-            link.addEventListener('click', function (e) {
-            e.preventDefault();
+    var tabId = link.getAttribute('href').replace('#', '');
 
-            var tabId = link.getAttribute('href').replace('#', '');
+    // Update selected state on list items
+    document.querySelectorAll('#pactGraphTabs .govuk-tabs__list-item').forEach(function (li) {
+    li.classList.remove('govuk-tabs__list-item--selected');
+    });
+    link.closest('.govuk-tabs__list-item').classList.add('govuk-tabs__list-item--selected');
 
-            // Update selected state on list items
-            document.querySelectorAll('#pactGraphTabs .govuk-tabs__list-item').forEach(function (li) {
-            li.classList.remove('govuk-tabs__list-item--selected');
-            });
-            link.closest('.govuk-tabs__list-item').classList.add('govuk-tabs__list-item--selected');
+    // Show the target panel, hide all others
+    document.querySelectorAll('#pactGraphTabs .govuk-tabs__panel').forEach(function (p) {
+    if (p.id === tabId) {
+    p.classList.remove('govuk-tabs__panel--hidden');
+    p.style.display = 'block';
+    } else {
+    p.classList.add('govuk-tabs__panel--hidden');
+    p.style.display = 'none';
+    }
+    });
 
-            // Show the target panel, hide all others
-            document.querySelectorAll('#pactGraphTabs .govuk-tabs__panel').forEach(function (p) {
-            if (p.id === tabId) {
-            p.classList.remove('govuk-tabs__panel--hidden');
-            p.style.display = 'block';
-            } else {
-            p.classList.add('govuk-tabs__panel--hidden');
-            p.style.display = 'none';
-            }
-            });
+    // Resize charts so Chart.js fills the newly visible canvas
+    setTimeout(function () {
+    if (nonCumulativeChart) nonCumulativeChart.resize();
+    if (cumulativeChart)    cumulativeChart.resize();
+    }, 50);
+    });
+    });
+    });
+    })();
 
-            // Resize charts so Chart.js fills the newly visible canvas
-            setTimeout(function () {
-            if (nonCumulativeChart) nonCumulativeChart.resize();
-            if (cumulativeChart)    cumulativeChart.resize();
-            }, 50);
-            });
-            });
-            });
-            })();
-
-        </script>
+</script>

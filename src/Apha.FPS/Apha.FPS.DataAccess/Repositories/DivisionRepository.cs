@@ -147,7 +147,7 @@ namespace Apha.FPS.DataAccess.Repositories
 
             return await _context.Divisions
                 .AsNoTracking()
-                .AnyAsync(d => d.DivName == divName);
+                .AnyAsync(d => EF.Functions.ILike(d.DivName, divName));
         }
 
         public async Task<List<string>> GetDivisionForeignKeyReferencesAsync(string divName)

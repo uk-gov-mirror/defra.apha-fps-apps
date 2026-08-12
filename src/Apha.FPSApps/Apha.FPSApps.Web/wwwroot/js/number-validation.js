@@ -1,4 +1,95 @@
 // Number Validation - Shared JavaScript Module
+//
+// USAGE:
+// ======
+// 
+// 1. Decimal Numbers (decfmt-input):
+//    <input type="text" class="govuk-input decfmt-input" asp-for="Amount" />
+//    Default range: -999,999,999,999,999.9999 to 999,999,999,999,999.9999
+//
+// 2. Integers (intfmt-input):
+//    <input type="text" class="govuk-input intfmt-input" asp-for="SupplierNumber" />
+//    Default range: -2,147,483,648 to 2,147,483,647 (Int32)
+//
+// 3. Custom Min/Max Values:
+//    Add data-min-value and/or data-max-value attributes to override default ranges:
+//    
+//    <input type="text" class="govuk-input decfmt-input" 
+//           asp-for="Percentage" 
+//           data-min-value="0" 
+//           data-max-value="100" />
+//    
+//    <input type="text" class="govuk-input intfmt-input" 
+//           asp-for="Age" 
+//           data-min-value="0" 
+//           data-max-value="120" />
+//
+// 4. Initialize validation:
+//    Call initializeFormValidation() after the DOM is ready:
+//    $(document).ready(function() {
+//        initializeFormValidation('#yourFormId');
+//    });
+//
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Helper Functions
+// ══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Format a number with thousand separators without rounding.
+ * Preserves the exact decimal places of the input number.
+ * @param {number} num - The number to format
+ * @returns {string} - Formatted number string
+ */
+function formatNumberWithoutRounding(num) {
+    if (num === null || num === undefined) {
+        return '';
+    }
+
+    // Convert to string to preserve exact decimal places
+    var numStr = num.toString();
+
+    // Check if it's a valid number string or number
+    if (isNaN(parseFloat(numStr))) {
+        return '';
+    }
+    var isNegative = numStr.startsWith('-');
+    if (isNegative) {
+        numStr = numStr.substring(1);
+    }
+
+    // Split into integer and decimal parts
+    var parts = numStr.split('.');
+    var integerPart = parts[0];
+    var decimalPart = parts.length > 1 ? parts[1] : '';
+
+    // Add thousand separators to integer part
+    integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+    // Combine parts
+    var result = integerPart;
+    if (decimalPart) {
+        result += '.' + decimalPart;
+    }
+
+    return isNegative ? '-' + result : result;
+}
+
+/**
+ * Get the field label name from the associated label element.
+ * Falls back to 'Value' if no label is found.
+ * @param {jQuery} $input - The input element
+ * @returns {string} - The label text or 'Value' as fallback
+ */
+function getFieldLabelName($input) {
+    var fieldName = 'Value';
+    var $label = $('label[for="' + $input.attr('id') + '"]');
+    if ($label.length > 0) {
+        // Get label text and remove trailing asterisk (required field indicator)
+        fieldName = $label.text().trim().replace(/\*\s*$/, '').trim();
+    }
+    return fieldName;
+}
 
 // Numeric input validation - allows positive/negative numbers with decimal point
 function validateNumericInput(event) {
@@ -88,18 +179,36 @@ function handleNumericPaste(event) {
         return;
     }
 
-    // Validate range: -999999999999999.9999 to 999999999999999.9999
+    // Get the input element
+    var input = event.target || event.currentTarget;
+    var $input = $(input);
+
+    // Get custom min/max from data attributes or use defaults
+    var min = $input.data('min-value');
+    var max = $input.data('max-value');
+
+    if (typeof min === 'undefined' || min === null || min === '') {
+        min = -999999999999999.9999;
+    }
+    if (typeof max === 'undefined' || max === null || max === '') {
+        max = 999999999999999.9999;
+    }
+
+    min = parseFloat(min);
+    max = parseFloat(max);
+
+    // Validate range
     var parsedValue = parseFloat(cleaned);
-    var min = -999999999999999.9999;
-    var max = 999999999999999.9999;
 
     if (!isNaN(parsedValue) && (parsedValue < min || parsedValue > max)) {
-        showAlertMessage('Value must be between -999,999,999,999,999.9999 and 999,999,999,999,999.9999', AlertType.ERROR);
+        var minFormatted = formatNumberWithoutRounding(min);
+        var maxFormatted = formatNumberWithoutRounding(max);
+        var fieldName = getFieldLabelName($input);
+        showAlertMessage(fieldName + ' must be between ' + minFormatted + ' and ' + maxFormatted, AlertType.ERROR);
         return;
     }
 
-    // Get the input element (handle both jQuery events and native events)
-    var input = event.target || event.currentTarget;
+    // Get cursor position and update value
     var start = input.selectionStart;
     var end = input.selectionEnd;
     var currentValue = input.value;
@@ -177,8 +286,24 @@ function validateRangeOnInput(input) {
     }
 
     var parsedValue = parseFloat(value);
-    var min = -999999999999999.9999;
-    var max = 999999999999999.9999;
+
+    // Get custom min/max from data attributes or use defaults
+    var minStr = $input.data('min-value');
+    var maxStr = $input.data('max-value');
+    var minDefault = '-999999999999999.9999';
+    var maxDefault = '999999999999999.9999';
+
+    // Use default string values if not specified
+    if (typeof minStr === 'undefined' || minStr === null || minStr === '') {
+        minStr = minDefault;
+    }
+    if (typeof maxStr === 'undefined' || maxStr === null || maxStr === '') {
+        maxStr = maxDefault;
+    }
+
+    // Convert to numbers for comparison
+    var min = parseFloat(minStr);
+    var max = parseFloat(maxStr);
 
     // Check if value is a valid number
     if (isNaN(parsedValue)) {
@@ -197,7 +322,12 @@ function validateRangeOnInput(input) {
 
     // Check if value is within range
     if (parsedValue < min || parsedValue > max) {
-        var errorMessage = 'Value must be between -999,999,999,999,999.9999 and 999,999,999,999,999.9999';
+        // Format numbers with thousand separators without rounding using original string values
+        var minFormatted = formatNumberWithoutRounding(minStr);
+        var maxFormatted = formatNumberWithoutRounding(maxStr);
+        var fieldName = getFieldLabelName($input);
+        var errorMessage = fieldName + ' must be between ' + minFormatted + ' and ' + maxFormatted;
+
         $input.addClass('govuk-input--error');
         $formGroup.addClass('govuk-form-group--error');
         $input.attr('title', errorMessage);
@@ -219,6 +349,291 @@ function validateRangeOnInput(input) {
                           .hide();
         }
     }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Integer Validation Functions
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Integer input validation - allows only positive/negative whole numbers (no decimals)
+function validateIntegerInput(event) {
+    var input = event.target;
+    var value = input.value;
+    var key = event.key;
+    var cursorPosition = input.selectionStart;
+
+    // Allow control keys
+    if (['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(key)) {
+        return true;
+    }
+
+    // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+    if (event.ctrlKey || event.metaKey) {
+        return true;
+    }
+
+    // Allow digits
+    if (/^\d$/.test(key)) {
+        return true;
+    }
+
+    // Allow minus sign only at the beginning and only if there isn't one already
+    if (key === '-') {
+        if (cursorPosition === 0 && !value.includes('-')) {
+            return true;
+        }
+        event.preventDefault();
+        return false;
+    }
+
+    // Block decimal points and all other keys
+    event.preventDefault();
+    return false;
+}
+
+// Format and validate integer input on paste
+function handleIntegerPaste(event) {
+    // Get the original event if this is a jQuery event
+    var originalEvent = event.originalEvent || event;
+    originalEvent.preventDefault();
+
+    var pastedData = (originalEvent.clipboardData || window.clipboardData).getData('text');
+
+    // Check if pasted data contains any invalid characters (anything other than digits, minus, and whitespace)
+    if (/[^\d\-\s]/.test(pastedData)) {
+        showAlertMessage('You may have entered text in an integer field or a number that is larger than the field size permits.', AlertType.ERROR);
+        return;
+    }
+
+    // Remove any non-numeric characters except minus (including spaces and decimal points)
+    var cleaned = pastedData.replace(/[^\d-]/g, '');
+
+    // If after cleaning, nothing remains, show error
+    if (!cleaned) {
+        showAlertMessage('You may have entered text in an integer field or a number that is larger than the field size permits.', AlertType.ERROR);
+        return;
+    }
+
+    // Ensure only one minus sign at the beginning
+    if (cleaned.indexOf('-') > 0) {
+        cleaned = cleaned.replace(/-/g, '');
+    } else if ((cleaned.match(/-/g) || []).length > 1) {
+        cleaned = '-' + cleaned.replace(/-/g, '');
+    }
+
+    // Get the input element
+    var input = event.target || event.currentTarget;
+    var $input = $(input);
+
+    // Enforce maxlength if specified on the input
+    var maxLength = input.maxLength;
+    if (maxLength > 0 && cleaned.length > maxLength) {
+        showAlertMessage('Value exceeds maximum length of ' + maxLength + ' characters.', AlertType.ERROR);
+        return;
+    }
+
+    // Get custom min/max from data attributes or use defaults
+    var min = $input.data('min-value');
+    var max = $input.data('max-value');
+
+    if (typeof min === 'undefined' || min === null || min === '') {
+        min = -2147483648;
+    }
+    if (typeof max === 'undefined' || max === null || max === '') {
+        max = 2147483647;
+    }
+
+    // Preserve original string values before conversion
+    var minStr = min;
+    var maxStr = max;
+
+    min = parseInt(minStr, 10);
+    max = parseInt(maxStr, 10);
+
+    // Validate range
+    var parsedValue = parseInt(cleaned, 10);
+
+    if (!isNaN(parsedValue) && (parsedValue < min || parsedValue > max)) {
+        // Format using original string values to avoid precision loss
+        var minFormatted = formatNumberWithoutRounding(minStr.toString());
+        var maxFormatted = formatNumberWithoutRounding(maxStr.toString());
+        var fieldName = getFieldLabelName($(event.target || event.currentTarget));
+        showAlertMessage(fieldName + ' must be between ' + minFormatted + ' and ' + maxFormatted, AlertType.ERROR);
+        return;
+    }
+
+    // Get the input element cursor position
+    var start = input.selectionStart;
+    var end = input.selectionEnd;
+    var currentValue = input.value;
+
+    // Replace the selected portion (or insert at cursor if nothing selected)
+    input.value = currentValue.substring(0, start) + cleaned + currentValue.substring(end);
+
+    // Set cursor position after the pasted content
+    var newCursorPos = start + cleaned.length;
+    input.selectionStart = input.selectionEnd = newCursorPos;
+
+    // Trigger input event for any validation listeners
+    $(input).trigger('input');
+}
+
+// Validate integer input range and provide visual feedback
+function validateIntegerRangeOnInput(input) {
+    var $input = $(input);
+    var value = $input.val().trim();
+    var fieldName = $input.attr('name') || $input.attr('id');
+
+    // Only allow minus at the beginning, remove any other minus signs
+    if (value.length > 0) {
+        var sanitized = value;
+        var firstChar = value.charAt(0);
+        var isNegative = firstChar === '-';
+
+        if (isNegative) {
+            // Keep first minus, remove all others
+            sanitized = '-' + value.substring(1).replace(/-/g, '');
+        } else {
+            // Remove all minus signs if not at the beginning
+            sanitized = value.replace(/-/g, '');
+        }
+
+        // Remove any decimal points (integers only)
+        sanitized = sanitized.replace(/\./g, '');
+
+        // Update the field value if it was sanitized
+        if (sanitized !== value) {
+            var cursorPos = input.selectionStart;
+            $input.val(sanitized);
+            // Restore cursor position
+            input.selectionStart = input.selectionEnd = Math.min(cursorPos, sanitized.length);
+            value = sanitized;
+        }
+    }
+
+    // Find the parent form-group and validation message span
+    var $formGroup = $input.closest('.govuk-form-group');
+    var $validationSpan = $formGroup.find('span[data-valmsg-for="' + fieldName + '"]');
+
+    // If not found, try with asp-validation-for
+    if ($validationSpan.length === 0) {
+        $validationSpan = $formGroup.find('span[asp-validation-for="' + fieldName + '"]');
+    }
+
+    // If still not found by name, try finding by class
+    if ($validationSpan.length === 0) {
+        $validationSpan = $formGroup.find('.govuk-error-message, .field-validation-error, .validation-message');
+    }
+
+    // Skip validation if field is empty
+    if (value === '' || value === '-') {
+        $input.removeClass('govuk-input--error');
+        $formGroup.removeClass('govuk-form-group--error');
+        $input.removeAttr('title');
+        if ($validationSpan.length > 0) {
+            $validationSpan.text('').hide();
+        }
+        return;
+    }
+
+    var parsedValue = parseInt(value, 10);
+
+    // Get custom min/max from data attributes or use defaults
+    var minStr = $input.data('min-value');
+    var maxStr = $input.data('max-value');
+    var minDefault = '-2147483648';
+    var maxDefault = '2147483647';
+
+    // Use default Int32 values if not specified
+    if (typeof minStr === 'undefined' || minStr === null || minStr === '') {
+        minStr = minDefault;
+    }
+    if (typeof maxStr === 'undefined' || maxStr === null || maxStr === '') {
+        maxStr = maxDefault;
+    }
+
+    // Convert to integers
+    var min = parseInt(minStr, 10);
+    var max = parseInt(maxStr, 10);
+
+    // Check if value is a valid integer
+    if (isNaN(parsedValue)) {
+        $input.addClass('govuk-input--error');
+        $formGroup.addClass('govuk-form-group--error');
+        $input.attr('title', 'Please enter a valid integer');
+        if ($validationSpan.length > 0) {
+            $validationSpan.removeClass('field-validation-valid')
+                          .addClass('field-validation-error')
+                          .text('Please enter a valid integer')
+                          .show()
+                          .css('display', 'block');
+        }
+        return;
+    }
+
+    // Check if value is within range
+    if (parsedValue < min || parsedValue > max) {
+        // Format numbers with thousand separators without rounding using original string values
+        var minFormatted = formatNumberWithoutRounding(minStr);
+        var maxFormatted = formatNumberWithoutRounding(maxStr);
+        var fieldName = getFieldLabelName($input);
+        var errorMessage = fieldName + ' must be between ' + minFormatted + ' and ' + maxFormatted;
+
+        $input.addClass('govuk-input--error');
+        $formGroup.addClass('govuk-form-group--error');
+        $input.attr('title', errorMessage);
+        if ($validationSpan.length > 0) {
+            $validationSpan.removeClass('field-validation-valid')
+                          .addClass('field-validation-error')
+                          .text(errorMessage)
+                          .show()
+                          .css('display', 'block');
+        }
+    } else {
+        $input.removeClass('govuk-input--error');
+        $formGroup.removeClass('govuk-form-group--error');
+        $input.removeAttr('title');
+        if ($validationSpan.length > 0) {
+            $validationSpan.removeClass('field-validation-error')
+                          .addClass('field-validation-valid')
+                          .text('')
+                          .hide();
+        }
+    }
+}
+
+/**
+ * Attach integer validation to all input fields with the 'intfmt-input' class.
+ * This function binds keydown, paste, and input event handlers to enable
+ * real-time integer validation and range checking.
+ */
+function attachIntegerValidation() {
+    // Find all input fields with intfmt-input class
+    $('.intfmt-input').each(function () {
+        var $input = $(this);
+
+        // Remove any existing handlers to prevent duplicate bindings
+        $input.off('keydown.integerValidation');
+        $input.off('paste.integerValidation');
+        $input.off('input.integerValidation');
+        $input.off('blur.integerValidation');
+
+        // Attach keydown event for character-by-character validation
+        $input.on('keydown.integerValidation', validateIntegerInput);
+
+        // Attach paste event for clipboard data validation
+        $input.on('paste.integerValidation', handleIntegerPaste);
+
+        // Attach input event for range validation and real-time feedback
+        $input.on('input.integerValidation', function () {
+            validateIntegerRangeOnInput(this);
+        });
+
+        // Attach blur event for final validation
+        $input.on('blur.integerValidation', function() {
+            validateIntegerRangeOnInput(this);
+        });
+    });
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -319,8 +734,8 @@ function ensureValidationMessagesVisible(form) {
 }
 
 /**
- * Initialize form validation with both jQuery Unobtrusive Validation and numeric validation.
- * This is a convenience wrapper that combines unobtrusive validation parsing with numeric validation attachment.
+ * Initialize form validation with both jQuery Unobtrusive Validation and numeric/integer validation.
+ * This is a convenience wrapper that combines unobtrusive validation parsing with numeric and integer validation attachment.
  * 
  * @param {string} formSelector - jQuery selector for the form (e.g., '#invoiceForm', '#monthlyOutputLiveForm')
  * 
@@ -335,4 +750,7 @@ function initializeFormValidation(formSelector) {
 
     // Attach numeric validation to all decfmt-input fields
     attachNumericValidation();
+
+    // Attach integer validation to all intfmt-input fields
+    attachIntegerValidation();
 }

@@ -35,7 +35,7 @@ namespace Apha.FPSApps.Web.Areas.PACT.Models
         [Display(Name = "Hours")]
         [Range(typeof(decimal), "-999999999999999.9999", "999999999999999.9999", ErrorMessage = "Hours must be between -999,999,999,999,999.9999 and 999,999,999,999,999.9999.")]
         [GridColumn(Order = 7, Width = 90, Type = GridColumnType.Number, CssClass = "monthly-time-staging-hours-right-align")]
-        public double? Hours { get; set; }
+        public decimal? Hours { get; set; }
 
         [Display(Name = "Pass")]
         [GridColumn(Order = 8, Width = 70, Type = GridColumnType.Checkbox)]

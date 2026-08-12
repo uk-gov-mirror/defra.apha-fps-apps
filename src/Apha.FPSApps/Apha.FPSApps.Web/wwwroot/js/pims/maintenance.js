@@ -5,6 +5,8 @@ var _timeOrigWorkingDays  = document.getElementById('timeWorkingDays')?.value  |
 // ── Current tab context ────────────────────────────────────────────────────────
 var _currentManagerName = '';
 var _currentReportId = null;
+var _programManagerLinkDropdown = null;
+var _profitCentreManagerLinkDropdown = null;
 
 function initializeTimeTabState() {
     var hwEl = document.getElementById('timeWorkingHours');
@@ -727,8 +729,11 @@ function saveProjectManager() {
                 return;
             }
 
-            if (data.errors) {
-                displayServerValidationErrors(data.errors, data.message, $form);
+            if (data.errors && data.errors.length > 0) {
+                $bannerText.text('');
+                $banner.addClass('ra-hidden');
+                displayServerValidationErrors(data.errors, data.message || 'Save failed.', $form);
+                return;
             }
 
             const serverMessage = data.message
@@ -754,6 +759,69 @@ function saveProjectManager() {
 //  MANAGER TAB — Program Manager Links (sub-grid)
 // ════════════════════════════════════════════════════════════════════════════
 
+function initializeProgramManagerLinkDropdown() {
+    var container = document.getElementById('mgrAssignProgramDropdownContainer');
+    var dataElement = document.getElementById('mgrAssignProgramOptionsData');
+    if (!container || !dataElement || typeof MultiColumnDropdownComponent === 'undefined') {
+        return;
+    }
+
+    var dropdownData = [];
+    try {
+        dropdownData = JSON.parse(dataElement.textContent || '[]');
+    } catch (error) {
+        console.error('Failed to parse manager program dropdown data.', error);
+    }
+
+    if (_programManagerLinkDropdown && typeof _programManagerLinkDropdown.destroy === 'function') {
+        _programManagerLinkDropdown.destroy();
+    }
+
+    _programManagerLinkDropdown = new MultiColumnDropdownComponent({
+        dropdownId: 'mgrAssignProgramDropdown',
+        containerSelector: '#mgrAssignProgramDropdownContainer',
+        placeholder: 'Select a Program',
+        searchPlaceholder: 'Search by program or year',
+        ariaLabelledBy: 'mgrAssignLabel',
+        showSerialNumber: false,
+        required: true,
+        clearButtonClearsSelection: true,
+        columns: [
+            { field: 'ProgramNo', header: 'Program No', width: '180px' },
+            { field: 'LatestYear', header: 'Latest Year', width: '120px' }
+        ],
+        data: dropdownData,
+        displayField: function (item) { return item && item.ProgramNo ? item.ProgramNo : ''; },
+        valueField: 'ProgramNo',
+        callbacks: {
+            onSelect: function (selectedItem) {
+                $('#mgrAssignValue').val(selectedItem && selectedItem.ProgramNo ? selectedItem.ProgramNo : '');
+                $('#mgrAssignValueGroup').removeClass('govuk-form-group--error');
+                $('#mgrAssignProgramDropdown_input').removeClass('govuk-input--error');
+                $('#mgrAssignValueError').text('').hide()
+                    .removeClass('field-validation-error')
+                    .addClass('field-validation-valid');
+            },
+            onClear: function () {
+                $('#mgrAssignValue').val('');
+            }
+        }
+    });
+
+    var $displayInput = $('#mgrAssignProgramDropdown_input');
+    $displayInput.attr({
+        name: 'Program',
+        required: 'required',
+        'data-val-required': 'Programme is required',
+        'aria-describedby': 'mgrAssignValueError'
+    });
+
+    var selectedProgram = $('#mgrAssignValue').val() || $('#hdnOriginalProgram').val() || '';
+    if (selectedProgram) {
+        _programManagerLinkDropdown.setValue(selectedProgram);
+    }
+}
+
 function addProgramManagerLink() {
     if (!_currentManagerName) {
         showAlertMessage('Please select a manager first.', AlertType.ERROR);
@@ -763,6 +831,7 @@ function addProgramManagerLink() {
     $.get('/PIMS/Maintenance/GetAddEditProgramManagerLinkPartial',
         { manager: _currentManagerName }, function (html) {
             $('#modaPopupBody').html(html);
+            initializeProgramManagerLinkDropdown();
             $('#modalPopup').addClass('show');
         });
 }
@@ -777,6 +846,7 @@ function editProgramManagerLink(btn) {
     $.get('/PIMS/Maintenance/GetAddEditProgramManagerLinkPartial',
         { manager: _currentManagerName, program: program }, function (html) {
             $('#modaPopupBody').html(html);
+            initializeProgramManagerLinkDropdown();
             $('#modalPopup').addClass('show');
         });
 }
@@ -852,10 +922,12 @@ function saveProgramManagerLink() {
             }
 
             if (data.errors) {
+                $bannerText.text('');
                 displayServerValidationErrors(data.errors, data.message, $form);
+                return;
             }
 
-            var msg = data.message || (Array.isArray(data.errors) && data.errors.length > 0 ? data.errors[0].message : 'Save failed.');
+            var msg = data.message || 'Save failed.';
             $bannerText.text(msg);
             $banner.removeClass('ra-hidden');
         },
@@ -873,6 +945,69 @@ function saveProgramManagerLink() {
 //  MANAGER TAB — Profit Centre Manager Links (sub-grid)
 // ════════════════════════════════════════════════════════════════════════════
 
+function initializeProfitCentreManagerLinkDropdown() {
+    var container = document.getElementById('pcAssignProfitCentreDropdownContainer');
+    var dataElement = document.getElementById('pcAssignProfitCentreOptionsData');
+    if (!container || !dataElement || typeof MultiColumnDropdownComponent === 'undefined') {
+        return;
+    }
+
+    var dropdownData = [];
+    try {
+        dropdownData = JSON.parse(dataElement.textContent || '[]');
+    } catch (error) {
+        console.error('Failed to parse manager resource centre dropdown data.', error);
+    }
+
+    if (_profitCentreManagerLinkDropdown && typeof _profitCentreManagerLinkDropdown.destroy === 'function') {
+        _profitCentreManagerLinkDropdown.destroy();
+    }
+
+    _profitCentreManagerLinkDropdown = new MultiColumnDropdownComponent({
+        dropdownId: 'pcAssignProfitCentreDropdown',
+        containerSelector: '#pcAssignProfitCentreDropdownContainer',
+        placeholder: 'Select resource centre',
+        searchPlaceholder: 'Search by resource centre or year',
+        ariaLabelledBy: 'pcAssignLabel',
+        showSerialNumber: false,
+        required: true,
+        clearButtonClearsSelection: true,
+        columns: [
+            { field: 'ProfitCentre', header: 'Profit Centre', width: '180px' },
+            { field: 'LatestYear', header: 'Latest Year', width: '120px' }
+        ],
+        data: dropdownData,
+        displayField: function (item) { return item && item.ProfitCentre ? item.ProfitCentre : ''; },
+        valueField: 'ProfitCentre',
+        callbacks: {
+            onSelect: function (selectedItem) {
+                $('#pcAssignValue').val(selectedItem && selectedItem.ProfitCentre ? selectedItem.ProfitCentre : '');
+                $('#pcAssignValueGroup').removeClass('govuk-form-group--error');
+                $('#pcAssignProfitCentreDropdown_input').removeClass('govuk-input--error');
+                $('#pcAssignValueError').text('').hide()
+                    .removeClass('field-validation-error')
+                    .addClass('field-validation-valid');
+            },
+            onClear: function () {
+                $('#pcAssignValue').val('');
+            }
+        }
+    });
+
+    var $displayInput = $('#pcAssignProfitCentreDropdown_input');
+    $displayInput.attr({
+        name: 'ProfitCentre',
+        required: 'required',
+        'data-val-required': 'Resource Centre is required',
+        'aria-describedby': 'pcAssignValueError'
+    });
+
+    var selectedProfitCentre = $('#pcAssignValue').val() || $('#hdnOriginalProfitCentre').val() || '';
+    if (selectedProfitCentre) {
+        _profitCentreManagerLinkDropdown.setValue(selectedProfitCentre);
+    }
+}
+
 function addProfitCentreManagerLink() {
     if (!_currentManagerName) {
         showAlertMessage('Please select a manager first.', AlertType.ERROR);
@@ -882,6 +1017,7 @@ function addProfitCentreManagerLink() {
     $.get('/PIMS/Maintenance/GetAddEditProfitCentreManagerLinkPartial',
         { manager: _currentManagerName }, function (html) {
             $('#modaPopupBody').html(html);
+            initializeProfitCentreManagerLinkDropdown();
             $('#modalPopup').addClass('show');
         });
 }
@@ -896,6 +1032,7 @@ function editProfitCentreManagerLink(btn) {
     $.get('/PIMS/Maintenance/GetAddEditProfitCentreManagerLinkPartial',
         { manager: _currentManagerName, profitcentre: profitcentre }, function (html) {
             $('#modaPopupBody').html(html);
+            initializeProfitCentreManagerLinkDropdown();
             $('#modalPopup').addClass('show');
         });
 }
@@ -971,10 +1108,12 @@ function saveProfitCentreManagerLink() {
             }
 
             if (data.errors) {
+                $bannerText.text('');
                 displayServerValidationErrors(data.errors, data.message, $form);
+                return;
             }
 
-            var msg = data.message || (Array.isArray(data.errors) && data.errors.length > 0 ? data.errors[0].message : 'Save failed.');
+            var msg = data.message || 'Save failed.';
             $bannerText.text(msg);
             $banner.removeClass('ra-hidden');
         },
@@ -1223,11 +1362,14 @@ function saveAccessUser() {
                     });
             } else {
                 if (data.errors && data.errors.length > 0) {
+                    if (dbErrorText) dbErrorText.textContent = '';
+                    if (dbError) dbError.classList.add('ra-hidden');
                     displayServerValidationErrors(data.errors, data.message || 'Save failed.', $form);
-                } else {
-                    if (dbErrorText) dbErrorText.textContent = data.message || 'Save failed.';
-                    if (dbError) dbError.classList.remove('ra-hidden');
+                    return;
                 }
+
+                if (dbErrorText) dbErrorText.textContent = data.message || 'Save failed.';
+                if (dbError) dbError.classList.remove('ra-hidden');
             }
         },
         error: function (xhr) {
@@ -1391,15 +1533,141 @@ $(document).on('click', '.other-list-item', function () {
     loadOtherValuesGrid(description);
 });
 
+function getPimsOtherValidationLabel($field, $container) {
+    var fieldId = $field.attr('id') || '';
+    var fieldName = $field.attr('name') || '';
+    return $container.find('label[for="' + fieldId + '"], label[for="' + fieldName + '"]')
+        .first()
+        .clone()
+        .children()
+        .remove()
+        .end()
+        .text()
+        .trim()
+        .replace(/:\s*$/, '') || fieldName;
+}
+
+function getPimsOtherValidationMessage($field, $container) {
+    var field = $field[0];
+    var label = getPimsOtherValidationLabel($field, $container);
+    var minValue = $field.attr('min');
+    var stepValue = $field.attr('step');
+    var isPositiveWholeNumberField = $field.attr('type') === 'number'
+        && (minValue === '0' || minValue === '1')
+        && stepValue === '1';
+
+    if (!field || !field.validity) {
+        return label + ' is invalid';
+    }
+
+    if (field.validity.valueMissing) {
+        return $field.attr('data-val-required') || (label + ' is required');
+    }
+
+    if (isPositiveWholeNumberField && (field.validity.badInput
+        || field.validity.typeMismatch
+        || field.validity.rangeUnderflow
+        || field.validity.stepMismatch)) {
+        if (minValue === '0') {
+            return 'Only zero and positive numbers are acceptable.';
+        } else {
+            return 'Only positive numbers and should be greater than 0.';
+        }
+    }
+
+    if (field.validity.badInput || field.validity.typeMismatch) {
+        return $field.attr('data-val-type') || (label + ' must be a valid value');
+    }
+
+    if (field.validity.rangeUnderflow) {
+        if (minValue === '0') {
+            return label + ' must be 0 or greater';
+        } else {
+            return label + ' must be 1 or greater';
+        }
+    }
+
+    return field.validationMessage || (label + ' is invalid');
+}
+
+function clearPimsOtherFieldErrorOnInput($field, fieldName, $container) {
+    $field.off('input.pimsother change.pimsother')
+        .on('input.pimsother change.pimsother', function () {
+            if (this.willValidate && !this.checkValidity()) {
+                return;
+            }
+
+            var $formGroup = $(this).closest('.govuk-form-group');
+            $formGroup.removeClass('govuk-form-group--error');
+            $(this).removeClass('govuk-input--error');
+            $container.find('[data-valmsg-for="' + fieldName + '"]')
+                .text('')
+                .hide()
+                .removeClass('field-validation-error')
+                .addClass('field-validation-valid');
+        });
+}
+
+function isPimsOtherFormValid($form) {
+    var valid = true;
+
+    $form.find(':input').each(function () {
+        if (this.disabled || !this.willValidate) {
+            return;
+        }
+
+        if (!this.checkValidity()) {
+            valid = false;
+            return false;
+        }
+    });
+
+    return valid;
+}
+
+function displayPimsOtherClientValidationErrors($form) {
+    clearValidationErrors($form);
+
+    var errors = [];
+    $form.find(':input').each(function () {
+        if (this.disabled || !this.willValidate || this.checkValidity()) {
+            return;
+        }
+
+        var $field = $(this);
+        errors.push({
+            field: $field.attr('name') || '',
+            message: getPimsOtherValidationMessage($field, $form)
+        });
+    });
+
+    errors.forEach(function (error) {
+        var $field = $form.find('[name="' + error.field + '"]');
+        if (!$field.length) {
+            return;
+        }
+
+        var $formGroup = $field.closest('.govuk-form-group').addClass('govuk-form-group--error');
+        $field.addClass('govuk-input--error');
+        $formGroup.find('[data-valmsg-for="' + error.field + '"]')
+            .text(error.message)
+            .show()
+            .removeClass('field-validation-valid')
+            .addClass('field-validation-error');
+
+        clearPimsOtherFieldErrorOnInput($field, error.field, $form);
+    });
+}
+
 function saveFrequency() {
     const $form = $('#formFrequency');
     const $banner = $('#reportDbError');
     const $bannerText = $('#frequencyDbErrorText');
     const isEdit = ($form.data('is-edit') || '').toString().toLowerCase() === 'true';
 
-    displayClientValidationErrors($form, $form);
+    displayPimsOtherClientValidationErrors($form);
 
-    if (!isFormValid($form)) return;
+    if (!isPimsOtherFormValid($form)) return;
 
     $banner.hide();
 
@@ -1418,10 +1686,12 @@ function saveFrequency() {
             }
 
             if (data.errors) {
+                $bannerText.text('');
                 displayServerValidationErrors(data.errors, data.message, $form);
+                return;
             }
 
-            var msg = data.message || (Array.isArray(data.errors) && data.errors.length > 0 ? data.errors[0].message : 'Save failed.');
+            var msg = data.message || 'Save failed.';
             $bannerText.text(msg);
             $banner.show();
         })
@@ -1476,9 +1746,9 @@ function saveReviewItem() {
     const $bannerText = $('#reviewItemDbErrorText');
     const isEdit = ($form.data('is-edit') || '').toString().toLowerCase() === 'true';
 
-    displayClientValidationErrors($form, $form);
+    displayPimsOtherClientValidationErrors($form);
 
-    if (!isFormValid($form)) return;
+    if (!isPimsOtherFormValid($form)) return;
 
     $banner.hide();
 
@@ -1497,10 +1767,12 @@ function saveReviewItem() {
             }
 
             if (data.errors) {
+                $bannerText.text('');
                 displayServerValidationErrors(data.errors, data.message, $form);
+                return;
             }
 
-            var msg = data.message || (Array.isArray(data.errors) && data.errors.length > 0 ? data.errors[0].message : 'Save failed.');
+            var msg = data.message || 'Save failed.';
             $bannerText.text(msg);
             $banner.show();
         })
@@ -1555,9 +1827,9 @@ function saveRisk() {
     const $bannerText = $('#riskDbErrorText');
     const isEdit = ($form.data('is-edit') || '').toString().toLowerCase() === 'true';
 
-    displayClientValidationErrors($form, $form);
+    displayPimsOtherClientValidationErrors($form);
 
-    if (!isFormValid($form)) return;
+    if (!isPimsOtherFormValid($form)) return;
 
     $banner.hide();
 
@@ -1576,10 +1848,12 @@ function saveRisk() {
             }
 
             if (data.errors) {
+                $bannerText.text('');
                 displayServerValidationErrors(data.errors, data.message, $form);
+                return;
             }
 
-            var msg = data.message || (Array.isArray(data.errors) && data.errors.length > 0 ? data.errors[0].message : 'Save failed.');
+            var msg = data.message || 'Save failed.';
             $bannerText.text(msg);
             $banner.show();
         })
@@ -1632,9 +1906,9 @@ function savePublicationType() {
     const $form = $('#formPublicationType');
     const isEdit = ($form.data('is-edit') || '').toString().toLowerCase() === 'true';
 
-    displayClientValidationErrors($form, $form);
+    displayPimsOtherClientValidationErrors($form);
 
-    if (!isFormValid($form)) return;
+    if (!isPimsOtherFormValid($form)) return;
 
     const formData = $form.serializeArray();
     formData.push({ name: 'isEdit', value: isEdit });
@@ -1727,9 +2001,9 @@ function saveOtherReportGroup() {
     const $bannerText = $('#otherReportGroupDbErrorText');
     const isEdit = ($form.data('is-edit') || '').toString().toLowerCase() === 'true';
 
-    displayClientValidationErrors($form, $form);
+    displayPimsOtherClientValidationErrors($form);
 
-    if (!isFormValid($form)) return;
+    if (!isPimsOtherFormValid($form)) return;
 
     $banner.hide();
 
@@ -1748,11 +2022,13 @@ function saveOtherReportGroup() {
             }
 
             if (data.errors) {
+                $bannerText.text('');
                 displayServerValidationErrors(data.errors, data.message, $form);
-            } else {
-                $bannerText.text(data.message || 'Save failed.');
-                $banner.show();
+                return;
             }
+
+            $bannerText.text(data.message || 'Save failed.');
+            $banner.show();
         })
         .fail(function () {
             $bannerText.text('An error occurred while saving.');

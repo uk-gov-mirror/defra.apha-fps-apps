@@ -738,9 +738,26 @@ namespace Apha.FPSApps.Web.Areas.PIMS.Controllers
                 ? await _service.UpdateProjectManagerAsync(item.Projectmanager!, dto)
                 : await _service.CreateProjectManagerAsync(dto);
 
-            return result.Success
-                ? Json(new { success = true, message = isEditMode ? "Manager updated successfully." : "Manager created successfully." })
-                : Json(new { success = false, errors = result.Errors });
+            if (result.Success)
+            {
+                return Json(new { success = true, message = isEditMode ? "Manager updated successfully." : "Manager created successfully." });
+            }
+
+            var responseMessage = result.Errors?.FirstOrDefault()?.Message ?? "Save failed.";
+            var responseErrors = (result.Errors ?? new List<ApiErrorDto>())
+                .Select(e => new
+                {
+                    field = string.Empty,
+                    message = e.Message
+                })
+                .ToList();
+
+            return Json(new
+            {
+                success = false,
+                message = responseMessage,
+                errors = responseErrors
+            });
         }
 
         [HttpDelete]
@@ -854,6 +871,15 @@ namespace Apha.FPSApps.Web.Areas.PIMS.Controllers
                     })
                     .ToList()
                 : new List<SelectListItem>();
+            ViewBag.ProgramDropdownData = programOptionsResult.Success && programOptionsResult.Data != null
+                ? (object)programOptionsResult.Data
+                    .Select(x => new
+                    {
+                        x.ProgramNo,
+                        x.LatestYear
+                    })
+                    .ToList()
+                : new List<object>();
 
             ViewBag.IsEditMode = !string.IsNullOrWhiteSpace(program);
             ViewBag.OriginalProgram = program;
@@ -1036,6 +1062,15 @@ namespace Apha.FPSApps.Web.Areas.PIMS.Controllers
                     })
                     .ToList()
                 : new List<SelectListItem>();
+            ViewBag.ProfitCentreDropdownData = profitCentreOptionsResult.Success && profitCentreOptionsResult.Data != null
+                ? (object)profitCentreOptionsResult.Data
+                    .Select(x => new
+                    {
+                        x.ProfitCentre,
+                        x.LatestYear
+                    })
+                    .ToList()
+                : new List<object>();
 
             ViewBag.IsEditMode = !string.IsNullOrWhiteSpace(profitcentre);
             ViewBag.OriginalProfitCentre = profitcentre;
@@ -1265,25 +1300,39 @@ namespace Apha.FPSApps.Web.Areas.PIMS.Controllers
                 item.SystemId = await ResolveDefaultAccessSystemIdAsync();
             }
 
-            var dto = _mapper.Map<AccessUserDto>(item);
-
             var routeSystemId = shouldUpdate ? (originalSystemid ?? item.SystemId) : item.SystemId;
             var routeNtLogin = shouldUpdate
                 ? (string.IsNullOrWhiteSpace(originalNtlogin) ? item.NtLogin! : originalNtlogin)
                 : item.NtLogin!;
 
+            item.UserEmail = string.IsNullOrWhiteSpace(item.UserEmail) ? null : item.UserEmail.Trim();
+
+            var dto = _mapper.Map<AccessUserDto>(item);
+
             ApiResponseDto<AccessUserDto> result = shouldUpdate
                 ? await _service.UpdateAccessUserAsync(routeSystemId, routeNtLogin, dto)
                 : await _service.CreateAccessUserAsync(dto);
 
-            return result.Success
-                ? Json(new { success = true, message = shouldUpdate ? "User updated successfully." : "User added successfully." })
-                : Json(new
+            if (result.Success)
+            {
+                return Json(new { success = true, message = shouldUpdate ? "User updated successfully." : "User added successfully." });
+            }
+
+            var responseMessage = result.Errors?.FirstOrDefault()?.Message ?? "Save failed.";
+            var responseErrors = (result.Errors ?? new List<ApiErrorDto>())
+                .Select(e => new
                 {
-                    success = false,
-                    message = result.Errors?.FirstOrDefault()?.Message ?? "Save failed.",
-                    errors = result.Errors
-                });
+                    field = string.Empty,
+                    message = e.Message
+                })
+                .ToList();
+
+            return Json(new
+            {
+                success = false,
+                message = responseMessage,
+                errors = responseErrors
+            });
         }
 
         [HttpDelete]

@@ -179,6 +179,30 @@
             });
         }
 
+        // Checks Division Name uniqueness (case-insensitive) before submitting the modal.
+        // Invokes onAvailable() when the name is free, otherwise shows an inline error.
+        function checkDivisionNameAvailable(divName, originalDivName, onAvailable) {
+            $.ajax({
+                url: '@Url.Action("CheckDivisionNameExists", "DivisionMaintenance", new { area = "FPS" })',
+                type: 'GET',
+                data: { divName: divName, originalDivName: originalDivName || '' },
+                success: function (result) {
+                    if (result && result.exists) {
+                        displayServerValidationErrors(
+                            [{ field: 'DivName', message: "Division '" + divName + "' already exists." }],
+                            'There is a problem',
+                            '#modaPopupBody');
+                    } else {
+                        onAvailable();
+                    }
+                },
+                error: function () {
+                    // If the availability check fails, fall back to server-side validation on submit.
+                    onAvailable();
+                }
+            });
+        }
+
         // Save Division (Create)
         function saveDivision() {
             clearValidationErrors('#modaPopupBody');
@@ -200,33 +224,35 @@
 
             var data = {
                 DivisionId: divisionId,
-                DivName: form.find('[name="DivName"]').val(),
+                DivName: newDivName,
                 AgencyId: parseInt(form.find('[name="AgencyId"]').val()),
                 CentOverhead: centOverhead
             };
 
-            $.ajax({
-                url: '@Url.Action("Create", "DivisionMaintenance", new { area = "FPS" })',
-                type: 'POST',
-                data: JSON.stringify(data),
-                contentType: 'application/json; charset=utf-8',
-                success: function (result) {
-                    if (result.success) {
-                        showAlertMessage(result.message, AlertType.SUCCESS).then(function () {
-                            closeModal();
-                            window['gridManager_divisionGrid'].reloadGrid({ page: 1 });
-                        });
-                    } else {
-                        displayServerValidationErrors(result.errors, result.message, '#modaPopupBody')
+            checkDivisionNameAvailable(newDivName, originalDivName, function () {
+                $.ajax({
+                    url: '@Url.Action("Create", "DivisionMaintenance", new { area = "FPS" })',
+                    type: 'POST',
+                    data: JSON.stringify(data),
+                    contentType: 'application/json; charset=utf-8',
+                    success: function (result) {
+                        if (result.success) {
+                            showAlertMessage(result.message, AlertType.SUCCESS).then(function () {
+                                closeModal();
+                                window['gridManager_divisionGrid'].reloadGrid({ page: 1 });
+                            });
+                        } else {
+                            displayServerValidationErrors(result.errors, result.message, '#modaPopupBody')
+                        }
+                    },
+                    error: function (xhr) {
+                        if (xhr.status === 400 && xhr.responseJSON) {
+                            displayServerValidationErrors(xhr.responseJSON.errors, xhr.responseJSON.message, '#modaPopupBody');
+                        } else {
+                            showAlertMessage('An error occurred while saving', AlertType.ERROR);
+                        }
                     }
-                },
-                error: function (xhr) {
-                    if (xhr.status === 400 && xhr.responseJSON) {
-                        displayServerValidationErrors(xhr.responseJSON.errors, xhr.responseJSON.message, '#modaPopupBody');
-                    } else {
-                        showAlertMessage('An error occurred while saving', AlertType.ERROR);
-                    }
-                }
+                });
             });
         }
 
@@ -256,29 +282,31 @@
                 CentOverhead: centOverhead
             };
 
-            // Use original DivName in the URL to identify the record to update
-            $.ajax({
-                url: '@Url.Action("Edit", "DivisionMaintenance", new { area = "FPS" })?originalDivName=' + encodeURIComponent(originalDivName),
-                type: 'POST',
-                data: JSON.stringify(data),
-                contentType: 'application/json; charset=utf-8',
-                success: function (result) {
-                    if (result.success) {
-                        showAlertMessage(result.message, AlertType.SUCCESS).then(function () {
-                            closeModal();
-                            window['gridManager_divisionGrid'].reloadGrid({ page: 1 });
-                        });
-                    } else {
-                        displayServerValidationErrors(result.errors, result.message, '#modaPopupBody')
+            checkDivisionNameAvailable(newDivName, originalDivName, function () {
+                // Use original DivName in the URL to identify the record to update
+                $.ajax({
+                    url: '@Url.Action("Edit", "DivisionMaintenance", new { area = "FPS" })?originalDivName=' + encodeURIComponent(originalDivName),
+                    type: 'POST',
+                    data: JSON.stringify(data),
+                    contentType: 'application/json; charset=utf-8',
+                    success: function (result) {
+                        if (result.success) {
+                            showAlertMessage(result.message, AlertType.SUCCESS).then(function () {
+                                closeModal();
+                                window['gridManager_divisionGrid'].reloadGrid({ page: 1 });
+                            });
+                        } else {
+                            displayServerValidationErrors(result.errors, result.message, '#modaPopupBody')
+                        }
+                    },
+                    error: function (xhr) {
+                        if (xhr.status === 400 && xhr.responseJSON) {
+                            displayServerValidationErrors(xhr.responseJSON.errors, xhr.responseJSON.message, '#modaPopupBody');
+                        } else {
+                            showAlertMessage('An error occurred while saving.', AlertType.ERROR);
+                        }
                     }
-                },
-                error: function (xhr) {
-                    if (xhr.status === 400 && xhr.responseJSON) {
-                        displayServerValidationErrors(xhr.responseJSON.errors, xhr.responseJSON.message, '#modaPopupBody');
-                    } else {
-                        showAlertMessage('An error occurred while saving.', AlertType.ERROR);
-                    }
-                }
+                });
             });
         }
 

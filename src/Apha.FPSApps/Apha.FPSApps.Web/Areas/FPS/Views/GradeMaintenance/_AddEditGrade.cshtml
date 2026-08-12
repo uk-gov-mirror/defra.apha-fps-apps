@@ -29,7 +29,7 @@
         <form id="@formId">
             @Html.AntiForgeryToken()
 
-            <input type="hidden" id="hdnIsEdit"
+            <input type="hidden" id="hdnIsEdit" value="@(isEditMode ? "true" : "false")" />
             <input type="hidden" id="hdnOriginalCode" value="@(Model?.GradeCode ?? string.Empty)" />
 
             <div class="cc-modal-form-grid">

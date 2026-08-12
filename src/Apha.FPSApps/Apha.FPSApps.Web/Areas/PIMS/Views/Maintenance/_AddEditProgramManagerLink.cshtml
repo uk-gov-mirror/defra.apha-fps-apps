@@ -4,6 +4,7 @@
     var isEditMode = ViewBag.IsEditMode as bool? ?? false;
     var originalProgram = ViewBag.OriginalProgram as string;
     var title = isEditMode ? "Edit Program" : "Add Program";
+    var programDropdownData = ViewBag.ProgramDropdownData as dynamic ?? new List<object>();
 }
 
 <div class="modal-header flex-space-center">
@@ -28,19 +29,18 @@
         </div>
 
         <div class="govuk-form-group" id="mgrAssignValueGroup">
-            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" for="mgrAssignValue">
+            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" for="mgrAssignProgramDropdown_input">
                 <span id="mgrAssignLabel">Program:</span> <span class="ra-required-star" aria-hidden="true">*</span>
             </label>
-            <select class="govuk-select govuk-!-font-size-16 ra-select-full"
-                    asp-for="Program"
-                    asp-items="ViewBag.ProgramOptions"
-                    id="mgrAssignValue"
-                    required
-                    aria-required="true"
-                    aria-label="Program"
-                    aria-describedby="mgrAssignValueError">
-                <option value="">-- Select --</option>
-            </select>
+            <!-- Multi-column dropdown container -->
+            <div id="mgrAssignProgramDropdownContainer" class="ra-select-full"></div>
+
+            <!-- Hidden input to store selected program value -->
+            <input type="hidden" id="mgrAssignValue" name="Program" value="@Model.Program" />
+
+            <!-- Hidden data element with dropdown options -->
+            <script type="application/json" id="mgrAssignProgramOptionsData">@Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(programDropdownData))</script>
+
             <span asp-validation-for="Program" 
                   data-valmsg-for="Program"
                   class="govuk-error-message" 
@@ -63,64 +63,3 @@
     </form>
 </div>
 
-@section Scripts {
-    <script>
-        function saveProgramManagerLink() {
-            var $form = $('#formProgramManagerLink');
-
-            // Clear and validate form using existing helper functions
-            displayClientValidationErrors($form, $form);
-            if (!isFormValid($form)) return;
-
-            var dbError     = document.getElementById('mgrAssignDbError');
-            var dbErrorText = document.getElementById('mgrAssignDbErrorText');
-            if (dbError) dbError.classList.add('ra-hidden');
-
-            var program = document.getElementById('mgrAssignValue')?.value || '';
-            var manager = document.getElementById('hdnLinkManager')?.value || '';
-
-            var isEditMode = (document.getElementById('hdnIsProgramEditMode')?.value || '').toLowerCase() === 'true';
-            var originalProgram = document.getElementById('hdnOriginalProgram')?.value || '';
-            var url = isEditMode
-                ? '/PIMS/Maintenance/UpdateProgramManagerLink'
-                : '/PIMS/Maintenance/SaveProgramManagerLink';
-
-            var payload = isEditMode
-                ? {
-                    originalProgram: originalProgram,
-                    originalManager: manager,
-                    program: program,
-                    manager: manager
-                }
-                : {
-                    program: program,
-                    manager: manager
-                };
-
-            $.ajax({
-                url: url,
-                type: 'POST',
-                contentType: 'application/json; charset=utf-8',
-                data: JSON.stringify(payload),
-                headers: { 'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').first().val() },
-                success: function (data) {
-                    if (data.success) {
-                        showAlertMessage(data.message || (isEditMode ? 'Programme assignment updated successfully.' : 'Programme assignment added successfully.'), AlertType.SUCCESS)
-                            .then(function () {
-                                closeModal();
-                                reloadProgramManagerLinksGrid();
-                            });
-                    } else {
-                        var msg = data.message || 'Save failed.';
-                        if (dbErrorText) dbErrorText.textContent = msg;
-                        if (dbError) dbError.classList.remove('ra-hidden');
-                    }
-                },
-                error: function () {
-                    if (dbErrorText) dbErrorText.textContent = 'An error occurred while saving.';
-                    if (dbError) dbError.classList.remove('ra-hidden');
-                }
-            });
-        }
-    </script>
-}

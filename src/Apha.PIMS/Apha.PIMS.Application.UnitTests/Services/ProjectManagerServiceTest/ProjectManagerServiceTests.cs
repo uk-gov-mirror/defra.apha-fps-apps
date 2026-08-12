@@ -24,10 +24,22 @@ namespace Apha.PIMS.Application.UnitTests.Services.ProjectManagerServiceTest
         // ── helpers ───────────────────────────────────────────────────────────────
 
         private static ProjectManager MakeEntity(string name = "J. Smith") =>
-            new ProjectManager { Projectmanager = name, Email = "j.smith@apha.gov.uk", Disable = false };
+            new ProjectManager
+            {
+                Projectmanager = name,
+                Email = "j.smith@apha.gov.uk",
+                LoginEmail = "j.smith@login.apha.gov.uk",
+                Disable = false
+            };
 
         private static ProjectManagerDto MakeDto(string name = "J. Smith") =>
-            new ProjectManagerDto { ProjectManager = name, Email = "j.smith@apha.gov.uk", Disable = false };
+            new ProjectManagerDto
+            {
+                ProjectManager = name,
+                Email = "j.smith@apha.gov.uk",
+                LoginEmail = "j.smith@login.apha.gov.uk",
+                Disable = false
+            };
 
         // ── Constructor ───────────────────────────────────────────────────────────
 
@@ -157,6 +169,7 @@ namespace Apha.PIMS.Application.UnitTests.Services.ProjectManagerServiceTest
             var created = MakeEntity(name);
             var result_dto = MakeDto(name);
             _repository.ProjectManagerExistsAsync(name).Returns(false);
+            _repository.GetAllProjectManagersAsync().Returns(new List<ProjectManager>());
             _mapper.Map<ProjectManager>(dto).Returns(entity);
             _repository.AddProjectManagerAsync(entity).Returns(created);
             _mapper.Map<ProjectManagerDto>(created).Returns(result_dto);
@@ -179,6 +192,27 @@ namespace Apha.PIMS.Application.UnitTests.Services.ProjectManagerServiceTest
 
             // Act & Assert
             await Assert.ThrowsAsync<InvalidOperationException>(() => _service.CreateProjectManagerAsync(dto));
+        }
+
+        [Fact]
+        public async Task CreateAsync_DuplicateLoginEmail_ThrowsInvalidOperationException()
+        {
+            // Arrange
+            var dto = MakeDto("New Manager");
+            dto.LoginEmail = "dup@login.apha.gov.uk";
+            _repository.ProjectManagerExistsAsync("New Manager").Returns(false);
+            _repository.GetAllProjectManagersAsync().Returns(new List<ProjectManager>
+            {
+                new ProjectManager
+                {
+                    Projectmanager = "Existing Manager",
+                    LoginEmail = "dup@login.apha.gov.uk"
+                }
+            });
+
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _service.CreateProjectManagerAsync(dto));
+            Assert.Equal("Manager's login email already exists.", ex.Message);
         }
 
         [Fact]
@@ -224,6 +258,7 @@ namespace Apha.PIMS.Application.UnitTests.Services.ProjectManagerServiceTest
             var updated = MakeEntity(name);
             var result_dto = MakeDto(name);
             _repository.ProjectManagerExistsAsync(name).Returns(true);
+            _repository.GetAllProjectManagersAsync().Returns(new List<ProjectManager> { MakeEntity(name) });
             _mapper.Map<ProjectManager>(dto).Returns(entity);
             _repository.UpdateProjectManagerAsync(entity).Returns(updated);
             _mapper.Map<ProjectManagerDto>(updated).Returns(result_dto);
@@ -244,6 +279,24 @@ namespace Apha.PIMS.Application.UnitTests.Services.ProjectManagerServiceTest
 
             // Act & Assert
             await Assert.ThrowsAsync<KeyNotFoundException>(() => _service.UpdateProjectManagerAsync(MakeDto("Unknown")));
+        }
+
+        [Fact]
+        public async Task UpdateAsync_DuplicateLoginEmailOnAnotherManager_ThrowsInvalidOperationException()
+        {
+            // Arrange
+            var dto = MakeDto("J. Smith");
+            dto.LoginEmail = "dup@login.apha.gov.uk";
+            _repository.ProjectManagerExistsAsync("J. Smith").Returns(true);
+            _repository.GetAllProjectManagersAsync().Returns(new List<ProjectManager>
+            {
+                new ProjectManager { Projectmanager = "J. Smith", LoginEmail = "j.smith@login.apha.gov.uk" },
+                new ProjectManager { Projectmanager = "A. Jones", LoginEmail = "dup@login.apha.gov.uk" }
+            });
+
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => _service.UpdateProjectManagerAsync(dto));
+            Assert.Equal("Manager's login email already exists.", ex.Message);
         }
 
         [Fact]

@@ -540,6 +540,17 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.DivisionRepositoryTest
             Assert.False(notExists);
         }
 
+        [Theory]
+        [InlineData("aap")]
+        [InlineData("AAP")]
+        [InlineData("Aap")]
+        public async Task DivisionExistsAsync_ReturnsTrue_RegardlessOfCasing(string lookupName)
+        {
+            var repo = CreateRepository(divisions: [BuildDivision("aap")]);
+            var result = await repo.DivisionExistsAsync(lookupName);
+            Assert.True(result);
+        }
+
         #endregion
 
         #region GetDivisionForeignKeyReferencesAsync Tests

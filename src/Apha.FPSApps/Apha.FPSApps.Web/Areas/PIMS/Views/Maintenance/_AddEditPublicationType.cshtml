@@ -39,8 +39,9 @@
                                maxlength="3"
                                readonly
                                aria-required="true"
-                               aria-label="Type"
-                               aria-describedby="editPublicationTypeCodeError" />
+                               aria-describedby="editPublicationTypeCodeError"
+                               data-val-required="Type is required" 
+                               aria-label="Type" />
                     }
                     else
                     {
@@ -51,8 +52,9 @@
                                maxlength="3"
                                required
                                aria-required="true"
-                               aria-label="Type"
-                               aria-describedby="editPublicationTypeCodeError" />
+                               aria-describedby="editPublicationTypeCodeError"
+                               data-val-required="Type is required"
+                               aria-label="Type" />
                     }
                     <span asp-validation-for="Type"
                     data-valmsg-for="Type"
