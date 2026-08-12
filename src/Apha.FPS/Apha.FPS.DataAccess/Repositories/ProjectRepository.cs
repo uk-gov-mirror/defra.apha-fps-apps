@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System.Dynamic;
 using System.Linq.Expressions;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Apha.FPS.DataAccess.Repositories
 {
@@ -729,7 +730,10 @@ namespace Apha.FPS.DataAccess.Repositories
             if (filterModel == null)
                 return query;
 
-            var dict = (IDictionary<string, object>)filterModel;
+            var dict = (IDictionary<string, object>)filterModel;            
+            
+            if (dict.TryGetValue("JobCode", out var jobCode) && jobCode != null)
+                query = query.Where(x => EF.Functions.ILike(x.ParentProject, $"%{jobCode}%"));
 
             if (dict.TryGetValue(FilterKeyParentProject, out var parentProject) && parentProject != null)
                 query = query.Where(x => EF.Functions.ILike(x.ParentProject, $"%{parentProject}%"));
@@ -769,6 +773,26 @@ namespace Apha.FPS.DataAccess.Repositories
 
             if (dict.TryGetValue("ProjectStatus", out var projectStatus) && projectStatus != null)
                 query = query.Where(x => EF.Functions.ILike(x.ProjectStatus!, $"%{projectStatus}%"));
+
+            return query;
+        }
+
+        private static List<ProjectProfitabilityView> ApplyProfitabilityJobCodeFilter(List<ProjectProfitabilityView> query, string? filter)
+        {
+            if (string.IsNullOrEmpty(filter))
+                return query;
+
+            dynamic? filterModel = JsonConvert.DeserializeObject<ExpandoObject>(filter);
+            if (filterModel == null)
+                return query;
+
+            var dict = (IDictionary<string, object>)filterModel;
+
+            if (dict.TryGetValue("JobCode", out var jobCode) && jobCode != null)
+                query = query.Where(x => x.JobCode.Contains(jobCode.ToString())).ToList();
+
+            if (dict.TryGetValue("ProjectStatus", out var projectStatus) && projectStatus != null)
+                query = query.Where(x => x.ProjectStatus!.Contains(projectStatus.ToString())).ToList();
 
             return query;
         }
@@ -1652,7 +1676,11 @@ namespace Apha.FPS.DataAccess.Repositories
                 ? new Dictionary<string, decimal?> { { programme.ProgramNo!, programme.Target } }
                 : new Dictionary<string, decimal?>();
 
-            return await ComputeProfitabilityAsync(query, projects, programmeTargetMap);
+            var result = await ComputeProfitabilityAsync(query, projects, programmeTargetMap);
+
+            result = ApplyProfitabilityJobCodeFilter(result, query.Filter);
+
+            return ApplyPaging(result, query.Page, query.PageSize);
         }
 
         /// <summary>
@@ -1676,8 +1704,6 @@ namespace Apha.FPS.DataAccess.Repositories
             else if (workTypeFilter == "not-approved")
                 projectQuery = projectQuery.Where(p => p.ProjectStatus == "Not Approved");
 
-            projectQuery = ApplyProjectFilter(projectQuery, query.Filter);
-
             var projects = await projectQuery
                 .Select(p => new ProjectProfitabilityEntry(p.ParentProject, p.BudgetCvl, p.Profit, p.ProjectStatus, p.Program))
                 .ToListAsync();
@@ -1696,7 +1722,11 @@ namespace Apha.FPS.DataAccess.Repositories
                 .Where(pg => distinctProgramNos.Contains(pg.ProgramNo))
                 .ToDictionaryAsync(pg => pg.ProgramNo!, pg => pg.Target);
 
-            return await ComputeProfitabilityAsync(query, projects, programmeTargetMap);
+            var result = await ComputeProfitabilityAsync(query, projects, programmeTargetMap);
+
+            result = ApplyProfitabilityJobCodeFilter(result, query.Filter);
+
+            return ApplyPaging(result, query.Page, query.PageSize);
         }
 
         private static ProjectProfitabilityView BuildProfitabilityRow(
@@ -1733,7 +1763,7 @@ namespace Apha.FPS.DataAccess.Repositories
             };
         }
 
-        private async Task<PagedData<ProjectProfitabilityView>> ComputeProfitabilityAsync(
+        private async Task<List<ProjectProfitabilityView>> ComputeProfitabilityAsync(
             PaginationParameters<string> query,
             List<ProjectProfitabilityEntry> projects,
             Dictionary<string, decimal?> programmeTargetMap)
@@ -1744,26 +1774,26 @@ namespace Apha.FPS.DataAccess.Repositories
             var staffCosts = await (
                 from sj in _dbContext.StaffJobs
                 join wge in _dbContext.WorkGroupEmployees
-                    on sj.StaffId equals wge.PactId                   
+                    on sj.StaffId equals wge.PactId
                 join wgg in _dbContext.WorkgroupGrades
-                    on wge.WorkGroupGrade equals wgg.WgGrade 
+                    on wge.WorkGroupGrade equals wgg.WgGrade
                 join pcg in _dbContext.ProfitCentreGrades
-                    on wgg.ProfitCentreGrade equals pcg.PcGrade                   
+                    on wgg.ProfitCentreGrade equals pcg.PcGrade
                 join p in _dbContext.Projects
                     on sj.JobCode equals p.ParentProject
                 join pg in _dbContext.Programs
-                    on p.Program equals pg.ProgramNo                                      
+                    on p.Program equals pg.ProgramNo
                 where projectCodes.Contains(sj.JobCode)
                     && pg != null
                     && EF.Functions.ILike(pg.SectorName!, "%charge%")
                 select new
-                {                    
+                {
                     sectorCharge = string.Equals((pg.SectorName ?? "").Trim(), "charge", StringComparison.OrdinalIgnoreCase) ? 1m : 0m,
-                    JobCode = sj.JobCode,                    
+                    JobCode = sj.JobCode,
                     PlannedHours = sj.PlannedHours,
                     ChargeRate = p.IsDefraProject == 0 ? pcg.ChargeRate : pcg.DefraChargeRate
                 })
-                .ToListAsync();            
+                .ToListAsync();
 
             // Additional costs by summing ItemCost per JobCode from AdditionalCosts
             var additionalCosts = await _dbContext.AdditionalCosts
@@ -1794,9 +1824,9 @@ namespace Apha.FPS.DataAccess.Repositories
             var animalCostsRaw = await (
                 from ar in _dbContext.AnimalRequests
                 join p in _dbContext.Projects
-                    on ar.JobCode equals p.ParentProject                    
+                    on ar.JobCode equals p.ParentProject
                 join a in _dbContext.Animals
-                    on ar.AnimalType equals a.AnimalType                  
+                    on ar.AnimalType equals a.AnimalType
                 where projectCodes.Contains(ar.JobCode)
                 select new
                 {
@@ -1829,21 +1859,21 @@ namespace Apha.FPS.DataAccess.Repositories
             // Apply sorting
             results = query.SortBy?.ToLower() switch
             {
-                "jobcode"               => SortList(results, r => r.JobCode,                 query.Descending),
-                "totalcosts"            => SortList(results, r => r.TotalCosts,              query.Descending),
-                "budgetcvl"             => SortList(results, r => r.BudgetCvl,               query.Descending),
-                "jcprofit"              => SortList(results, r => r.JcProfit,                query.Descending),
-                "offtarget"             => SortList(results, r => r.OffTarget,               query.Descending),
-                "projectstatus"         => SortList(results, r => r.ProjectStatus,           query.Descending),
-                "jctotalstaffcosts"     => SortList(results, r => r.JcTotalStaffCosts,       query.Descending),
-                "jctotaltestcosts"      => SortList(results, r => r.JcTotalTestCosts,        query.Descending),
-                "jctotalanimalcosts"    => SortList(results, r => r.JcTotalAnimalCosts,      query.Descending),
-                "jctotaladditionalcosts"=> SortList(results, r => r.JcTotalAdditionalCosts,  query.Descending),
-                "targetprofit"          => SortList(results, r => r.TargetProfit,            query.Descending),
-                _                       => results.OrderBy(r => r.JobCode).ToList()
+                "jobcode" => SortList(results, r => r.JobCode, query.Descending),
+                "totalcosts" => SortList(results, r => r.TotalCosts, query.Descending),
+                "budgetcvl" => SortList(results, r => r.BudgetCvl, query.Descending),
+                "jcprofit" => SortList(results, r => r.JcProfit, query.Descending),
+                "offtarget" => SortList(results, r => r.OffTarget, query.Descending),
+                "projectstatus" => SortList(results, r => r.ProjectStatus, query.Descending),
+                "jctotalstaffcosts" => SortList(results, r => r.JcTotalStaffCosts, query.Descending),
+                "jctotaltestcosts" => SortList(results, r => r.JcTotalTestCosts, query.Descending),
+                "jctotalanimalcosts" => SortList(results, r => r.JcTotalAnimalCosts, query.Descending),
+                "jctotaladditionalcosts" => SortList(results, r => r.JcTotalAdditionalCosts, query.Descending),
+                "targetprofit" => SortList(results, r => r.TargetProfit, query.Descending),
+                _ => results.OrderBy(r => r.JobCode).ToList()
             };
 
-            return ApplyPaging(results, query.Page, query.PageSize);
+            return results;
         }
 
         // ── VLA Project Profitability ──────────────────────────────────────────
