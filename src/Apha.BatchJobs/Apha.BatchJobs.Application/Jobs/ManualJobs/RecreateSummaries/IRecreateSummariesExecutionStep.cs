@@ -10,8 +10,5 @@ public interface IRecreateSummariesExecutionStep
     /// <summary>Unique display name matching the legacy procedure name.</summary>
     string StepName { get; }
 
-    /// <summary>
-    /// Executes the step using the supplied execution context.
-    /// </summary>
-    Task<StepResult> ExecuteAsync(RecreateSummariesExecutionContext context, CancellationToken cancellationToken = default);
+    Task<StepResult> ExecuteAsync(IRecreateSummariesExecutionContext context, CancellationToken cancellationToken = default);
 }

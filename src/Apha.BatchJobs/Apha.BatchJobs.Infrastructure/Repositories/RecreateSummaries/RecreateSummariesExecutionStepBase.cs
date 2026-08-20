@@ -10,13 +10,16 @@ internal abstract class RecreateSummariesExecutionStepBase : IRecreateSummariesE
 {
     public abstract string StepName { get; }
 
-    public async Task<StepResult> ExecuteAsync(RecreateSummariesExecutionContext context, CancellationToken cancellationToken = default)
+    public async Task<StepResult> ExecuteAsync(IRecreateSummariesExecutionContext context, CancellationToken cancellationToken = default)
     {
+        if (context is not RecreateSummariesExecutionContext executionContext)
+            throw new ArgumentException("Unexpected RecreateSummaries execution context.", nameof(context));
+
         var start = DateTime.UtcNow;
 
         try
         {
-            var rowsAffected = await ExecuteCoreAsync(context, cancellationToken);
+            var rowsAffected = await ExecuteCoreAsync(executionContext, cancellationToken);
             return new StepResult(StepName, rowsAffected, start, DateTime.UtcNow, StepStatus.Success);
         }
         catch (OperationCanceledException)

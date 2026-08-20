@@ -111,7 +111,7 @@ internal sealed class RecreateSummariesExecutionRunner : IRecreateSummariesExecu
 
     private async Task<StepResult> ExecuteStepAsync(
         IRecreateSummariesExecutionStep step,
-        RecreateSummariesExecutionContext executionContext,
+        IRecreateSummariesExecutionContext executionContext,
         string jobExecutionId,
         CancellationToken cancellationToken)
     {
