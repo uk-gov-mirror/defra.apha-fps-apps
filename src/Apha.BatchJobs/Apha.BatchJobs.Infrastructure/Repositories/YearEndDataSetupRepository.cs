@@ -1,6 +1,7 @@
 using Apha.BatchJobs.Domain.Interfaces;
 using Apha.BatchJobs.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 using System.Data.Common;
 
 namespace Apha.BatchJobs.Infrastructure.Repositories;
@@ -129,6 +130,63 @@ public sealed class YearEndDataSetupRepository : IYearEndDataSetupRepository
 
         return await ExecuteBooleanAsync(command, cancellationToken);
     }
+
+    public async Task<long> CountRowsByYearAsync(string schema, string table, string yearColumn, int year, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = _dbContextFactory.CreateDbContext();
+        await dbContext.Database.OpenConnectionAsync(cancellationToken);
+        var connection = dbContext.Database.GetDbConnection();
+
+        await using var command = connection.CreateCommand();
+        command.CommandText = $"SELECT COUNT(*) FROM {schema}.{table} WHERE {yearColumn} = @target_year;";
+        AddParameter(command, "target_year", year);
+
+        var scalar = await command.ExecuteScalarAsync(cancellationToken);
+        return scalar is long count ? count : Convert.ToInt64(scalar);
+    }
+
+    public async Task<string?> ResolveYearColumnAsync(string schema, string table, CancellationToken cancellationToken = default)
+    {
+        if (await ColumnExistsAsync(schema, table, "fpsyear", cancellationToken))
+        {
+            return "fpsyear";
+        }
+
+        if (await ColumnExistsAsync(schema, table, "year", cancellationToken))
+        {
+            return "year";
+        }
+
+        return null;
+    }
+
+    public async Task<int> DeleteRowsByYearAsync(string schema, string table, string yearColumn, int targetYear, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = _dbContextFactory.CreateDbContext();
+        await dbContext.Database.OpenConnectionAsync(cancellationToken);
+        var connection = dbContext.Database.GetDbConnection();
+
+        await using var command = connection.CreateCommand();
+        command.CommandText = $"DELETE FROM {schema}.{table} WHERE {yearColumn} = @target_year;";
+        AddParameter(command, "target_year", targetYear);
+
+        return await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    public Task<int> DeleteInactiveEmployeeJobRowsAsync(string schema, string jobTable, string yearColumn, string jobStaffColumn, string employeeTable, string employeeStaffColumn, int targetYear, CancellationToken cancellationToken = default)
+        => throw new NotSupportedException("This Year End operation is awaiting the active Year End branch implementation.");
+
+    public Task<int> CopyPeriodRowsAsync(int sourceYear, int targetYear, CancellationToken cancellationToken = default)
+        => throw new NotSupportedException("This Year End operation is awaiting the active Year End branch implementation.");
+
+    public Task<int> ResetFieldsByYearAsync(string schema, string table, string yearColumn, IReadOnlyDictionary<string, string> rules, int targetYear, CancellationToken cancellationToken = default)
+        => throw new NotSupportedException("This Year End operation is awaiting the active Year End branch implementation.");
+
+    public Task<int> CopyFpsYearScopedTableAsync(string table, int sourceYear, int targetYear, CancellationToken cancellationToken = default)
+        => throw new NotSupportedException("This Year End operation is awaiting the active Year End branch implementation.");
+
+    public Task<int> CopyMabArchiveYearScopedTableAsync(string table, int sourceYear, int targetYear, CancellationToken cancellationToken = default)
+        => throw new NotSupportedException("This Year End operation is awaiting the active Year End branch implementation.");
 
     private static async Task<bool> ExecuteBooleanAsync(DbCommand command, CancellationToken cancellationToken)
     {
