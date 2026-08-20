@@ -49,6 +49,7 @@ public sealed class BatchJobFactoryTests
     [Fact]
     public void Create_ShouldThrowImmediately_WhenRegisteredTypeCannotBeResolvedFromContainer()
     {
+        using var serviceProvider = new ServiceCollection().BuildServiceProvider();
         // ConventionalJobMap finds HealthCheckJobHandler by reflection, but nothing here
         // registers it (or its dependencies) in the container â€” this must fail loudly at
         // this Create() call rather than silently falling back to constructing every other job.
@@ -64,6 +65,7 @@ public sealed class BatchJobFactoryTests
     [Fact]
     public void GetAvailableJobs_ShouldReturnKnownConventionalNames()
     {
+        using var serviceProvider = new ServiceCollection().BuildServiceProvider();
         var factory = new BatchJobFactory(serviceProvider);
 
         // Regression guard: this is the full set of real IBatchJob types discovered by

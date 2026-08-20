@@ -11,7 +11,8 @@ internal sealed class MyStaffLoader : MabArchiveExecutionLoaderBase
     private readonly MabArchiveSettings _settings;
     private readonly ILogger<MyStaffLoader> _logger;
 
-    public MyStaffLoader(IOptions<MabArchiveSettings> settings, ILogger<MyStaffLoader> logger)
+    public MyStaffLoader(BatchJobsDbContext context, IOptions<MabArchiveSettings> settings, ILogger<MyStaffLoader> logger)
+        : base(context)
     {
         _settings = settings?.Value ?? new MabArchiveSettings();
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));

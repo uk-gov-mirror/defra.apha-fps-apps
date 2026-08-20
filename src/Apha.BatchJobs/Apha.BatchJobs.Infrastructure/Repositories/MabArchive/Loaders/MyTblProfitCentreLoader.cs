@@ -5,6 +5,8 @@ namespace Apha.BatchJobs.Infrastructure.Repositories.MabArchive.Loaders;
 
 internal sealed class MyTblProfitCentreLoader : MabArchiveExecutionLoaderBase
 {
+    internal MyTblProfitCentreLoader(BatchJobsDbContext context) : base(context) { }
+
     public override int Sequence => 19;
 
     public override string Name => "my_tblprofitcentre";

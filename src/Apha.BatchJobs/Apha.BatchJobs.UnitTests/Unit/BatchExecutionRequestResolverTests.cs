@@ -34,6 +34,7 @@ public sealed class BatchExecutionRequestResolverTests
     public void Resolve_ValidScheduledRequest_ReturnsMatchingRequest()
     {
         var jobExecutionId = Guid.NewGuid();
+        using var scope = new EnvScopeSet(
             jobName: "MABArchive",
             runMode: "Scheduled",
             jobExecutionId: jobExecutionId.ToString("D"),
@@ -52,6 +53,7 @@ public sealed class BatchExecutionRequestResolverTests
     [Fact]
     public void Resolve_WhenParametersJsonSet_ReturnsItOnTheRequest()
     {
+        using var scope = new EnvScopeSet(
             jobName: "RecreateSummary",
             runMode: "Manual",
             jobExecutionId: Guid.NewGuid().ToString("D"),
@@ -67,6 +69,7 @@ public sealed class BatchExecutionRequestResolverTests
     [Fact]
     public void Resolve_WhenParametersJsonNotSet_ReturnsNull()
     {
+        using var scope = new EnvScopeSet(
             jobName: "RecreateSummary",
             runMode: "Manual",
             jobExecutionId: Guid.NewGuid().ToString("D"),
@@ -81,6 +84,7 @@ public sealed class BatchExecutionRequestResolverTests
     [Fact]
     public void Resolve_WhenRequestedByMissing_DefaultsToSystem()
     {
+        using var scope = new EnvScopeSet(
             jobName: "RecreateSummary",
             runMode: "Manual",
             jobExecutionId: Guid.NewGuid().ToString("D"),
@@ -95,6 +99,7 @@ public sealed class BatchExecutionRequestResolverTests
     [Fact]
     public void Resolve_WhenJobNameIsTemplatePlaceholder_ThrowsJobValidationException()
     {
+        using var scope = new EnvScopeSet(
             jobName: "<jobName>",
             runMode: "Manual",
             jobExecutionId: Guid.NewGuid().ToString("D"),
@@ -108,6 +113,7 @@ public sealed class BatchExecutionRequestResolverTests
     [Fact]
     public void Resolve_WhenRequestedByIsTemplatePlaceholder_ThrowsJobValidationException()
     {
+        using var scope = new EnvScopeSet(
             jobName: "RecreateSummary",
             runMode: "Manual",
             jobExecutionId: Guid.NewGuid().ToString("D"),

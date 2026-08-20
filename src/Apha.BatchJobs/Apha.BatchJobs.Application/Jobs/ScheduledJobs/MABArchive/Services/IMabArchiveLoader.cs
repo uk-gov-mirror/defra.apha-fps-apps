@@ -1,5 +1,3 @@
-using Apha.BatchJobs.Infrastructure.Data;
-
 namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
 
 /// <summary>
@@ -20,5 +18,5 @@ public interface IMabArchiveLoader
     /// <summary>
     /// Executes this loader for the supplied year.
     /// </summary>
-    Task<int> LoadAsync(BatchJobsDbContext context, int year, CancellationToken cancellationToken);
+    Task<int> LoadAsync(int year, CancellationToken cancellationToken);
 }

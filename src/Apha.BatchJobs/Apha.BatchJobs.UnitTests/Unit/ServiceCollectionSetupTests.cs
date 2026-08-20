@@ -131,6 +131,7 @@ public sealed class ServiceCollectionSetupTests
     {
         // Regression guard: adding, removing, or deferring a job must force a deliberate update here.
         var services = CreateServices(GetBatchJobsRoot());
+        using var serviceProvider = services.BuildServiceProvider();
 
         var registeredNames = serviceProvider.GetServices<IBatchJob>()
             .Select(j => j.Name)
@@ -147,6 +148,7 @@ public sealed class ServiceCollectionSetupTests
     public void AddBatchJobs_AllRegisteredJobs_ShouldDeclareExplicitIdempotencyStrategy()
     {
         var services = CreateServices(GetBatchJobsRoot());
+        using var serviceProvider = services.BuildServiceProvider();
 
         var jobs = serviceProvider.GetServices<IBatchJob>().ToList();
         Assert.NotEmpty(jobs);
@@ -163,6 +165,7 @@ public sealed class ServiceCollectionSetupTests
     public void AddBatchJobs_ManualAdhocJobs_ShouldHaveNoScheduleExpression()
     {
         var services = CreateServices(GetBatchJobsRoot());
+        using var serviceProvider = services.BuildServiceProvider();
 
         var jobs = serviceProvider.GetServices<IBatchJob>().ToList();
 
@@ -187,6 +190,7 @@ public sealed class ServiceCollectionSetupTests
     [Fact]
     public void AddBatchJobs_DefaultMabArchiveMode_ShouldRegisterMabArchiveLoadersOnly()
     {
+        using var serviceProvider = BuildServiceProvider();
         var loaders = serviceProvider.GetServices<IMabArchiveLoader>().ToList();
 
         Assert.Equal(24, loaders.Count);
@@ -241,6 +245,7 @@ public sealed class ServiceCollectionSetupTests
     [Fact]
     public void AddBatchJobs_ShouldRegisterYearEndDataSetupStepsInExpectedOrder()
     {
+        using var serviceProvider = BuildServiceProvider();
         var steps = serviceProvider.GetServices<IYearEndDataSetupStep>().ToList();
 
         Assert.Equal(
@@ -264,16 +269,18 @@ public sealed class ServiceCollectionSetupTests
     [Fact]
     public void AddBatchJobs_ShouldRegisterEmailTemplateRenderer()
     {
+        using var serviceProvider = BuildServiceProvider();
         Assert.NotNull(serviceProvider.GetRequiredService<IEmailTemplateRenderer>());
     }
 
     [Fact]
     public void AddBatchJobs_WhenGraphEmailSettingsMissing_RegistrationSucceeds_ButResolvingEmailServiceThrows()
     {
-        // No GraphEmailSettings section ï¿½ expected in every environment until a live Graph send
+        // No GraphEmailSettings section - expected in every environment until a live Graph send
         // is authorised. Registration and BuildServiceProvider must not throw; only resolving
         // IEmailService itself should fail, and only at that point.
 
+        using var serviceProvider = BuildServiceProvider();
         var ex = Assert.Throws<InvalidOperationException>(() => serviceProvider.GetRequiredService<IEmailService>());
         Assert.Contains("GraphEmailSettings", ex.Message);
     }

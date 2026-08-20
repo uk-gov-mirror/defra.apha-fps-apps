@@ -35,6 +35,7 @@ public sealed class RecreateSummariesExecutionStepBaseTests
     [Fact]
     public async Task ExecuteAsync_WhenCancelled_DoesNotReturnFailedStepResult()
     {
+        using var cts = new CancellationTokenSource();
         cts.Cancel();
 
         var step = new CancellingStep();

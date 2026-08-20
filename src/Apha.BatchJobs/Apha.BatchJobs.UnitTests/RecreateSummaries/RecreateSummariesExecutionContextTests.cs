@@ -1,4 +1,5 @@
-﻿using Apha.BatchJobs.Infrastructure.Data;
+using Apha.BatchJobs.Infrastructure.Data;
+using Apha.BatchJobs.Application.Jobs.ManualJobs.RecreateSummaries;
 using Apha.BatchJobs.Infrastructure.Repositories.RecreateSummaries;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
@@ -39,7 +40,8 @@ public sealed class RecreateSummariesExecutionContextTests
     public void Constructor_WhenArgumentsAreValid_ShouldExposeProperties()
     {
         // Arrange
-
+        using var dbContext = CreateDbContext();
+        using var connection = new NpgsqlConnection();
         // Act
         var context = new RecreateSummariesExecutionContext(dbContext, connection, fpsYear: 2026);
 

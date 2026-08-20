@@ -33,7 +33,7 @@ public sealed class MyFpsYearlyDataServiceTests
     [Fact]
     public void Constructor_WhenLoadersIsNull_ShouldThrowArgumentNullException()
     {
-
+        using var context = CreateContext();
         var ex = Assert.Throws<ArgumentNullException>(
             () => new MyFpsYearlyDataService(context, NullLogger<MyFpsYearlyDataService>.Instance, null!));
 
@@ -43,6 +43,7 @@ public sealed class MyFpsYearlyDataServiceTests
     [Fact]
     public void Constructor_WhenLoaderCountMismatch_ShouldThrowInvalidOperationException()
     {
+        using var context = CreateContext();
         var loaders = CreateSequentialLoaders(1, 23);
 
         var ex = Assert.Throws<InvalidOperationException>(
@@ -54,8 +55,9 @@ public sealed class MyFpsYearlyDataServiceTests
     [Fact]
     public void Constructor_WhenDuplicateSequenceExists_ShouldThrowInvalidOperationException()
     {
+        using var context = CreateContext();
         var loaders = CreateSequentialLoaders(1, 23)
-            .Concat(new[] { CreateLoader(5, "Loader-5-Duplicate", (_, _, _) => Task.FromResult(0)) })
+            .Concat(new[] { CreateLoader(5, "Loader-5-Duplicate", (_, _) => Task.FromResult(0)) })
             .ToList();
 
         var ex = Assert.Throws<InvalidOperationException>(
@@ -67,8 +69,9 @@ public sealed class MyFpsYearlyDataServiceTests
     [Fact]
     public void Constructor_WhenSequenceIsNotContiguous_ShouldThrowInvalidOperationException()
     {
+        using var context = CreateContext();
         var loaders = CreateSequentialLoaders(1, 23)
-            .Concat(new[] { CreateLoader(25, "Loader-25", (_, _, _) => Task.FromResult(0)) })
+            .Concat(new[] { CreateLoader(25, "Loader-25", (_, _) => Task.FromResult(0)) })
             .ToList();
 
         var ex = Assert.Throws<InvalidOperationException>(
@@ -80,11 +83,12 @@ public sealed class MyFpsYearlyDataServiceTests
     [Fact]
     public async Task LoadYearDataAsync_WhenLoadersProvidedUnordered_ShouldExecuteInSequenceOrderAndAggregateRows()
     {
+        using var context = CreateContext();
         var executionOrder = new List<int>();
 
         var unorderedLoaders = Enumerable.Range(1, 24)
             .Reverse()
-            .Select(i => CreateLoader(i, $"Loader-{i}", (_, _, _) =>
+            .Select(i => CreateLoader(i, $"Loader-{i}", (_, _) =>
             {
                 executionOrder.Add(i);
                 return Task.FromResult(1);
@@ -102,10 +106,11 @@ public sealed class MyFpsYearlyDataServiceTests
     [Fact]
     public async Task LoadYearDataAsync_WhenLoaderFails_ShouldStopAndRethrow()
     {
+        using var context = CreateContext();
         var executionOrder = new List<int>();
 
         var loaders = Enumerable.Range(1, 24)
-            .Select(i => CreateLoader(i, $"Loader-{i}", (_, _, _) =>
+            .Select(i => CreateLoader(i, $"Loader-{i}", (_, _) =>
             {
                 executionOrder.Add(i);
 
@@ -166,7 +171,7 @@ public sealed class MyFpsYearlyDataServiceTests
         var invokedSequenceYears = new Dictionary<int, int>();
 
         var loaders = Enumerable.Range(1, 24)
-            .Select(i => CreateLoader(i, $"Loader-{i}", (_, year, _) =>
+            .Select(i => CreateLoader(i, $"Loader-{i}", (year, _) =>
             {
                 if (i == 24)
                 {
@@ -214,7 +219,7 @@ public sealed class MyFpsYearlyDataServiceTests
         await using var context = CreateContext();
 
         var loaders = Enumerable.Range(1, 24)
-            .Select(i => CreateLoader(i, $"Loader-{i}", (_, _, _) => Task.FromResult(i == 2 ? -1 : 0)))
+            .Select(i => CreateLoader(i, $"Loader-{i}", (_, _) => Task.FromResult(i == 2 ? -1 : 0)))
             .ToList();
 
         var subject = new MyFpsYearlyDataService(context, NullLogger<MyFpsYearlyDataService>.Instance, loaders);
@@ -230,7 +235,7 @@ public sealed class MyFpsYearlyDataServiceTests
         await using var context = CreateContext();
 
         var loaders = Enumerable.Range(1, 24)
-            .Select(i => CreateLoader(i, $"Loader-{i}", async (_, _, _) =>
+            .Select(i => CreateLoader(i, $"Loader-{i}", async (_, _) =>
             {
                 if (i == 2)
                 {
@@ -281,21 +286,21 @@ public sealed class MyFpsYearlyDataServiceTests
     private static List<IMabArchiveLoader> CreateSequentialLoaders(int start, int end)
     {
         return Enumerable.Range(start, end - start + 1)
-            .Select(i => CreateLoader(i, $"Loader-{i}", (_, _, _) => Task.FromResult(0)))
+            .Select(i => CreateLoader(i, $"Loader-{i}", (_, _) => Task.FromResult(0)))
             .Cast<IMabArchiveLoader>()
             .ToList();
     }
 
-    private static TestLoader CreateLoader(int sequence, string name, Func<BatchJobsDbContext, int, CancellationToken, Task<int>> loadFunc)
+    private static TestLoader CreateLoader(int sequence, string name, Func<int, CancellationToken, Task<int>> loadFunc)
     {
         return new TestLoader(sequence, name, loadFunc);
     }
 
     private sealed class TestLoader : IMabArchiveLoader
     {
-        private readonly Func<BatchJobsDbContext, int, CancellationToken, Task<int>> _loadFunc;
+        private readonly Func<int, CancellationToken, Task<int>> _loadFunc;
 
-        public TestLoader(int sequence, string name, Func<BatchJobsDbContext, int, CancellationToken, Task<int>> loadFunc)
+        public TestLoader(int sequence, string name, Func<int, CancellationToken, Task<int>> loadFunc)
         {
             Sequence = sequence;
             Name = name;
@@ -306,9 +311,9 @@ public sealed class MyFpsYearlyDataServiceTests
 
         public string Name { get; }
 
-        public Task<int> LoadAsync(BatchJobsDbContext context, int year, CancellationToken cancellationToken)
+        public Task<int> LoadAsync(int year, CancellationToken cancellationToken)
         {
-            return _loadFunc(context, year, cancellationToken);
+            return _loadFunc(year, cancellationToken);
         }
     }
 }

@@ -5,6 +5,8 @@ namespace Apha.BatchJobs.Infrastructure.Repositories.MabArchive.Loaders;
 
 internal sealed class MyTblAdditionalCostsLoader : MabArchiveExecutionLoaderBase
 {
+    internal MyTblAdditionalCostsLoader(BatchJobsDbContext context) : base(context) { }
+
     public override int Sequence => 10;
 
     public override string Name => "my_tbladditionalcosts";

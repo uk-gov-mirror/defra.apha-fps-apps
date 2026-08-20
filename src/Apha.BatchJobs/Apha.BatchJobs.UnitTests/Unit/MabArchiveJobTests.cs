@@ -5,6 +5,7 @@ using Apha.BatchJobs.Domain.Configuration;
 using Apha.BatchJobs.Domain.Interfaces;
 using Apha.BatchJobs.Infrastructure.Context;
 using Apha.BatchJobs.Infrastructure.Data;
+using Apha.BatchJobs.Infrastructure.Repositories.MabArchive;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -36,16 +37,16 @@ public sealed class MabArchiveJobTests
             NullLogger<MabArchiveJob>.Instance,
             Options.Create(new MabArchiveSettings())));
 
-        Assert.Equal("dbContext", ex.ParamName);
+        Assert.Equal("transactionManager", ex.ParamName);
     }
 
     [Fact]
     public void Constructor_WhenYearSelectionServiceIsNull_ShouldThrowArgumentNullException()
     {
-        using var dbContext = CreateDbContext();
+        var transactionManager = Substitute.For<IMabArchiveTransactionManager>();
 
         var ex = Assert.Throws<ArgumentNullException>(() => new MabArchiveJob(
-            dbContext,
+            transactionManager,
             null!,
             Substitute.For<IReloadFpsTotalsService>(),
             Substitute.For<IMyFpsYearlyDataService>(),
@@ -60,9 +61,10 @@ public sealed class MabArchiveJobTests
     [Fact]
     public void Constructor_WhenTotalsServiceIsNull_ShouldThrowArgumentNullException()
     {
+        var transactionManager = Substitute.For<IMabArchiveTransactionManager>();
 
         var ex = Assert.Throws<ArgumentNullException>(() => new MabArchiveJob(
-            dbContext,
+            transactionManager,
             Substitute.For<IMabArchiveYearSelectionService>(),
             null!,
             Substitute.For<IMyFpsYearlyDataService>(),
@@ -77,9 +79,10 @@ public sealed class MabArchiveJobTests
     [Fact]
     public void Constructor_WhenDataServiceIsNull_ShouldThrowArgumentNullException()
     {
+        var transactionManager = Substitute.For<IMabArchiveTransactionManager>();
 
         var ex = Assert.Throws<ArgumentNullException>(() => new MabArchiveJob(
-            dbContext,
+            transactionManager,
             Substitute.For<IMabArchiveYearSelectionService>(),
             Substitute.For<IReloadFpsTotalsService>(),
             null!,
@@ -94,9 +97,10 @@ public sealed class MabArchiveJobTests
     [Fact]
     public void Constructor_WhenExecutionYearContextIsNull_ShouldThrowArgumentNullException()
     {
+        var transactionManager = Substitute.For<IMabArchiveTransactionManager>();
 
         var ex = Assert.Throws<ArgumentNullException>(() => new MabArchiveJob(
-            dbContext,
+            transactionManager,
             Substitute.For<IMabArchiveYearSelectionService>(),
             Substitute.For<IReloadFpsTotalsService>(),
             Substitute.For<IMyFpsYearlyDataService>(),
@@ -111,9 +115,10 @@ public sealed class MabArchiveJobTests
     [Fact]
     public void Constructor_WhenCorrelationServiceIsNull_ShouldThrowArgumentNullException()
     {
+        var transactionManager = Substitute.For<IMabArchiveTransactionManager>();
 
         var ex = Assert.Throws<ArgumentNullException>(() => new MabArchiveJob(
-            dbContext,
+            transactionManager,
             Substitute.For<IMabArchiveYearSelectionService>(),
             Substitute.For<IReloadFpsTotalsService>(),
             Substitute.For<IMyFpsYearlyDataService>(),
@@ -128,9 +133,10 @@ public sealed class MabArchiveJobTests
     [Fact]
     public void Constructor_WhenLoggerIsNull_ShouldThrowArgumentNullException()
     {
+        var transactionManager = Substitute.For<IMabArchiveTransactionManager>();
 
         var ex = Assert.Throws<ArgumentNullException>(() => new MabArchiveJob(
-            dbContext,
+            transactionManager,
             Substitute.For<IMabArchiveYearSelectionService>(),
             Substitute.For<IReloadFpsTotalsService>(),
             Substitute.For<IMyFpsYearlyDataService>(),
@@ -145,9 +151,10 @@ public sealed class MabArchiveJobTests
     [Fact]
     public void Constructor_WhenSettingsIsNull_ShouldUseDefaults()
     {
+        var transactionManager = Substitute.For<IMabArchiveTransactionManager>();
 
         var subject = new MabArchiveJob(
-            dbContext,
+            transactionManager,
             Substitute.For<IMabArchiveYearSelectionService>(),
             Substitute.For<IReloadFpsTotalsService>(),
             Substitute.For<IMyFpsYearlyDataService>(),
@@ -162,9 +169,10 @@ public sealed class MabArchiveJobTests
     [Fact]
     public void Metadata_ShouldMatchExpectedContract()
     {
+        var transactionManager = Substitute.For<IMabArchiveTransactionManager>();
 
         var subject = new MabArchiveJob(
-            dbContext,
+            transactionManager,
             Substitute.For<IMabArchiveYearSelectionService>(),
             Substitute.For<IReloadFpsTotalsService>(),
             Substitute.For<IMyFpsYearlyDataService>(),
@@ -203,7 +211,7 @@ public sealed class MabArchiveJobTests
         await AssertCanConnectAsync(dbContext);
 
         var subject = new MabArchiveJob(
-            dbContext,
+            new MabArchiveTransactionManager(dbContext),
             yearSelectionService,
             totalsService,
             dataService,
@@ -251,7 +259,7 @@ public sealed class MabArchiveJobTests
         await AssertCanConnectAsync(dbContext);
 
         var subject = new MabArchiveJob(
-            dbContext,
+            new MabArchiveTransactionManager(dbContext),
             yearSelectionService,
             totalsService,
             dataService,
@@ -289,7 +297,7 @@ public sealed class MabArchiveJobTests
         await AssertCanConnectAsync(dbContext);
 
         var subject = new MabArchiveJob(
-            dbContext,
+            new MabArchiveTransactionManager(dbContext),
             yearSelectionService,
             totalsService,
             dataService,
@@ -327,7 +335,7 @@ public sealed class MabArchiveJobTests
         await AssertCanConnectAsync(dbContext);
 
         var subject = new MabArchiveJob(
-            dbContext,
+            new MabArchiveTransactionManager(dbContext),
             yearSelectionService,
             totalsService,
             dataService,

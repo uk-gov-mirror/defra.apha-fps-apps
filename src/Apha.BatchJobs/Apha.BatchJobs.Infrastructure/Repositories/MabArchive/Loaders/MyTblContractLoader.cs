@@ -5,6 +5,8 @@ namespace Apha.BatchJobs.Infrastructure.Repositories.MabArchive.Loaders;
 
 internal sealed class MyTblContractLoader : MabArchiveExecutionLoaderBase
 {
+    internal MyTblContractLoader(BatchJobsDbContext context) : base(context) { }
+
     public override int Sequence => 12;
 
     public override string Name => "my_tblcontract";

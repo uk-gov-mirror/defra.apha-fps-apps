@@ -52,6 +52,7 @@ public sealed class ExecutionCancellationContextTests
     public async Task ClassifyCancellation_WhenBothTimeoutAndShutdownFire_PrefersHostShutdown()
     {
         var hostLifetime = CreateLifetime(out var lifetimeCts);
+        using var context = new ExecutionCancellationContext(hostLifetime, overallTimeoutSeconds: 1);
 
         await Task.Delay(TimeSpan.FromSeconds(1.5));
         lifetimeCts.Cancel();
@@ -65,6 +66,7 @@ public sealed class ExecutionCancellationContextTests
     public void ClassifyCancellation_WhenNeitherFires_IsUnclassified()
     {
         var hostLifetime = CreateLifetime(out _);
+        using var context = new ExecutionCancellationContext(hostLifetime, overallTimeoutSeconds: 3600);
 
         Assert.False(context.Token.IsCancellationRequested);
         Assert.Equal(ExecutionCancellationReason.Unclassified, context.ClassifyCancellation());

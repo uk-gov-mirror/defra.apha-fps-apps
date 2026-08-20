@@ -5,6 +5,8 @@ namespace Apha.BatchJobs.Infrastructure.Repositories.MabArchive.Loaders;
 
 internal sealed class MyFpsYearTotalsLoader : MabArchiveExecutionLoaderBase
 {
+    internal MyFpsYearTotalsLoader(BatchJobsDbContext context) : base(context) { }
+
     public override int Sequence => 4;
 
     public override string Name => "my_fpsyeartotals";

@@ -51,7 +51,10 @@ public sealed class TlkpYearLoaderTests : IAsyncLifetime
     [Fact]
     public void Loader_HasSequence16_AndName_tlkpyear()
     {
-        var loader = new TlkpYearLoader();
+        var options = new DbContextOptionsBuilder<BatchJobsDbContext>()
+            .UseInMemoryDatabase("tlkpyear-metadata")
+            .Options;
+        var loader = new TlkpYearLoader(new BatchJobsDbContext(options));
 
         Assert.Equal(16, loader.Sequence);
         Assert.Equal("tlkpyear", loader.Name);
@@ -103,8 +106,8 @@ public sealed class TlkpYearLoaderTests : IAsyncLifetime
             .Select(x => x.CurrentMonth)
             .SingleAsync();
 
-        var loader = new TlkpYearLoader();
-        var rowsAffected = await loader.LoadAsync(ctx, targetYear, CancellationToken.None);
+        var loader = new TlkpYearLoader(ctx);
+        var rowsAffected = await loader.LoadAsync(targetYear, CancellationToken.None);
 
         var inserted = await ctx.MaDstTlkpYear
             .AsNoTracking()
@@ -128,10 +131,10 @@ public sealed class TlkpYearLoaderTests : IAsyncLifetime
 
         await ctx.Database.ExecuteSqlRawAsync("DELETE FROM fps.tblcurrentmonth");
 
-        var loader = new TlkpYearLoader();
+        var loader = new TlkpYearLoader(ctx);
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => loader.LoadAsync(ctx, 1899, CancellationToken.None));
+            () => loader.LoadAsync(1899, CancellationToken.None));
 
         await tx.RollbackAsync();
 
@@ -150,10 +153,10 @@ public sealed class TlkpYearLoaderTests : IAsyncLifetime
         // Insert a second row to violate the single-row contract.
         await ctx.Database.ExecuteSqlRawAsync("INSERT INTO fps.tblcurrentmonth (currentmonth) VALUES (99)");
 
-        var loader = new TlkpYearLoader();
+        var loader = new TlkpYearLoader(ctx);
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => loader.LoadAsync(ctx, 1899, CancellationToken.None));
+            () => loader.LoadAsync(1899, CancellationToken.None));
 
         await tx.RollbackAsync();
 
@@ -184,8 +187,8 @@ public sealed class TlkpYearLoaderTests : IAsyncLifetime
             .Select(v => v.DbVarValue)
             .FirstOrDefaultAsync();
 
-        var loader = new TlkpYearLoader();
-        await loader.LoadAsync(ctx, targetYear, CancellationToken.None);
+        var loader = new TlkpYearLoader(ctx);
+        await loader.LoadAsync(targetYear, CancellationToken.None);
 
         var inserted = await ctx.MaDstTlkpYear
             .AsNoTracking()
@@ -207,10 +210,10 @@ public sealed class TlkpYearLoaderTests : IAsyncLifetime
         await using var tx = await ctx.Database.BeginTransactionAsync();
 
         const int targetYear = 1897;
-        var loader = new TlkpYearLoader();
+        var loader = new TlkpYearLoader(ctx);
 
-        await loader.LoadAsync(ctx, targetYear, CancellationToken.None);
-        var secondCallRows = await loader.LoadAsync(ctx, targetYear, CancellationToken.None);
+        await loader.LoadAsync(targetYear, CancellationToken.None);
+        var secondCallRows = await loader.LoadAsync(targetYear, CancellationToken.None);
 
         var count = await ctx.MaDstTlkpYear.CountAsync(x => x.Year == targetYear);
 

@@ -16,6 +16,7 @@ internal static class MabArchiveInfrastructureExtensions
         services.AddScoped<IReloadFpsTotalsService, ReloadFpsTotalsService>();
         services.AddScoped<IMyFpsYearlyDataService, MyFpsYearlyDataService>();
         services.AddScoped<IMabArchiveYearSelectionService, MabArchiveYearSelectionService>();
+        services.AddScoped<IMabArchiveTransactionManager, MabArchiveTransactionManager>();
         services.AddScoped<IEmailNotificationService, EmailNotificationService>();
 
         return services;

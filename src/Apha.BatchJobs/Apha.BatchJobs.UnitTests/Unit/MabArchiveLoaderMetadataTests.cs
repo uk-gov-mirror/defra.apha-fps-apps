@@ -1,5 +1,7 @@
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
 using Apha.BatchJobs.Domain.Configuration;
+using Apha.BatchJobs.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -46,6 +48,7 @@ public class MabArchiveLoaderMetadataTests
         using var serviceProvider = new ServiceCollection()
             .AddLogging()
             .Configure<MabArchiveSettings>(_ => { })
+            .AddDbContext<BatchJobsDbContext>(opts => opts.UseInMemoryDatabase("loader-metadata-test"))
             .BuildServiceProvider();
 
         var loaders = executionLoaderTypes

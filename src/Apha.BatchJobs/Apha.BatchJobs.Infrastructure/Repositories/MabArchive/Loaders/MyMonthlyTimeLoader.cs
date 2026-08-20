@@ -5,6 +5,8 @@ namespace Apha.BatchJobs.Infrastructure.Repositories.MabArchive.Loaders;
 
 internal sealed class MyMonthlyTimeLoader : MabArchiveExecutionLoaderBase
 {
+    internal MyMonthlyTimeLoader(BatchJobsDbContext context) : base(context) { }
+
     public override int Sequence => 6;
 
     public override string Name => "my_monthlytime";

@@ -5,6 +5,8 @@ namespace Apha.BatchJobs.Infrastructure.Repositories.MabArchive.Loaders;
 
 internal sealed class MyProjInvoiceLoader : MabArchiveExecutionLoaderBase
 {
+    internal MyProjInvoiceLoader(BatchJobsDbContext context) : base(context) { }
+
     public override int Sequence => 7;
 
     public override string Name => "my_proj_invoice";

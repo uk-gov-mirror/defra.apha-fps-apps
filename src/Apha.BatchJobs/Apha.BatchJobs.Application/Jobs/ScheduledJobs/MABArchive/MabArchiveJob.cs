@@ -2,8 +2,6 @@ using Apha.BatchJobs.Application.Interfaces;
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
 using Apha.BatchJobs.Domain.Configuration;
 using Apha.BatchJobs.Domain.Interfaces;
-using Apha.BatchJobs.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -20,13 +18,13 @@ namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive;
 /// must not acquire/release the distributed lock, and must not send its own failure notification
 /// - JobOrchestrator sends one, best-effort, once retries are exhausted.
 ///
-/// Totals rebuild, archive delete/load, and project refresh all run against the same
-/// constructor-injected scoped <see cref="BatchJobsDbContext"/> that owns the transaction below,
-/// so the whole Open+Planned cycle commits or rolls back atomically.
+/// Totals rebuild, archive delete/load, and project refresh all run within a single transaction
+/// managed by <see cref="IMabArchiveTransactionManager"/>, so the whole Open+Planned cycle
+/// commits or rolls back atomically.
 /// </summary>
 public sealed class MabArchiveJob : IBatchJob
 {
-    private readonly BatchJobsDbContext _dbContext;
+    private readonly IMabArchiveTransactionManager _transactionManager;
     private readonly IMabArchiveYearSelectionService _yearSelectionService;
     private readonly IReloadFpsTotalsService _totalsService;
     private readonly IMyFpsYearlyDataService _dataService;
@@ -42,7 +40,7 @@ public sealed class MabArchiveJob : IBatchJob
     public int? MaxExecutionSeconds => null;
 
     public MabArchiveJob(
-        BatchJobsDbContext dbContext,
+        IMabArchiveTransactionManager transactionManager,
         IMabArchiveYearSelectionService yearSelectionService,
         IReloadFpsTotalsService totalsService,
         IMyFpsYearlyDataService dataService,
@@ -51,7 +49,7 @@ public sealed class MabArchiveJob : IBatchJob
         ILogger<MabArchiveJob> logger,
         IOptions<MabArchiveSettings> settings)
     {
-        _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+        _transactionManager = transactionManager ?? throw new ArgumentNullException(nameof(transactionManager));
         _yearSelectionService = yearSelectionService ?? throw new ArgumentNullException(nameof(yearSelectionService));
         _totalsService = totalsService ?? throw new ArgumentNullException(nameof(totalsService));
         _dataService = dataService ?? throw new ArgumentNullException(nameof(dataService));
@@ -104,15 +102,12 @@ public sealed class MabArchiveJob : IBatchJob
 
             using var loadStep = _logger.BeginScope(new Dictionary<string, object?> { ["StepName"] = "ExecuteLoad" });
 
-            var executionStrategy = _dbContext.Database.CreateExecutionStrategy();
-            await executionStrategy.ExecuteAsync(async () =>
+            await _transactionManager.ExecuteAsync(async ct =>
             {
-                await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
-
                 _logger.LogInformation(
                     "Starting MABArchive full processing | FpsYear={FpsYear} | YearStatus=Open",
                     context.OpenYear);
-                await ExecuteFullYearCycleAsync(context.OpenYear, cancellationToken);
+                await ExecuteFullYearCycleAsync(context.OpenYear, ct);
                 _logger.LogInformation(
                     "Completed MABArchive full processing | FpsYear={FpsYear}",
                     context.OpenYear);
@@ -122,16 +117,14 @@ public sealed class MabArchiveJob : IBatchJob
                     _logger.LogInformation(
                         "Starting MABArchive project-only processing | FpsYear={FpsYear} | YearStatus=Planned",
                         context.PlannedYear.Value);
-                    await ExecuteProjectOnlyRefreshAsync(context.PlannedYear.Value, cancellationToken);
+                    await ExecuteProjectOnlyRefreshAsync(context.PlannedYear.Value, ct);
                     _logger.LogInformation(
                         "Completed MABArchive project-only processing | FpsYear={FpsYear}",
                         context.PlannedYear.Value);
                 }
 
                 _logger.LogInformation("MABArchive orchestration completed successfully");
-
-                await transaction.CommitAsync(cancellationToken);
-            });
+            }, cancellationToken);
 
             var duration = DateTime.UtcNow - startedAt;
             _logger.LogInformation("===========================================");

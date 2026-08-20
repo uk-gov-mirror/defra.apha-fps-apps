@@ -96,7 +96,6 @@ public sealed class BulkTestRatesServicePerformanceTests : IAsyncLifetime
     }
 
     private BulkTestRatesService CreateService() => new(
-        new TestDbContextFactory(_connectionString),
         new BulkRatesRepository(new TestDbContextFactory(_connectionString), NullLogger<BulkRatesRepository>.Instance),
         Substitute.For<IJobExecutionRepository>(),
         NullLogger<BulkTestRatesService>.Instance);

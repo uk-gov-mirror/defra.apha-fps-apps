@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
+using Apha.BatchJobs.Application.Jobs.ManualJobs.RecreateSummaries;
 using Apha.BatchJobs.Infrastructure.Repositories.RecreateSummaries;
 using Apha.BatchJobs.Domain.Enums;
 using Npgsql;

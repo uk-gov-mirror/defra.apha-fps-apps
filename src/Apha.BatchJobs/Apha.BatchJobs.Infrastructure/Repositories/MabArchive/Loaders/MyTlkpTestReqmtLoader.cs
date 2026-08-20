@@ -5,6 +5,8 @@ namespace Apha.BatchJobs.Infrastructure.Repositories.MabArchive.Loaders;
 
 internal sealed class MyTlkpTestReqmtLoader : MabArchiveExecutionLoaderBase
 {
+    internal MyTlkpTestReqmtLoader(BatchJobsDbContext context) : base(context) { }
+
     public override int Sequence => 15;
 
     public override string Name => "my_tlkptestreqmt";

@@ -17,6 +17,12 @@ public sealed class EfCoreMappingTests
             .UseNpgsql("Host=localhost;Database=test") // metadata-only; no connection made
             .Options;
 
+    // Shared instance: metadata-only, no real DB connection is ever opened.
+    private readonly BatchJobsDbContext ctx = new BatchJobsDbContext(
+        new DbContextOptionsBuilder<BatchJobsDbContext>()
+            .UseNpgsql("Host=localhost;Database=test")
+            .Options);
+
     private static IEntityType GetEntityByTable(BatchJobsDbContext ctx, string table) =>
         ctx.Model.GetEntityTypes()
                  .Single(e => e.GetTableName() == table);

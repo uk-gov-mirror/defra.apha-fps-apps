@@ -161,7 +161,7 @@ public sealed class MyFpsYearlyDataService : IMyFpsYearlyDataService
 
                    // Validation hook: record load performance and results
                    var sw = System.Diagnostics.Stopwatch.StartNew();
-                   var rowCount = await loader.LoadAsync(_context, targetYear, cancellationToken);
+                   var rowCount = await loader.LoadAsync(targetYear, cancellationToken);
                    sw.Stop();
 
                    // Log performance and validate row count sanity
@@ -219,7 +219,7 @@ public sealed class MyFpsYearlyDataService : IMyFpsYearlyDataService
                 .ExecuteDeleteAsync(cancellationToken);
             _logger.LogInformation("Deleted {RowCount} rows in my_tlkpproject_all for year {Year} prior to refresh", deletedProjectAllRows, targetYear);
 
-            var projectAllRows = await _projectAllLoader.LoadAsync(_context, targetYear, cancellationToken);
+            var projectAllRows = await _projectAllLoader.LoadAsync(targetYear, cancellationToken);
             _logger.LogInformation("Refreshed {RowCount} rows in my_tlkpproject_all for year {Year}", projectAllRows, targetYear);
 
             return projectAllRows;

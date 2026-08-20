@@ -39,7 +39,7 @@ public sealed class ReloadFpsTotalsServiceTests
     [Fact]
     public void Constructor_WhenLoggerIsNull_ShouldThrowArgumentNullException()
     {
-
+        using var context = CreateInMemoryDbContext();
         var ex = Assert.Throws<ArgumentNullException>(() =>
             new ReloadFpsTotalsService(
                 context,
