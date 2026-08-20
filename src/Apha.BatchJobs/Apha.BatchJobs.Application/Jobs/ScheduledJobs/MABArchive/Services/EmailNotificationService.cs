@@ -1,21 +1,16 @@
 using Apha.BatchJobs.Application.Interfaces;
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Services;
+using Apha.BatchJobs.Domain.Configuration;
 using Apha.BatchJobs.Domain.Entities.MilestoneUpdateNotifications;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Apha.BatchJobs.Domain.Configuration;
 
-namespace Apha.BatchJobs.Infrastructure.Repositories.MabArchive;
+namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
 
 /// <summary>
-/// Implementation of IEmailNotificationService. Sends failure-alert emails through the existing
-/// Graph-backed <see cref="IEmailService"/> (the same path MilestoneUpdateNotifications uses) —
-/// no separate SMTP integration needed. Resolves <see cref="IEmailService"/> lazily via a
-/// factory delegate, not as a plain constructor dependency: <c>IEmailService</c>'s DI chain
-/// (GraphBackedEmailService → IGraphEmailService → GraphServiceClient) throws if
-/// GraphEmailSettings isn't configured, which is true everywhere except local dev today. Eagerly
-/// depending on it would break every job that depends on this service (constructor injection
-/// resolves eagerly), even when notifications are disabled or the recipient is unset.
+/// Sends failure-alert emails through <see cref="IEmailService"/>.
+/// Resolves <see cref="IEmailService"/> lazily: eager resolution would throw wherever
+/// GraphEmailSettings is unconfigured, breaking every job that depends on this service.
 /// </summary>
 public sealed class EmailNotificationService : IEmailNotificationService
 {
@@ -24,13 +19,6 @@ public sealed class EmailNotificationService : IEmailNotificationService
     private readonly AwsLoggingSettings _awsLoggingSettings;
     private readonly Func<IEmailService> _emailServiceFactory;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="EmailNotificationService"/> class.
-    /// </summary>
-    /// <param name="logger">Logger instance.</param>
-    /// <param name="settings">Shared batch-alerting settings (not MABArchive-specific — this service is invoked with the failing job's name as a parameter).</param>
-    /// <param name="awsLoggingSettings">Shared AWS logging settings (CloudWatch log group referenced in the alert email body).</param>
-    /// <param name="emailServiceFactory">Lazy resolver for <see cref="IEmailService"/> — only invoked once a notification is actually about to send.</param>
     public EmailNotificationService(
         ILogger<EmailNotificationService> logger,
         IOptions<BatchAlertingSettings> settings,
@@ -43,14 +31,6 @@ public sealed class EmailNotificationService : IEmailNotificationService
         _emailServiceFactory = emailServiceFactory ?? throw new ArgumentNullException(nameof(emailServiceFactory));
     }
 
-    /// <summary>
-    /// Sends a failure notification for a MABArchive execution.
-    /// </summary>
-    /// <param name="correlationId">Correlation identifier.</param>
-    /// <param name="jobName">Job name.</param>
-    /// <param name="errorMessage">Error message text.</param>
-    /// <param name="timestamp">Failure timestamp (UTC).</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
     public async Task SendFailureNotificationAsync(
         string correlationId,
         string jobName,
