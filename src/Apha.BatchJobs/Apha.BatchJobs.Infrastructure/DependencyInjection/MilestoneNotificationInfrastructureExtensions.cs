@@ -23,7 +23,7 @@ internal static class MilestoneNotificationInfrastructureExtensions
         services.AddScoped<IMilestoneNotificationReadRepository, MilestoneNotificationReadRepository>();
         services.AddScoped<INotificationSettingsPreflight, NotificationSettingsPreflight>();
         services.AddScoped<IReportingYearResolver, ReportingYearResolver>();
-        services.AddSingleton<IRecipientIdentityBuilder, RecipientIdentityBuilder>();
+        // RecipientIdentityBuilder is pure application logic — registered in MilestoneNotificationServiceExtensions
         services.AddSingleton<INotificationGroupingService, NotificationGroupingService>();
 
         // Email integration — IGraphEmailService is registered lazily via AddGraphEmailIntegration

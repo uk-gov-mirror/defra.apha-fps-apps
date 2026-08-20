@@ -1,8 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
-using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Services;
 
-namespace Apha.BatchJobs.Infrastructure.Repositories.MilestoneUpdateNotifications;
+namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Services;
 
 /// <summary>
 /// Implementation of <see cref="IRecipientIdentityBuilder"/>. Grouping is always the

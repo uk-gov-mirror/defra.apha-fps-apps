@@ -1,3 +1,4 @@
+using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Services;
 using Apha.BatchJobs.Domain.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,6 +13,7 @@ public static class MilestoneNotificationServiceExtensions
     {
         services.Configure<MilestoneNotificationsSettings>(configuration.GetSection("MilestoneNotifications"));
         services.Configure<BatchAlertingSettings>(configuration.GetSection("BatchAlerting"));
+        services.AddSingleton<IRecipientIdentityBuilder, RecipientIdentityBuilder>();
 
         return services;
     }
