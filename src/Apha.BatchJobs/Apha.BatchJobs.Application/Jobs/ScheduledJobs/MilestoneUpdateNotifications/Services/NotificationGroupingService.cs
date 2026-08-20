@@ -1,7 +1,6 @@
-using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Services;
 using Apha.BatchJobs.Domain.Entities.MilestoneUpdateNotifications;
 
-namespace Apha.BatchJobs.Infrastructure.Repositories.MilestoneUpdateNotifications;
+namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Services;
 
 /// <summary>
 /// Implementation of <see cref="INotificationGroupingService"/>. Groups every

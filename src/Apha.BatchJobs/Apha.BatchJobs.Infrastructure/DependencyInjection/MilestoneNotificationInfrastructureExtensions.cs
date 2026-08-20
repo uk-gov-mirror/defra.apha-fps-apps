@@ -23,13 +23,12 @@ internal static class MilestoneNotificationInfrastructureExtensions
         services.AddScoped<IMilestoneNotificationReadRepository, MilestoneNotificationReadRepository>();
         services.AddScoped<INotificationSettingsPreflight, NotificationSettingsPreflight>();
         services.AddScoped<IReportingYearResolver, ReportingYearResolver>();
-        // RecipientIdentityBuilder is pure application logic — registered in MilestoneNotificationServiceExtensions
-        services.AddSingleton<INotificationGroupingService, NotificationGroupingService>();
+        // RecipientIdentityBuilder, NotificationGroupingService, and EmailTemplateRenderer are pure application logic — registered in MilestoneNotificationServiceExtensions
 
         // Email integration — IGraphEmailService is registered lazily via AddGraphEmailIntegration
         // (called from AddBatchInfrastructure). Nothing here executes at registration time;
         // Graph credentials are validated only when IEmailService is first resolved.
-        services.AddScoped<IEmailTemplateRenderer, EmailTemplateRenderer>();
+        // EmailTemplateRenderer is pure application logic — registered in MilestoneNotificationServiceExtensions
         services.AddScoped<IEmailService>(sp => new NonProdEmailRedirectDecorator(
             new GraphBackedEmailService(
                 sp.GetRequiredService<IGraphEmailService>(),
@@ -46,8 +45,7 @@ internal static class MilestoneNotificationInfrastructureExtensions
             new NotificationDeliveryRepository(
                 connectionString,
                 sp.GetRequiredService<ILogger<NotificationDeliveryRepository>>()));
-
-        services.AddScoped<ICapsSummaryService, CapsSummaryService>();
+        // CapsSummaryService is pure application logic — registered in MilestoneNotificationServiceExtensions
 
         return services;
     }

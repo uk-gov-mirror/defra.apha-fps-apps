@@ -1,11 +1,10 @@
 using System.Net;
 using System.Text;
-using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Services;
 using Apha.BatchJobs.Domain.Configuration;
 using Apha.BatchJobs.Domain.Entities.MilestoneUpdateNotifications;
 using Microsoft.Extensions.Options;
 
-namespace Apha.BatchJobs.Infrastructure.Repositories.MilestoneUpdateNotifications;
+namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Services;
 
 /// <summary>
 /// Implementation of <see cref="IEmailTemplateRenderer"/>, following spec section 13's

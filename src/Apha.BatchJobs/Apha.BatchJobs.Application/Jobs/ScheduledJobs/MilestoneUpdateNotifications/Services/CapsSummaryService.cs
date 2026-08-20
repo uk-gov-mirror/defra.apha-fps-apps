@@ -1,11 +1,10 @@
-using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Services;
 using Apha.BatchJobs.Domain.Interfaces.MilestoneUpdateNotifications;
 using Apha.BatchJobs.Domain.Configuration;
 using Apha.BatchJobs.Domain.Entities.MilestoneUpdateNotifications;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Apha.BatchJobs.Infrastructure.Repositories.MilestoneUpdateNotifications;
+namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Services;
 
 /// <summary>
 /// Builds and sends the post-run CAPS completion email (spec §15) and

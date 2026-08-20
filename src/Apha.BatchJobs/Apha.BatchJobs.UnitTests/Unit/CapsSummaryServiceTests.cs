@@ -2,7 +2,6 @@ using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications
 using Apha.BatchJobs.Domain.Interfaces.MilestoneUpdateNotifications;
 using Apha.BatchJobs.Domain.Configuration;
 using Apha.BatchJobs.Domain.Entities.MilestoneUpdateNotifications;
-using Apha.BatchJobs.Infrastructure.Repositories.MilestoneUpdateNotifications;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using NSubstitute;
