@@ -1,4 +1,5 @@
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
+using Apha.BatchJobs.Domain.Interfaces.MabArchive;
 using Apha.BatchJobs.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -6,28 +7,27 @@ using Microsoft.Extensions.Logging;
 namespace Apha.BatchJobs.Infrastructure.Repositories.MabArchive;
 
 /// <summary>
-/// Implementation of IMyFpsYearlyDataService.
 /// Manages yearly FPS archive data operations (delete, load, refresh).
 /// Contract: delete/load/refresh operations are designed to run inside the orchestration transaction
 /// provided by the caller so the full year cycle remains atomic.
 /// </summary>
-public sealed class MyFpsYearlyDataService : IMyFpsYearlyDataService
+public sealed class MabArchiveYearRepository : IMabArchiveYearRepository
 {
     private readonly BatchJobsDbContext _context;
-    private readonly ILogger<MyFpsYearlyDataService> _logger;
+    private readonly ILogger<MabArchiveYearRepository> _logger;
     private readonly IReadOnlyList<IMabArchiveLoader> _orderedLoaders;
     private readonly IMabArchiveLoader _projectAllLoader;
     private const int ExpectedLoaderCount = 24;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="MyFpsYearlyDataService"/> class.
+    /// Initializes a new instance of the <see cref="MabArchiveYearRepository"/> class.
     /// </summary>
     /// <param name="context">Batch jobs database context.</param>
     /// <param name="logger">Logger instance.</param>
     /// <param name="loaders">Registered MABArchive loaders in metadata-defined sequence.</param>
-    public MyFpsYearlyDataService(
+    public MabArchiveYearRepository(
         BatchJobsDbContext context,
-        ILogger<MyFpsYearlyDataService> logger,
+        ILogger<MabArchiveYearRepository> logger,
         IEnumerable<IMabArchiveLoader> loaders)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));

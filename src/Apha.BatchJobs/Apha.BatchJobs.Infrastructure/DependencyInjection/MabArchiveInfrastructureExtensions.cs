@@ -1,4 +1,5 @@
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
+using Apha.BatchJobs.Domain.Interfaces.MabArchive;
 using Apha.BatchJobs.Infrastructure.Repositories.MabArchive;
 using Apha.BatchJobs.Infrastructure.Repositories.MabArchive.Loaders;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,9 +13,9 @@ internal static class MabArchiveInfrastructureExtensions
     {
         RegisterMabArchiveLoaders(services);
 
-        services.AddScoped<IReloadFpsTotalsService, ReloadFpsTotalsService>();
-        services.AddScoped<IMyFpsYearlyDataService, MyFpsYearlyDataService>();
-        services.AddScoped<IMabArchiveYearSelectionService, MabArchiveYearSelectionService>();
+        services.AddScoped<IFpsTotalsRepository, FpsTotalsRepository>();
+        services.AddScoped<IMabArchiveYearRepository, MabArchiveYearRepository>();
+        services.AddScoped<IMabArchiveYearSelectionRepository, MabArchiveYearSelectionRepository>();
         services.AddScoped<IMabArchiveTransactionManager, MabArchiveTransactionManager>();
 
         return services;

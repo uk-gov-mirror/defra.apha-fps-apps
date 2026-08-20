@@ -90,9 +90,9 @@ public sealed class MabArchivePostgresIntegrationTests : IAsyncLifetime
                  3, 5, 'Wave3 Manager', 7, 2);
         ");
 
-        var service = new ReloadFpsTotalsService(
+        var service = new FpsTotalsRepository(
             context,
-            NullLogger<ReloadFpsTotalsService>.Instance,
+            NullLogger<FpsTotalsRepository>.Instance,
             Options.Create(new MabArchiveSettings { StrictYearIsolation = false }));
 
         var rows = await service.RebuildSourceTotalsAsync(targetYear, CancellationToken.None);

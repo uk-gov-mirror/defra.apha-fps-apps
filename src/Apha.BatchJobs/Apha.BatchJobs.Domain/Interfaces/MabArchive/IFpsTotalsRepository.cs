@@ -1,9 +1,9 @@
-namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
+namespace Apha.BatchJobs.Domain.Interfaces.MabArchive;
 
 /// <summary>
-/// Service for rebuilding FPS source totals before archive load.
+/// Rebuilds FPS source totals before archive load.
 /// </summary>
-public interface IReloadFpsTotalsService
+public interface IFpsTotalsRepository
 {
     /// <summary>
     /// Rebuilds FPS source totals for the specified year.

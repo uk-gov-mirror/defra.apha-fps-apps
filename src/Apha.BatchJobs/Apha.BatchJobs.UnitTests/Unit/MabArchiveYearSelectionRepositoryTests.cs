@@ -10,7 +10,7 @@ namespace Apha.BatchJobs.UnitTests;
 /// inspection (Bucket/Validate take pre-read rows/years as parameters; neither
 /// touches DateTime.UtcNow or any clock).
 /// </summary>
-public sealed class MabArchiveYearSelectionServiceTests
+public sealed class MabArchiveYearSelectionRepositoryTests
 {
     [Fact]
     public void Bucket_WhenOneOpenAndOnePlanned_ShouldSplitCorrectly()

@@ -1,9 +1,11 @@
-namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
+using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive;
+
+namespace Apha.BatchJobs.Domain.Interfaces.MabArchive;
 
 /// <summary>
 /// Resolves the FPS years MABArchive must process from fps.tblyearmaster.
 /// </summary>
-public interface IMabArchiveYearSelectionService
+public interface IMabArchiveYearSelectionRepository
 {
     /// <summary>
     /// Reads fps.tblyearmaster and returns the Open year (required, exactly one) and the

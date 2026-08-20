@@ -1,4 +1,4 @@
-using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
+using Apha.BatchJobs.Domain.Interfaces.MabArchive;
 using Apha.BatchJobs.Domain.Configuration;
 using Apha.BatchJobs.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -9,23 +9,22 @@ using Npgsql;
 namespace Apha.BatchJobs.Infrastructure.Repositories.MabArchive;
 
 /// <summary>
-/// Implementation of IReloadFpsTotalsService.
 /// Rebuilds FPS source totals before archive load.
 /// </summary>
-public sealed class ReloadFpsTotalsService : IReloadFpsTotalsService
+public sealed class FpsTotalsRepository : IFpsTotalsRepository
 {
     private readonly BatchJobsDbContext _context;
-    private readonly ILogger<ReloadFpsTotalsService> _logger;
+    private readonly ILogger<FpsTotalsRepository> _logger;
     private readonly MabArchiveSettings _settings;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ReloadFpsTotalsService"/> class.
+    /// Initializes a new instance of the <see cref="FpsTotalsRepository"/> class.
     /// </summary>
     /// <param name="context">Batch jobs database context.</param>
     /// <param name="logger">Logger instance.</param>
-    public ReloadFpsTotalsService(
+    public FpsTotalsRepository(
         BatchJobsDbContext context,
-        ILogger<ReloadFpsTotalsService> logger,
+        ILogger<FpsTotalsRepository> logger,
         IOptions<MabArchiveSettings> settings)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));

@@ -2,6 +2,7 @@
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive;
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
 using Apha.BatchJobs.Domain.Configuration;
+using Apha.BatchJobs.Domain.Interfaces.MabArchive;
 using Apha.BatchJobs.Domain.Interfaces;
 using Apha.BatchJobs.Infrastructure.Context;
 using Apha.BatchJobs.Infrastructure.Data;
@@ -29,9 +30,9 @@ public sealed class MabArchiveJobTests
     {
         var ex = Assert.Throws<ArgumentNullException>(() => new MabArchiveJob(
             null!,
-            Substitute.For<IMabArchiveYearSelectionService>(),
-            Substitute.For<IReloadFpsTotalsService>(),
-            Substitute.For<IMyFpsYearlyDataService>(),
+            Substitute.For<IMabArchiveYearSelectionRepository>(),
+            Substitute.For<IFpsTotalsRepository>(),
+            Substitute.For<IMabArchiveYearRepository>(),
             new ExecutionYearContext(),
             Substitute.For<ICorrelationService>(),
             NullLogger<MabArchiveJob>.Instance,
@@ -41,21 +42,21 @@ public sealed class MabArchiveJobTests
     }
 
     [Fact]
-    public void Constructor_WhenYearSelectionServiceIsNull_ShouldThrowArgumentNullException()
+    public void Constructor_WhenYearSelectionRepositoryIsNull_ShouldThrowArgumentNullException()
     {
         var transactionManager = Substitute.For<IMabArchiveTransactionManager>();
 
         var ex = Assert.Throws<ArgumentNullException>(() => new MabArchiveJob(
             transactionManager,
             null!,
-            Substitute.For<IReloadFpsTotalsService>(),
-            Substitute.For<IMyFpsYearlyDataService>(),
+            Substitute.For<IFpsTotalsRepository>(),
+            Substitute.For<IMabArchiveYearRepository>(),
             new ExecutionYearContext(),
             Substitute.For<ICorrelationService>(),
             NullLogger<MabArchiveJob>.Instance,
             Options.Create(new MabArchiveSettings())));
 
-        Assert.Equal("yearSelectionService", ex.ParamName);
+        Assert.Equal("yearSelectionRepository", ex.ParamName);
     }
 
     [Fact]
@@ -65,9 +66,9 @@ public sealed class MabArchiveJobTests
 
         var ex = Assert.Throws<ArgumentNullException>(() => new MabArchiveJob(
             transactionManager,
-            Substitute.For<IMabArchiveYearSelectionService>(),
+            Substitute.For<IMabArchiveYearSelectionRepository>(),
             null!,
-            Substitute.For<IMyFpsYearlyDataService>(),
+            Substitute.For<IMabArchiveYearRepository>(),
             new ExecutionYearContext(),
             Substitute.For<ICorrelationService>(),
             NullLogger<MabArchiveJob>.Instance,
@@ -83,8 +84,8 @@ public sealed class MabArchiveJobTests
 
         var ex = Assert.Throws<ArgumentNullException>(() => new MabArchiveJob(
             transactionManager,
-            Substitute.For<IMabArchiveYearSelectionService>(),
-            Substitute.For<IReloadFpsTotalsService>(),
+            Substitute.For<IMabArchiveYearSelectionRepository>(),
+            Substitute.For<IFpsTotalsRepository>(),
             null!,
             new ExecutionYearContext(),
             Substitute.For<ICorrelationService>(),
@@ -101,9 +102,9 @@ public sealed class MabArchiveJobTests
 
         var ex = Assert.Throws<ArgumentNullException>(() => new MabArchiveJob(
             transactionManager,
-            Substitute.For<IMabArchiveYearSelectionService>(),
-            Substitute.For<IReloadFpsTotalsService>(),
-            Substitute.For<IMyFpsYearlyDataService>(),
+            Substitute.For<IMabArchiveYearSelectionRepository>(),
+            Substitute.For<IFpsTotalsRepository>(),
+            Substitute.For<IMabArchiveYearRepository>(),
             null!,
             Substitute.For<ICorrelationService>(),
             NullLogger<MabArchiveJob>.Instance,
@@ -119,9 +120,9 @@ public sealed class MabArchiveJobTests
 
         var ex = Assert.Throws<ArgumentNullException>(() => new MabArchiveJob(
             transactionManager,
-            Substitute.For<IMabArchiveYearSelectionService>(),
-            Substitute.For<IReloadFpsTotalsService>(),
-            Substitute.For<IMyFpsYearlyDataService>(),
+            Substitute.For<IMabArchiveYearSelectionRepository>(),
+            Substitute.For<IFpsTotalsRepository>(),
+            Substitute.For<IMabArchiveYearRepository>(),
             new ExecutionYearContext(),
             null!,
             NullLogger<MabArchiveJob>.Instance,
@@ -137,9 +138,9 @@ public sealed class MabArchiveJobTests
 
         var ex = Assert.Throws<ArgumentNullException>(() => new MabArchiveJob(
             transactionManager,
-            Substitute.For<IMabArchiveYearSelectionService>(),
-            Substitute.For<IReloadFpsTotalsService>(),
-            Substitute.For<IMyFpsYearlyDataService>(),
+            Substitute.For<IMabArchiveYearSelectionRepository>(),
+            Substitute.For<IFpsTotalsRepository>(),
+            Substitute.For<IMabArchiveYearRepository>(),
             new ExecutionYearContext(),
             Substitute.For<ICorrelationService>(),
             null!,
@@ -155,9 +156,9 @@ public sealed class MabArchiveJobTests
 
         var subject = new MabArchiveJob(
             transactionManager,
-            Substitute.For<IMabArchiveYearSelectionService>(),
-            Substitute.For<IReloadFpsTotalsService>(),
-            Substitute.For<IMyFpsYearlyDataService>(),
+            Substitute.For<IMabArchiveYearSelectionRepository>(),
+            Substitute.For<IFpsTotalsRepository>(),
+            Substitute.For<IMabArchiveYearRepository>(),
             new ExecutionYearContext(),
             Substitute.For<ICorrelationService>(),
             NullLogger<MabArchiveJob>.Instance,
@@ -173,9 +174,9 @@ public sealed class MabArchiveJobTests
 
         var subject = new MabArchiveJob(
             transactionManager,
-            Substitute.For<IMabArchiveYearSelectionService>(),
-            Substitute.For<IReloadFpsTotalsService>(),
-            Substitute.For<IMyFpsYearlyDataService>(),
+            Substitute.For<IMabArchiveYearSelectionRepository>(),
+            Substitute.For<IFpsTotalsRepository>(),
+            Substitute.For<IMabArchiveYearRepository>(),
             new ExecutionYearContext(),
             Substitute.For<ICorrelationService>(),
             NullLogger<MabArchiveJob>.Instance,
@@ -191,15 +192,15 @@ public sealed class MabArchiveJobTests
     [SkippableFact]
     public async Task ExecuteAsync_WhenPlannedYearPresent_RunsOpenYearFullCycleThenPlannedYearProjectOnly()
     {
-        var dataService = Substitute.For<IMyFpsYearlyDataService>();
+        var dataService = Substitute.For<IMabArchiveYearRepository>();
         dataService.DeleteYearDataAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(0);
         dataService.LoadYearDataAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(0);
         dataService.RefreshProjectsOnlyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(0);
 
-        var totalsService = Substitute.For<IReloadFpsTotalsService>();
+        var totalsService = Substitute.For<IFpsTotalsRepository>();
         totalsService.RebuildSourceTotalsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(0);
 
-        var yearSelectionService = Substitute.For<IMabArchiveYearSelectionService>();
+        var yearSelectionService = Substitute.For<IMabArchiveYearSelectionRepository>();
         yearSelectionService.GetProcessableYearsAsync(Arg.Any<CancellationToken>())
             .Returns(new MabArchiveExecutionContext(2026, 2027));
 
@@ -241,14 +242,14 @@ public sealed class MabArchiveJobTests
     [SkippableFact]
     public async Task ExecuteAsync_WhenNoPlannedYear_RunsOpenYearOnlyAndSkipsProjectOnlyRefresh()
     {
-        var dataService = Substitute.For<IMyFpsYearlyDataService>();
+        var dataService = Substitute.For<IMabArchiveYearRepository>();
         dataService.DeleteYearDataAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(0);
         dataService.LoadYearDataAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(0);
 
-        var totalsService = Substitute.For<IReloadFpsTotalsService>();
+        var totalsService = Substitute.For<IFpsTotalsRepository>();
         totalsService.RebuildSourceTotalsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(0);
 
-        var yearSelectionService = Substitute.For<IMabArchiveYearSelectionService>();
+        var yearSelectionService = Substitute.For<IMabArchiveYearSelectionRepository>();
         yearSelectionService.GetProcessableYearsAsync(Arg.Any<CancellationToken>())
             .Returns(new MabArchiveExecutionContext(2026, null));
 
@@ -279,14 +280,14 @@ public sealed class MabArchiveJobTests
     [SkippableFact]
     public async Task ExecuteAsync_WhenProcessingFails_ShouldRethrow()
     {
-        var dataService = Substitute.For<IMyFpsYearlyDataService>();
+        var dataService = Substitute.For<IMabArchiveYearRepository>();
 
-        var totalsService = Substitute.For<IReloadFpsTotalsService>();
+        var totalsService = Substitute.For<IFpsTotalsRepository>();
         totalsService
             .RebuildSourceTotalsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromException<int>(new InvalidOperationException("boom")));
 
-        var yearSelectionService = Substitute.For<IMabArchiveYearSelectionService>();
+        var yearSelectionService = Substitute.For<IMabArchiveYearSelectionRepository>();
         yearSelectionService.GetProcessableYearsAsync(Arg.Any<CancellationToken>())
             .Returns(new MabArchiveExecutionContext(2026, null));
 
@@ -317,14 +318,14 @@ public sealed class MabArchiveJobTests
     [SkippableFact]
     public async Task ExecuteAsync_WhenCancellationRequested_ShouldRethrowOperationCanceledException()
     {
-        var dataService = Substitute.For<IMyFpsYearlyDataService>();
+        var dataService = Substitute.For<IMabArchiveYearRepository>();
 
-        var totalsService = Substitute.For<IReloadFpsTotalsService>();
+        var totalsService = Substitute.For<IFpsTotalsRepository>();
         totalsService
             .RebuildSourceTotalsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => Task.FromCanceled<int>((CancellationToken)callInfo[1]));
 
-        var yearSelectionService = Substitute.For<IMabArchiveYearSelectionService>();
+        var yearSelectionService = Substitute.For<IMabArchiveYearSelectionRepository>();
         yearSelectionService.GetProcessableYearsAsync(Arg.Any<CancellationToken>())
             .Returns(new MabArchiveExecutionContext(2026, null));
 

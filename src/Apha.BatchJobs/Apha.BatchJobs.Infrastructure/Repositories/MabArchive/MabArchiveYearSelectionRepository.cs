@@ -1,5 +1,5 @@
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive;
-using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
+using Apha.BatchJobs.Domain.Interfaces.MabArchive;
 using Apha.BatchJobs.Domain.Exceptions;
 using Apha.BatchJobs.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -8,22 +8,21 @@ using Microsoft.Extensions.Logging;
 namespace Apha.BatchJobs.Infrastructure.Repositories.MabArchive;
 
 /// <summary>
-/// Implementation of IMabArchiveYearSelectionService.
 /// Resolves the Open and Planned FPS years for MABArchive processing from fps.tblyearmaster.
 /// Year selection must never depend on the system date, month arithmetic, or physical
 /// database naming - fps.tblyearmaster.yearstatus is the sole source of truth.
 /// </summary>
-public sealed class MabArchiveYearSelectionService : IMabArchiveYearSelectionService
+public sealed class MabArchiveYearSelectionRepository : IMabArchiveYearSelectionRepository
 {
     private const string OpenStatus = "Open";
     private const string PlannedStatus = "Planned";
 
     private readonly IDbContextFactory<BatchJobsDbContext> _dbContextFactory;
-    private readonly ILogger<MabArchiveYearSelectionService> _logger;
+    private readonly ILogger<MabArchiveYearSelectionRepository> _logger;
 
-    public MabArchiveYearSelectionService(
+    public MabArchiveYearSelectionRepository(
         IDbContextFactory<BatchJobsDbContext> dbContextFactory,
-        ILogger<MabArchiveYearSelectionService> logger)
+        ILogger<MabArchiveYearSelectionRepository> logger)
     {
         _dbContextFactory = dbContextFactory ?? throw new ArgumentNullException(nameof(dbContextFactory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));

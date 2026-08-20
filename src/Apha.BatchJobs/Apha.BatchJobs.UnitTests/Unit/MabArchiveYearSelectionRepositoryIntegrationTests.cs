@@ -17,7 +17,7 @@ namespace Apha.BatchJobs.UnitTests;
 /// result while the real Open year is still returned correctly.
 /// </summary>
 [Trait("Category", "Integration")]
-public sealed class MabArchiveYearSelectionServiceIntegrationTests : IAsyncLifetime
+public sealed class MabArchiveYearSelectionRepositoryIntegrationTests : IAsyncLifetime
 {
     private const string DefaultConnectionString = "Host=localhost;Port=5432;Database=batch_jobs_foundation_db;Username=postgres;Timeout=30";
     private const int SandboxClosedYear = 9701;

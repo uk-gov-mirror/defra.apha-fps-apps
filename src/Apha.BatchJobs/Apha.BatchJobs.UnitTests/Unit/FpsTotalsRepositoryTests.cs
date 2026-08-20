@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 
 namespace Apha.BatchJobs.UnitTests;
 
-public sealed class ReloadFpsTotalsServiceTests
+public sealed class FpsTotalsRepositoryTests
 {
     private const string DefaultConnectionString = "Host=localhost;Port=5432;Database=batch_jobs_foundation_db;Username=postgres;Password=LOCAL_DB_PASSWORD;Timeout=30";
 

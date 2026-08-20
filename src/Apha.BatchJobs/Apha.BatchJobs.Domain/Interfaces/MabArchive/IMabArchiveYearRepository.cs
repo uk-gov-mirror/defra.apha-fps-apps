@@ -1,9 +1,9 @@
-namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
+namespace Apha.BatchJobs.Domain.Interfaces.MabArchive;
 
 /// <summary>
-/// Service for managing yearly FPS archive data operations.
+/// Manages yearly FPS archive data operations (delete, load, refresh).
 /// </summary>
-public interface IMyFpsYearlyDataService
+public interface IMabArchiveYearRepository
 {
     /// <summary>
     /// Deletes all archive data for the specified year in dependency order.

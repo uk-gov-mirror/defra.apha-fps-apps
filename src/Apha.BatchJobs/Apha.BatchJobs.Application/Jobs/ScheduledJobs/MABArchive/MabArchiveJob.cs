@@ -1,6 +1,7 @@
 using Apha.BatchJobs.Application.Interfaces;
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
 using Apha.BatchJobs.Domain.Configuration;
+using Apha.BatchJobs.Domain.Interfaces.MabArchive;
 using Apha.BatchJobs.Domain.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -25,9 +26,9 @@ namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive;
 public sealed class MabArchiveJob : IBatchJob
 {
     private readonly IMabArchiveTransactionManager _transactionManager;
-    private readonly IMabArchiveYearSelectionService _yearSelectionService;
-    private readonly IReloadFpsTotalsService _totalsService;
-    private readonly IMyFpsYearlyDataService _dataService;
+    private readonly IMabArchiveYearSelectionRepository _yearSelectionRepository;
+    private readonly IFpsTotalsRepository _totalsRepository;
+    private readonly IMabArchiveYearRepository _yearRepository;
     private readonly IExecutionYearContext _executionYearContext;
     private readonly ICorrelationService _correlationService;
     private readonly ILogger<MabArchiveJob> _logger;
@@ -41,18 +42,18 @@ public sealed class MabArchiveJob : IBatchJob
 
     public MabArchiveJob(
         IMabArchiveTransactionManager transactionManager,
-        IMabArchiveYearSelectionService yearSelectionService,
-        IReloadFpsTotalsService totalsService,
-        IMyFpsYearlyDataService dataService,
+        IMabArchiveYearSelectionRepository yearSelectionRepository,
+        IFpsTotalsRepository totalsRepository,
+        IMabArchiveYearRepository yearRepository,
         IExecutionYearContext executionYearContext,
         ICorrelationService correlationService,
         ILogger<MabArchiveJob> logger,
         IOptions<MabArchiveSettings> settings)
     {
         _transactionManager = transactionManager ?? throw new ArgumentNullException(nameof(transactionManager));
-        _yearSelectionService = yearSelectionService ?? throw new ArgumentNullException(nameof(yearSelectionService));
-        _totalsService = totalsService ?? throw new ArgumentNullException(nameof(totalsService));
-        _dataService = dataService ?? throw new ArgumentNullException(nameof(dataService));
+        _yearSelectionRepository = yearSelectionRepository ?? throw new ArgumentNullException(nameof(yearSelectionRepository));
+        _totalsRepository = totalsRepository ?? throw new ArgumentNullException(nameof(totalsRepository));
+        _yearRepository = yearRepository ?? throw new ArgumentNullException(nameof(yearRepository));
         _executionYearContext = executionYearContext ?? throw new ArgumentNullException(nameof(executionYearContext));
         _correlationService = correlationService ?? throw new ArgumentNullException(nameof(correlationService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -82,7 +83,7 @@ public sealed class MabArchiveJob : IBatchJob
 
         try
         {
-            var context = await _yearSelectionService.GetProcessableYearsAsync(cancellationToken);
+            var context = await _yearSelectionRepository.GetProcessableYearsAsync(cancellationToken);
             _logger.LogInformation(
                 "Execution context resolved from fps.tblyearmaster | OpenYear={OpenYear} | PlannedYear={PlannedYear}",
                 context.OpenYear,
@@ -153,13 +154,13 @@ public sealed class MabArchiveJob : IBatchJob
 
         _logger.LogInformation("Executing full cycle for Open year {Year}", year);
 
-        var totalsRows = await _totalsService.RebuildSourceTotalsAsync(year, cancellationToken);
+        var totalsRows = await _totalsRepository.RebuildSourceTotalsAsync(year, cancellationToken);
         _logger.LogInformation("Rebuilt source totals for year {Year} | RowsInserted={RowsInserted}", year, totalsRows);
 
-        var deletedRows = await _dataService.DeleteYearDataAsync(year, cancellationToken);
+        var deletedRows = await _yearRepository.DeleteYearDataAsync(year, cancellationToken);
         _logger.LogInformation("Deleted archive data for year {Year} | RowsDeleted={RowsDeleted}", year, deletedRows);
 
-        var loadedRows = await _dataService.LoadYearDataAsync(year, cancellationToken);
+        var loadedRows = await _yearRepository.LoadYearDataAsync(year, cancellationToken);
         _logger.LogInformation("Loaded archive data for year {Year} | RowsLoaded={RowsLoaded}", year, loadedRows);
     }
 
@@ -170,7 +171,7 @@ public sealed class MabArchiveJob : IBatchJob
 
         _logger.LogInformation("Executing project-only refresh for Planned year {Year}", year);
 
-        var refreshedRows = await _dataService.RefreshProjectsOnlyAsync(year, cancellationToken);
+        var refreshedRows = await _yearRepository.RefreshProjectsOnlyAsync(year, cancellationToken);
         _logger.LogInformation("Refreshed projects for year {Year} | RowsRefreshed={RowsRefreshed}", year, refreshedRows);
     }
 }

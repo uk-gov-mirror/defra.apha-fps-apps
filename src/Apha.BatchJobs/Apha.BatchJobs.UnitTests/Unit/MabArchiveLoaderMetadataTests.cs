@@ -1,6 +1,8 @@
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
 using Apha.BatchJobs.Domain.Configuration;
+using Apha.BatchJobs.Domain.Interfaces.MabArchive;
 using Apha.BatchJobs.Infrastructure.Data;
+using Apha.BatchJobs.Infrastructure.Repositories.MabArchive;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -12,7 +14,7 @@ public class MabArchiveLoaderMetadataTests
     [Fact]
     public void LoaderMetadata_MatchesExpectedLegacyCoverage()
     {
-        var loaderTypes = typeof(IMyFpsYearlyDataService).Assembly
+        var loaderTypes = typeof(MabArchiveYearRepository).Assembly
             .GetTypes()
             .Where(t =>
                 t is { IsClass: true, IsAbstract: false } &&
