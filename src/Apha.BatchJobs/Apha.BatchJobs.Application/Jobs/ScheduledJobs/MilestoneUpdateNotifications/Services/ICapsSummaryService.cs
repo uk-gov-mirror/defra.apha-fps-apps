@@ -1,4 +1,5 @@
 using Apha.BatchJobs.Domain.Entities.MilestoneUpdateNotifications;
+using Apha.BatchJobs.Domain.Interfaces.MilestoneUpdateNotifications;
 
 namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Services;
 

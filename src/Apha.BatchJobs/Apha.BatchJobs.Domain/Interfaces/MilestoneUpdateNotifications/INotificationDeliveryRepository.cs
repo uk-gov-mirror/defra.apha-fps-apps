@@ -1,6 +1,6 @@
 using Apha.BatchJobs.Domain.Entities.MilestoneUpdateNotifications;
 
-namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Services;
+namespace Apha.BatchJobs.Domain.Interfaces.MilestoneUpdateNotifications;
 
 /// <summary>
 /// Write-path repository for <c>fps.notification_delivery</c> (parent) +
