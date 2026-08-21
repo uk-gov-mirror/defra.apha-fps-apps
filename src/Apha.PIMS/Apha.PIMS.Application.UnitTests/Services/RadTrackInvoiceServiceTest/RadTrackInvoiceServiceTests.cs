@@ -244,16 +244,27 @@ namespace Apha.PIMS.Application.UnitTests.Services.RadTrackInvoiceServiceTest
         }
 
         [Fact]
-        public async Task CreateAsync_WithNullDueAmount_ThrowsBusinessValidationErrorException()
+        public async Task CreateAsync_WithNullDueAmount_CreatesInvoiceSuccessfully()
         {
             // Arrange
             var dto = ValidCreateDto();
             dto.DueAmount = null;
 
-            // Act & Assert
-            var exception = await Assert.ThrowsAsync<BusinessValidationErrorException>(() => _sut.CreateAsync(dto));
-            exception.Errors.Should().ContainSingle(e => e.Code == "DUE_AMOUNT_REQUIRED");
-            await _mockRepository.DidNotReceive().CreateAsync(Arg.Any<RadTrackInvoice>());
+            var entity = new RadTrackInvoice { Project = "PP001", DueAmount = null, DueDate = dto.DueDate };
+            var created = new RadTrackInvoice { InvoiceCounter = 1, Project = "PP001", DueAmount = null, DueDate = dto.DueDate };
+            var createdDto = new RadTrackInvoiceDto { InvoiceCounter = 1, Project = "PP001", DueAmount = null, DueDate = dto.DueDate };
+
+            _mockMapper.Map<RadTrackInvoice>(dto).Returns(entity);
+            _mockRepository.CreateAsync(entity).Returns(created);
+            _mockMapper.Map<RadTrackInvoiceDto>(created).Returns(createdDto);
+
+            // Act
+            var result = await _sut.CreateAsync(dto);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.InvoiceCounter.Should().Be(1);
+            await _mockRepository.Received(1).CreateAsync(entity);
         }
 
         [Fact]
@@ -283,9 +294,8 @@ namespace Apha.PIMS.Application.UnitTests.Services.RadTrackInvoiceServiceTest
             // Act & Assert
             var exception = await Assert.ThrowsAsync<BusinessValidationErrorException>(() => _sut.CreateAsync(dto));
             exception.Errors.Should().Contain(e => e.Code == "PROJECT_REQUIRED");
-            exception.Errors.Should().Contain(e => e.Code == "DUE_AMOUNT_REQUIRED");
             exception.Errors.Should().Contain(e => e.Code == "DUE_DATE_REQUIRED");
-            exception.Errors.Should().HaveCount(3);
+            exception.Errors.Should().HaveCount(2);
             await _mockRepository.DidNotReceive().CreateAsync(Arg.Any<RadTrackInvoice>());
         }
 
@@ -473,15 +483,27 @@ namespace Apha.PIMS.Application.UnitTests.Services.RadTrackInvoiceServiceTest
         }
 
         [Fact]
-        public async Task UpdateAsync_WithNullDueAmount_ThrowsBusinessValidationErrorException()
+        public async Task UpdateAsync_WithNullDueAmount_UpdatesInvoiceSuccessfully()
         {
             // Arrange
             var dto = ValidUpdateDto();
             dto.DueAmount = null;
 
-            // Act & Assert
-            var exception = await Assert.ThrowsAsync<BusinessValidationErrorException>(() => _sut.UpdateAsync(dto));
-            exception.Errors.Should().ContainSingle(e => e.Code == "DUE_AMOUNT_REQUIRED");
+            var existing = new RadTrackInvoice { InvoiceCounter = dto.InvoiceCounter, Project = "PP001" };
+            var updated = new RadTrackInvoice { InvoiceCounter = dto.InvoiceCounter, Project = "PP001", DueAmount = null, DueDate = dto.DueDate };
+            var resultDto = new RadTrackInvoiceDto { InvoiceCounter = dto.InvoiceCounter, Project = "PP001", DueAmount = null, DueDate = dto.DueDate };
+
+            _mockRepository.GetByIdAsync(dto.InvoiceCounter).Returns(existing);
+            _mockRepository.UpdateAsync(existing).Returns(updated);
+            _mockMapper.Map<RadTrackInvoiceDto>(updated).Returns(resultDto);
+
+            // Act
+            var result = await _sut.UpdateAsync(dto);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.InvoiceCounter.Should().Be(dto.InvoiceCounter);
+            await _mockRepository.Received(1).UpdateAsync(existing);
         }
 
         [Fact]
@@ -512,9 +534,8 @@ namespace Apha.PIMS.Application.UnitTests.Services.RadTrackInvoiceServiceTest
             var exception = await Assert.ThrowsAsync<BusinessValidationErrorException>(() => _sut.UpdateAsync(dto));
             exception.Errors.Should().Contain(e => e.Code == "INVOICE_COUNTER_REQUIRED");
             exception.Errors.Should().Contain(e => e.Code == "PROJECT_REQUIRED");
-            exception.Errors.Should().Contain(e => e.Code == "DUE_AMOUNT_REQUIRED");
             exception.Errors.Should().Contain(e => e.Code == "DUE_DATE_REQUIRED");
-            exception.Errors.Should().HaveCount(4);
+            exception.Errors.Should().HaveCount(3);
         }
 
         [Fact]

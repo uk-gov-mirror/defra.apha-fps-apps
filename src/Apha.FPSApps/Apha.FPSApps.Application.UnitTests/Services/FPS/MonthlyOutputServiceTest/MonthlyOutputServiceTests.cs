@@ -26,6 +26,13 @@ namespace Apha.FPSApps.Application.UnitTests.Services.FPS.MonthlyOutputServiceTe
         private static Dictionary<(string, string), decimal> EmptyLookup() => new();
         private static Dictionary<(string, string), decimal> PriceLookup(string testCode, string buyer, decimal price)
             => new() { { (testCode, buyer), price } };
+        private static Dictionary<(string, string), decimal> PriceLookupMany(params (string testCode, string buyer, decimal price)[] entries)
+        {
+            var lookup = new Dictionary<(string, string), decimal>();
+            foreach (var (testCode, buyer, price) in entries)
+                lookup[(testCode, buyer)] = price;
+            return lookup;
+        }
 
         #region GetMonthlyOutputByProjectAsync
 
@@ -134,6 +141,116 @@ namespace Apha.FPSApps.Application.UnitTests.Services.FPS.MonthlyOutputServiceTe
 
             await _apiClient.Received(1).GetByProjectAsync(Arg.Any<QueryParameters<string>>(), "AH0033");
             _ = _fpsClient.Received(1).FpsMonthlyOutput;
+        }
+
+        [Fact]
+        public async Task GetMonthlyOutputByProjectAsync_SortByCharge_Ascending_OrdersByComputedCharge()
+        {
+            var items = new List<MonthlyOutputDto>
+            {
+                new() { Buyer = "AH0033", TestCode = "TC01", Volume = 3 }, // charge 300
+                new() { Buyer = "AH0033", TestCode = "TC02", Volume = 1 }, // charge 100
+                new() { Buyer = "AH0033", TestCode = "TC03", Volume = 2 }  // charge 200
+            };
+            _apiClient.GetByProjectAsync(Arg.Any<QueryParameters<string>>(), "AH0033")
+                .Returns(ApiResponseDto<List<MonthlyOutputDto>>.SuccessResponse(items));
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10, SortBy = nameof(MonthlyOutputDto.Charge), Descending = false };
+
+            var result = await _service.GetMonthlyOutputByProjectAsync(query, "AH0033", PriceLookupMany(("TC01", "AH0033", 100m), ("TC02", "AH0033", 100m), ("TC03", "AH0033", 100m)));
+
+            Assert.True(result.Success);
+            Assert.Equal(new[] { "TC02", "TC03", "TC01" }, result.Data!.Select(x => x.TestCode));
+        }
+
+        [Fact]
+        public async Task GetMonthlyOutputByProjectAsync_SortByCharge_Descending_OrdersByComputedChargeDesc()
+        {
+            var items = new List<MonthlyOutputDto>
+            {
+                new() { Buyer = "AH0033", TestCode = "TC01", Volume = 3 }, // charge 300
+                new() { Buyer = "AH0033", TestCode = "TC02", Volume = 1 }, // charge 100
+                new() { Buyer = "AH0033", TestCode = "TC03", Volume = 2 }  // charge 200
+            };
+            _apiClient.GetByProjectAsync(Arg.Any<QueryParameters<string>>(), "AH0033")
+                .Returns(ApiResponseDto<List<MonthlyOutputDto>>.SuccessResponse(items));
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10, SortBy = nameof(MonthlyOutputDto.Charge), Descending = true };
+
+            var result = await _service.GetMonthlyOutputByProjectAsync(query, "AH0033", PriceLookupMany(("TC01", "AH0033", 100m), ("TC02", "AH0033", 100m), ("TC03", "AH0033", 100m)));
+
+            Assert.Equal(new[] { "TC01", "TC03", "TC02" }, result.Data!.Select(x => x.TestCode));
+        }
+
+        [Fact]
+        public async Task GetMonthlyOutputByProjectAsync_SortByTestPrice_OrdersByComputedRate()
+        {
+            var items = new List<MonthlyOutputDto>
+            {
+                new() { Buyer = "AH0033", TestCode = "TC01", Volume = 1 }, // rate 300
+                new() { Buyer = "AH0033", TestCode = "TC02", Volume = 1 }, // rate 100
+                new() { Buyer = "AH0033", TestCode = "TC03", Volume = 1 }  // rate 200
+            };
+            _apiClient.GetByProjectAsync(Arg.Any<QueryParameters<string>>(), "AH0033")
+                .Returns(ApiResponseDto<List<MonthlyOutputDto>>.SuccessResponse(items));
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10, SortBy = nameof(MonthlyOutputDto.TestPrice), Descending = false };
+
+            var result = await _service.GetMonthlyOutputByProjectAsync(query, "AH0033", PriceLookupMany(("TC01", "AH0033", 300m), ("TC02", "AH0033", 100m), ("TC03", "AH0033", 200m)));
+
+            Assert.Equal(new[] { "TC02", "TC03", "TC01" }, result.Data!.Select(x => x.TestCode));
+        }
+
+        [Fact]
+        public async Task GetMonthlyOutputByProjectAsync_SortByComputedColumn_FetchesAllRowsAndPagesInMemory()
+        {
+            var items = new List<MonthlyOutputDto>
+            {
+                new() { Buyer = "AH0033", TestCode = "TC01", Volume = 3 }, // charge 300
+                new() { Buyer = "AH0033", TestCode = "TC02", Volume = 1 }, // charge 100
+                new() { Buyer = "AH0033", TestCode = "TC03", Volume = 2 }  // charge 200
+            };
+            QueryParameters<string>? capturedQuery = null;
+            _apiClient.GetByProjectAsync(Arg.Do<QueryParameters<string>>(q => capturedQuery = q), "AH0033")
+                .Returns(ApiResponseDto<List<MonthlyOutputDto>>.SuccessResponse(items));
+            var query = new QueryParameters<string> { Page = 2, PageSize = 2, SortBy = nameof(MonthlyOutputDto.Charge), Descending = false };
+
+            var result = await _service.GetMonthlyOutputByProjectAsync(query, "AH0033", PriceLookupMany(("TC01", "AH0033", 100m), ("TC02", "AH0033", 100m), ("TC03", "AH0033", 100m)));
+
+            Assert.Equal(int.MaxValue, capturedQuery!.PageSize);
+            Assert.Equal(1, capturedQuery.Page);
+            // Ascending charge: TC02(100), TC03(200), TC01(300); page 2 (size 2) -> TC01 only
+            Assert.Single(result.Data!);
+            Assert.Equal("TC01", result.Data![0].TestCode);
+            Assert.Equal(3, result.Pagination!.TotalRecords);
+            Assert.Equal(2, result.Pagination.TotalPages);
+            Assert.Equal(2, result.Pagination.PageNumber);
+            Assert.Equal(2, result.Pagination.PageSize);
+        }
+
+        [Fact]
+        public async Task GetMonthlyOutputByProjectAsync_SortByComputedColumn_WhenApiFails_ReturnsFailureResponse()
+        {
+            _apiClient.GetByProjectAsync(Arg.Any<QueryParameters<string>>(), "AH0033")
+                .Returns(ApiResponseDto<List<MonthlyOutputDto>>.FailureResponse(
+                    new List<ApiErrorDto> { new() { Message = "err" } }, new ApiMetaDto()));
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10, SortBy = nameof(MonthlyOutputDto.Charge) };
+
+            var result = await _service.GetMonthlyOutputByProjectAsync(query, "AH0033", EmptyLookup());
+
+            Assert.False(result.Success);
+        }
+
+        [Fact]
+        public async Task GetMonthlyOutputByProjectAsync_SortByNonComputedColumn_DelegatesQueryUnchanged()
+        {
+            var items = new List<MonthlyOutputDto> { new() { Buyer = "AH0033", TestCode = "TC01" } };
+            QueryParameters<string>? capturedQuery = null;
+            _apiClient.GetByProjectAsync(Arg.Do<QueryParameters<string>>(q => capturedQuery = q), "AH0033")
+                .Returns(ApiResponseDto<List<MonthlyOutputDto>>.SuccessResponse(items));
+            var query = new QueryParameters<string> { Page = 1, PageSize = 10, SortBy = nameof(MonthlyOutputDto.Volume) };
+
+            var result = await _service.GetMonthlyOutputByProjectAsync(query, "AH0033", EmptyLookup());
+
+            Assert.True(result.Success);
+            Assert.Same(query, capturedQuery);
         }
 
         #endregion

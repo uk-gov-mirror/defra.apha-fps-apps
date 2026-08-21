@@ -147,7 +147,7 @@
                      id="nav-monthlyPact" role="tabpanel" aria-labelledby="tab_nav-monthlyPact">
                     <div class="govuk-grid-row">
                         <div class="govuk-grid-column-full">
-                            <div class="govuk-!-padding-3">
+                            <div class="govuk-!-padding-top-3 govuk-!-padding-bottom-3 govuk-!-padding-left-3">
                                 <div id="@($"gridContainer_{Model.MonthlyPactGrid.GridId}")">
                                     @await Html.PartialAsync("_DataGrid", Model.MonthlyPactGrid)
                                 </div>
@@ -197,7 +197,7 @@
                                 </div>
                                 <!-- FPS Planned Cost section -->
                                 <div class="govuk-!-margin-top-3">
-                                    <strong class="govuk-body tab-font-bold-size">FPS Planned Cost</strong>
+                                    <strong class="govuk-body govuk-!-font-size-16 sup_font_weight_700">FPS Planned Cost</strong>
                                 </div>
                                 <table class="govuk-table govuk-table--s custom-table govuk-table--bordered"
                                        style="width: 100%; table-layout: fixed; border-collapse: collapse; margin-top: 4px;">
@@ -245,7 +245,7 @@
                      id="nav-pact-pay" role="tabpanel" aria-labelledby="tab_nav-pact-pay">
                     <div class="govuk-grid-row">
                         <div class="govuk-grid-column-full">
-                            <div class="govuk-!-padding-3">
+                            <div class="govuk-!-padding-top-3 govuk-!-padding-bottom-3 ">
                                 <div id="@($"gridContainer_{Model.PactPayGrid.GridId}")">
                                     @await Html.PartialAsync("_DataGrid", Model.PactPayGrid)
                                 </div>
@@ -259,8 +259,8 @@
                                         <col style="width: 17.4%;" />
                                         <col style="width: 20.3%;" />
                                     </colgroup>
-                                    <thead class="govuk-visually-hidden" aria-label="Project year costs table headers">
-+                                        <tr>
+                                   <thead class="govuk-visually-hidden" aria-label="Project year costs table headers">
+                                        <tr>
                                             <th scope="col" class="govuk-table__header" aria-label="payPact-Col1"></th>
                                             <th scope="col" class="govuk-table__header" aria-label="payPact-Col1"></th>
                                             <th scope="col" class="govuk-table__header">Pay</th>
@@ -271,11 +271,11 @@
                                     </thead>
                                     <tfoot class="govuk-table__foot tab-font-bold-size">
                                         <tr class="govuk-table__row">
-                                            <td class="govuk-table__cell" colspan="2">Totals</td>
-                                            <td class="govuk-table__cell govuk-text-align-right" id="pactPayTotalPay">£0.00</td>
-                                            <td class="govuk-table__cell govuk-text-align-right" id="pactPayTotalNonPay">£0.00</td>
-                                            <td class="govuk-table__cell govuk-text-align-right" id="pactPayTotalOverhead">£0.00</td>
-                                            <td class="govuk-table__cell govuk-text-align-right" id="pactPayTotalStaffCosts">£0.00</td>
+                                            <td class="govuk-table__cell sup_text_align_right" colspan="2">Totals</td>
+                                            <td class="govuk-table__cell sup_text_align_right" id="pactPayTotalPay">£0.00</td>
+                                            <td class="govuk-table__cell sup_text_align_right" id="pactPayTotalNonPay">£0.00</td>
+                                            <td class="govuk-table__cell sup_text_align_right" id="pactPayTotalOverhead">£0.00</td>
+                                            <td class="govuk-table__cell sup_text_align_right" id="pactPayTotalStaffCosts">£0.00</td>
                                         </tr>
                                     </tfoot>
                                 </table>
@@ -287,10 +287,8 @@
                 <div class="govuk-tabs__panel govuk-tabs__panel--hidden govuk-!-padding-2"
                      id="nav-project-details" role="tabpanel" aria-labelledby="tab_nav-project-details"
                      style="overflow-y: auto; max-height: 500px;">
-                    <form class="govuk-form" style="width: 100%; display: flex;">
-                        <fieldset class="govuk-fieldset"
-                                  style="width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; grid-auto-flow: dense;">
-
+                    <form class="govuk-form" id="nav-project-details-form">
+                        <fieldset class="govuk-fieldset pyc-fieldset-grid govuk-!-margin-left-1">
                             <div class="govuk-form-group">
                                 <label class="govuk-label govuk-!-font-size-16 sup_font_weight_700" for="pd-year">Year</label>
                                 <input class="govuk-input govuk-!-font-size-16" id="pd-year" name="year" type="text" readonly>
@@ -371,18 +369,19 @@
                                 <label class="govuk-label govuk-!-font-size-16 sup_font_weight_700" for="pd-project-group">Project Group</label>
                                 <input class="govuk-input govuk-!-font-size-16" id="pd-project-group" name="projectgroup" type="text" readonly>
                             </div>
-                            <div class="govuk-form-group">
-                                <div class="govuk-checkboxes govuk-checkboxes--small">
+                            <div class="govuk-form-group pyc-comments-group" style="grid-column: span 2;">
+                                <label class="govuk-label govuk-!-font-size-16 sup_font_weight_700" for="pd-comments">Comments</label>
+                                <textarea class="govuk-textarea govuk-!-font-size-16" id="pd-comments" name="comments" rows="3" readonly></textarea>
+                            </div>
+                            <div class="govuk-form-group pyc-checkbox-group">
+                                <div class="govuk-checkboxes govuk-checkboxes--small govuk-!-margin-top-4">
                                     <div class="govuk-checkboxes__item">
                                         <input class="govuk-checkboxes__input" id="pd-defraproject" name="defraproject" type="checkbox" disabled>
                                         <label class="govuk-label govuk-!-font-size-16 govuk-checkboxes__label sup_font_weight_700" for="pd-defraproject">Defra Project</label>
                                     </div>
                                 </div>
                             </div>
-                            <div class="govuk-form-group" style="grid-column: span 3;">
-                                <label class="govuk-label govuk-!-font-size-16 sup_font_weight_700" for="pd-comments">Comments</label>
-                                <textarea class="govuk-textarea govuk-!-font-size-16" id="pd-comments" name="comments" rows="2" readonly></textarea>
-                            </div>
+
 
                         </fieldset>
                     </form>
@@ -397,7 +396,7 @@
 
                         <!-- Staff Plan (top-left) -->
                         <div class="govuk-grid-column-one-half">
-                            <div class="sup_border govuk-!-padding-3">
+                            <div class="govuk-!-padding-top-3 govuk-!-padding-bottom-3 govuk-!-padding-left-3">
                                 <div id="@($"gridContainer_{Model.PlanStaffGrid.GridId}")">
                                     @await Html.PartialAsync("_DataGrid", Model.PlanStaffGrid)
                                 </div>
@@ -410,7 +409,7 @@
 
                         <!-- Test Plan (top-right) -->
                         <div class="govuk-grid-column-one-half">
-                            <div class="sup_border govuk-!-padding-3">
+                            <div class="govuk-!-padding-top-3 govuk-!-padding-bottom-3 govuk-!-padding-right-3">
                                 <div id="@($"gridContainer_{Model.PlanTestGrid.GridId}")">
                                     @await Html.PartialAsync("_DataGrid", Model.PlanTestGrid)
                                 </div>
@@ -425,8 +424,8 @@
                     <div class="govuk-grid-row">
 
                         <!-- Animal Plan (bottom-left) -->
-                        <div class="govuk-grid-column-one-half">
-                            <div class="sup_border govuk-!-padding-3">
+                        <div class="govuk-grid-column-one-half"> 
+                            <div class="govuk-!-padding-top-3 govuk-!-padding-bottom-3 govuk-!-padding-left-3">
                                 <div id="@($"gridContainer_{Model.PlanAnimalGrid.GridId}")">
                                     @await Html.PartialAsync("_DataGrid", Model.PlanAnimalGrid)
                                 </div>
@@ -439,7 +438,7 @@
 
                         <!-- Additional Cost Plan (bottom-right) -->
                         <div class="govuk-grid-column-one-half">
-                            <div class="sup_border govuk-!-padding-3">
+                            <div class="govuk-!-padding-top-3 govuk-!-padding-bottom-3 govuk-!-padding-right-3">
                                 <div id="@($"gridContainer_{Model.PlanAdditionalGrid.GridId}")">
                                     @await Html.PartialAsync("_DataGrid", Model.PlanAdditionalGrid)
                                 </div>
@@ -459,7 +458,7 @@
 
                         <!-- Staff Plan (left) -->
                         <div class="govuk-grid-column-one-half">
-                            <div class="sup_border govuk-!-padding-3">
+                            <div class="govuk-!-padding-top-3 govuk-!-padding-bottom-3 govuk-!-padding-left-3">
                                 <div id="@($"gridContainer_{Model.StaffPlansGrid.GridId}")">
                                     @await Html.PartialAsync("_DataGrid", Model.StaffPlansGrid)
                                 </div>
@@ -472,7 +471,7 @@
 
                         <!-- Staff Actuals (right) -->
                         <div class="govuk-grid-column-one-half">
-                            <div class="sup_border govuk-!-padding-3">
+                            <div class="govuk-!-padding-top-3 govuk-!-padding-bottom-3 govuk-!-padding-right-3">
                                 <div id="@($"gridContainer_{Model.StaffActualsGrid.GridId}")">
                                     @await Html.PartialAsync("_DataGrid", Model.StaffActualsGrid)
                                 </div>
@@ -492,7 +491,7 @@
 
                         <!-- Test Plan (left) -->
                         <div class="govuk-grid-column-one-half">
-                            <div class="sup_border govuk-!-padding-3">
+                            <div class="govuk-!-padding-top-3 govuk-!-padding-bottom-3 govuk-!-padding-left-3">
                                 <div id="@($"gridContainer_{Model.TestPlansGrid.GridId}")">
                                     @await Html.PartialAsync("_DataGrid", Model.TestPlansGrid)
                                 </div>
@@ -505,7 +504,7 @@
 
                         <!-- Test Actuals (right) -->
                         <div class="govuk-grid-column-one-half">
-                            <div class="sup_border govuk-!-padding-3">
+                            <div class="govuk-!-padding-top-3 govuk-!-padding-right-3 govuk-!-padding-bottom-3">
                                 <div id="@($"gridContainer_{Model.TestActualsGrid.GridId}")">
                                     @await Html.PartialAsync("_DataGrid", Model.TestActualsGrid)
                                 </div>
@@ -530,7 +529,7 @@
 
                         <!-- Animal Plan (left) -->
                         <div class="govuk-grid-column-one-half">
-                            <div class="sup_border govuk-!-padding-3">
+                            <div class="govuk-!-padding-top-3 govuk-!-padding-bottom-3 govuk-!-padding-left-3">
                                 <div id="@($"gridContainer_{Model.AnimalPlansGrid.GridId}")">
                                     @await Html.PartialAsync("_DataGrid", Model.AnimalPlansGrid)
                                 </div>
@@ -543,7 +542,7 @@
 
                         <!-- Animal Actuals (right) -->
                         <div class="govuk-grid-column-one-half">
-                            <div class="sup_border govuk-!-padding-3">
+                            <div class="govuk-!-padding-top-3 govuk-!-padding-bottom-3 govuk-!-padding-right-3">
                                 <div id="@($"gridContainer_{Model.AnimalActualsGrid.GridId}")">
                                     @await Html.PartialAsync("_DataGrid", Model.AnimalActualsGrid)
                                 </div>
@@ -565,7 +564,7 @@
 
                         <!-- Additional Cost Plan (left) -->
                         <div class="govuk-grid-column-one-half">
-                            <div class="sup_border govuk-!-padding-3">
+                            <div class="govuk-!-padding-top-3 govuk-!-padding-bottom-3 govuk-!-padding-left-3">
                                 <div id="@($"gridContainer_{Model.AdditionalPlansGrid.GridId}")">
                                     @await Html.PartialAsync("_DataGrid", Model.AdditionalPlansGrid)
                                 </div>
@@ -578,7 +577,7 @@
 
                         <!-- Additional Actuals (right) -->
                         <div class="govuk-grid-column-one-half">
-                            <div class="sup_border govuk-!-padding-3">
+                            <div class="govuk-!-padding-top-3 govuk-!-padding-bottom-3 govuk-!-padding-right-3">
                                 <div id="@($"gridContainer_{Model.AdditionalActualsGrid.GridId}")">
                                     @await Html.PartialAsync("_DataGrid", Model.AdditionalActualsGrid)
                                 </div>

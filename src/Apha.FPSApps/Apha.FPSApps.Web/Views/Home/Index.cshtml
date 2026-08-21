@@ -17,7 +17,7 @@
     // Check user permissions for each application
     var hasFpsAccess = User.IsInRole("FPSAdmin") || User.IsInRole("FPSUser");
     var hasPactAccess = User.IsInRole("PACTAdmin") || User.IsInRole("PACTUser");
-    var hasPimsAccess = User.IsInRole("PIMSUser") || User.IsInRole("PIMSAdmin") || User.IsInRole("PIMSProjectManager");
+    var hasPimsAccess = User.IsInRole("PIMSUser") || User.IsInRole("PIMSAdmin") || User.IsInRole("PIMSProjectManager")|| User.IsInRole("PMDAdmin");
     var hasCostbookAccess = User.IsInRole("CostbookUser") || User.IsInRole("CostbookAdmin");
 }
 
@@ -73,7 +73,11 @@
             <div class="tile @(hasPimsAccess ? "" : "tile-disabled")">  
                 @if (hasPimsAccess)
                 {
-                    @if ((User.IsInRole("PIMSProjectManager") || User.IsInRole("PMDAdmin")) && !User.IsInRole("PIMSUser") && !User.IsInRole("PIMSAdmin"))
+                    bool hasPimsUserOrAdmin = User.IsInRole("PIMSUser") || User.IsInRole("PIMSAdmin");
+                    bool hasPmdOnlyAccess   = (User.IsInRole("PIMSProjectManager") || User.IsInRole("PMDAdmin"))
+                                              && !hasPimsUserOrAdmin;
+
+                    if (hasPmdOnlyAccess)
                     {
                         <a asp-area="PIMS" asp-controller="PMDMilestone" asp-action="Index" class="govuk-link govuk-link--inverse">PIMS</a>
                     }

@@ -4,62 +4,67 @@
     var pimsPowerBiReportUrl = Configuration["PowerBiReports:PIMS"];
 }
             <!-- Choose Project -->
-            <div class="nav-item">
-                <a class="nav-button" asp-area="PIMS" asp-controller="ProjectList" asp-action="Index">
-                    <div class="align-menu-text"><span>Choose Project</span></div>
-                </a>
-            </div>
+            @if (User.IsInRole("PIMSUser") || User.IsInRole("PIMSAdmin"))
+            {
+                <div class="nav-item">
+                    <a class="nav-button" asp-area="PIMS" asp-controller="ProjectList" asp-action="Index">
+                        <div class="align-menu-text"><span>Choose Project</span></div>
+                    </a>
+                </div>
 
-            <!-- Print Reports -->
+                <!-- Print Reports -->
+                <div class="nav-item dropdown">
+                    <a class="nav-button" asp-area="PIMS" asp-controller="Queries" asp-action="Index">
+                        <div class="align-menu-text"><span>Print Reports</span></div>
+                    </a>
+                </div>
 
-            <div class="nav-item dropdown">
+                <!-- Milestones -->
+                <div class="nav-item dropdown">
+                    <a class="nav-button" asp-area="PIMS" asp-controller="Milestone" asp-action="Index">
+                        <div class="align-menu-text"><span>Milestone</span></div>
+                    </a>
+                </div>
 
-                 <a class="nav-button" asp-area="PIMS" asp-controller="Queries" asp-action="Index">
-                    <div class="align-menu-text"><span>Print Reports</span></div>
-                </a>
-               
-            </div>
-            
-            <!-- Milestones -->
-            <div class="nav-item dropdown">
-                <a class="nav-button" asp-area="PIMS" asp-controller="Milestone" asp-action="Index">
-                    <div class="align-menu-text"><span>Milestone</span></div>
-                </a>
-            </div>
-
-              <!-- Yearly Financial Details -->
-            <div class="nav-item">
-                <a class="nav-button" asp-area="PIMS" asp-controller="YearlyFinancialData" asp-action="Index">
-                    <div class="align-menu-text"><span>Yearly Financial Details</span></div>
-                </a>
-            </div>
+                <!-- Yearly Financial Details -->
+                <div class="nav-item">
+                    <a class="nav-button" asp-area="PIMS" asp-controller="YearlyFinancialData" asp-action="Index">
+                        <div class="align-menu-text"><span>Yearly Financial Details</span></div>
+                    </a>
+                </div>
+            }
 
                 <!-- PMD Milestones -->
-            <div class="nav-item dropdown">
-    <a class="nav-button" asp-area="PIMS" asp-controller="PMDMilestone" asp-action="Index">
-                    <div class="align-menu-text"><span>PMD Milestone</span></div>
-                </a>
-            </div>
+                @if (User.IsInRole("PIMSProjectManager") || User.IsInRole("PMDAdmin"))
+                {
+                    <div class="nav-item dropdown">
+                        <a class="nav-button" asp-area="PIMS" asp-controller="PMDMilestone" asp-action="Index">
+                            <div class="align-menu-text"><span>PMD Milestone</span></div>
+                        </a>
+                    </div>
+                }
 
-<!-- Invoices -->
-<div class="nav-item">
-    <a class="nav-button" asp-area="PIMS" asp-controller="Invoice" asp-action="Index">
-        <div class="align-menu-text"><span>Invoices</span></div>
-    </a>
-</div>
-<!-- Maintenance -->
-<div class="nav-item">
-    <a class="nav-button" asp-area="PIMS" asp-controller="Maintenance" asp-action="Index">
-        <div class="align-menu-text"><span>Maintenance</span></div>
-    </a>
-</div>
+@if (User.IsInRole("PIMSUser") || User.IsInRole("PIMSAdmin"))
+{
+    <!-- Invoices -->
+    <div class="nav-item">
+        <a class="nav-button" asp-area="PIMS" asp-controller="Invoice" asp-action="Index">
+            <div class="align-menu-text"><span>Invoices</span></div>
+        </a>
+    </div>
+    <!-- Maintenance -->
+    <div class="nav-item">
+        <a class="nav-button" asp-area="PIMS" asp-controller="Maintenance" asp-action="Index">
+            <div class="align-menu-text"><span>Maintenance</span></div>
+        </a>
+    </div>
 
-
-<!-- Power BIReports -->
-<div class="nav-item">
-    <a class="nav-button" href="@pimsPowerBiReportUrl"
-       target="_blank" rel="noopener noreferrer">Power BI Report</a>
-</div>
+    <!-- Power BI Reports -->
+    <div class="nav-item">
+        <a class="nav-button" href="@pimsPowerBiReportUrl"
+           target="_blank" rel="noopener noreferrer">Power BI Report</a>
+    </div>
+}
 
            
             

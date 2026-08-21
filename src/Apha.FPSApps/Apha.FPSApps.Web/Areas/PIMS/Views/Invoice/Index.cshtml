@@ -34,7 +34,7 @@
                                     id="invFilterProject"
                                     onchange="onInvProjectChange()"
                                     aria-label="invFilterProject">
-                                <option value="">       </option>
+                                <option value=""> All Projects </option>
                                 @foreach (var item in Model.ProjectList)
                                 {
                                     if (item.Selected)
@@ -57,7 +57,7 @@
                                     id="invFilterSurvContract"
                                     onchange="onInvContractChange()"
                                     aria-label="invFilterSurvContract">
-                                <option value="">       </option>
+                                <option value="">  All Contracts     </option>
                                 @foreach (var item in Model.ContractList)
                                 {
                                     if (item.Value == Model.FilterContract)
@@ -79,7 +79,7 @@
                                     id="invFilterYear"
                                     onchange="applyInvoiceFilters()"
                                     aria-label="invFilterYear">
-                                <option value="">       </option>
+                               
                                 @foreach (var item in Model.YearList)
                                 {
                                     if (item.Selected)
@@ -102,7 +102,7 @@
                                     id="invFilterProgram"
                                     onchange="onInvProgramChange()"
                                     aria-label="invFilterProgram">
-                                <option value="">       </option>
+                                <option value="">   All Programs    </option>
                                 @foreach (var item in Model.ProgramList)
                                 {
                                     if (item.Value == Model.FilterProgram)
@@ -135,9 +135,9 @@
                 <!-- ── Totals row — separate row below the grid (outside grid container),
                              values populated via AJAX on load and on filter change,
                              columns kept pixel-aligned with the invoices grid via JS ──── -->
-                <div class="govuk-grid-row sup_margin_left_right_0 sup_margin_bottom_10" style="margin-top: 8px;">
+                <div class="govuk-grid-row sup_margin_left_right_0 sup_margin_bottom_10 " style="margin-top: 8px;">
                     <div class="govuk-grid-column-full sup_p_0">
-                        <div id="invTotalsContainer">
+                        <div id="invTotalsContainer" class="govuk-!-margin-left-3">
                             <div id="invTotalsScrollWrapper" class="yfd-scroll-wrapper ">
                                 <table id="tblInvTotals" class="govuk-table custom-table yfd-totals-table" aria-label="Invoice totals">
                                     <colgroup>
@@ -436,3 +436,4 @@
         });
     </script>
 }
+

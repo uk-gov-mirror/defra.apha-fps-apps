@@ -114,6 +114,15 @@ function ajaxPost(url, params) {
     const WG_URL = '/FPS/SetUpStaffResources/GetGroupsByResourceCentre';
     const GRADE_URL = '/FPS/SetUpStaffResources/GetGradesByGroups';
 
+    // Rebuild the "Staff of this Grade" totals row after the grid markup is
+    // replaced directly (grade change / state restore / clear). Grid reloads
+    // triggered by paging or filtering are handled by the gridReloaded event.
+    function refreshStaffTotalsRow() {
+        if (typeof window.buildRaStaffTotalsRow === 'function') {
+            window.buildRaStaffTotalsRow();
+        }
+    }
+
     /* ── Resource Centre change ─────────────────────────────────────────── */
     async function OnResourceCenterChange() {
         const centre = el('resourceCentreSelect').value;
@@ -155,6 +164,7 @@ function ajaxPost(url, params) {
         try {
             const html = await ajaxPost(staffGridUrl, { workGroupGrade: grade, page: 1, pageSize: 10 });
             el('gridContainer_StaffAllocationGrid').innerHTML = html;
+            refreshStaffTotalsRow();
             SelectFirstStaffRow();
             await loadStaffAllocationTotals(grade);
         } catch {
@@ -240,6 +250,7 @@ function ajaxPost(url, params) {
     function clearStaffGrid() {
         $.post(staffGridUrl, { workGroupGrade: '' }, html => {
             el('gridContainer_StaffAllocationGrid').innerHTML = html;
+            refreshStaffTotalsRow();
         });
         clearSummaryPanel();
     }
@@ -336,6 +347,7 @@ function ajaxPost(url, params) {
             // ── 4. Reload staff grid and re-select saved staff row ────────
             const html = await ajaxPost(staffGridUrl, { workGroupGrade: saved.grade, page: 1, pageSize: 10 });
             el('gridContainer_StaffAllocationGrid').innerHTML = html;
+            refreshStaffTotalsRow();
             await loadStaffAllocationTotals(saved.grade);
 
             if (saved.staffId) {

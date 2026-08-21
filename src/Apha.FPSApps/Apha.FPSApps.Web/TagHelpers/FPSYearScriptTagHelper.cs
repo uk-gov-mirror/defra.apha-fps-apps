@@ -22,6 +22,26 @@ namespace Apha.FPSApps.Web.TagHelpers
                 jQuery(document).ajaxSend(function (e, xhr) {{
                     xhr.setRequestHeader('X-FPS-Year', window.FPS_YEAR);
                 }});
+                (function () {{
+                    if (!window.fetch || window.fetch.__fpsYearWrapped) {{
+                        return;
+                    }}
+                    var nativeFetch = window.fetch.bind(window);
+                    var wrappedFetch = function (input, init) {{
+                        var headers = new Headers(
+                            (init && init.headers) ||
+                            (input instanceof Request ? input.headers : undefined)
+                        );
+                        if (!headers.has('X-FPS-Year')) {{
+                            headers.set('X-FPS-Year', window.FPS_YEAR);
+                        }}
+                        init = init || {{}};
+                        init.headers = headers;
+                        return nativeFetch(input, init);
+                    }};
+                    wrappedFetch.__fpsYearWrapped = true;
+                    window.fetch = wrappedFetch;
+                }})();
                 window.fpsNavigateTo = function (url) {{
                     var separator = url.indexOf('?') !== -1 ? '&' : '?';
                     window.location.href = url + separator + 'year=' + window.FPS_YEAR;

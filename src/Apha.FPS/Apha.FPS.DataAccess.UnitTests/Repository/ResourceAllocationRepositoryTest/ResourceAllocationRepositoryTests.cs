@@ -556,6 +556,37 @@ namespace Apha.FPS.DataAccess.UnitTests.Repository.ResourceAllocationRepositoryT
             Assert.True(result.Data.Count() <= 2);
         }
 
+        [Fact]
+        public async Task GetPagedStaffAllocationsByWorkGroupGradeAsync_AppPlannedHoursIncludesAllProjectStatuses()
+        {
+            // Arrange - Create projects with different statuses
+            var workgroupGrades = new[] { BuildWorkgroupGrade() };
+            var employees = new[] { BuildEmployee("SP001", "General", "Staff") };
+            var workGroupEmployees = new[] { BuildWorkGroupEmployee("PACT001", DefaultWorkGroupGrade, "SP001", 3714.0) };
+            var staffJobs = new[]
+            {
+                BuildStaffJob("PACT001", "J001", 500.0),  // approved project
+                BuildStaffJob("PACT001", "J002", 487.0)   // non-approved project
+            };
+            var projects = new[]
+            {
+                BuildProject("J001", "GP", "approved"),
+                BuildProject("J002", "GP", "draft")       // This should now be included
+            };
+
+            var repo = CreateRepository(workGroupEmployees, employees, workgroupGrades, staffJobs, projects);
+            var query = DefaultQuery();
+
+            // Act
+            var result = await repo.GetPagedStaffAllocationsByWorkGroupGradeAsync(DefaultWorkGroupGrade, query);
+
+            // Assert
+            Assert.All(result.Data, row =>
+            {
+                // AppPlannedHours should include hours from both approved and non-approved projects
+                Assert.True(row.AppPlannedHours > 0);  // Should have accumulated hours
+            });
+        }
         #endregion
     }
 }

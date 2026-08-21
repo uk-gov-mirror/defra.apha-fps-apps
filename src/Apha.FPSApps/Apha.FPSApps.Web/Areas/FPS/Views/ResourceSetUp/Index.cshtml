@@ -26,8 +26,7 @@
                                 <td class="govuk-table__cell govuk-!-padding-bottom-0 govuk-!-padding-top-0 govuk-!-padding-right-1 isNoBottomBorder govuk-!-text-align-right">
                                     <form asp-action="Index" asp-controller="ResourceSetUp" asp-area="FPS" method="get"
                                           class="govuk-!-padding-right-0 govuk-!-padding-top-2 govuk-!-padding-bottom-2">
-                                        <input type="hidden" name="year" value="@FpsYearContext.Year" />
-                                        @* <label class="fw-bold mt-2 me-2" for="profitCentreSelect">Resource Centre: </label> *@
+                                        <input type="hidden" name="year" value="@FpsYearContext.Year" />                                       
                                         <select id="profitCentreSelect"
                                                 name="profitCentre"
                                                 asp-items="Model.ProfitCentreList"
@@ -35,7 +34,7 @@
                                                 onchange="showLoader(); this.form.submit()">
                                             <option value="">-- Select Resource Centre --</option>
                                         </select>
-                                        </form>
+                                    </form>
                             </td>
                         </tr>
                     </tbody>

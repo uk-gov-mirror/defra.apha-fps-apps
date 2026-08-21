@@ -1,5 +1,14 @@
 ﻿@model Apha.FPSApps.Web.Areas.PIMS.Models.ProjectDetailsViewModel
 
+@{
+    string currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+
+    string GetActiveClass(string controllerName) =>
+        string.Equals(currentController, controllerName, StringComparison.OrdinalIgnoreCase)
+            ? " active"
+            : string.Empty;
+}
+
 <!-- ── Side Navigation ─────────────────────────────────────────── -->
 <nav class="sidenav flex-column flex-shrink-0" id="shortnav">
     <button class="toggle-btn" onclick="toggleSidebar()" style="right: -8px; top: 30px"
@@ -8,21 +17,21 @@
              alt="side menu left arrow" style="margin: -2px 5px 0 0px" />
     </button>
     <ul>
-        <li class="sidebar-link-two" style="border-radius: 0 8px 8px 0; cursor: pointer; background-color: #1d70b8;">
+        <li class="sidebar-link-two@(GetActiveClass("ProjectDetails"))" style="border-radius: 0 8px 8px 0; cursor: pointer;">
             <a href="@Url.Action("Index", "ProjectDetails", new { area = "PIMS", parentproject = Model.Parentproject })"
                style="color: #fff">Project Details</a>
         </li>
-       
-        <li class="sidebar-link-two" style="border-radius: 0 8px 8px 0; cursor: pointer; background-color: #1d70b8;">
+
+        <li class="sidebar-link-two@(GetActiveClass("ProjectYearCosts"))" style="border-radius: 0 8px 8px 0; cursor: pointer;">
             <a href="@Url.Action("Index", "ProjectYearCosts", new { area = "PIMS", parentproject = Model.Parentproject })"
                style="color: #fff">Yearly Finances</a>
         </li>
        
-        <li class="sidebar-link-two" style="border-radius: 0 8px 8px 0; cursor: pointer; background-color: #1d70b8;">
+        <li class="sidebar-link-two@(GetActiveClass("Comment"))" style="border-radius: 0 8px 8px 0; cursor: pointer;">
             <a href="@Url.Action("Index", "Comment", new { area = "PIMS", parentproject = Model.Parentproject })"
                style="color: #fff">Comments</a>
         </li>
-       
-      
+
+
     </ul>
 </nav>

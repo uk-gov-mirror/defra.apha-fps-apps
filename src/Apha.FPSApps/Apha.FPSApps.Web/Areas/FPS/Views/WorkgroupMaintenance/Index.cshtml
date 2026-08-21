@@ -10,7 +10,7 @@
 
         <!-- Title — matches frmMaintWorkGroup2 HTML prototype govuk-heading-s -->
         <div class="govuk-grid-row">
-            <div class="govuk-grid-column-full">
+            <div class="govuk-grid-column-full govuk-\!-padding-left-0 govuk-!-padding-right-0">
                 <h1 class="govuk-heading-s sup_border-bottom govuk-!-margin-top-2 govuk-!-padding-bottom-2 govuk-!-padding-left-3">
                     WorkGroup Maintenance
                 </h1>
@@ -18,26 +18,24 @@
         </div>
 
         <div class="row">
-            <div class="col-lg-12">
+            <div class="col-lg-12 govuk-!-padding-left-4">
                 <main class="main-content" style="padding:0;">
                     <div class="container-fluid" style="padding: 0;">
                         <div class="row">
                             <div class="container-fluid" style="padding-left:0px;">
                                 <div style="display: flex; flex-direction: row; align-items: flex-start;">
-
+                                    <!-- Side nav -->
                                     @await Html.PartialAsync("_MaintenanceSideNav", "WorkgroupMaintenance")
-
                                     <div style="display: flex; flex-direction: column; flex: 1 1 auto; min-width: 0; margin: 0 0px 5px 8px;">
-
                                         <!-- DataGrid section -->
                                         <div class="govuk-grid-row">
                                             <div class="govuk-grid-column-full mt-2">
+                                                <!-- Grid Container -->
                                                 <div id="@($"gridContainer_{Model.WorkgroupGrid.GridId}")">
                                                     @await Html.PartialAsync("_DataGrid", Model.WorkgroupGrid)
                                                 </div>
                                             </div>
                                         </div>
-
                                     </div>
                                 </div>
                             </div>

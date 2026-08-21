@@ -3,6 +3,10 @@
     ViewData["Title"] = "Stage 2 Check Resource Allocation";
 }
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/staff-resource.css" asp-append-version="true" />
+}
+
 <main class="govuk-main-wrapper govuk-!-padding-top-0" id="main-content" role="main">
     <div class="container-fluid">
        
@@ -225,6 +229,117 @@
             totalsUrl:    '@Url.Action("GetStaffAllocationTotals",  "ResourceAllocation", new { area = "FPS" })',
             ztCodeUrl:    '@Url.Action("Index", "PlanStaffZTCode",  new { area = "FPS" })'
         };
-    </script>
-    <script src="~/js/fps_js/ResourceAllocation.js"></script>
-}
+
+            // ─── Totals row for the "Staff of this Grade" grid ──────────────────
+            // Rendered as a <tfoot> inside the grid table so the browser's own
+            // table layout keeps every total aligned under its column. Mirrors the
+            // totals row shown on the Staff Resource Utilisation page.
+            function buildRaStaffTotalsRow() {
+                var table = document.getElementById('tbl_@Model.StaffAllocationGrid.GridId');
+                if (!table) return;
+
+                // Clear any previously rendered totals tfoot before rebuilding it.
+                var existingFoot = table.querySelector('tfoot');
+                if (existingFoot) existingFoot.remove();
+
+                var rows = table.querySelectorAll('tbody tr');
+                if (!rows.length) return;
+
+                // Visible column layout (0-based):
+                //  0:Name(text)
+                //  1:HrsAvail  2:PlanHrs
+                //  3:Allocation(%)
+                //  4:AppChargeHrs
+                //  5:AppUtilization(%)
+                //  6:ChargeHrs
+                //  7:Utilization(%)
+                var refCells = rows[0].querySelectorAll('td');
+                var colCount = refCells.length;
+                var sumCols  = [1, 2, 4, 6];           // Sum these: HrsAvail, PlanHrs, AppChargeHrs, ChargeHrs
+                var derivedPercentageCols = [3, 5, 7]; // Derive from sums: Allocation, AppUtilization, Utilization
+                var sums = {};
+
+                sumCols.forEach(function (i) { sums[i] = 0; });
+
+                rows.forEach(function (row) {
+                    var cells = row.querySelectorAll('td');
+                    sumCols.forEach(function (i) {
+                        if (!cells[i]) return;
+                        var val = parseFloat(cells[i].textContent.trim().replace(/,/g, ''));
+                        if (!isNaN(val)) sums[i] += val;
+                    });
+                });
+
+                // Build totals table row (rendered outside the main grid)
+                var totalsHtml = '<table class="govuk-table custom-table ra-totals-table" style="width: 100%; margin-top: 0;">';
+                totalsHtml += '<tbody class="govuk-table__body">';
+                totalsHtml += '<tr class="ruv-totals-row govuk-table__row">';
+
+                for (var i = 0; i < colCount; i++) {
+                    var cellContent = '';
+                    var cellClass = 'govuk-table__cell';
+
+                    if (i === 0) {
+                        cellContent = 'Staff Totals:';
+                        cellClass += ' ruv-totals-label';
+                    } else if (sums.hasOwnProperty(i)) {
+                        // Sum columns: just display the total
+                        cellContent = (Math.round(sums[i] * 100) / 100).toFixed(2);
+                        cellClass += ' govuk-table__cell--numeric';
+                    } else if (derivedPercentageCols.indexOf(i) !== -1) {
+                        // Derived percentage columns: calculate from component sums
+                        var numerator = 0, denominator = 0;
+
+                        if (i === 3) {
+                            // Allocation = PlanHrs / HrsAvail
+                            numerator = sums[2];
+                            denominator = sums[1];
+                        } else if (i === 5) {
+                            // AppUtilization = AppChargeHrs / HrsAvail
+                            numerator = sums[4];
+                            denominator = sums[1];
+                        } else if (i === 7) {
+                            // Utilization = ChargeHrs / HrsAvail
+                            numerator = sums[6];
+                            denominator = sums[1];
+                        }
+
+                        if (denominator !== 0) {
+                            var pct = (numerator / denominator) * 100;
+                            cellContent = pct.toFixed(2) + '%';
+                        } else {
+                            cellContent = '0.00%';
+                        }
+                        cellClass += ' govuk-table__cell--numeric';
+                    }
+
+                    totalsHtml += '<td class="' + cellClass + '">' + cellContent + '</td>';
+                }
+
+                totalsHtml += '</tr>';
+                totalsHtml += '</tbody>';
+                totalsHtml += '</table>';
+
+                // Insert the totals table after the grid container
+                var gridContainer = document.getElementById('gridContainer_@Model.StaffAllocationGrid.GridId');
+                if (gridContainer) {
+                    var totalsDiv = document.createElement('div');
+                    totalsDiv.id = 'ra-staff-totals-container';
+                    totalsDiv.innerHTML = totalsHtml;
+                    gridContainer.parentNode.insertBefore(totalsDiv, gridContainer.nextSibling);
+                }
+            }
+
+            // Expose so ResourceAllocation.js can rebuild totals after it replaces
+            // the staff grid markup directly (grade change / state restore).
+            window.buildRaStaffTotalsRow = buildRaStaffTotalsRow;
+
+            // Rebuild totals whenever the staff grid reloads (paging / filtering).
+            document.addEventListener('gridReloaded', function (e) {
+                if (e.detail && e.detail.gridId === '@Model.StaffAllocationGrid.GridId') {
+                    buildRaStaffTotalsRow();
+                }
+            });
+        </script>
+        <script src="~/js/fps_js/ResourceAllocation.js"></script>
+    }

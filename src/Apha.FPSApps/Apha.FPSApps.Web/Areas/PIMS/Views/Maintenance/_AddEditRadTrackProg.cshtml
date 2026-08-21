@@ -7,7 +7,7 @@
 }
 
 <div class="modal-header flex-space-center">
-    <h3 class="modal-title" style="margin: 0;">@title</h3>
+    <h3 class="govuk-edit-modal__title" style="margin: 0;">@title</h3>
     <button type="button" class="btn-close btn-red" onclick="closeModal()">X</button>
 </div>
 <div class="modal-body" style="padding-top: 5px;">
@@ -32,7 +32,7 @@
             <div class="govuk-grid-column-one-half">
                 <div class="govuk-form-group sup_margin_bottom_10" id="progProgNameGroup">
                     <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="Program">
-                        Programme: <span class="ra-required-star" aria-hidden="true">*</span>
+                        Program: <span class="ra-required-star" aria-hidden="true">*</span>
                     </label>
                     @if (isEditMode)
                     {
@@ -53,7 +53,7 @@
                                 aria-describedby="progProgNameError"
                                 asp-items="ViewBag.ProgramOptions"
                                 required="required">
-                            <option value="">-- Select Programme --</option>
+                            <option value="">-- Select Program --</option>
                         </select>
                     }
                     <span asp-validation-for="Program" class="govuk-error-message" id="progProgNameError" style="display:none;"></span>

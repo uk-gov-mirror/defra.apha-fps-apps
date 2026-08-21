@@ -429,6 +429,7 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
         /// Imports a monthly time file into staging.
         /// </summary>
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Import(IFormFile file, short importType)
         {
             if (!ModelState.IsValid)

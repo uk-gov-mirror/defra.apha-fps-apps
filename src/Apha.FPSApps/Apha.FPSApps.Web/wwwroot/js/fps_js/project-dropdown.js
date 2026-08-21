@@ -8,10 +8,22 @@
 
 function initProjectDropdown(lookupUrl, onSelectCallback) {
     var allProjects = [];
-    var display = document.getElementById('projectNameInput');
-    var panel   = document.getElementById('ProjectDropdownPanel');
-    var search  = document.getElementById('ProjectSearchBox');
-    var body    = document.getElementById('ProjectDropdownBody');
+    // Find the display input (support legacy id or new uid-suffixed ids or class)
+    var display = document.getElementById('projectNameInput') || document.querySelector('.project-dropdown-input') || document.querySelector('[id^="projectNameInput_"]');
+
+    // Find panel, search and body relative to the display when possible, with fallbacks to legacy ids
+    var panel = null, search = null, body = null;
+    if (display) {
+        var container = display.parentElement || document;
+        panel = container.querySelector('#ProjectDropdownPanel') || container.querySelector('[id^="ProjectDropdownPanel_"]') || container.querySelector('.project-dropdown-panel');
+        search = container.querySelector('#ProjectSearchBox') || container.querySelector('[id^="ProjectSearchBox_"]') || container.querySelector('.project-dropdown-search');
+        body = container.querySelector('#ProjectDropdownBody') || container.querySelector('[id^="ProjectDropdownBody_"]') || container.querySelector('.project-dropdown-body');
+    }
+
+    // Legacy global fallbacks
+    panel = panel || document.getElementById('ProjectDropdownPanel');
+    search = search || document.getElementById('ProjectSearchBox');
+    body = body || document.getElementById('ProjectDropdownBody');
 
     if (!display || !panel || !search || !body) return;
 
@@ -25,6 +37,10 @@ function initProjectDropdown(lookupUrl, onSelectCallback) {
         body.innerHTML = '';
         rows.forEach(function (item) {
             var tr = document.createElement('tr');
+            tr.setAttribute('role', 'option');
+            tr.setAttribute('tabindex', '-1');
+            // set an id so ARIA references remain valid if needed
+            tr.id = 'ProjectDropdownRow_' + Math.random().toString(36).slice(2);
             tr.style.cursor = 'pointer';
             tr.innerHTML =
                 '<td style="padding:6px 8px;border-bottom:1px solid #f3f2f1">' + item.parentProject + '</td>' +

@@ -15,13 +15,67 @@ namespace Apha.FPSApps.Application.Services.FPS
             _fpsClient = fpsClient;
         }
 
+        private static readonly HashSet<string> ComputedSortColumns =
+            new(StringComparer.OrdinalIgnoreCase) { nameof(MonthlyOutputDto.TestPrice), nameof(MonthlyOutputDto.Charge) };
+
         public async Task<ApiResponseDto<List<MonthlyOutputDto>>> GetMonthlyOutputByProjectAsync(QueryParameters<string> query, string projectCode, Dictionary<(string TestCode, string Buyer), decimal> priceLookup)
         {
+            // TestPrice (Rate) and Charge are computed in this layer from the price lookup and do not
+            // exist in the data store, so the API cannot sort by them. When sorting by these computed
+            // columns, fetch the full filtered set, enrich, then sort and page in memory.
+            if (!string.IsNullOrEmpty(query.SortBy) && ComputedSortColumns.Contains(query.SortBy))
+                return await GetSortedByComputedColumnAsync(query, projectCode, priceLookup);
+
             var result = await _fpsClient.FpsMonthlyOutput.GetByProjectAsync(query, projectCode);
             if (!result.Success || result.Data == null)
                 return result;
 
             EnrichWithPrices(result.Data, priceLookup);
+            return result;
+        }
+
+        private async Task<ApiResponseDto<List<MonthlyOutputDto>>> GetSortedByComputedColumnAsync(
+            QueryParameters<string> query, string projectCode, Dictionary<(string TestCode, string Buyer), decimal> priceLookup)
+        {
+            var allQuery = new QueryParameters<string>
+            {
+                Page = 1,
+                PageSize = int.MaxValue,
+                Filter = query.Filter,
+                Search = query.Search
+            };
+
+            var result = await _fpsClient.FpsMonthlyOutput.GetByProjectAsync(allQuery, projectCode);
+            if (!result.Success || result.Data == null)
+                return result;
+
+            EnrichWithPrices(result.Data, priceLookup);
+
+            Func<MonthlyOutputDto, double> keySelector = string.Equals(query.SortBy, nameof(MonthlyOutputDto.Charge), StringComparison.OrdinalIgnoreCase)
+                ? item => item.Charge ?? 0
+                : item => item.TestPrice ?? 0;
+
+            var sorted = (query.Descending
+                ? result.Data.OrderByDescending(keySelector)
+                : result.Data.OrderBy(keySelector)).ToList();
+
+            var totalRecords = sorted.Count;
+            var pageSize = query.PageSize <= 0 ? 10 : query.PageSize;
+            var page = query.Page <= 0 ? 1 : query.Page;
+
+            result.Data = sorted
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            result.Pagination = new PaginationDto
+            {
+                PageNumber = page,
+                PageSize = pageSize,
+                TotalRecords = totalRecords,
+                TotalPages = (int)Math.Ceiling(totalRecords / (double)pageSize)
+            };
+
             return result;
         }
 

@@ -51,8 +51,8 @@
     display: flex;
     align-items: center;
     border: 1px solid #b1b4b6;
-    background-color: #f3f2f1;
-    margin-top: 2px;
+    margin-top: 10px;
+    margin-bottom: 10px;
 }
 
 .sup_total_footer__label {
@@ -76,6 +76,195 @@
 .sup_btn_input_height {
     padding: 5px 10px;
     line-height: 1.2;
+}
+
+/* Milestone grid: highlight "Is Late" cell text in red */
+#gridContainer_milestonesGrid {
+    td[data-property="DisplayLate"] span {
+        color: #ca3535;
+    }
+}
+
+/* Milestone grid: word-wrap long text in Description/P Leader's Comment/CAP's Comment columns */
+#gridContainer_milestonesGrid {
+    td[data-property="Description"],
+    td[data-property="ProjectLeaderComment"],
+    td[data-property="CapsComment"] {
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: break-word;
+    }
+
+    td[data-property="Description"] span,
+    td[data-property="ProjectLeaderComment"] span,
+    td[data-property="CapsComment"] span {
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        display: inline-block;
+    }
+}
+
+/* Reports grid: word-wrap long text; set min/max widths for Name, Description and Report Help columns */
+#gridContainer_reportsGrid {
+    td[data-property="ReportName"],
+    td[data-property="ReportDescription"],
+    td[data-property="ReportHelp"] {
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: break-word;
+        padding: 2px;
+    }
+
+        td[data-property="ReportName"] span,
+        td[data-property="ReportDescription"] span,
+        td[data-property="ReportHelp"] span {
+            white-space: normal;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            display: inline-block;
+            padding: 2px;
+        }
+    /* Name column */
+    th[data-property="ReportName"],
+    td[data-property="ReportName"] {
+        min-width: 290px;
+        width: 290px;
+        max-width: 320px;
+    }
+    /* Description column */
+    th[data-property="ReportDescription"],
+    td[data-property="ReportDescription"] {
+        min-width: 300px;
+        width: 300px;
+        max-width: 350px;
+    }
+    /* Report Help column */
+    th[data-property="ReportHelp"],
+    td[data-property="ReportHelp"] {
+        min-width: 531px;
+        width: 531px;
+        max-width: 560px;
+    }
+}
+
+/* Project Details form: 4-column grid with aligned label + input, inputs at 50% */
+.pyc-fieldset-grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    column-gap: 24px;
+    row-gap: 12px;
+    grid-auto-flow: dense;
+}
+
+#nav-project-details-form .govuk-form-group:not(.pyc-checkbox-group):not(.pyc-comments-group) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+#nav-project-details-form .govuk-form-group:not(.pyc-checkbox-group):not(.pyc-comments-group) .govuk-label {
+    flex: 0 0 auto;
+    width: 30%;
+    margin: 0;
+    white-space: normal;
+}
+
+#nav-project-details-form .govuk-form-group:not(.pyc-checkbox-group):not(.pyc-comments-group) .govuk-input,
+#nav-project-details-form .govuk-form-group:not(.pyc-checkbox-group):not(.pyc-comments-group) .govuk-select {
+   
+    box-sizing: border-box;
+    margin: 0;
+}
+
+#nav-project-details-form .pyc-comments-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+#nav-project-details-form .pyc-comments-group .govuk-label {
+    flex: 0 0 auto;
+    width: 14%;
+    margin-right: 5px;
+}
+
+#nav-project-details-form .pyc-comments-group .govuk-textarea {
+    box-sizing: border-box;
+    margin: 0;
+}
+
+#nav-project-details-form .pyc-checkbox-group {
+    margin: 0;
+}
+
+
+/* Supplement classes for Comments filters table (minimal, aligned to GOV.UK look) */
+.sup-filters-table {
+    width: 50%;
+    border-collapse: collapse;
+}
+
+.sup-nested-table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 5px;
+}
+
+.sup-col-1 { width: 25%; vertical-align: middle; }
+.sup-col-2 { width: 10%; text-align: center; vertical-align: middle; }
+.sup-col-3 { width: 8%; }
+.sup-col-4 { width: 57%; }
+
+.sup-cell-label {
+    vertical-align: middle;
+}
+
+.sup-cell-control {
+    padding: 0;
+}
+
+/* small spacing between nested rows */
+.sup-nested-table tr td {
+    padding: 4px 6px;
+}
+
+/* Inline control wrapper: keep label-to-control gap small and align Save button */
+.sup-inline-control {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px; /* small gap between input and button */
+}
+
+    .sup-inline-control .govuk-input, .govuk-select {
+        min-width: 190px;
+    }
+
+.sup-inline-control .govuk-button {
+    margin: 0;
+}
+
+/* Filter box border and reduced gaps */
+.sup-filter-box {
+    border: 1px solid #9e9e9e;
+    padding: 6px 8px;
+    display: inline-block;
+    vertical-align: top;
+    margin-left:30px;
+}
+
+/* Reduce gap between label and control */
+.sup-cell-label {
+    padding-right: 6px;
+    white-space: nowrap;
+}
+
+.sup-cell-control select,
+.sup-cell-control input {
+    margin-left: 0;
 }
 
 /*menu*/
@@ -119,11 +308,11 @@ body {
     /* transform: translateX(5px);*/
 }
 
-.sidebar-link.active {
-    color: #ffffff;
-    background: none;
-    /* width: var(--sidebar-width-collapsed);*/
-}
+    .sidebar-link.active {
+        color: #ffffff;
+        background-color: #00005c;
+        /* width: var(--sidebar-width-collapsed);*/
+    }
 
 .sidenav {
     width: 20px;
@@ -135,6 +324,7 @@ body {
     border-radius: 0 8px 8px 0;
     margin-bottom: 10px;
     margin-right: 5px;
+    margin-left: 5px;
 }
 
 .sidenav.collapsed {
@@ -182,17 +372,15 @@ body {
     overflow: hidden;
 }
 
-.sidebar-link-two:hover {
-    color: #ffffff;
-    background: rgba(255, 255, 255, 0.1);
-    /* transform: translateX(5px);*/
-}
+    .sidebar-link-two:hover {
+        background-color: #155790;
+        color: #fff;
+    }
 
-.sidebar-link-two.active {
-    color: #ffffff;
-    background: rgba(255, 255, 255, 0.1);
-    /* width: var(--sidebar-width-collapsed);*/
-}
+    .sidebar-link-two.active {
+        background-color: #155790;
+        color: #fff;
+    }
 
 
 .collapsed .sidebar-link-two {
@@ -621,7 +809,6 @@ body {
 
 /*#############################################*/
 
-
 .arrow {
 
     transition: transform 0.3s;
@@ -900,17 +1087,6 @@ tbody#tableBody>tr>td {
     padding: 5px 10px !important;
 }
 
-/* Compact row height for maintenance.html grids */
-#mainTabs .custom-table td {
-    padding: 3px 8px !important;
-    line-height: 1;
-}
-
-#mainTabs .custom-table th {
-    padding: 5px 8px !important;
-    line-height: 1;
-}
-
 .selectedProjectForm {
 
     padding: 10px;
@@ -920,9 +1096,7 @@ tbody#tableBody>tr>td {
     border: 1px solid #9e9e9e;
 }
 
-.selectedProjectForm div {
-    margin-bottom: 10px;
-}
+
 
 /* .selectedProjectForm div div {
     margin-bottom: 2px;
@@ -1593,9 +1767,6 @@ th.sorted-desc {
     font-weight: bold;
 }
 
-
-
-
 /* Blank out empty placeholder cells in the totals row (e.g. VLA Budget, Seedcorn,
    Man Hours, Adjustment Comment, Actions) as whitespace — keep them in layout
    so column widths/positions stay synced with the DataGrid's colgroup. */
@@ -1798,7 +1969,7 @@ th.sorted-desc {
     align-items: center;
 }
 
-.yfd-costing-panel__checkbox .govuk-checkboxes__item {
+/.yfd-costing-panel__checkbox .govuk-checkboxes__item {
     margin: 0;
 }
 
@@ -2740,357 +2911,9 @@ th.sorted-desc {
 .other-col-id {
     width: 90px;
 }
-
-/* =====================================================
-   Manager Tab Panel Styles
-   (#tab-manager)
-   ===================================================== */
-
-/* ── Main manager grid ─────────────────────────────── */
-.mgr-grid-wrapper {
-    margin-bottom: 10px;
-    overflow: hidden;
-}
-
-/* ── Selected row in main manager table ─────────────── */
-#mgrTable .govuk-table__body .mgr-row-selected td,
-#mgrTable .govuk-table__body .mgr-row-selected:nth-child(even) td,
-#mgrTable .govuk-table__body .mgr-row-selected:hover td {
-    background-color: #cecece !important;
-}
-
-#mgrTable .govuk-table__body .govuk-table__row {
-    cursor: pointer;
-}
-
-/* ── Disable checkbox (read-only display) ────────────── */
-.mgr-checkbox-display {
-    width: 16px;
-    height: 16px;
-    cursor: default;
-    accent-color: #1d70b8;
-}
-
-/* ── Manager search input ────────────────────────────── */
-.mgr-search-input {
-    font-size: 13px;
-    padding: 3px 8px;
-    border: 1px solid #b1b4b6;
-    font-family: "GDS Transport", Arial, sans-serif;
-    height: 28px;
-    width: 130px;
-}
-
-.mgr-search-input:focus {
-    outline: 3px solid #ffdd00;
-    outline-offset: 0;
-    box-shadow: inset 0 0 0 2px #0b0c0c;
-}
-
-/* ── Sub-grids container ───────────────────────────── */
-.mgr-subgrids-wrapper {
-    margin-top: 16px;
-}
-
-/* ── Sub-grid box ──────────────────────────────────── */
-.mgr-sub-grid-box {
-    border-radius: 2px;
-/*    overflow: hidden;*/
-    margin-bottom: 8px;
-}
-
-.mgr-sub-toolbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 6px 10px;
-    border-bottom: 1px solid #b1b4b6;
-    background-color: #f8f8f8;
-}
-
-/* ── Sub-grid table ────────────────────────────────── */
-.mgr-sub-table-wrapper {
-    overflow-x: auto;
-    overflow-y: auto;
-    max-height: 200px;
-}
-
-.mgr-sub-table .govuk-table__body .govuk-table__row:nth-child(even) {
-    background-color: #fafafa;
-}
-
-/* ── Column widths ─────────────────────────────────── */
-.mgr-th-name {
-    min-width: 160px;
-}
-
-.mgr-th-mnumber {
-    min-width: 100px;
-}
-
-.mgr-th-email {
-    min-width: 220px;
-}
-
-.mgr-th-disable {
-    min-width: 70px;
-    text-align: center !important;
-}
-
-.mgr-th-actions {
-    min-width: 100px;
-    text-align: center !important;
-}
-
-.mgr-sub-th-value {
-    min-width: 180px;
-}
-
-.mgr-sub-th-actions {
-    min-width: 100px;
-    text-align: center !important;
-}
-
-/* ── Action cell centring ──────────────────────────── */
-.mgr-action-cell {
-    display: flex;
-    gap: 5px;
-    justify-content: center;
-    align-items: center;
-}
-
-.mgr-disable-cell {
-    text-align: center;
-}
-
-.govuk-edit-modal__footer {
-    margin-bottom: 15px !important;
-}
-
-.govuk-edit-modal__close-btn {
-    color: white !important;
-}
-
-
-/* =====================================================
-   Time Tab – Working Hours & Working Days
-   PIMS Report Admin Maintenance
-   ===================================================== */
-
-/* ── Form container ────────────────────────────────── */
-.time-form-container {
-    max-width: 900px;
-    padding: 16px 0 8px 0;
-}
-
-/* ── Each field row (label | input | hint inline) ──── */
-.time-form-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 25px;
-    margin-bottom: 0;
-    border-left: none;
-}
-
-.time-form-row.govuk-form-group--error {
-    border-left: 4px solid #d4351c;
-    padding-left: 12px;
-}
-
-/* ── Label column ──────────────────────────────────── */
-.time-form-label-col {
-    flex: 0 0 200px;
-    min-width: 0;
-    padding-top: 5px;
-    padding-left: 10px
-}
-
-.time-form-label-col .govuk-label {
-    margin-bottom: 0;
-}
-
-/* ── Input column ──────────────────────────────────── */
-.time-form-input-col {
-    flex: 0 0 250px;
-    min-width: 0px;
-}
-
-.time-form-input-col .govuk-input {
-    width: 100%;
-}
-
-.time-form-input-col .govuk-error-message {
-    margin-top: 4px;
-    margin-bottom: 0;
-    font-size: 14px;
-}
-
-/* ── Hint column ───────────────────────────────────── */
-.time-form-hint-col {
-    flex: 1;
-    min-width: 0;
-    padding-top: 5px;
-}
-
-.time-form-hint-col .govuk-hint {
-    margin-bottom: 0;
-    font-size: 14px;
-    color: #505a5f;
-}
-
-/* ── Footer (Cancel / Save buttons) ───────────────── */
-.time-form-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-top: 16px;
-    padding-left: 7px;
-    margin-top: 12px;
-    max-width: 470px;
-
-}
-
-/* ── pimsNewProject.html — form column at 60% max-width ──── */
-#pimsformNewProject,
-.pnp-app-note {
-    width: 100%;
-    max-width: 60%;
-}
-
-/* =====================================================
-   Import Milestones/Deliverables — page-specific styles
-   (pimsmilestonesimport.html)
-   Classes here have no equivalent in govuk-* or sup_*
-   ===================================================== */
-
-/* Left workflow panel — unique background, border and width constraints */
-.import-workflow-panel {
-    background-color: #f3f2f1;
-    border: 1px solid var(--govuk-border-colour, #b1b4b6);
-    padding: 12px;
-    min-width: 220px;
-    max-width: 240px;
-    flex-shrink: 0;
-}
-/* =====================================================
-
-   Milestone/Deliverable Form Required checkbox
-
-   Keep checkbox and label on the same line
-
-   ===================================================== */ 
-.milestone-checkbox-inline {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    white-space: nowrap;
-}
-/* Override button positioning to move Add button to rightmost */
-
-#gridContainer_milestonesGrid .editable-grid-container > div > h2 > .sup_flex_space_between,
-#gridContainer_milestoneFormDatesGrid .editable-grid-container > div > h2 > .sup_flex_space_between, 
-#gridContainer_comments .editable-grid-container > div > h2 > .sup_flex_space_between {
-    display: flex !important;
-    justify-content: end !important;
-}
-
-#gridContainer_milestonesGrid > .editable-grid-container > div > .grid-scroll-container {
-    height: 300px !important;
-    max-height: 300px !important;
-}
-#gridContainer_pmdMilestonesGrid > .editable-grid-container > div > .grid-scroll-container,
-#gridContainer_invoicesGrid > .editable-grid-container > div > .grid-scroll-container,
-#gridContainer_milestoneFormDatesGrid > .editable-grid-container > div > .grid-scroll-container {
-    height: 270px !important;
-    max-height: 270px !important;
-}
-
-.isProjectList {
-    .editable-grid-table td {
-        width: calc(100%/4) !important;
-    }
-}
-.yfd-modal-min-width-height {
-    min-width: 900px;
-    min-height: 500px;
-}
-
-/* ── Export Queries (PIMS Queries/Index) ───────────────────────────── */
-/* Only rules with no equivalent GOV.UK/supplement utility class remain here. */
-.qry-filter-row {
-    display: flex;
-    gap: 40px;
-    flex-wrap: wrap;
-}
-
-.qry-filter-row--end {
-    align-items: flex-end;
-}
-
-.qry-filter-row--start {
-    align-items: flex-start;
-}
-
-#qryFilterMonth,
-#qryFilterYear,
-#qryFilterContract {
-    width: 400px;
-}
-
-#qryExportQueriesBox {
-    border: 1px solid black;
-    width: 400px;
-    background: #ffffff;
-    max-height: 125px;
-    overflow-y: auto;
-}
-
-    #qryExportQueriesBox label {
-        display: block;
-        padding: 8px 12px;
-        margin: 0;
-        cursor: pointer;
-        border-bottom: 1px solid var(--govuk-border-colour, #b1b4b6);
-    }
-
-        #qryExportQueriesBox label:last-child {
-            border-bottom: none;
-        }
-
-    #qryExportQueriesBox input[type="radio"] {
-        display: none;
-    }
-
-    #qryExportQueriesBox label:hover {
-        background-color: var(--govuk-hover-colour, #cecece);
-    }
-
-    #qryExportQueriesBox label:has(input:checked) {
-        background-color: var(--govuk-brand-colour, #1d70b8);
-        color: #ffffff;
-        font-weight: 700;
-    }
-
-#qryOpenQueryGroup {
-    margin-left: 40px;
-}
-
-#qryContractGroup {
-    margin-top: 35px;
-}
-
-#queryResultsContainer {
-    display: none;
-    margin-top: 30px;
-}
-
-#row1,
-#row2,
-#row3 {
-    display: none;
-}
-
-#qryResultsTableWrapper {
-    overflow-x: auto;
-    border: 1px solid var(--govuk-border-colour, #b1b4b6);
+/*-- Add button- right align*/
+#gridContainer_comments .editable-grid-container div div,
+#gridContainer_milestonesGrid .editable-grid-container div div,
+#gridContainer_milestoneFormDatesGrid .editable-grid-container div div {
+    justify-content: end
 }

@@ -22,8 +22,8 @@
 
                 <!-- ── Milestones toolbar ─────────────────────────────────── -->
                 <div class="milestones-toolbar govuk-!-margin-bottom-2">
-                    <div class="sup_flex_align_center sup_flex_gap_10 sup_margin_left_20">
-                        <label class="govuk-label font-size-16" for="projectSelectGrid">Project</label>
+                    <div class="sup_flex_align_center sup_flex_gap_10 govuk-!-margin-left-2">
+                        <label class="govuk-label font-size-16 sup_font_weight_700" for="projectSelectGrid">Project</label>
                         <select asp-for="Parentproject"
                                 asp-items="Model.ProjectOptions"
                                 class="govuk-select font-size-16 govuk-!-margin-right-3"
@@ -56,13 +56,13 @@
                 </div>
 
                 <!-- ── Financial Form Dates section ─────────────────────── -->
-                <div class="govuk-grid-row sup_margin_left_right_0 sup_margin_top_20">
+                <div class="govuk-grid-row sup_margin_left_right_0 sup_margin_top_20 ">
                     <div>
-                        <div class="govuk-grid-column-full sup_margin_left_right_10 checkbox-section sup_flex_align_center sup_gap_16 govuk-!-margin-bottom-2">
-                            <span class="govuk-label tab-font-bold-size sup_margin_0">
+                        <div class="govuk-grid-column-full checkbox-section sup_flex_align_center sup_gap_16 govuk-!-margin-bottom-2">
+                            <span class="govuk-label  govuk-!-font-size-16 sup_font_weight_700 sup_margin_0">
                                 Show Milestone/Deliverable Update Received
                             </span>
-                            <div class="govuk-checkboxes govuk-checkboxes--small sup_margin_0 sup_flex_align_center"
+                            <div class="govuk-checkboxes govuk-checkboxes--small sup_margin_0 sup_flex_align_center sup_whitespace_nowrap"
                                  data-module="govuk-checkboxes">
                                 <div class="govuk-checkboxes__item sup_margin_0 sup_flex_align_center milestone-checkbox-inline">
                                     <input class="govuk-checkboxes__input govuk-checkboxes__input--small govuk-!-font-size-16 sup_margin_0"
@@ -71,7 +71,7 @@
                                            type="checkbox"
                                            value="milestone"
                                     @(Model.FormRequired ? "checked" : "")>
-                                    <label class="govuk-!-font-weight-regular sup_no_wrap govuk-label govuk-checkboxes__label sup_margin_0 govuk-!-font-size-14"
+                                    <label class="govuk-!-font-weight-regular sup_no_wrap govuk-label govuk-checkboxes__label sup_font_weight_700 sup_margin_0 govuk-!-font-size-14"
                                            for="chkMilestoneDeliverable">
                                         Form Required
                                     </label>

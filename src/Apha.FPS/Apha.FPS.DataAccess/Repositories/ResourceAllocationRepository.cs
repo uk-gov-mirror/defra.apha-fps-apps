@@ -181,7 +181,7 @@ namespace Apha.FPS.DataAccess.Repositories
                     g.Key.Name,
                     g.Key.HrsAvail,
                     AppPlannedHours = g.Sum(x =>
-                        x.proj.ParentProject != null && x.proj.ProjectStatus == "approved" && x.sj.JobCode != null
+                        x.proj.ParentProject != null && x.sj.JobCode != null
                             ? x.sj.PlannedHours
                             : 0.0),
                     PlannedHours = g.Sum(x =>

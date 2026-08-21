@@ -58,7 +58,7 @@
 
         <div class="col-12">
             <div class="govuk-form-group sup_margin_0">
-                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="Name">
+                <label id="NameLabel" class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="Name">
                     Staff Name: <span class="sup_color_red">*</span>
                 </label>
                 <input type="hidden" id="Name" asp-for="Name" required />
@@ -68,14 +68,20 @@
                            value="-- Select Staff --"
                            class="dropdown-input down-arrow-img govuk-input govuk-!-font-size-16"
                            readonly
+                           aria-labelledby="NameLabel"
                            aria-label="Staff Name"
+                           aria-haspopup="listbox"
+                           aria-expanded="false"
+                           aria-controls="staffNameTableBody"
                            onclick="toggleWgStaffNameDropdown()" />
 
                     <div class="dropdown-panel" id="staff-name-panel" style="display:none; width:100%; min-width:580px; top:100%; left:0; max-height:220px; overflow-y:auto;">
+                        <label for="staff-name-search" class="govuk-label govuk-visually-hidden">Search staff</label>
                         <input type="text"
                                class="search-box govuk-input govuk-!-font-size-16"
                                id="staff-name-search"
                                placeholder="Type to search staff"
+                               aria-label="Search staff"
                                oninput="filterWgStaffNameTable(this.value)" />
                         <table class="period-dropdown__table govuk-table govuk-!-font-size-16" style="table-layout:fixed; margin-bottom:0;">
                             <colgroup>
@@ -88,16 +94,19 @@
                                     <th class="govuk-table__header">SPNumber</th>
                                 </tr>
                             </thead>
-                            <tbody class="govuk-table__body" id="staffNameTableBody">
+                            <tbody class="govuk-table__body" id="staffNameTableBody" role="listbox" aria-label="Staff results">
                                 @foreach (var staff in (Model?.StaffLookupOptions ?? System.Linq.Enumerable.Empty<Apha.FPSApps.Web.Areas.FPS.Models.WorkGroupStaffLookupItem>())
                                                                    .Where(x => !string.IsNullOrWhiteSpace(x.Name))
                                                                    .GroupBy(x => x.Name)
                                                                    .Select(g => g.First()))
                                 {
-                                    <tr class="govuk-table__row staff-name-row"
+                                    var rowId = "staffNameRow_" + @staff.PactId + "_" + @staff.SpNumber;
+                                    <tr id="@rowId" class="govuk-table__row staff-name-row"
                                         data-pactid="@staff.PactId"
                                         data-name="@staff.Name"
                                         data-spnumber="@staff.SpNumber"
+                                        role="option"
+                                        tabindex="-1"
                                         style="cursor:pointer;"
                                         onclick="selectWgStaffName(this)">
                                         <td class="govuk-table__cell" style="overflow:hidden; text-overflow:ellipsis;">@staff.Name</td>
@@ -225,9 +234,7 @@
 
         <div class="col-12">
             <div class="govuk-form-group sup_margin_0">
-                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="MakeAvailable">
-                    Available?:
-                </label>
+                <span class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16">Available?:</span>
                 <div class="govuk-checkboxes govuk-checkboxes--small" data-module="govuk-checkboxes">
                     <div class="govuk-checkboxes__item">
                         <input class="govuk-checkboxes__input" id="MakeAvailable" asp-for="MakeAvailable" type="checkbox" />
@@ -240,9 +247,7 @@
 
         <div class="col-12">
             <div class="govuk-form-group sup_margin_0">
-                <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16" asp-for="TimeRecorder">
-                    Time recorder?:
-                </label>
+                <span class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16">Time recorder?:</span>
                 <div class="govuk-checkboxes govuk-checkboxes--small" data-module="govuk-checkboxes">
                     <div class="govuk-checkboxes__item">
                         <input class="govuk-checkboxes__input" id="TimeRecorder" asp-for="TimeRecorder" type="checkbox" />
@@ -326,9 +331,11 @@
         if (isHidden) {
             panel.style.display = 'block';
             panel.style.width = input.offsetWidth + 'px';
+            input.setAttribute('aria-expanded', 'true');
             search.focus();
         } else {
             panel.style.display = 'none';
+            input.setAttribute('aria-expanded', 'false');
         }
     }
 
@@ -370,7 +377,10 @@
             }
         }
 
-        document.getElementById('staff-name-panel').style.display = 'none';
+        var panelEl = document.getElementById('staff-name-panel');
+        if (panelEl) panelEl.style.display = 'none';
+        var displayEl = document.getElementById('staff-name-input');
+        if (displayEl) displayEl.setAttribute('aria-expanded', 'false');
         document.getElementById('staff-name-search').value = '';
         filterWgStaffNameTable('');
     }
@@ -423,6 +433,8 @@
             var panel = document.getElementById('staff-name-panel');
             if (dropdown && panel && !dropdown.contains(e.target)) {
                 panel.style.display = 'none';
+                var displayEl = document.getElementById('staff-name-input');
+                if (displayEl) displayEl.setAttribute('aria-expanded', 'false');
             }
         });
     })();

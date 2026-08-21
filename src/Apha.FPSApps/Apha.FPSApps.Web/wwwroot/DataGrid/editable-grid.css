@@ -38,9 +38,6 @@
 }
 
 .grid-wrapper {
-    /* display: flex;
-    flex: 1;
-    overflow: hidden;*/
     max-height: 423px;
     height: 403px;
     border: 0 !important;
@@ -49,9 +46,7 @@
 }
 
 .grid-scroll-container {
-    /*  flex: 1;
-    overflow: auto;
-    background-color: #fff;*/
+    background-color: #fff; /* add background color to prevent table background become transparent*/
     max-height: 400px;
     height: 400px;
     overflow-y: auto;
@@ -61,6 +56,7 @@
     width: 100%;
     border-collapse: collapse;
     font-size: 12px;
+    margin-bottom: 0;
 }
 
 .editable-grid-table thead {

@@ -1375,6 +1375,109 @@ namespace Apha.PIMS.DataAccess.UnitTests.Repository.MilestoneRepositoryTest
             Assert.Contains("Please check this number format.", staging[0].Note);
         }
 
+        [Fact]
+        public async Task ValidateStagingAsync_AddsDateNote_WhenDateDueIsDefault()
+        {
+            // Arrange
+            var staging = new List<StagingMilestone>
+            {
+                new() { Id = 1, Project = "PP001", Number = "25/01", Description = "Desc", DateDue = default }
+            };
+            var repo = CreateRepository(stagingMilestones: staging, milestones: []);
+
+            // Act
+            await repo.ValidateStagingAsync("PP001", "D", isDeliverableMode: false);
+
+            // Assert
+            Assert.Contains("(*Please check this date*)", staging[0].Note);
+        }
+
+        [Fact]
+        public async Task ValidateStagingAsync_TrimmedNumber_WhenFormatValidAndNotExisting()
+        {
+            // Arrange
+            var staging = new List<StagingMilestone>
+            {
+                new() { Id = 1, Project = "PP001", Number = " 25/01 ", Description = "Desc", DateDue = new DateTime(2025, 1, 1) }
+            };
+            var repo = CreateRepository(stagingMilestones: staging, milestones: []);
+
+            // Act
+            await repo.ValidateStagingAsync("PP001", "D", isDeliverableMode: false);
+
+            // Assert
+            Assert.Equal("25/01", staging[0].Number);
+            Assert.Null(staging[0].Note);
+        }
+
+        [Fact]
+        public async Task ValidateStagingAsync_AddsExistingMilestoneNote_WhenNumberAlreadyExists()
+        {
+            // Arrange
+            const string project = "PP001";
+            const string existingNumber = "25/01";
+
+            var staging = new List<StagingMilestone>
+            {
+                new() { Id = 1, Project = project, Number = existingNumber, Description = "Desc", DateDue = new DateTime(2025, 1, 1) }
+            };
+
+            var milestones = new List<Milestone>
+            {
+                new() { Project = project, Number = existingNumber, DateDue = new DateTime(2025, 1, 1) }
+            };
+
+            var repo = CreateRepository(stagingMilestones: staging, milestones: milestones);
+
+            // Act
+            await repo.ValidateStagingAsync(project, "D", isDeliverableMode: false);
+
+            // Assert
+            Assert.Contains("already exists", staging[0].Note ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public async Task ValidateStagingAsync_RemovesFullyEmptyRows()
+        {
+            // Arrange
+            var staging = new List<StagingMilestone>
+            {
+                new() { Id = 1, Project = "PP001", Number = " ", Description = "", DateDue = new DateTime(2025, 1, 1) }
+            };
+
+            var (repo, _, _, mockContext, _, stagingDbSet) = CreateRepositoryWithMocks(stagingMilestones: staging, milestones: []);
+
+            // Act
+            await repo.ValidateStagingAsync("PP001", "D", isDeliverableMode: false);
+
+            // Assert
+            stagingDbSet.Verify(x => x.Remove(It.Is<StagingMilestone>(s => s.Id == 1)), Times.Once);
+            RepositoryTestHelper.VerifySaveChanges(mockContext, times: 1);
+        }
+
+        [Fact]
+        public async Task ValidateStagingAsync_FiltersRowsByCreatedBy_WhenProvided()
+        {
+            // Arrange
+            const string createdBy = "user1";
+            var staging = new List<StagingMilestone>
+            {
+                new() { Id = 1, Project = "PP001", Number = "M1", Description = "Desc", DateDue = new DateTime(2025, 1, 1), CreatedBy = createdBy },
+                new() { Id = 2, Project = "PP001", Number = "M2", Description = "Desc", DateDue = new DateTime(2025, 1, 1), CreatedBy = "user2" }
+            };
+
+            var repo = CreateRepository(stagingMilestones: staging, milestones: []);
+
+            // Act
+            await repo.ValidateStagingAsync("PP001", "D", isDeliverableMode: false, createdBy: createdBy);
+
+            // Assert
+            Assert.Equal("D", staging[0].TypeId);
+            Assert.Contains("Please check this number format.", staging[0].Note);
+            Assert.Null(staging[1].TypeId);
+            Assert.Null(staging[1].Note);
+        }
+
         #endregion
 
         #region Staging bulk operations (database required)

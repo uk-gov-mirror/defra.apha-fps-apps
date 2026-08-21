@@ -8,8 +8,8 @@ namespace Apha.FPSApps.Web.Areas.PIMS.Models
         [GridColumn(Type = GridColumnType.ReadOnly, IsVisible = false)]
         public int Id { get; set; }
 
-        [Required(ErrorMessage = "Report name is required")]
-        [Display(Name = "Report name")]
+        [Required(ErrorMessage = "Name is required")]
+        [Display(Name = "Name")]
         [GridColumn(Order = 1, Width = 100, Type = GridColumnType.Text, IsFilterable = true, IsVisible = true)]
         public string? ReportName { get; set; }
 
@@ -18,17 +18,17 @@ namespace Apha.FPSApps.Web.Areas.PIMS.Models
         [GridColumn(Order = 2, Width = 100, Type = GridColumnType.Text, IsFilterable = true, IsVisible = true)]
         public string? ReportDescription { get; set; }
 
-        [Required(ErrorMessage = "Report help is required")]
+        [Required(ErrorMessage = "Report Help is required")]
         [Display(Name = "Report Help")]
         [GridColumn(Order = 3, Width = 80, Type = GridColumnType.ReadOnly, IsVisible = true)]
         public string? ReportHelp { get; set; }
 
-        [Required(ErrorMessage = "Mail comment is required")]
+        [Required(ErrorMessage = "Mail Comment is required")]
         [Display(Name = "Mail Comment")]
         [GridColumn(Order = 4, Width = 80, Type = GridColumnType.ReadOnly, IsVisible = true)]
         public string? MailComment { get; set; }
 
-        [Required(ErrorMessage = "Mail title is required")]
+        [Required(ErrorMessage = "Mail Title is required")]
         [Display(Name = "Mail Title")]
         [GridColumn(Order = 5, Width = 80, Type = GridColumnType.ReadOnly, IsVisible = true)]
         public string? MailTitle { get; set; }

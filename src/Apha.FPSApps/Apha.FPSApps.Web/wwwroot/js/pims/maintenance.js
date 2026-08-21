@@ -812,7 +812,7 @@ function initializeProgramManagerLinkDropdown() {
     $displayInput.attr({
         name: 'Program',
         required: 'required',
-        'data-val-required': 'Programme is required',
+        'data-val-required': 'Program is required',
         'aria-describedby': 'mgrAssignValueError'
     });
 

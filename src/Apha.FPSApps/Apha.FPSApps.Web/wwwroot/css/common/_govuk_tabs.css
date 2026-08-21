@@ -45,7 +45,7 @@
 }
 
 .govuk-tabs__list-item--selected .govuk-tabs__tab {
-    color: #1d70b8 !important;
+/*    color: #1d70b8 !important;*/
     font-weight: 700;
 }
 

@@ -10,39 +10,8 @@
 }
 
 <main id="main-content" class="govuk-grid-column-full govuk-!-padding-0 isResourceUtilizationViewPage">
-    @* <div class="govuk-grid-row sup_margin_left_right_0 fps-sr-breadcrumb-row">
-        <div class="govuk-grid-column-full">
-            <h1 class="govuk-grid-row sup_border-bottom govuk-!-font-size-19 sup_pad_top_bottom_5_10">
-                <div class="sup_flex_between_center fps-sr-breadcrumb-flex">
-                    <div class="sup_flex_left_center">
-                        Resource Utilization View
-                        @if (!string.IsNullOrWhiteSpace(Model.SelectedProfitCentre))
-                        {
-                            <div class="display-flex sup_margin_left_5">
-                                <div class="m-0 p-0 sup_flex_row_center_center sup_margin_left_5">
-                                    <span class="govuk-!-font-size-19 govuk-!-font-weight-bold sup_gov_blue_color sup_blue_border_bottom_2">@Model.SelectedProfitCentre</span>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                    <div>
-                        <form asp-action="Index" asp-controller="StaffResource" asp-area="FPS" method="get" class="sup_flex_align_center">
-                            <label class="govuk-label" for="ruvProfitCentreSelect">Resource Centre</label>
-                            <select id="ruvProfitCentreSelect"
-                                    name="profitCentre"
-                                    asp-items="Model.ProfitCentreList"
-                                    class="govuk-select govuk-!-font-size-16"
-                                    onchange="showLoader(); this.form.submit()">
-                                <option value="">-- Select Resource Centre --</option>
-                            </select>
-                        </form>
-                    </div>
-                </div>
-            </h1>
-        </div>
-    </div> *@
 
-            <div class="govuk-grid-row sup_border-bottom">
+  <div class="govuk-grid-row sup_border-bottom govuk-!-margin-bottom-3">
     <div class="govuk-grid-column-one-half isFloatLeft">
 		<h1 class="govuk-grid-row govuk-heading-s govuk-!-margin-bottom-0 govuk-!-margin-top-3 govuk-!-margin-left-3 isCustomPageHeadings">
 			<div class="sup_flex_left_center">
@@ -88,8 +57,7 @@
 
         <!-- Left panel: Workgroup selector -->
         <div class="ruv-left-panel">
-            <fieldset class="govuk-fieldset sup_margin_0">
-                <legend class="govuk-fieldset__legend govuk-visually-hidden">Select workgroup</legend>
+            <fieldset class="govuk-fieldset sup_margin_0">            
                 <div id="gridContainer_@Model.WorkgroupGrid.GridId">
                     @await Html.PartialAsync("_DataGrid", Model.WorkgroupGrid)
                 </div>

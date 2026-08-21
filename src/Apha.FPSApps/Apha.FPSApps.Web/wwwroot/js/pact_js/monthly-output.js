@@ -122,6 +122,11 @@ function readDropdownJsonData(selector) {
     }
 }
 
+function getAntiForgeryToken() {
+    const el = document.querySelector('input[name="__RequestVerificationToken"]');
+    return el ? el.value : '';
+}
+
 // ── Work Group dropdown (filter panel) ───────────────────────────────────────
 
 function initWorkGroupDropdown() {
@@ -724,13 +729,16 @@ function importMonthlyOutput(file) {
         return;
     }
 
+    const antiForgeryToken = getAntiForgeryToken();
     const formData = new FormData();
     formData.append('file', file);
     formData.append('importType', window.monthlyOutputImportType || '1');
+    formData.append('__RequestVerificationToken', antiForgeryToken);
 
     $.ajax({
         url: '/PACT/MonthlyOutput/Import',
         type: 'POST',
+        headers: { 'RequestVerificationToken': antiForgeryToken },
         data: formData,
         processData: false,
         contentType: false,
@@ -885,6 +893,7 @@ function filterStagingAll() {
 // ── Page init ─────────────────────────────────────────────────────────────────
 
 $(document).ready(function () {
+    window.monthlyOutputPassedFilter = null;
     initWorkGroupDropdown();
     initTestCodeDropdown();
     initBuyerDropdown();

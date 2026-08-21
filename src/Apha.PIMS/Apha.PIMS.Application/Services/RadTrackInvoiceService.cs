@@ -52,13 +52,8 @@ namespace Apha.PIMS.Application.Services
 
             var errors = new List<BusinessValidationError>();
             if (string.IsNullOrWhiteSpace(dto.Project))
-                errors.Add(new BusinessValidationError("Project is required.", "PROJECT_REQUIRED"));
-
-           
-            if (!dto.DueAmount.HasValue)
-                errors.Add(new BusinessValidationError("Amount Due is required.", "DUE_AMOUNT_REQUIRED"));
-
-            
+                errors.Add(new BusinessValidationError("Project is required.", "PROJECT_REQUIRED"));         
+                       
             if (!dto.DueDate.HasValue)
                 errors.Add(new BusinessValidationError("Date Due is required.", "DUE_DATE_REQUIRED"));
 
@@ -96,12 +91,8 @@ namespace Apha.PIMS.Application.Services
 
           
             if (string.IsNullOrWhiteSpace(dto.Project))
-                errors.Add(new BusinessValidationError("Project is required.", "PROJECT_REQUIRED"));
-
+                errors.Add(new BusinessValidationError("Project is required.", "PROJECT_REQUIRED"));          
           
-            if (!dto.DueAmount.HasValue)
-                errors.Add(new BusinessValidationError("Amount Due is required.", "DUE_AMOUNT_REQUIRED"));
-
             
             if (!dto.DueDate.HasValue)
                 errors.Add(new BusinessValidationError("Date Due is required.", "DUE_DATE_REQUIRED"));

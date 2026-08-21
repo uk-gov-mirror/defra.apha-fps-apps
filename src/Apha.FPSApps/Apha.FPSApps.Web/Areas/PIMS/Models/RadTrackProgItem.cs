@@ -5,8 +5,8 @@ namespace Apha.FPSApps.Web.Areas.PIMS.Models
 {
     public class RadTrackProgItem
     {
-        [Required(ErrorMessage = "Programme is required")]
-        [Display(Name = "Programme")]
+        [Required(ErrorMessage = "Program is required")]
+        [Display(Name = "Program")]
         [GridColumn(Order = 1, Width = 200, Type = GridColumnType.Text, IsFilterable = true)]
         public string? Program { get; set; }
 

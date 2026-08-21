@@ -377,6 +377,7 @@ namespace Apha.FPSApps.Web.Areas.PACT.Controllers
         /// Imports a monthly output file into staging.
         /// </summary>
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Import(IFormFile file, short importType = 1)
         {
             if (!ModelState.IsValid)

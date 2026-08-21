@@ -142,6 +142,8 @@
     <div class="failed-msg-container" id="failedmsg">
         <textarea class="govuk-textarea govuk-!-font-size-16 error-textarea" id="txt-description" rows="2" aria-label="Failed message"></textarea>
     </div>
+
+    @Html.AntiForgeryToken()
 </div>
 
 @section Styles {

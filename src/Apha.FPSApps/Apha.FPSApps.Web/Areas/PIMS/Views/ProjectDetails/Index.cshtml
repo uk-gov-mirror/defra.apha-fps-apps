@@ -34,7 +34,7 @@
                     <div class="govuk-template__body js-enabled govuk-frontend-supported">
                         <div class="govuk-tabs" data-module="govuk-tabs" id="projectDetailsTabs">
                             <ul class="govuk-tabs__list">
-                                <li class="govuk-tabs__list-item govuk-!-padding-2 @(Model.IsFPS ? "govuk-tabs__list-item--selected" : "")"
+                                <li class="govuk-tabs__list-item  @(Model.IsFPS ? "govuk-tabs__list-item--selected" : "")"
                                     id="tab_nav-home">
                                     <a class="govuk-tabs__tab tab-font-bold-size"
                                            href="#nav-home" role="tab"
@@ -42,7 +42,7 @@
                                         FPS Project Details
                                     </a>
                                 </li>
-                                <li class="govuk-tabs__list-item govuk-!-padding-2 @(!Model.IsFPS ? "govuk-tabs__list-item--selected" : "")"
+                                <li class="govuk-tabs__list-item  @(!Model.IsFPS ? "govuk-tabs__list-item--selected" : "")"
                                     id="tab_nav-profile">
                                     <a class="govuk-tabs__tab tab-font-bold-size"
                                            href="#nav-profile" role="tab"
@@ -50,7 +50,7 @@
                                         Proposed Project Details
                                     </a>
                                 </li>
-                                <li class="govuk-tabs__list-item govuk-!-padding-2"
+                                <li class="govuk-tabs__list-item "
                                     id="tab_nav-contact">
                                     <a class="govuk-tabs__tab tab-font-bold-size"
                                            href="#nav-contact" role="tab"
@@ -70,37 +70,37 @@
                                 {
                                     <div class="govuk-grid-row" style="align-items: flex-start">
                                         <div class="govuk-grid-column-one-quarter">
-                                            <label class="tab-font-bold-size sup_font_weight_700"
+                                            <label class="govuk-!-font-size-16 sup_font_weight_700"
                                                    asp-for="FpsProjectDetails.Parentproject">
                                                 Project
                                             </label>
                                         </div>
                                         <div class="govuk-grid-column-three-quarters sup_font_weight_700">
-                                            <p id="selected_project" class="tab-font-size">
+                                            <p id="selected_project" class="govuk-!-font-size-16 sup_font_weight_700">
                                                 @Model.FpsProjectDetails.Parentproject
                                             </p>
                                         </div>
                                     </div>
                                     <div class="govuk-grid-row">
                                         <div class="govuk-grid-column-one-quarter">
-                                            <label class="tab-font-bold-size sup_font_weight_700"
+                                            <label class="govuk-!-font-size-16 sup_font_weight_700"
                                                    asp-for="FpsProjectDetails.Projecttitle">
                                                 Title
                                             </label>
                                         </div>
                                         <div class="govuk-grid-column-three-quarters sup_font_weight_700">
-                                            <p class="tab-font-size">@Model.FpsProjectDetails.Projecttitle</p>
+                                            <p class="govuk-!-font-size-16 sup_font_weight_700">@Model.FpsProjectDetails.Projecttitle</p>
                                         </div>
                                     </div>
                                     <div class="govuk-grid-row">
                                         <div class="govuk-grid-column-one-quarter">
-                                            <label class="tab-font-bold-size sup_font_weight_700"
+                                            <label class="govuk-!-font-size-16 sup_font_weight_700"
                                                    asp-for="FpsProjectDetails.Disease">
                                                 Disease
                                             </label>
                                         </div>
                                         <div class="govuk-grid-column-three-quarters sup_font_weight_700">
-                                            <p class="tab-font-size">
+                                            <p class="govuk-!-font-size-16 sup_font_weight_700">
                                                 @(string.IsNullOrWhiteSpace(Model.FpsProjectDetails.Disease)
                                                     ? "Not Specified"
                                                     : Model.FpsProjectDetails.Disease)
@@ -109,24 +109,24 @@
                                     </div>
                                     <div class="govuk-grid-row">
                                         <div class="govuk-grid-column-one-quarter">
-                                            <label class="tab-font-bold-size sup_font_weight_700"
+                                            <label class="govuk-!-font-size-16 sup_font_weight_700"
                                                    asp-for="FpsProjectDetails.Contract">
                                                 Contract
                                             </label>
                                         </div>
                                         <div class="govuk-grid-column-three-quarters sup_font_weight_700">
-                                            <p class="tab-font-size">@Model.FpsProjectDetails.Contract</p>
+                                            <p class="govuk-!-font-size-16 sup_font_weight_700">@Model.FpsProjectDetails.Contract</p>
                                         </div>
                                     </div>
                                     <div class="govuk-grid-row">
                                         <div class="govuk-grid-column-one-quarter">
-                                            <label class="tab-font-bold-size sup_font_weight_700"
+                                            <label class="govuk-!-font-size-16 sup_font_weight_700"
                                                    asp-for="FpsProjectDetails.Projectstatus">
                                                 Status
                                             </label>
                                         </div>
                                         <div class="govuk-grid-column-three-quarters sup_font_weight_700">
-                                            <p>@Model.FpsProjectDetails.Projectstatus</p>
+                                            <p class="govuk-!-font-size-16 sup_font_weight_700">@Model.FpsProjectDetails.Projectstatus</p>
                                         </div>
                                     </div>
                                 }
@@ -139,7 +139,7 @@
                             <!-- Tab 2: Proposed Project Details (editable) -->
                             <div class="govuk-tabs__panel govuk-!-padding-2 @(Model.IsFPS ? "govuk-tabs__panel--hidden" : "")"
                                  id="nav-profile" role="tabpanel"
-                                 style="min-height: 460px; overflow-y: auto"
+                                 style="min-height: 460px;"
                                  hidden=@(Model.IsFPS)
                                  aria-labelledby="tab_nav-profile">
                                 <div class="govuk-grid-column-full p-0">
@@ -149,7 +149,7 @@
                                               asp-area="PIMS"
                                               asp-route-parentproject="@parentproject"
                                               method="post"
-                                              class="govuk-form-group selectedProjectForm"
+                                              class="govuk-form-group"
                                               id="formProposedDetail">
                                             @Html.AntiForgeryToken()
                                             <fieldset class="govuk-fieldset">
@@ -258,7 +258,7 @@
                                                            id="manager-transfer"
                                                            aria-label="manager-transfer"
                                                            asp-for="ProposedProjectDetails.Manager"
-                                                           asp-for="ProposedProjectDetails.Manager"
+                                                         
                                                            type="text" />
                                                 </div>
                                             </fieldset>
@@ -279,37 +279,40 @@
                                  style="min-height: 460px; overflow: auto"
                                  hidden=@(!Model.IsFPS)
                                  aria-labelledby="tab_nav-contact">
-                                <table class="govuk-table custom-table"
-                                       style="border-right: 1px solid; border-bottom-color: var(--govuk-border-colour, #cecece); word-wrap: break-word; overflow-wrap: break-word;">
-                                    <thead class="govuk-table__head tab-font-bold-size">
-                                        <tr class="govuk-table__row">
-                                            <th class="govuk-table__header">Year</th>
-                                            <th class="govuk-table__header">Program</th>
-                                            <th class="govuk-table__header">Customer</th>
-                                            <th class="govuk-table__header">Manager</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="govuk-table__body tab-font-size">
-                                        @if (Model.YearlyDetails.Any())
-                                        {
-                                            @foreach (var row in Model.YearlyDetails)
+                                <div class="sup_overflow_y_400 ">
+                                    <table class="govuk-table custom-table"
+                                           style="border-right: 1px solid; border-bottom-color: var(--govuk-border-colour, #cecece); word-wrap: break-word; overflow-wrap: break-word;">
+                                        <thead class="govuk-table__head tab-font-bold-size">
+                                            <tr class="govuk-table__row">
+                                                <th class="govuk-table__header">Year</th>
+                                                <th class="govuk-table__header">Program</th>
+                                                <th class="govuk-table__header">Customer</th>
+                                                <th class="govuk-table__header">Manager</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="govuk-table__body tab-font-size">
+                                            @if (Model.YearlyDetails.Any())
+                                            {
+                                                @foreach (var row in Model.YearlyDetails)
+                                                {
+                                                    <tr class="govuk-table__row">
+                                                        <td class="govuk-table__cell">@row.Year</td>
+                                                        <td class="govuk-table__cell">@row.Program</td>
+                                                        <td class="govuk-table__cell">@row.Customer</td>
+                                                        <td class="govuk-table__cell">@row.Manager</td>
+                                                    </tr>
+                                                }
+                                            }
+                                            else
                                             {
                                                 <tr class="govuk-table__row">
-                                                    <td class="govuk-table__cell">@row.Year</td>
-                                                    <td class="govuk-table__cell">@row.Program</td>
-                                                    <td class="govuk-table__cell">@row.Customer</td>
-                                                    <td class="govuk-table__cell">@row.Manager</td>
+                                                    <td class="govuk-table__cell text-center" colspan="4">No yearly records found.</td>
                                                 </tr>
                                             }
-                                        }
-                                        else
-                                        {
-                                            <tr class="govuk-table__row">
-                                                <td class="govuk-table__cell text-center" colspan="4">No yearly records found.</td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
+                                        </tbody>
+                                    </table>
+                                
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -322,18 +325,18 @@
                           asp-area="PIMS"
                           asp-route-parentproject="@parentproject"
                           method="post"
-                          class="govuk-form-group selectedProjectForm"
+                          class="govuk-form-group selectedProjectForm "
                           id="formPimsDetailRight">
                         @Html.AntiForgeryToken()
                         <div class="flex-column">
                             <fieldset class="govuk-fieldset">
                                 <div class="headline">
-                                    <h6 class="selectedProjectForm govuk-form-group">PIMS Details</h6>
+                                    <h6 class="selectedProjectForm sup_font_weight_700 govuk-form-group">PIMS Details</h6>
                                 </div>
                                 <div class="govuk-grid-row">
                                     <!-- Left sub-column -->
                                     <div class="govuk-grid-column-one-half">
-                                        <div class="govuk-form-group">
+                                        <div class="govuk-form-group">      
                                             <label class="govuk-label govuk-!-font-size-16 sup_font_weight_700" for="pims-version">
                                                 Version
                                             </label>

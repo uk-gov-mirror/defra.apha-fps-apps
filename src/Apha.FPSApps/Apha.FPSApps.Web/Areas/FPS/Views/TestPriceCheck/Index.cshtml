@@ -8,13 +8,32 @@
 
 <main id="main-content">
     <div class="container-fluid">
-        <div class="govuk-grid-row">
-            <div class="govuk-grid-column-full">
-                <h1 class="govuk-heading-s sup_border-bottom govuk-!-margin-top-2 govuk-!-padding-bottom-2 govuk-!-padding-left-4">
-                    Test Price Check
-                </h1>
+        <div class="govuk-grid-row sup_border-bottom">
+            <div class="govuk-grid-column-one-half isFloatLeft">
+                <h1 class="govuk-heading-s sup_margin_bottom_0 govuk-!-margin-top-3">Test Price Checks</h1>
+            </div>
+            <div class="govuk-grid-column-one-half isFloatRight isTestPriceCheck govuk-!-padding-right-0">
+                <table class="govuk-table govuk-!-margin-bottom-2">
+                    <tbody class="govuk-table__body">
+                        <tr class="govuk-table__row">
+                            <th scope="row" class="govuk-table__header govuk-!-padding-bottom-0 govuk-!-padding-right-0 isNoBottomBorder">
+                                <label class="govuk-label govuk-!-font-size-16 govuk-!-font-weight-bold govuk-!-margin-bottom-0" for="test-owner-filter">
+                                    Test Owner:
+                                </label>
+                            </th>
+                            <td class="govuk-table__cell govuk-!-padding-bottom-0 govuk-!-padding-right-1 isNoBottomBorder">
+                                <select class="govuk-select govuk-!-font-size-16" id="test-owner-filter" name="owner"
+                                        asp-items="@(new SelectList(Model.Owners, Model.SelectedOwner))"
+                                        onchange="reloadTestPriceCheckGrid()">
+                                    <option value="">All Owners</option>
+                                </select>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
+    </div>
 
         <div class="row">
             <div class="col-lg-12">
@@ -24,53 +43,51 @@
                     <div class="govuk-grid-row govuk-!-margin-left-0 govuk-!-margin-right-0 govuk-!-margin-bottom-3"
                          id="test-price-layout-row">
 
-                        <div class="govuk-grid-column-three-quarters">
+                    <div class="govuk-grid-column-one-full govuk-!-padding-left-0 govuk-!-padding-top-0">
                             <fieldset class="govuk-fieldset">
-                                <legend class="govuk-fieldset__legend govuk-fieldset__legend--s govuk-!-margin-bottom-1">
-                                    Price
-                                </legend>
-                                <div class="govuk-radios govuk-radios--inline govuk-radios--small"
-                                     data-module="govuk-radios">
-                                    <div class="govuk-radios__item">
-                                        <input class="govuk-radios__input" id="price-filter-zero"
-                                               name="priceFilter" type="radio" value="zero"
-                                               @(Model.SelectedPriceFilter == "zero" ? "checked" : "")
-                                               onchange="reloadTestPriceCheckGrid()" />
-                                        <label class="govuk-label govuk-radios__label" for="price-filter-zero">
-                                            Zero Rated
-                                        </label>
-                                    </div>
-                                    <div class="govuk-radios__item">
-                                        <input class="govuk-radios__input" id="price-filter-non"
-                                               name="priceFilter" type="radio" value="non-standard"
-                                               @(Model.SelectedPriceFilter == "non-standard" ? "checked" : "")
-                                               onchange="reloadTestPriceCheckGrid()" />
-                                        <label class="govuk-label govuk-radios__label" for="price-filter-non">
-                                            Non Standard
-                                        </label>
-                                    </div>
-                                    <div class="govuk-radios__item">
-                                        <input class="govuk-radios__input" id="price-filter-both"
-                                               name="priceFilter" type="radio" value="all"
-                                               @(Model.SelectedPriceFilter == "all" ? "checked" : "")
-                                               onchange="reloadTestPriceCheckGrid()" />
-                                        <label class="govuk-label govuk-radios__label" for="price-filter-both">
-                                            Both
-                                        </label>
-                                    </div>
-                                </div>
+                            <table class="govuk-table govuk-!-margin-bottom-0 govuk-!-margin-left-3 isWidthAuto">
+                                <tbody class="govuk-table__body">
+                                    <tr class="govuk-table__row">
+                                        <th scope="row" class="govuk-table__header govuk-!-text-align-right">Price: </th>
+                                        <td class="govuk-table__cell">
+                                            <div class="govuk-radios govuk-radios--inline govuk-radios--small"
+                                                 data-module="govuk-radios">
+                                                <div class="govuk-radios__item">
+                                                    <input class="govuk-radios__input" id="price-filter-zero"
+                                                           name="priceFilter" type="radio" value="zero"
+                                                    @(Model.SelectedPriceFilter == "zero" ? "checked" : "")
+                                                           onchange="reloadTestPriceCheckGrid()" />
+                                                    <label class="govuk-label govuk-radios__label isNoWrap" for="price-filter-zero">
+                                                        Zero Rated
+                                                    </label>
+                                                </div>
+                                                <div class="govuk-radios__item">
+                                                    <input class="govuk-radios__input" id="price-filter-non"
+                                                           name="priceFilter" type="radio" value="non-standard"
+                                                    @(Model.SelectedPriceFilter == "non-standard" ? "checked" : "")
+                                                           onchange="reloadTestPriceCheckGrid()" />
+                                                    <label class="govuk-label govuk-radios__label isNoWrap" for="price-filter-non">
+                                                        Non Standard
+                                                    </label>
+                                                </div>
+                                                <div class="govuk-radios__item">
+                                                    <input class="govuk-radios__input" id="price-filter-both"
+                                                           name="priceFilter" type="radio" value="all"
+                                                    @(Model.SelectedPriceFilter == "all" ? "checked" : "")
+                                                           onchange="reloadTestPriceCheckGrid()" />
+                                                    <label class="govuk-label govuk-radios__label isNoWrap" for="price-filter-both">
+                                                        Both
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                             </fieldset>
                         </div>
 
-                        <div class="govuk-grid-column-one-quarter govuk-!-text-align-right">
-                            <label class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16 govuk-!-margin-bottom-1"
-                                   for="test-owner-filter">Test Owner</label>
-                            <select class="govuk-select govuk-!-font-size-16" id="test-owner-filter" name="owner"
-                                    asp-items="@(new SelectList(Model.Owners, Model.SelectedOwner))"
-                                    onchange="reloadTestPriceCheckGrid()">
-                                <option value="">All Owners</option>
-                            </select>
-                        </div>
+                       
 
                         <!-- Grid -->
                         <div class="govuk-grid-column-full govuk-!-margin-top-3">

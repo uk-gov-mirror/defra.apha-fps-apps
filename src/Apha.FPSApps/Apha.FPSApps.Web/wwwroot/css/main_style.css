@@ -1892,3 +1892,22 @@ textarea {
 .govuk-back-link{
     font-weight: bold !important;
 }
+
+.govuk-input:disabled,
+.modal-body .govuk-input[readonly],
+.govuk-input--disabled {
+    background: #E8E8E8;
+    border: 1px solid #b1b4b6;
+    color: #505A5F;
+    cursor: not-allowed;
+}
+.modal-body {
+    .govuk-input--disabled,
+    .govuk-input:disabled, 
+    .govuk-input[readonly] {
+        background: #E8E8E8;
+        border: 1px solid #b1b4b6;
+        color: #505A5F;
+        cursor: not-allowed;
+    }
+}

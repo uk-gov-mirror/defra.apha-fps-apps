@@ -33,15 +33,15 @@
                             </td>
 
                             <th scope="row" class="govuk-table__header  govuk-!-padding-right-1 govuk-!-padding-bottom-0 isNoBottomBorder">
-                                <label class="govuk-label govuk-!-margin-bottom-0 govuk-!-font-weight-bold isNoWrap" for="projectNameInput">Project:</label>
+                                <label id="projectNameInputLabel" class="govuk-label govuk-!-margin-bottom-0 govuk-!-font-weight-bold isNoWrap" for="projectNameInput">Project:</label>
                             </th>
                             <td class="govuk-table__cell govuk-!-padding-bottom-0 isNoBottomBorder">
                                 <input type="text" id="projectNameInput" placeholder="Select Project" autocomplete="off"
                                        class="govuk-input down-arrow-img isNoWrap"
-                                       value="@Model.ProjectName" aria-label="Filter project" aria-haspopup="listbox" aria-expanded="false" aria-controls="ProjectDropdownBody" readonly />
+                                       value="@Model.ProjectName" aria-label="Filter project" aria-labelledby="projectNameInputLabel" aria-owns="ProjectDropdownBody" aria-haspopup="listbox" aria-expanded="false" aria-controls="ProjectDropdownBody" readonly />
                                 <div id="ProjectDropdownPanel" style="display:none; position:absolute; top:100%; right: 26px; width:420px;
                                     max-height:260px; overflow-y:auto; background:#fff; border:1px solid #b1b4b6;
-                                    box-shadow:0 4px 8px rgba(0,0,0,.2); z-index:2000; top: 168px;">
+                                        box-shadow:0 4px 8px rgba(0,0,0,.2); z-index:2000; top: 168px; left: 76.7vw !important;">
                                     <label for="ProjectSearchBox" class="govuk-label govuk-visually-hidden">Search projects</label>
                                     <input type="text" id="ProjectSearchBox" placeholder="Type to search project" aria-label="Search projects"
                                            style="width:100%; padding:6px 8px; border:0; border-bottom:1px solid #b1b4b6; outline:none; box-sizing:border-box;" />

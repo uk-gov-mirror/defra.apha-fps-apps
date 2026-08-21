@@ -28,9 +28,7 @@ namespace Apha.FPSApps.Web.TagHelpers
             // Skip for landing page (no area) or other non-app pages
             if (string.IsNullOrEmpty(currentArea) || 
                 (!string.Equals(currentArea, "FPS", StringComparison.OrdinalIgnoreCase) &&
-                 !string.Equals(currentArea, "PACT", StringComparison.OrdinalIgnoreCase) &&
-                 !string.Equals(currentArea, "PIMS", StringComparison.OrdinalIgnoreCase) &&
-                 !string.Equals(currentArea, "COSTBOOK", StringComparison.OrdinalIgnoreCase)))
+                 !string.Equals(currentArea, "PACT", StringComparison.OrdinalIgnoreCase)))
                 return;
 
             var href = output.Attributes["href"]?.Value?.ToString();

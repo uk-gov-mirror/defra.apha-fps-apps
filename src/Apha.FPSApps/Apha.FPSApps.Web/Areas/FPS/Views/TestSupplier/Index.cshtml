@@ -5,22 +5,30 @@
     ViewData["Title"] = "FPS : Test Supplier";
 }
 
-@* Page Title *@
-<div class="govuk-grid-row sup_margin_left_right_0">
-    <div class="govuk-grid-column-full">
-        <h1 class="heading_with_txtbox govuk-heading-s sup_border-bottom sup_margin_bottom_10">
-            <div class="sup_flex_left_center">Test Supplier View (Who is Buying TestX?)</div>
+
+
+<div class="govuk-grid-row sup_border-bottom isTestSupplierPage">
+    <div class="govuk-grid-column-one-half isFloatLeft">
+        <h1 class="govuk-heading-s sup_margin_bottom_0 govuk-!-margin-top-3 govuk-!-padding-left-3">
+            Test Supplier View (Who is Buying TestX?)
         </h1>
     </div>
-</div>
-
-@* Filter Header: Select Test Code + Show Rejected toggle *@
-<div class="govuk-grid-row sup_margin_left_right_0 sup_flex_left_center sup_padding_bottom_10 sup_border-bottom" style="margin-top:10px;">
-
-    <div class="govuk-grid-column-one-third">
-        <label for="testCodePick" class="govuk-label govuk-!-font-weight-bold">Select a Test:</label>
-        <div id="testCodePickMultiDropdown"></div>
-        <input type="hidden" id="testCodePick" value="@Model.SelectedTestCode" />
+    <div class="govuk-grid-column-one-half isFloatRight isBudgetBidsQuery">
+        <table class="govuk-table govuk-!-margin-bottom-2">
+            <tbody class="govuk-table__body">
+                <tr class="govuk-table__row">
+                    <th scope="row" class="govuk-table__header govuk-!-padding-bottom-0 govuk-!-padding-right-1 isNoBottomBorder">
+                        <label class="govuk-label govuk-!-font-size-16 govuk-!-font-weight-bold govuk-!-margin-bottom-0 govuk-!-text-align-right" for="testCodePick">
+                            Select a Test:
+                        </label>
+                    </th>
+                    <td class="govuk-table__cell govuk-!-padding-bottom-0 govuk-!-padding-right-1 isNoBottomBorder">
+                        <div id="testCodePickMultiDropdown"></div>
+                        <input type="hidden" id="testCodePick" value="@Model.SelectedTestCode" />
+                    </td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </div>
 

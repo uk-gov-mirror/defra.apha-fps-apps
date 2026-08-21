@@ -678,7 +678,8 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
             {
                 // Single project selected - fetch that specific project
                 var singleResult = await _projectService.GetProjectByIdAsync(parentProject);
-                if (singleResult.Success && singleResult.Data != null)
+                if (singleResult.Success && singleResult.Data != null
+                    && MatchesProjectDetailsFilter(singleResult.Data, filterDict))
                 {
                     result = new ApiResponseDto<List<ProjectDto>>
                     {
@@ -689,7 +690,12 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
                 }
                 else
                 {
-                    result = new ApiResponseDto<List<ProjectDto>> { Success = true, Data = new List<ProjectDto>() };
+                    result = new ApiResponseDto<List<ProjectDto>>
+                    {
+                        Success = true,
+                        Data = new List<ProjectDto>(),
+                        Pagination = new Application.Dtos.PaginationDto { TotalRecords = 0, PageNumber = 1, PageSize = query.PageSize }
+                    };
                 }
             }
             else if (!string.IsNullOrWhiteSpace(program))
@@ -725,7 +731,7 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
 
             var paginationModel = result?.Pagination is null
                 ? new PaginationModel()
-                : _mapper.Map<PaginationModel>(result.Pagination);
+                : _mapper.Map<PaginationModel>(result.Pagination) ?? new PaginationModel();
             paginationModel.SortColumn = request.SortBy;
             paginationModel.SortDirection = request.Descending;
 
@@ -737,6 +743,35 @@ namespace Apha.FPSApps.Web.Areas.FPS.Controllers
 
             return PartialView("_DataGrid", gridConfig);
         }
+
+        private static bool MatchesProjectDetailsFilter(ProjectDto project, Dictionary<string, string>? filterDict)
+        {
+            if (filterDict == null || filterDict.Count == 0)
+                return true;
+
+            foreach (var filter in filterDict)
+            {
+                if (string.IsNullOrWhiteSpace(filter.Value))
+                    continue;
+
+                var value = filter.Key switch
+                {
+                    nameof(ProjectDetailsGridItem.ParentProject) => project.ParentProject,
+                    nameof(ProjectDetailsGridItem.ProjectTitle) => project.ProjectTitle,
+                    nameof(ProjectDetailsGridItem.Manager) => project.Manager,
+                    _ => null
+                };
+
+                if (value == null ||
+                    value.IndexOf(filter.Value, StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
 
         [HttpPost]
         public async Task<IActionResult> LoadStaffPlanGrid(PaginationFilter<string> request, string? parentProject = null, string? gridId = null)

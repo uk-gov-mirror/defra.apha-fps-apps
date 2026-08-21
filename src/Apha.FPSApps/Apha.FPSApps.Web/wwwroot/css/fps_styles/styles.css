@@ -23,15 +23,14 @@ button {
 .admin-btn {
     background-color: #f0f0f0;
     border: 1px solid #ccc;
-    padding: 5px 15px;
     border-radius: 3px;
     cursor: pointer;
 }
 
 .project-code-section {
     background-color: #f8f8f8;
-    padding: 15px;
-    margin-bottom: 20px;
+    padding: 0 15px;
+    margin-bottom: 0;
     border-radius: 5px;
     display: flex;
     align-items: center;
@@ -5253,6 +5252,7 @@ body,
 }
 
 .asu-dropdown-wrapper {
+    margin-bottom: 5px !important;
     position: relative;
 }
 
@@ -5348,18 +5348,24 @@ body,
     width: 42%;
 }
 .isSetUpStaffResources {
-    width: 63%;
+    width: 65%;
 }
 .isBudgetBidsQuery{
     width: 21%;
 }
+.isProjectGroupManagement {
+    width: 37%;
+}
 .isResourceReAllocationScreen {
     width: 24%;
-}  
+}
+.isMiscReport,
 .isStaffPlanDetails {
     width: 20%;
 }
-
+.isTestPriceCheck {
+    width: 16%;
+}
 .isPlanAllAdditionalCosts.isHalfGrid {
     width: 54%;
 }
@@ -5407,24 +5413,6 @@ body,
         float: right;
     }
 }
-/*#programmeSelect {
-    max-width: 25em;
-}*/
-
-#gridContainer_rcGradeGrid .grid-scroll-container {
-    height: 260px;
-    max-height: 260px;
-}
-
-#gridContainer_wgGradeGrid .grid-scroll-container {
-    height: 220px;
-    max-height: 220px;
-}
-
-#gridContainer_wgStaffGrid .grid-scroll-container {
-    height: 240px;
-    max-height: 240px;
-}
 
 #gridContainer_wgGradeGrid .editable-grid-container {
     min-height: unset;
@@ -5454,12 +5442,94 @@ body,
 #fpsSrTotalAtWork {
     border: 1px solid #b1b4b6 !important;
 }
+
+.content-wrapper:has(.isTestSupplierPage),
+.content-wrapper:has(.isMiscReportPage),
 .content-wrapper:has(.isResourceUtilizationViewPage) {
     flex: 0 !important;
     margin-bottom: 0 !important;
 }
-.govuk-footer {
-    position: fixed;
-    bottom: 0;
+
+.sup_margin_bottom_10.content-wrapper:has(.isContributionSummaryPage) {
+    margin-bottom: 10vh !important;
+}
+    .govuk-footer {
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+    }
+.isSideNav {
+    .sidenav{
+        padding-left: 0 !important;
+    }
+}
+.isTestSupplierPage {
+    .multicolumn-dropdown-panel {
+        left: -154px !important;
+    }
+}
+#gridContainer_testListVlaGrid {
+    .editable-grid-container {
+        .sup_border_bottom_0 {
+            display: none;
+        }
+    }
+}
+#ProjectDropdownPanel {
+    position: absolute;
+    top: 100%;
+    left: -200px;
+    width: 420px;
+    max-height: 260px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #b1b4b6;
+    box-shadow: 0 4px 8px rgba(0,0,0,.2);
+    z-index: 2000;
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+
+        thead {
+            background: #f3f2f1;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+
+            th {
+                padding: 6px 8px;
+                text-align: left;
+            }
+        }
+    }
+}
+#ProjectSearchBox {
     width: 100%;
+    padding: 6px 8px;
+    border: 0;
+    border-bottom: 1px solid #b1b4b6;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.isCustomLabels {
+    text-align: right;
+    display: block;
+    margin-top: 7px;
+    width: 47%;
+}
+.isWidthAuto{
+    width: auto;
+}
+#gridContainer_ruvWorkgroupGrid {
+    h2.sup_align_heading{
+        display: none;
+    }
+}
+.project-dropdown-panel{
+    td{
+        text-align: left;
+    }
 }

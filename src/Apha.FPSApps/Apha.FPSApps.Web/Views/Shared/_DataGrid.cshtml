@@ -108,7 +108,7 @@
                         {
                             <th scope="col" class="govuk-table__header sup_p_0">
 
-                                <div class="govuk-checkboxes govuk-checkboxes--small sup_margin_0" data-module="govuk-checkboxes">
+                                <div class="govuk-checkboxes govuk-checkboxes--small sup_margin_0 govuk-!-padding-bottom-1" data-module="govuk-checkboxes">
                                     <div class="govuk-checkboxes__item">
                                     <input type="checkbox" id="@($"{Model.GridId}_selectAll")" class="govuk-checkboxes__input govuk-!-font-size-16" aria-label="Select all rows" />                                    
                                         <label id="@($"{Model.GridId}_selectAll")"  class="govuk-label govuk-checkboxes__label sup_label_auto_width sup_p_0 sup_w_h_0" for="@($"{Model.GridId}_selectAll")">
@@ -192,7 +192,7 @@
                                         }
                                         else
                                         {
-                                            <input type="text" id="@($"{Model.GridId}_{column.PropertyName}_filter")" class="grid-filter govuk-input govuk-!-font-size-16" data-filter="@column.PropertyName" value="@filterValue" placeholder="Filter..." aria-label="@($"Filter {column.DisplayName}")" />
+                                                <input type="text" id="@($"{Model.GridId}_{column.PropertyName}_filter")" class="grid-filter govuk-input govuk-!-font-size-16" data-filter="@column.PropertyName" value="@filterValue" placeholder="Filter..." aria-label="@($"Filter {column.DisplayName}")" autocomplete="off" />
                                         }
                                     }
                                     else
@@ -250,7 +250,7 @@
                                     {
                                         <td class="checkbox-cell govuk-table__cell @column.CssClass" data-property="@column.PropertyName" data-type="@column.ColumnType" style="text-align:center; vertical-align:middle;">
                                             <div class="govuk-checkboxes govuk-checkboxes--small sup_margin_0" data-module="govuk-checkboxes" style="display:flex; justify-content:center; align-items:center;">
-                                                <div class="govuk-checkboxes__item sup_chk_margin" style="pointer-events:none; padding-bottom: 8px;">
+                                                <div class="govuk-checkboxes__item sup_chk_margin" style="pointer-events:none; padding-bottom: 13px;">
                                                     <input type="checkbox" name="@column.PropertyName"
                                                            id="@($"{Model.GridId}_{column.PropertyName}_{rowIndex}")" class="govuk-checkboxes__input govuk-!-font-size-16 @GridHelpers.GetTypeCssClass(column)"
                                                            @(Convert.ToBoolean(value) ? "checked" : "") />

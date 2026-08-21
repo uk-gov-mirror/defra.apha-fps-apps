@@ -24,84 +24,51 @@
         <!-- ── Main Content ─────────────────────────────────────────────── -->
         <main class="ra-main-content sup_p_0 sup_width_100">
 
-            <!-- ── Filter / header row ────────────────────────────────────── -->
-            <div class="sup_margin_left_right_0 sup_flex_space_between sup_padding_right_20 sup_margin_bottom_10">
+            <!-- ── Filter / header row (4-column compact layout) ───────────── -->
+            <div class="sup_margin_left_right_0 sup_padding_right_20 sup_margin_bottom_10">
+                <div class="govuk-grid-column-full govuk-!-margin-left-1">
+                    <table class="govuk-table sup-filters-table govuk-!-margin-bottom-2">
+                        <tr>
+                            <!-- Column 1: Project + Forecast (two rows in a nested table for inline label/control alignment) -->
+                            <td class="sup-col-1">
+                                <table class="govuk-table sup-nested-table">
+                                    <tr>
+                                        <td class="sup-cell-label"><label class="govuk-label govuk-!-font-size-16 sup_font_weight_700" for="commentProject">Project</label></td>
+                                        <td class="sup-cell-control"><select class="govuk-select govuk-!-font-size-16 " id="commentProject" name="commentProject" asp-items="Model.ProjectOptions" onchange="onProjectChanged()"></select></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="sup-cell-label"><label class="govuk-label govuk-!-font-size-16 sup_font_weight_700" for="forecastSpend">Forecast Spend (%)</label></td>
+                                        <td class="sup-cell-control">
+                                            <div class="sup-inline-control">
+                                                <input class="govuk-input govuk-!-font-size-16 " id="forecastSpend" name="forecastSpend" value="@Model.ForecastSpend" />
+                                                <button type="button" class="govuk-button govuk-button--start" id="btnSaveForecastSpend" onclick="saveForecastSpendIfChanged()">Save</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
 
-                <div class="govuk-!-padding-4 govuk-\!-margin-top-6 govuk-!-width-one-half">
-                    <div class="govuk-form-group ">
-                        <label class="govuk-label govuk-!-font-weight-bold" for="commentProject">
-                            Project:
-                        </label>
-                        <select class="govuk-select govuk-!-font-size-16 govuk-!-width-two-thirds"
-                                id="commentProject"
-                                name="commentProject"
-                                aria-label="Select project"
-                                asp-items="Model.ProjectOptions"
-                                onchange="onProjectChanged()">
-                        </select>
-                    </div>
+                            <!-- Column 4: Filter title plus Topic + Year nested table (Filter title moved above Topic) -->
+                            <td class="sup-col-4 govuk-!-margin-left-2">
+                                <div class="sup-filter-box">
+                                    
+                                    <table class="govuk-table sup-nested-table ">
+                                        <tr>
+                                            <td><label class="govuk-!-padding-bottom-1 govuk-label govuk-!-font-size-16 sup_font_weight_700">Filter</label></td>
+                                            <td class="sup-cell-label"><label class="govuk-label govuk-label govuk-!-font-size-16 sup_font_weight_700" for="filterTopic">Topic</label></td>
+                                            <td class="sup-cell-control"><select class="govuk-select govuk-label govuk-!-font-size-16" id="filterTopic" name="filterTopic" asp-items="Model.TopicOptions" onchange="reloadCommentsGrid()"></select></td>
+                                        </tr>
+                                        <tr>
+                                            <td></td>
+                                            <td class="sup-cell-label"><label class="govuk-label govuk-label govuk-!-font-size-16 sup_font_weight_700" for="filterYear">Year</label></td>
+                                            <td class="sup-cell-control"><input class="govuk-input govuk-label govuk-!-font-size-16" id="filterYear" name="filterYear" maxlength="4" inputmode="numeric" pattern="[0-9]*" oninput="onYearFilterChanged(this)" onkeydown="if (event.key === 'Enter') { event.preventDefault(); applyCommentsFilter(); }" /></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </td>
 
-                    <div class="govuk-form-group sup_margin_bottom_10">
-                        <label class="govuk-label govuk-!-font-weight-bold" for="forecastSpend">
-                            Forecast Spend: (%)
-                        </label>
-                        <input class="govuk-input govuk-!-font-size-16 govuk-!-width-two-thirds"
-                               type="text"
-                               id="forecastSpend"
-                               name="forecastSpend"
-                               value="@Model.ForecastSpend"
-                               autocomplete="off" />
-                        <button type="button" class="govuk-button govuk-!-margin-right-0 govuk-!-margin-top-0 govuk-!-margin-bottom-0 
-govuk-!-margin-left-2 govuk-!-font-size-16 sup_btn_input_height"
-                                id="btnSaveForecastSpend" onclick="saveForecastSpendIfChanged()">
-                            Save
-                        </button>
-                    </div>
-                </div>
-
-                <div class="govuk-!-width-one-half">
-                    <div>
-                        <div class="sup_border sup_padding_10 sup_margin_top_10 govuk-!-width-full"
-                             aria-labelledby="commentsFilterTitle">
-                            <div id="commentsFilterTitle"
-                                 class="govuk-label govuk-!-font-weight-bold govuk-!-font-size-16 sup_margin_bottom_10">
-                                Filter:
-                            </div>
-
-                            <div class="govuk-form-group sup_margin_bottom_10">
-                                <label class="govuk-label govuk-!-font-weight-bold sup_margin_0" for="filterTopic">
-                                    Topic
-                                </label>
-                                <select class="govuk-select govuk-!-font-size-16 govuk-!-width-full"
-                                        id="filterTopic"
-                                        name="filterTopic"
-                                        aria-label="Filter by topic"
-                                        asp-items="Model.TopicOptions"
-                                        onchange="reloadCommentsGrid()">
-                                </select>
-                            </div>
-
-                            <div class="govuk-form-group sup_margin_bottom_10">
-                                <label class="govuk-label govuk-!-font-weight-bold sup_margin_0" for="filterYear">
-                                    Year
-                                </label>
-                                <input class="govuk-input govuk-!-font-size-16"
-                                       type="text"
-                                       id="filterYear"
-                                       name="filterYear"
-                                       autocomplete="off"
-                                       maxlength="4"
-                                       inputmode="numeric"
-                                       pattern="[0-9]*"
-                                       aria-label="Filter by year"
-                                       oninput="onYearFilterChanged(this)"
-                                       onkeydown="if (event.key === 'Enter') { event.preventDefault(); applyCommentsFilter(); }" />
-                            </div>
-
-                            
-
-                        </div>
-                    </div>
+                        </tr>
+                    </table>
                 </div>
             </div>
 

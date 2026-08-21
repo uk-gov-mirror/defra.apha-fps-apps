@@ -5,37 +5,47 @@
     ViewData["Title"] = "Misc Reports";
 }
 
-<div class="govuk-grid-row sup_margin_left_right_0">
-    <div class="govuk-grid-column-full">
-        <h1 class="heading_with_txtbox govuk-heading-s sup_border-bottom" style="display:flex; align-items:center;">
-            <span class="sup_flex_left_center">Misc Reports</span>
-            <div class="govuk-form-group govuk-!-margin-bottom-0" style="margin-left:auto; display:flex; align-items:center; gap:8px;">
-                <label class="govuk-label govuk-label--s govuk-!-margin-bottom-0" for="SelectedProfitCentre" style="white-space:nowrap;">
-                    Resource Centre:
-                </label>
-                <select class="govuk-select govuk-!-font-size-16" style="width:auto; min-width:360px;"
-                        id="SelectedProfitCentre"
-                        name="SelectedProfitCentre">
-                    <option value="">--Select Resource Centre--</option>
-                    @foreach (var pc in Model.ProfitCentreOptions)
-                    {
-                        if (Model.SelectedProfitCentre == pc.Value)
-                        {
-                            <option value="@pc.Value" selected>@pc.Text</option>
-                        }
-                        else
-                        {
-                            <option value="@pc.Value">@pc.Text</option>
-                        }
-                    }
-                </select>
-            </div>
-        </h1>
+<div class="govuk-grid-row sup_margin_left_right_0 isMiscReportPage">
+    <div class="govuk-grid-row sup_border-bottom govuk-!-margin-bottom-2">
+        <div class="govuk-grid-column-one-half isFloatLeft">
+            <h1 class="govuk-heading-s sup_margin_bottom_0 govuk-!-margin-top-3 govuk-!-margin-left-3">Misc Reports</h1>
+        </div>
+        <div class="govuk-grid-column-one-half isFloatRight isMiscReport">
+            <table class="govuk-table govuk-!-margin-bottom-2">
+                <tbody class="govuk-table__body">
+                    <tr class="govuk-table__row">
+                        <th scope="row" class="govuk-table__header govuk-!-padding-bottom-0 govuk-!-padding-right-0 isNoBottomBorder">
+                            <label class="govuk-label govuk-!-font-size-16 govuk-!-font-weight-bold govuk-!-margin-bottom-0" for="SelectedProfitCentre">
+                                Resource Centre:
+                            </label>
+                        </th>
+                        <td class="govuk-table__cell govuk-!-padding-bottom-0 govuk-!-padding-right-1 isNoBottomBorder">
+                            <select class="govuk-select govuk-!-font-size-16"
+                                    id="SelectedProfitCentre"
+                                    name="SelectedProfitCentre">
+                                <option value="">--Select Resource Centre--</option>
+                                @foreach (var pc in Model.ProfitCentreOptions)
+                                {
+                                    if (Model.SelectedProfitCentre == pc.Value)
+                                    {
+                                        <option value="@pc.Value" selected>@pc.Text</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@pc.Value">@pc.Text</option>
+                                    }
+                                }
+                            </select>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
 <div class="govuk-grid-row sup_margin_left_right_0 sup_margin_bottom_10">
-    <div class="govuk-grid-column-full">
+    <div class="govuk-grid-column-full govuk-!-padding-left-0 govuk-!-padding-right-2">
         <div class="cc-container-fluid">
             <div class="cc-layout-row">
 
@@ -54,6 +64,19 @@
 @section Scripts {
     @* getMiscReportsExtraFilters must be global before the _DataGrid grid manager is used *@
     <script>
+        $(function(){
+            // $(".sortable-header").removeClass("grid-column-wrap");
+            $(".sortable-header").removeClass("grid-column-wrap");
+
+            $('#SelectedProfitCentre').on('change', function() {
+
+                // Your existing change/grid refresh logic here
+                setTimeout(function() {
+                    $('.sortable-header').removeClass('grid-column-wrap');
+                }, 0);
+
+            });
+        })
         function getMiscReportsExtraFilters() {
             return {
                 profitCentre: document.getElementById('SelectedProfitCentre')?.value ?? '',
