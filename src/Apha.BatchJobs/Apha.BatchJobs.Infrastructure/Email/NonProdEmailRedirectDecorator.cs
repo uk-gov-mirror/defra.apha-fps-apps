@@ -1,6 +1,5 @@
 using Apha.BatchJobs.Application.Interfaces;
 using Apha.BatchJobs.Domain;
-using Apha.BatchJobs.Domain.Configuration;
 using Apha.BatchJobs.Domain.Entities.Email;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -18,17 +17,17 @@ namespace Apha.BatchJobs.Infrastructure.Email;
 public sealed class NonProdEmailRedirectDecorator : IEmailService
 {
     private readonly IEmailService _inner;
-    private readonly MilestoneNotificationsSettings _settings;
+    private readonly EmailDeliverySettings _settings;
     private readonly string _environmentName;
     private readonly ILogger<NonProdEmailRedirectDecorator> _logger;
 
     public NonProdEmailRedirectDecorator(
         IEmailService inner,
-        IOptions<MilestoneNotificationsSettings> settings,
+        IOptions<EmailDeliverySettings> settings,
         ILogger<NonProdEmailRedirectDecorator> logger)
     {
         _inner = inner ?? throw new ArgumentNullException(nameof(inner));
-        _settings = settings?.Value ?? new MilestoneNotificationsSettings();
+        _settings = settings?.Value ?? new EmailDeliverySettings();
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _environmentName = EnvironmentResolver.GetEnvironmentName("Development");
     }

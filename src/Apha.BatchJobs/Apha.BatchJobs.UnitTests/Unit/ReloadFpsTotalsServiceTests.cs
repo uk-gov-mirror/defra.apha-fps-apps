@@ -1,4 +1,4 @@
-using Apha.BatchJobs.Domain.Configuration;
+using Apha.BatchJobs.Infrastructure.MabArchive.Configuration;
 using Apha.BatchJobs.Infrastructure.Data;
 using Apha.BatchJobs.Infrastructure.MabArchive.Repositories;
 using Microsoft.EntityFrameworkCore;

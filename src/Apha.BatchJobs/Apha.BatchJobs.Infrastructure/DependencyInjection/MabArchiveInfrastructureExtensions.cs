@@ -1,8 +1,10 @@
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Ports;
 using Apha.BatchJobs.Domain.Interfaces.MabArchive;
+using Apha.BatchJobs.Infrastructure.MabArchive.Configuration;
 using Apha.BatchJobs.Infrastructure.MabArchive.Repositories;
 using Apha.BatchJobs.Infrastructure.MabArchive.Transactions;
 using Apha.BatchJobs.Infrastructure.MabArchive.Loaders;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Apha.BatchJobs.Infrastructure.DependencyInjection;
@@ -10,8 +12,10 @@ namespace Apha.BatchJobs.Infrastructure.DependencyInjection;
 internal static class MabArchiveInfrastructureExtensions
 {
     internal static IServiceCollection AddMabArchiveInfrastructure(
-        this IServiceCollection services)
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
+        services.Configure<MabArchiveSettings>(configuration.GetSection("MabArchive"));
         RegisterMabArchiveLoaders(services);
 
         services.AddScoped<IFpsTotalsRepository, FpsTotalsRepository>();

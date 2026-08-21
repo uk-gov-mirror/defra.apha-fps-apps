@@ -1,5 +1,4 @@
 using Apha.BatchJobs.Application.Interfaces;
-using Apha.BatchJobs.Domain.Configuration;
 using Apha.BatchJobs.Domain.Entities.Email;
 using Apha.BatchJobs.Infrastructure.Email;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -16,7 +15,7 @@ public sealed class NonProdEmailRedirectDecoratorTests
         var ex = Assert.Throws<ArgumentNullException>(() =>
             new NonProdEmailRedirectDecorator(
                 null!,
-                Options.Create(new MilestoneNotificationsSettings()),
+                Options.Create(new EmailDeliverySettings()),
                 NullLogger<NonProdEmailRedirectDecorator>.Instance));
 
         Assert.Equal("inner", ex.ParamName);
@@ -28,7 +27,7 @@ public sealed class NonProdEmailRedirectDecoratorTests
         var ex = Assert.Throws<ArgumentNullException>(() =>
             new NonProdEmailRedirectDecorator(
                 Substitute.For<IEmailService>(),
-                Options.Create(new MilestoneNotificationsSettings()),
+                Options.Create(new EmailDeliverySettings()),
                 null!));
 
         Assert.Equal("logger", ex.ParamName);
@@ -87,7 +86,7 @@ public sealed class NonProdEmailRedirectDecoratorTests
     [Fact]
     public async Task SendAsync_WhenNonProduction_AndRedirectEnabled_ButNoRecipientsConfigured_ShouldThrow()
     {
-        var settings = new MilestoneNotificationsSettings { NonProdRedirectEnabled = true, NonProdRedirectRecipients = [] };
+        var settings = new EmailDeliverySettings { NonProdRedirectEnabled = true, NonProdRedirectRecipients = [] };
         var decorator = CreateDecorator(out var inner, settings);
         var message = new EmailMessage(["real.manager@example.com"], "Subject", "<p>body</p>");
 
@@ -96,13 +95,13 @@ public sealed class NonProdEmailRedirectDecoratorTests
         await inner.DidNotReceive().SendAsync(Arg.Any<EmailMessage>(), Arg.Any<CancellationToken>());
     }
 
-    private static MilestoneNotificationsSettings NonProdSettings() => new()
+    private static EmailDeliverySettings NonProdSettings() => new()
     {
         NonProdRedirectEnabled = true,
         NonProdRedirectRecipients = ["test.mailbox@example.com"]
     };
 
-    private static NonProdEmailRedirectDecorator CreateDecorator(out IEmailService inner, MilestoneNotificationsSettings settings)
+    private static NonProdEmailRedirectDecorator CreateDecorator(out IEmailService inner, EmailDeliverySettings settings)
     {
         inner = Substitute.For<IEmailService>();
         inner.SendAsync(Arg.Any<EmailMessage>(), Arg.Any<CancellationToken>())

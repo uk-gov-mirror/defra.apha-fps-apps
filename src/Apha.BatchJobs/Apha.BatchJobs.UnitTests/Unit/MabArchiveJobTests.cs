@@ -1,8 +1,7 @@
-using Apha.BatchJobs.Application.Interfaces;
+﻿using Apha.BatchJobs.Application.Interfaces;
 using Apha.BatchJobs.Domain.Entities.MabArchive;
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive;
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Ports;
-using Apha.BatchJobs.Domain.Configuration;
 using Apha.BatchJobs.Domain.Interfaces.MabArchive;
 using Apha.BatchJobs.Domain.Interfaces;
 using Apha.BatchJobs.Infrastructure.Context;
@@ -11,7 +10,6 @@ using Apha.BatchJobs.Infrastructure.MabArchive.Repositories;
 using Apha.BatchJobs.Infrastructure.MabArchive.Transactions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 using NSubstitute;
 using Xunit;
 
@@ -37,8 +35,7 @@ public sealed class MabArchiveJobTests
             Substitute.For<IMabArchiveYearRepository>(),
             new ExecutionYearContext(),
             Substitute.For<ICorrelationContextAccessor>(),
-            NullLogger<MabArchiveJob>.Instance,
-            Options.Create(new MabArchiveSettings())));
+            NullLogger<MabArchiveJob>.Instance));
 
         Assert.Equal("transactionManager", ex.ParamName);
     }
@@ -55,8 +52,7 @@ public sealed class MabArchiveJobTests
             Substitute.For<IMabArchiveYearRepository>(),
             new ExecutionYearContext(),
             Substitute.For<ICorrelationContextAccessor>(),
-            NullLogger<MabArchiveJob>.Instance,
-            Options.Create(new MabArchiveSettings())));
+            NullLogger<MabArchiveJob>.Instance));
 
         Assert.Equal("yearSelectionRepository", ex.ParamName);
     }
@@ -73,8 +69,7 @@ public sealed class MabArchiveJobTests
             Substitute.For<IMabArchiveYearRepository>(),
             new ExecutionYearContext(),
             Substitute.For<ICorrelationContextAccessor>(),
-            NullLogger<MabArchiveJob>.Instance,
-            Options.Create(new MabArchiveSettings())));
+            NullLogger<MabArchiveJob>.Instance));
 
         Assert.Equal("totalsRepository", ex.ParamName);
     }
@@ -91,8 +86,7 @@ public sealed class MabArchiveJobTests
             null!,
             new ExecutionYearContext(),
             Substitute.For<ICorrelationContextAccessor>(),
-            NullLogger<MabArchiveJob>.Instance,
-            Options.Create(new MabArchiveSettings())));
+            NullLogger<MabArchiveJob>.Instance));
 
         Assert.Equal("yearRepository", ex.ParamName);
     }
@@ -109,8 +103,7 @@ public sealed class MabArchiveJobTests
             Substitute.For<IMabArchiveYearRepository>(),
             null!,
             Substitute.For<ICorrelationContextAccessor>(),
-            NullLogger<MabArchiveJob>.Instance,
-            Options.Create(new MabArchiveSettings())));
+            NullLogger<MabArchiveJob>.Instance));
 
         Assert.Equal("executionYearContext", ex.ParamName);
     }
@@ -127,8 +120,7 @@ public sealed class MabArchiveJobTests
             Substitute.For<IMabArchiveYearRepository>(),
             new ExecutionYearContext(),
             null!,
-            NullLogger<MabArchiveJob>.Instance,
-            Options.Create(new MabArchiveSettings())));
+            NullLogger<MabArchiveJob>.Instance));
 
         Assert.Equal("correlationService", ex.ParamName);
     }
@@ -145,8 +137,7 @@ public sealed class MabArchiveJobTests
             Substitute.For<IMabArchiveYearRepository>(),
             new ExecutionYearContext(),
             Substitute.For<ICorrelationContextAccessor>(),
-            null!,
-            Options.Create(new MabArchiveSettings())));
+            null!));
 
         Assert.Equal("logger", ex.ParamName);
     }
@@ -163,8 +154,7 @@ public sealed class MabArchiveJobTests
             Substitute.For<IMabArchiveYearRepository>(),
             new ExecutionYearContext(),
             Substitute.For<ICorrelationContextAccessor>(),
-            NullLogger<MabArchiveJob>.Instance,
-            settings: null!);
+            NullLogger<MabArchiveJob>.Instance);
 
         Assert.Equal("MABArchive", subject.Name);
     }
@@ -181,8 +171,7 @@ public sealed class MabArchiveJobTests
             Substitute.For<IMabArchiveYearRepository>(),
             new ExecutionYearContext(),
             Substitute.For<ICorrelationContextAccessor>(),
-            NullLogger<MabArchiveJob>.Instance,
-            Options.Create(new MabArchiveSettings()));
+            NullLogger<MabArchiveJob>.Instance);
 
         Assert.Equal("MABArchive", subject.Name);
         Assert.Equal("YearScopedRebuildWithDeterministicOrdering", subject.IdempotencyStrategy);
@@ -220,8 +209,7 @@ public sealed class MabArchiveJobTests
             dataService,
             new ExecutionYearContext(),
             correlationService,
-            NullLogger<MabArchiveJob>.Instance,
-            Options.Create(new MabArchiveSettings()));
+            NullLogger<MabArchiveJob>.Instance);
 
         await subject.ExecuteAsync(CancellationToken.None);
 
@@ -268,8 +256,7 @@ public sealed class MabArchiveJobTests
             dataService,
             new ExecutionYearContext(),
             correlationService,
-            NullLogger<MabArchiveJob>.Instance,
-            Options.Create(new MabArchiveSettings()));
+            NullLogger<MabArchiveJob>.Instance);
 
         await subject.ExecuteAsync(CancellationToken.None);
 
@@ -306,8 +293,7 @@ public sealed class MabArchiveJobTests
             dataService,
             new ExecutionYearContext(),
             correlationService,
-            NullLogger<MabArchiveJob>.Instance,
-            Options.Create(new MabArchiveSettings()));
+            NullLogger<MabArchiveJob>.Instance);
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => subject.ExecuteAsync(CancellationToken.None));
 
@@ -344,8 +330,7 @@ public sealed class MabArchiveJobTests
             dataService,
             new ExecutionYearContext(),
             correlationService,
-            NullLogger<MabArchiveJob>.Instance,
-            Options.Create(new MabArchiveSettings()));
+            NullLogger<MabArchiveJob>.Instance);
 
         using var cts = new CancellationTokenSource();
         cts.Cancel();

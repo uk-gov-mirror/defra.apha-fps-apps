@@ -1,6 +1,6 @@
 using Apha.BatchJobs.Application.Interfaces;
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
-using Apha.BatchJobs.Domain.Configuration;
+using Apha.BatchJobs.Application.Configuration;
 using Apha.BatchJobs.Domain.Entities.Email;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;

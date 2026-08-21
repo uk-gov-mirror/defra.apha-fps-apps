@@ -1,5 +1,5 @@
 using Apha.BatchJobs.Domain.Interfaces.MabArchive;
-using Apha.BatchJobs.Domain.Configuration;
+using Apha.BatchJobs.Infrastructure.MabArchive.Configuration;
 using Apha.BatchJobs.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

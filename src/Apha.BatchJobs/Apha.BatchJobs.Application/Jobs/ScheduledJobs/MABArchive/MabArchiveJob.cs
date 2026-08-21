@@ -1,10 +1,8 @@
 using Apha.BatchJobs.Application.Interfaces;
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Ports;
-using Apha.BatchJobs.Domain.Configuration;
 using Apha.BatchJobs.Domain.Interfaces.MabArchive;
 using Apha.BatchJobs.Domain.Interfaces;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive;
 
@@ -32,7 +30,6 @@ public sealed class MabArchiveJob : IBatchJob
     private readonly IExecutionYearContext _executionYearContext;
     private readonly ICorrelationContextAccessor _correlationService;
     private readonly ILogger<MabArchiveJob> _logger;
-    private readonly MabArchiveSettings _settings;
 
     public string Name => "MABArchive";
     public string IdempotencyStrategy => "YearScopedRebuildWithDeterministicOrdering";
@@ -47,8 +44,7 @@ public sealed class MabArchiveJob : IBatchJob
         IMabArchiveYearRepository yearRepository,
         IExecutionYearContext executionYearContext,
         ICorrelationContextAccessor correlationService,
-        ILogger<MabArchiveJob> logger,
-        IOptions<MabArchiveSettings> settings)
+        ILogger<MabArchiveJob> logger)
     {
         _transactionManager = transactionManager ?? throw new ArgumentNullException(nameof(transactionManager));
         _yearSelectionRepository = yearSelectionRepository ?? throw new ArgumentNullException(nameof(yearSelectionRepository));
@@ -57,7 +53,6 @@ public sealed class MabArchiveJob : IBatchJob
         _executionYearContext = executionYearContext ?? throw new ArgumentNullException(nameof(executionYearContext));
         _correlationService = correlationService ?? throw new ArgumentNullException(nameof(correlationService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _settings = settings?.Value ?? new MabArchiveSettings();
     }
 
     /// <summary>

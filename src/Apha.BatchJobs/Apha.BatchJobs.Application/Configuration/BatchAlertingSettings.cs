@@ -1,4 +1,4 @@
-namespace Apha.BatchJobs.Domain.Configuration;
+namespace Apha.BatchJobs.Application.Configuration;
 
 /// <summary>
 /// Failure-alerting settings shared across batch processes — not specific to any one job.

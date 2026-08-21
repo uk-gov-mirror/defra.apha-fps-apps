@@ -1,5 +1,5 @@
 using Apha.BatchJobs.Application.Interfaces;
-using Apha.BatchJobs.Domain.Configuration;
+using Apha.BatchJobs.Application.Configuration;
 using Apha.BatchJobs.Domain.Entities.Email;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;

@@ -1,15 +1,11 @@
-namespace Apha.BatchJobs.Domain.Configuration;
+namespace Apha.BatchJobs.Infrastructure.MabArchive.Configuration;
 
 /// <summary>
 /// Configuration settings for the MABArchive scheduled job.
+/// Bound from the "MabArchive" configuration section.
 /// </summary>
 public class MabArchiveSettings
 {
-    /// <summary>
-    /// Lock timeout in seconds. Default: 3600 (1 hour).
-    /// </summary>
-    public int LockTimeoutSeconds { get; set; } = 0;
-
     /// <summary>
     /// Enforces year-aware joins and source view contracts for totals rebuild.
     /// When true, totals source views must expose fpsyear and joins must include fpsyear.

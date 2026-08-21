@@ -1,5 +1,4 @@
 using Apha.BatchJobs.Application.Interfaces;
-using Apha.BatchJobs.Domain.Configuration;
 using Apha.BatchJobs.Infrastructure.Email;
 using Azure.Identity;
 using Microsoft.Extensions.Configuration;
@@ -42,7 +41,7 @@ public static class GraphEmailServiceExtensions
             new GraphBackedEmailService(
                 sp.GetRequiredService<IGraphEmailService>(),
                 sp.GetRequiredService<ILogger<GraphBackedEmailService>>()),
-            sp.GetRequiredService<IOptions<MilestoneNotificationsSettings>>(),
+            sp.GetRequiredService<IOptions<EmailDeliverySettings>>(),
             sp.GetRequiredService<ILogger<NonProdEmailRedirectDecorator>>()));
 
         // Func<IEmailService> lets MABArchive resolve IEmailService lazily without triggering Graph.

@@ -1,7 +1,7 @@
 ﻿using Apha.BatchJobs.Application.Factory;
 using Apha.BatchJobs.Application.Interfaces;
 using Apha.BatchJobs.Application.Jobs.HealthCheck;
-using Apha.BatchJobs.Domain.Configuration;
+using Apha.BatchJobs.Application.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;

@@ -1,4 +1,4 @@
-namespace Apha.BatchJobs.Domain.Configuration;
+namespace Apha.BatchJobs.Application.Configuration;
 
 /// <summary>
 /// AWS logging settings, named to match the "AwsLogging:LogGroupName" convention already used

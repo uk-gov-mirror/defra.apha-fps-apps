@@ -1,6 +1,6 @@
 using System.Net;
 using System.Text;
-using Apha.BatchJobs.Domain.Configuration;
+using Apha.BatchJobs.Application.Configuration;
 using Apha.BatchJobs.Domain.Entities.MilestoneUpdateNotifications;
 using Microsoft.Extensions.Options;
 

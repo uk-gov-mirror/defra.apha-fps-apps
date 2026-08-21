@@ -1,5 +1,6 @@
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Services;
 using Apha.BatchJobs.Domain.Interfaces.MilestoneUpdateNotifications;
+using Apha.BatchJobs.Infrastructure.Email;
 using Apha.BatchJobs.Infrastructure.MilestoneUpdateNotifications.Repositories;
 using Apha.BatchJobs.Infrastructure.MilestoneUpdateNotifications.Queries;
 using Microsoft.Extensions.Configuration;
@@ -14,6 +15,8 @@ internal static class MilestoneNotificationInfrastructureExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        services.Configure<EmailDeliverySettings>(configuration.GetSection("MilestoneNotifications"));
+
         var connectionString = configuration.GetConnectionString("FPSConnectionString")
             ?? throw new InvalidOperationException("Connection string 'FPSConnectionString' not found.");
 

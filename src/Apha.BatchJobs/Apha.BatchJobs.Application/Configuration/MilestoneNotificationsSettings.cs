@@ -1,4 +1,4 @@
-namespace Apha.BatchJobs.Domain.Configuration;
+namespace Apha.BatchJobs.Application.Configuration;
 
 /// <summary>
 /// Configuration settings for the MilestoneUpdateNotifications scheduled job's email
@@ -12,22 +12,6 @@ public class MilestoneNotificationsSettings
     /// email template (plan section 10.2).
     /// </summary>
     public string? SupportContact { get; set; }
-
-    /// <summary>
-    /// When true (the safe default), non-production environments redirect every
-    /// manager email to <see cref="NonProdRedirectRecipients"/> instead of the real
-    /// recipient list, per spec section 22 ("real users must not receive test emails").
-    /// Has no effect when the resolved environment is Production.
-    /// </summary>
-    public bool NonProdRedirectEnabled { get; set; } = true;
-
-    /// <summary>
-    /// Recipients every non-production email is redirected to when
-    /// <see cref="NonProdRedirectEnabled"/> is true. Must be non-empty whenever
-    /// redirect is active — an empty list fails the send rather than risk delivering
-    /// to a real recipient.
-    /// </summary>
-    public List<string> NonProdRedirectRecipients { get; set; } = [];
 
     /// <summary>
     /// Base URL for the FPS application — used by MilestoneLinkBuilder as a fallback

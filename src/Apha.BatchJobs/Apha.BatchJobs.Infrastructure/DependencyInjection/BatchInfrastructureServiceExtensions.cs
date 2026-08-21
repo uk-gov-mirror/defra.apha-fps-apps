@@ -35,7 +35,7 @@ public static class BatchInfrastructureServiceExtensions
             new RecreateSummariesStepCatalog(sp.GetRequiredService<ILoggerFactory>()));
         services.AddScoped<IRecreateSummariesExecutionRunner, RecreateSummariesExecutionRunner>();
         services.AddMilestoneNotificationInfrastructure(configuration);
-        services.AddMabArchiveInfrastructure();
+        services.AddMabArchiveInfrastructure(configuration);
 
         return services;
     }

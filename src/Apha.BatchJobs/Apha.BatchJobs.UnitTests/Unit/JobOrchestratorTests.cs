@@ -2,7 +2,7 @@ using Apha.BatchJobs.Application.FailureHandling;
 using Apha.BatchJobs.Application.Interfaces;
 using Apha.BatchJobs.Application.Orchestration;
 using Apha.BatchJobs.Domain.Constants;
-using Apha.BatchJobs.Domain.Configuration;
+using Apha.BatchJobs.Application.Configuration;
 using Apha.BatchJobs.Domain.Entities;
 using Apha.BatchJobs.Domain.Enums;
 using Apha.BatchJobs.Domain.Interfaces;
