@@ -938,10 +938,10 @@ public sealed class BulkRatesRepository : IBulkRatesRepository
         cmd.Transaction = tx;
         cmd.CommandText = @"
             INSERT INTO fps.testreq_log
-                (testcode, buyer, unitprice, norequired, projectbuyercode, testbuyercode,
+                (sequenceno, testcode, buyer, unitprice, norequired, projectbuyercode, testbuyercode,
                  active, date_time, user_id, insert_delete, jobcode, fpsyear)
             VALUES
-                (@testcode, @buyer, @unitprice, @norequired, @projectbuyercode, @testbuyercode,
+                (nextval('fps.testreq_log_sequenceno_seq'), @testcode, @buyer, @unitprice, @norequired, @projectbuyercode, @testbuyercode,
                  @active, @date_time, @user_id, @insert_delete, @jobcode, @fpsyear);";
         cmd.Parameters.AddWithValue("testcode",         testCode.Length <= 20 ? testCode : testCode[..20]);
         cmd.Parameters.AddWithValue("buyer",            buyer.Length <= 20 ? buyer : buyer[..20]);
