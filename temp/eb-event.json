@@ -1,8 +1,0 @@
-[
-  {
-    "Source": "fps.api",
-    "DetailType": "BatchJobTriggerRequested",
-    "EventBusName": "arn:aws:events:eu-west-2:951656660068:event-bus/default",
-    "Detail": "{\"jobExecutionId\":\"5abb7803-95b5-486e-be32-5ed1aa745b37\",\"jobName\":\"YearEnd-DataSetup\",\"runMode\":\"Manual\",\"requestedBy\":\"arihant.jain@defradev.onmicrosoft.com\",\"requestedAtUtc\":\"2026-08-19T07:58:48Z\",\"parametersJson\":\"{\\\"plannedYear\\\":\\\"2026\\\"}\"}"
-  }
-]

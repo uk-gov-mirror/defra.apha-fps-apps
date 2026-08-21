@@ -65,4 +65,3 @@ You can view all available versions directly in the GitHub UI:
 This project is licensed under the [MIT License](LICENSE).  
 See the LICENSE file for full details.
 
-
