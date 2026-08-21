@@ -27,7 +27,7 @@ public static class WorkerHostExtensions
     public static void ConfigureWorkerConfiguration(this HostApplicationBuilder builder)
     {
         builder.Configuration
-            .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false)
+            .AddJsonFile(Path.Combine(AppContext.BaseDirectory, "appsettings.Local.json"), optional: true, reloadOnChange: false)
             .AddEnvironmentVariables();
     }
 
