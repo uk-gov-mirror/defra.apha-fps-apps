@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Data.Common;
 
-namespace Apha.BatchJobs.Infrastructure.Shared.Repositories;
+namespace Apha.BatchJobs.Infrastructure.YearEnd.Repositories;
 
 /// <summary>
 /// Executes Year End Data Setup persistence operations against fps.tblyearmaster.

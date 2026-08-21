@@ -1,7 +1,8 @@
 using Apha.BatchJobs.Infrastructure.Resilience;
 using Apha.BatchJobs.Domain.Interfaces;
 using Apha.BatchJobs.Infrastructure.Data;
-using Apha.BatchJobs.Infrastructure.Shared.Repositories;
+using Apha.BatchJobs.Infrastructure.Operational.Repositories;
+using Apha.BatchJobs.Infrastructure.YearEnd.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using System.Data.Common;
 
-namespace Apha.BatchJobs.Infrastructure.Shared.Repositories;
+namespace Apha.BatchJobs.Infrastructure.YearEnd.Repositories;
 
 /// <summary>
 /// Executes the year-status transition for Year End Cutover inside a single transaction.
