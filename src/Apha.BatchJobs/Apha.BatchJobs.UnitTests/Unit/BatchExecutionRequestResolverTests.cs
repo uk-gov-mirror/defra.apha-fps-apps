@@ -125,8 +125,8 @@ public sealed class BatchExecutionRequestResolverTests
     }
 
     /// <summary>
-    /// Sets every environment variable <see cref="Apha.BatchJobs.Domain.BatchExecutionContext.FromEnvironment"/>
-    /// reads to a known state for the duration of one test, restoring the original values on dispose.
+    /// Sets every environment variable <see cref="BatchExecutionRequestResolver.Resolve"/> reads
+    /// to a known state for the duration of one test, restoring the original values on dispose.
     /// </summary>
     private sealed class EnvScopeSet : IDisposable
     {
