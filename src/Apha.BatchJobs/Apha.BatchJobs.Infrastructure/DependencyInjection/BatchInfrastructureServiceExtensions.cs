@@ -23,6 +23,7 @@ public static class BatchInfrastructureServiceExtensions
     {
         services.AddBatchPersistence(configuration);
         services.AddGraphEmailIntegration(configuration);
+        services.AddEmailService();
 
         // Shared execution-context services whose implementations are in Infrastructure.
         services.AddScoped<IExecutionYearContext, ExecutionYearContext>();

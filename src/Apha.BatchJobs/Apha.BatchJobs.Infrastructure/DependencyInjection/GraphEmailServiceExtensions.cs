@@ -1,7 +1,11 @@
+using Apha.BatchJobs.Application.Interfaces;
+using Apha.BatchJobs.Domain.Configuration;
 using Apha.BatchJobs.Infrastructure.Email;
 using Azure.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.Graph;
 
 namespace Apha.BatchJobs.Infrastructure.DependencyInjection;
@@ -22,6 +26,27 @@ public static class GraphEmailServiceExtensions
     {
         services.AddSingleton(_ => CreateGraphServiceClient(configuration));
         services.AddSingleton<IGraphEmailService, GraphEmailService>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers <see cref="IEmailService"/> (Graph-backed, with non-prod redirect) and its
+    /// <see cref="Func{IEmailService}"/> factory. Shared by all jobs — MABArchive resolves the
+    /// factory lazily so Graph credentials are never eagerly validated at startup.
+    /// </summary>
+    public static IServiceCollection AddEmailService(this IServiceCollection services)
+    {
+        // Graph credentials are validated only when IEmailService is first resolved.
+        services.AddScoped<IEmailService>(sp => new NonProdEmailRedirectDecorator(
+            new GraphBackedEmailService(
+                sp.GetRequiredService<IGraphEmailService>(),
+                sp.GetRequiredService<ILogger<GraphBackedEmailService>>()),
+            sp.GetRequiredService<IOptions<MilestoneNotificationsSettings>>(),
+            sp.GetRequiredService<ILogger<NonProdEmailRedirectDecorator>>()));
+
+        // Func<IEmailService> lets MABArchive resolve IEmailService lazily without triggering Graph.
+        services.AddScoped<Func<IEmailService>>(sp => sp.GetRequiredService<IEmailService>);
 
         return services;
     }

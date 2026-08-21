@@ -1,9 +1,9 @@
-using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Services;
-using Apha.BatchJobs.Domain.Entities.MilestoneUpdateNotifications;
+using Apha.BatchJobs.Application.Interfaces;
+using Apha.BatchJobs.Domain.Entities.Email;
 using Apha.BatchJobs.Infrastructure.Email;
 using Microsoft.Extensions.Logging;
 
-namespace Apha.BatchJobs.Infrastructure.MilestoneUpdateNotifications.Email;
+namespace Apha.BatchJobs.Infrastructure.Email;
 
 /// <summary>
 /// Implementation of <see cref="IEmailService"/>. Thin adapter over Apha.Common's
@@ -46,7 +46,7 @@ public sealed class GraphBackedEmailService : IEmailService
         {
             _logger.LogWarning(
                 ex,
-                "Failed to send milestone notification email to {RecipientCount} recipient(s)",
+                "Failed to send email to {RecipientCount} recipient(s)",
                 message.To.Count);
             return EmailSendResult.Failed(ex.Message);
         }

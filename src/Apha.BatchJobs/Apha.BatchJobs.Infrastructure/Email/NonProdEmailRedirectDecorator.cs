@@ -1,11 +1,11 @@
-using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Services;
+using Apha.BatchJobs.Application.Interfaces;
 using Apha.BatchJobs.Domain;
 using Apha.BatchJobs.Domain.Configuration;
-using Apha.BatchJobs.Domain.Entities.MilestoneUpdateNotifications;
+using Apha.BatchJobs.Domain.Entities.Email;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Apha.BatchJobs.Infrastructure.MilestoneUpdateNotifications.Email;
+namespace Apha.BatchJobs.Infrastructure.Email;
 
 /// <summary>
 /// Implementation of <see cref="IEmailService"/> that wraps another <see cref="IEmailService"/>

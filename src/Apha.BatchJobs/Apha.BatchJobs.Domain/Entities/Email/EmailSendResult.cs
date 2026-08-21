@@ -1,4 +1,4 @@
-namespace Apha.BatchJobs.Domain.Entities.MilestoneUpdateNotifications;
+namespace Apha.BatchJobs.Domain.Entities.Email;
 
 /// <summary>
 /// Outcome of one <c>IEmailService.SendAsync</c> call (plan section 10.1, section 11.2).

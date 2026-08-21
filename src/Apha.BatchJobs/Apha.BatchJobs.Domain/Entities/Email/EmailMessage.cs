@@ -1,4 +1,4 @@
-namespace Apha.BatchJobs.Domain.Entities.MilestoneUpdateNotifications;
+namespace Apha.BatchJobs.Domain.Entities.Email;
 
 /// <summary>
 /// Provider-agnostic outbound email (plan section 10.1) — mapped onto
