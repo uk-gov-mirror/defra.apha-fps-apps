@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using System.Data;
 using System.Data.Common;
 
-namespace Apha.BatchJobs.Infrastructure.Repositories;
+namespace Apha.BatchJobs.Infrastructure.Shared.Repositories;
 
 /// <summary>
 /// Implementation of job execution repository using EF Core.

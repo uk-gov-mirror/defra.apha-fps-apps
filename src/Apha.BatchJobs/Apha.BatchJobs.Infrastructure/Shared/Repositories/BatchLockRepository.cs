@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace Apha.BatchJobs.Infrastructure.Repositories;
+namespace Apha.BatchJobs.Infrastructure.Shared.Repositories;
 
 /// <summary>
 /// Implementation of batch lock repository using EF Core.
