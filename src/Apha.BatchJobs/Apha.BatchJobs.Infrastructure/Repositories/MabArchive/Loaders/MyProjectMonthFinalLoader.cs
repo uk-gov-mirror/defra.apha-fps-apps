@@ -5,7 +5,7 @@ namespace Apha.BatchJobs.Infrastructure.Repositories.MabArchive.Loaders;
 
 internal sealed class MyProjectMonthFinalLoader : MabArchiveExecutionLoaderBase
 {
-    internal MyProjectMonthFinalLoader(BatchJobsDbContext context) : base(context) { }
+    public MyProjectMonthFinalLoader(BatchJobsDbContext context) : base(context) { }
 
     public override int Sequence => 9;
 

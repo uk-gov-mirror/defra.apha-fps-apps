@@ -1,8 +1,8 @@
 using Apha.BatchJobs.Application.Jobs.ManualJobs.RecreateSummaries;
 using Apha.BatchJobs.Domain.Interfaces;
 using Apha.BatchJobs.Infrastructure.Context;
+using Apha.BatchJobs.Infrastructure.RecreateSummaries;
 using Apha.BatchJobs.Infrastructure.Repositories.BulkRates;
-using Apha.BatchJobs.Infrastructure.Repositories.RecreateSummaries;
 using Apha.BatchJobs.Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

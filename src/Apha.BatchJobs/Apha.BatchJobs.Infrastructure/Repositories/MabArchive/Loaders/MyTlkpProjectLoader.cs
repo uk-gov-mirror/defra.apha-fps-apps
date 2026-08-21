@@ -5,7 +5,7 @@ namespace Apha.BatchJobs.Infrastructure.Repositories.MabArchive.Loaders;
 
 internal sealed class MyTlkpProjectLoader : MabArchiveExecutionLoaderBase
 {
-    internal MyTlkpProjectLoader(BatchJobsDbContext context) : base(context) { }
+    public MyTlkpProjectLoader(BatchJobsDbContext context) : base(context) { }
 
     public override int Sequence => 3;
 

@@ -1,7 +1,7 @@
 using Apha.BatchJobs.Application.Jobs.ManualJobs.RecreateSummaries;
 using Apha.BatchJobs.Domain.Enums;
 using Apha.BatchJobs.Infrastructure.Data;
-using Apha.BatchJobs.Infrastructure.Repositories.RecreateSummaries;
+using Apha.BatchJobs.Infrastructure.RecreateSummaries;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using System.Reflection;
@@ -29,7 +29,7 @@ public sealed class RecreateSummariesExecutionStepContractTests
     {
         // Arrange
         var stepType = typeof(IRecreateSummariesExecutionStep).Assembly
-            .GetType("Apha.BatchJobs.Infrastructure.Repositories.RecreateSummaries.DeleteFpsTotalsStep");
+            .GetType("Apha.BatchJobs.Infrastructure.RecreateSummaries.Steps.DeleteFpsTotalsStep");
 
         Assert.NotNull(stepType);
 
@@ -77,7 +77,7 @@ public sealed class RecreateSummariesExecutionStepContractTests
         // Act + Assert
         foreach (var definition in definitions)
         {
-            var type = assembly.GetType($"Apha.BatchJobs.Infrastructure.Repositories.RecreateSummaries.{definition.TypeName}");
+            var type = assembly.GetType($"Apha.BatchJobs.Infrastructure.RecreateSummaries.Steps.{definition.TypeName}");
             Assert.NotNull(type);
 
             var step = Activator.CreateInstance(type!, args: definition.Args) as IRecreateSummariesExecutionStep;

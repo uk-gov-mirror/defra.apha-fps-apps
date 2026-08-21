@@ -1,9 +1,10 @@
 using Apha.BatchJobs.Application.Jobs.ManualJobs.RecreateSummaries;
 using Apha.BatchJobs.Infrastructure.Data;
-using Apha.BatchJobs.Infrastructure.Repositories.RecreateSummaries;
+using Apha.BatchJobs.Infrastructure.RecreateSummaries;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using System.Text.Json;
+using Xunit;
 
 namespace Apha.BatchJobs.UnitTests.RecreateSummaries;
 
@@ -45,7 +46,16 @@ internal sealed class RecreateSummariesPostgresTestHarness : IAsyncDisposable
         var connectionString = builder.ConnectionString;
 
         var connection = new NpgsqlConnection(connectionString);
-        await connection.OpenAsync();
+        try
+        {
+            await connection.OpenAsync();
+        }
+        catch (Exception ex)
+        {
+            await connection.DisposeAsync();
+            Skip.If(true, $"Integration DB unavailable: {ex.Message}");
+            return null!; // unreachable — Skip.If always throws
+        }
         var transaction = await connection.BeginTransactionAsync();
 
         var options = new DbContextOptionsBuilder<BatchJobsDbContext>()
@@ -130,7 +140,7 @@ internal sealed class RecreateSummariesPostgresTestHarness : IAsyncDisposable
     public async Task<StepResult> ExecuteStepAsync(string typeName, params object[] args)
     {
         var type = typeof(IRecreateSummariesExecutionStep).Assembly
-            .GetType($"Apha.BatchJobs.Infrastructure.Repositories.RecreateSummaries.{typeName}");
+            .GetType($"Apha.BatchJobs.Infrastructure.RecreateSummaries.Steps.{typeName}");
 
         if (type is null)
         {

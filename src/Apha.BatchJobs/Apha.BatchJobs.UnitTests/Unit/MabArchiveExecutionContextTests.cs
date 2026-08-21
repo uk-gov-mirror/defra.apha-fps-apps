@@ -1,4 +1,4 @@
-using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive;
+using Apha.BatchJobs.Domain.Entities.MabArchive;
 
 namespace Apha.BatchJobs.UnitTests;
 

@@ -5,7 +5,7 @@ namespace Apha.BatchJobs.Infrastructure.Repositories.MabArchive.Loaders;
 
 internal sealed class MyWorkgroupGradeLoader : MabArchiveExecutionLoaderBase
 {
-    internal MyWorkgroupGradeLoader(BatchJobsDbContext context) : base(context) { }
+    public MyWorkgroupGradeLoader(BatchJobsDbContext context) : base(context) { }
 
     public override int Sequence => 17;
 

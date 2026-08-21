@@ -5,7 +5,7 @@ namespace Apha.BatchJobs.Infrastructure.Repositories.MabArchive.Loaders;
 
 internal sealed class MyProfitCentreGradeLoader : MabArchiveExecutionLoaderBase
 {
-    internal MyProfitCentreGradeLoader(BatchJobsDbContext context) : base(context) { }
+    public MyProfitCentreGradeLoader(BatchJobsDbContext context) : base(context) { }
 
     public override int Sequence => 18;
 

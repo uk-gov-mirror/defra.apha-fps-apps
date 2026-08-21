@@ -28,7 +28,7 @@ public sealed class MabArchiveYearSelectionRepositoryIntegrationTests : IAsyncLi
     private int _livePlannedYearCount;
     private int _liveOpenYear;
 
-    public MabArchiveYearSelectionServiceIntegrationTests()
+    public MabArchiveYearSelectionRepositoryIntegrationTests()
     {
         _connectionString =
             Environment.GetEnvironmentVariable("ConnectionStrings__FPSConnectionString")

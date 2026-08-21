@@ -1,5 +1,5 @@
 using Apha.BatchJobs.Infrastructure.Data;
-using Apha.BatchJobs.Infrastructure.Repositories.MilestoneUpdateNotifications;
+using Apha.BatchJobs.Infrastructure.MilestoneUpdateNotifications.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 

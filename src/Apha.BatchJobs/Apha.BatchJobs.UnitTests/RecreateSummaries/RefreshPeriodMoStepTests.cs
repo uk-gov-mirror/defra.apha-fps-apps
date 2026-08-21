@@ -4,7 +4,8 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 using Apha.BatchJobs.Application.Jobs.ManualJobs.RecreateSummaries;
-using Apha.BatchJobs.Infrastructure.Repositories.RecreateSummaries;
+using Apha.BatchJobs.Infrastructure.RecreateSummaries;
+using Apha.BatchJobs.Infrastructure.RecreateSummaries.Steps;
 using Apha.BatchJobs.Infrastructure.Data;
 using Apha.BatchJobs.Domain.Enums;
 using Npgsql;
@@ -13,7 +14,7 @@ namespace Apha.BatchJobs.UnitTests.RecreateSummaries;
 
 public sealed class RefreshPeriodMoStepTests
 {
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteCoreAsync_SuccessPath()
     {
         await using var harness = await RecreateSummariesPostgresTestHarness.CreateAsync();
@@ -81,7 +82,7 @@ public sealed class RefreshPeriodMoStepTests
         Assert.Equal(50m, row.TotalCost);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteCoreAsync_IgnoresRowsFromOtherYears()
     {
         await using var harness = await RecreateSummariesPostgresTestHarness.CreateAsync();
@@ -158,7 +159,7 @@ public sealed class RefreshPeriodMoStepTests
         Assert.Empty(priorRows);
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteCoreAsync_DoesNotMultiplyRowsFromOtherYearSources()
     {
         await using var harness = await RecreateSummariesPostgresTestHarness.CreateAsync();

@@ -1,5 +1,5 @@
 using Apha.BatchJobs.Infrastructure.Data;
-using Apha.BatchJobs.Infrastructure.Repositories.RecreateSummaries;
+using Apha.BatchJobs.Infrastructure.RecreateSummaries;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 

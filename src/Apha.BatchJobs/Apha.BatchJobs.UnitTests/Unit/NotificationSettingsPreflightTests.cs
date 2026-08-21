@@ -1,6 +1,6 @@
 using Apha.BatchJobs.Domain.Exceptions;
 using Apha.BatchJobs.Infrastructure.Data;
-using Apha.BatchJobs.Infrastructure.Repositories.MilestoneUpdateNotifications;
+using Apha.BatchJobs.Infrastructure.MilestoneUpdateNotifications.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 

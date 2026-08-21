@@ -1,6 +1,6 @@
 using Apha.BatchJobs.Domain.Constants;
 using Apha.BatchJobs.Domain.Entities.MilestoneUpdateNotifications;
-using Apha.BatchJobs.Infrastructure.Repositories.MilestoneUpdateNotifications;
+using Apha.BatchJobs.Infrastructure.MilestoneUpdateNotifications.Repositories;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;

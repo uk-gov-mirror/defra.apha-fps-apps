@@ -1,7 +1,7 @@
-﻿using Apha.BatchJobs.Application.Jobs.ManualJobs.RecreateSummaries;
+using Apha.BatchJobs.Application.Jobs.ManualJobs.RecreateSummaries;
 using Apha.BatchJobs.Domain.Enums;
 using Apha.BatchJobs.Infrastructure.Data;
-using Apha.BatchJobs.Infrastructure.Repositories.RecreateSummaries;
+using Apha.BatchJobs.Infrastructure.RecreateSummaries;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
@@ -75,7 +75,7 @@ public sealed class RecreateSummariesExecutionStepBaseTests
         Assert.Equal(3, result.RowsAffected);
     }
 
-    // Fake step subclasses â€” defined here to keep tests self-contained
+    // Fake step subclasses — defined here to keep tests self-contained
 
     private sealed class CancellingStep : RecreateSummariesExecutionStepBase
     {

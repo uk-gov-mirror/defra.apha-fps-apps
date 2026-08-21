@@ -1,7 +1,7 @@
 using Apha.BatchJobs.Application.Jobs.ManualJobs.RecreateSummaries;
 using Apha.BatchJobs.Domain.Enums;
 using Apha.BatchJobs.Infrastructure.Data;
-using Apha.BatchJobs.Infrastructure.Repositories.RecreateSummaries;
+using Apha.BatchJobs.Infrastructure.RecreateSummaries;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Xunit;
@@ -304,7 +304,7 @@ public sealed class RecreateSummariesPostgresStepIntegrationTests : IAsyncLifeti
     private async Task<StepResult> ExecuteStepAsync(string typeName, object[] args, BatchJobsDbContext context)
     {
         var type = typeof(IRecreateSummariesExecutionStep).Assembly
-            .GetType($"Apha.BatchJobs.Infrastructure.Repositories.RecreateSummaries.{typeName}");
+            .GetType($"Apha.BatchJobs.Infrastructure.RecreateSummaries.Steps.{typeName}");
 
         Assert.NotNull(type);
 

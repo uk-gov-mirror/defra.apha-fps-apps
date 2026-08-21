@@ -1,4 +1,5 @@
 ﻿using Apha.BatchJobs.Application.Interfaces;
+using Apha.BatchJobs.Domain.Entities.MabArchive;
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive;
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
 using Apha.BatchJobs.Domain.Configuration;
@@ -74,7 +75,7 @@ public sealed class MabArchiveJobTests
             NullLogger<MabArchiveJob>.Instance,
             Options.Create(new MabArchiveSettings())));
 
-        Assert.Equal("totalsService", ex.ParamName);
+        Assert.Equal("totalsRepository", ex.ParamName);
     }
 
     [Fact]
@@ -92,7 +93,7 @@ public sealed class MabArchiveJobTests
             NullLogger<MabArchiveJob>.Instance,
             Options.Create(new MabArchiveSettings())));
 
-        Assert.Equal("dataService", ex.ParamName);
+        Assert.Equal("yearRepository", ex.ParamName);
     }
 
     [Fact]

@@ -5,7 +5,7 @@ namespace Apha.BatchJobs.Infrastructure.Repositories.MabArchive.Loaders;
 
 internal sealed class MyTestOrProductLoader : MabArchiveExecutionLoaderBase
 {
-    internal MyTestOrProductLoader(BatchJobsDbContext context) : base(context) { }
+    public MyTestOrProductLoader(BatchJobsDbContext context) : base(context) { }
 
     public override int Sequence => 20;
 

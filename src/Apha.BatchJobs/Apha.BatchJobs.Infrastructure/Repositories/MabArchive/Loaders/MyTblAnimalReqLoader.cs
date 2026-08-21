@@ -5,7 +5,7 @@ namespace Apha.BatchJobs.Infrastructure.Repositories.MabArchive.Loaders;
 
 internal sealed class MyTblAnimalReqLoader : MabArchiveExecutionLoaderBase
 {
-    internal MyTblAnimalReqLoader(BatchJobsDbContext context) : base(context) { }
+    public MyTblAnimalReqLoader(BatchJobsDbContext context) : base(context) { }
 
     public override int Sequence => 11;
 

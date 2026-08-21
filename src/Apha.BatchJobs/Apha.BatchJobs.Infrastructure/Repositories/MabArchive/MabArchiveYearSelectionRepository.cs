@@ -1,4 +1,4 @@
-using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive;
+using Apha.BatchJobs.Domain.Entities.MabArchive;
 using Apha.BatchJobs.Domain.Interfaces.MabArchive;
 using Apha.BatchJobs.Domain.Exceptions;
 using Apha.BatchJobs.Infrastructure.Data;

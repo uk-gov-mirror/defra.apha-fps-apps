@@ -4,7 +4,8 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 using Apha.BatchJobs.Application.Jobs.ManualJobs.RecreateSummaries;
-using Apha.BatchJobs.Infrastructure.Repositories.RecreateSummaries;
+using Apha.BatchJobs.Infrastructure.RecreateSummaries;
+using Apha.BatchJobs.Infrastructure.RecreateSummaries.Steps;
 using Apha.BatchJobs.Infrastructure.Data;
 using Apha.BatchJobs.Domain.Enums;
 using Npgsql;
@@ -13,7 +14,7 @@ namespace Apha.BatchJobs.UnitTests.RecreateSummaries;
 
 public sealed class CreateProjectMonthFinalStepTests
 {
-    [Fact]
+    [SkippableFact]
     public async Task ExecuteCoreAsync_SuccessPath()
     {
         // Arrange: In-memory EF Core context

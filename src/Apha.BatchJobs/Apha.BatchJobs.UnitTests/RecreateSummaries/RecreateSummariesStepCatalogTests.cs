@@ -1,5 +1,5 @@
 using Apha.BatchJobs.Application.Jobs.ManualJobs.RecreateSummaries;
-using Apha.BatchJobs.Infrastructure.Repositories.RecreateSummaries;
+using Apha.BatchJobs.Infrastructure.RecreateSummaries;
 
 namespace Apha.BatchJobs.UnitTests.RecreateSummaries;
 
@@ -68,7 +68,7 @@ public sealed class RecreateSummariesStepCatalogTests
     private static IRecreateSummariesStepCatalog CreateCatalog()
     {
         var type = typeof(IRecreateSummariesStepCatalog).Assembly
-            .GetType("Apha.BatchJobs.Infrastructure.Repositories.RecreateSummaries.RecreateSummariesStepCatalog");
+            .GetType("Apha.BatchJobs.Infrastructure.RecreateSummaries.RecreateSummariesStepCatalog");
 
         Assert.NotNull(type);
 

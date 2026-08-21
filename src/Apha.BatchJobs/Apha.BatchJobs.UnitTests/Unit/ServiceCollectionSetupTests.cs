@@ -1,4 +1,5 @@
 ﻿using Apha.BatchJobs.Application.DependencyInjection;
+using Apha.BatchJobs.Infrastructure.DependencyInjection;
 using Apha.BatchJobs.Application.Interfaces;
 using Apha.BatchJobs.Application.Jobs.ManualJobs.YearEnd.Services;
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
@@ -34,6 +35,7 @@ public sealed class ServiceCollectionSetupTests
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddSingleton<IConfiguration>(config);
+        services.AddBatchInfrastructure(config);
         services.AddBatchJobs(config);
         return services;
     }
@@ -62,6 +64,7 @@ public sealed class ServiceCollectionSetupTests
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddSingleton<IConfiguration>(config);
+        services.AddBatchInfrastructure(config);
         services.AddBatchJobs(config);
         return services.BuildServiceProvider();
     }
@@ -130,6 +133,7 @@ public sealed class ServiceCollectionSetupTests
     public void AddBatchJobs_ShouldRegisterExactlySixSupportedJobs()
     {
         // Regression guard: adding, removing, or deferring a job must force a deliberate update here.
+        using var _ = new EnvironmentVariableScope("BATCH_JOB_PARAMETERS_JSON", "{\"month\":\"2026-07\"}");
         var services = CreateServices(GetBatchJobsRoot());
         using var serviceProvider = services.BuildServiceProvider();
 
@@ -147,6 +151,7 @@ public sealed class ServiceCollectionSetupTests
     [Fact]
     public void AddBatchJobs_AllRegisteredJobs_ShouldDeclareExplicitIdempotencyStrategy()
     {
+        using var _ = new EnvironmentVariableScope("BATCH_JOB_PARAMETERS_JSON", "{\"month\":\"2026-07\"}");
         var services = CreateServices(GetBatchJobsRoot());
         using var serviceProvider = services.BuildServiceProvider();
 
@@ -164,6 +169,7 @@ public sealed class ServiceCollectionSetupTests
     [Fact]
     public void AddBatchJobs_ManualAdhocJobs_ShouldHaveNoScheduleExpression()
     {
+        using var _ = new EnvironmentVariableScope("BATCH_JOB_PARAMETERS_JSON", "{\"month\":\"2026-07\"}");
         var services = CreateServices(GetBatchJobsRoot());
         using var serviceProvider = services.BuildServiceProvider();
 
