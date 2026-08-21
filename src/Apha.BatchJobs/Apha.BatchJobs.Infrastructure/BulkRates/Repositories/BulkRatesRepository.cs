@@ -7,7 +7,7 @@ using Npgsql;
 using NpgsqlTypes;
 using System.Text.Json;
 
-namespace Apha.BatchJobs.Infrastructure.Repositories.BulkRates;
+namespace Apha.BatchJobs.Infrastructure.BulkRates.Repositories;
 
 /// <summary>
 /// Npgsql implementation of <see cref="IBulkRatesRepository"/>.

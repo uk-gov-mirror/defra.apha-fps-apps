@@ -4,7 +4,7 @@ using Apha.BatchJobs.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-namespace Apha.BatchJobs.Infrastructure.MilestoneUpdateNotifications.Services;
+namespace Apha.BatchJobs.Infrastructure.MilestoneUpdateNotifications.Queries;
 
 /// <summary>
 /// Implementation of <see cref="IReportingYearResolver"/>. Queries
