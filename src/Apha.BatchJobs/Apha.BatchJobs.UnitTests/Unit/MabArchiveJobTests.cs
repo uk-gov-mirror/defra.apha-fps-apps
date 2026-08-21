@@ -8,6 +8,7 @@ using Apha.BatchJobs.Domain.Interfaces;
 using Apha.BatchJobs.Infrastructure.Context;
 using Apha.BatchJobs.Infrastructure.Data;
 using Apha.BatchJobs.Infrastructure.MabArchive.Repositories;
+using Apha.BatchJobs.Infrastructure.MabArchive.Transactions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
