@@ -1,4 +1,4 @@
-namespace Apha.BatchJobs.Application.Jobs.ManualJobs.RecreateSummaries;
+namespace Apha.BatchJobs.Application.Jobs.ManualJobs.RecreateSummaries.Execution;
 
 public interface IRecreateSummariesExecutionContext
 {

@@ -1,10 +1,9 @@
-using Apha.BatchJobs.Application.Jobs.ManualJobs.BulkRates.Services;
 using Apha.BatchJobs.Domain.Constants;
 using Apha.BatchJobs.Domain.Entities.BulkRates;
 using Apha.BatchJobs.Domain.Interfaces;
 using Microsoft.Extensions.Logging;
 
-namespace Apha.BatchJobs.Application.Jobs.ManualJobs.BulkRates;
+namespace Apha.BatchJobs.Application.Jobs.ManualJobs.BulkRates.Services;
 
 /// <summary>
 /// Applies FEC Test/Product (FEC before AGRUP, spec §15.2) annual rate changes

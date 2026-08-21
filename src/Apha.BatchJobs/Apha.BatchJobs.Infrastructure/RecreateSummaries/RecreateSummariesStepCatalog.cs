@@ -1,4 +1,4 @@
-using Apha.BatchJobs.Application.Jobs.ManualJobs.RecreateSummaries;
+using Apha.BatchJobs.Application.Jobs.ManualJobs.RecreateSummaries.Execution;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Apha.BatchJobs.Infrastructure.RecreateSummaries.Steps;

@@ -1,4 +1,5 @@
 ﻿using Apha.BatchJobs.Application.Jobs.ManualJobs.BulkRates;
+using Apha.BatchJobs.Application.Jobs.ManualJobs.BulkRates.Services;
 using Apha.BatchJobs.Domain.Constants;
 using Apha.BatchJobs.Domain.Interfaces;
 using Apha.BatchJobs.Infrastructure.Data;

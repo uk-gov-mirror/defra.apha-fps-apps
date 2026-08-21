@@ -1,4 +1,4 @@
-using Apha.BatchJobs.Application.Jobs.ManualJobs.RecreateSummaries;
+using Apha.BatchJobs.Application.Jobs.ManualJobs.RecreateSummaries.Execution;
 using Apha.BatchJobs.Infrastructure.RecreateSummaries;
 
 namespace Apha.BatchJobs.UnitTests.RecreateSummaries;
