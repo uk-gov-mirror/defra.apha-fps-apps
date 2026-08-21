@@ -4,6 +4,7 @@ using Apha.BatchJobs.Domain.Constants;
 using Apha.BatchJobs.Domain.Interfaces;
 using Microsoft.Extensions.Logging;
 
+using Apha.BatchJobs.Application.Jobs.ManualJobs.YearEnd.Execution;
 namespace Apha.BatchJobs.Application.Jobs.ManualJobs.YearEnd;
 
 /// <summary>

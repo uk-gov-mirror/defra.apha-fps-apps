@@ -1,7 +1,8 @@
 using Apha.BatchJobs.Domain.Interfaces;
 using Microsoft.Extensions.Logging;
 
-namespace Apha.BatchJobs.Application.Jobs.ManualJobs.YearEnd.Services;
+using Apha.BatchJobs.Application.Jobs.ManualJobs.YearEnd.Execution;
+namespace Apha.BatchJobs.Application.Jobs.ManualJobs.YearEnd.Steps;
 
 /// <summary>
 /// Copies vetted mabarchive schema tables from current FPS year into target FPS year using strict year scoping.

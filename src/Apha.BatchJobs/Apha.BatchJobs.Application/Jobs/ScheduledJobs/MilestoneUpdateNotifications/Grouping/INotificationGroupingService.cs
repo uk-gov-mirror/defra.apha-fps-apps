@@ -1,6 +1,6 @@
 using Apha.BatchJobs.Domain.Entities.MilestoneUpdateNotifications;
 
-namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Services;
+namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Grouping;
 
 /// <summary>
 /// Pure, no-I/O grouping of candidate rows into per-recipient notification groups

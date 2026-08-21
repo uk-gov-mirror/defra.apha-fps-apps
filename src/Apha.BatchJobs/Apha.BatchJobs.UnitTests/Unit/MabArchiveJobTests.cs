@@ -1,7 +1,7 @@
 using Apha.BatchJobs.Application.Interfaces;
 using Apha.BatchJobs.Domain.Entities.MabArchive;
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive;
-using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
+using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Ports;
 using Apha.BatchJobs.Domain.Configuration;
 using Apha.BatchJobs.Domain.Interfaces.MabArchive;
 using Apha.BatchJobs.Domain.Interfaces;

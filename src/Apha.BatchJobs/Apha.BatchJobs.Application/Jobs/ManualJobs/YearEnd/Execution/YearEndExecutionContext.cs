@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace Apha.BatchJobs.Application.Jobs.ManualJobs.YearEnd.Services;
+namespace Apha.BatchJobs.Application.Jobs.ManualJobs.YearEnd.Execution;
 
 /// <summary>
 /// Immutable execution context for Year End worker services.

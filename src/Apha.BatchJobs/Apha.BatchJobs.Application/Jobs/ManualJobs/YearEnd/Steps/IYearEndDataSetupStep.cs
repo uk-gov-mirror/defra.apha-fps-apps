@@ -1,4 +1,6 @@
-namespace Apha.BatchJobs.Application.Jobs.ManualJobs.YearEnd.Services;
+using Apha.BatchJobs.Application.Jobs.ManualJobs.YearEnd.Execution;
+
+namespace Apha.BatchJobs.Application.Jobs.ManualJobs.YearEnd.Steps;
 
 /// <summary>
 /// Represents one ordered step in the Year End Data Setup pipeline.

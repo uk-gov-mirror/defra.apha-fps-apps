@@ -1,6 +1,6 @@
 using Apha.BatchJobs.Domain.Entities.MilestoneUpdateNotifications;
 
-namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Services;
+namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Rendering;
 
 /// <summary>
 /// Renders the manager notification email from spec section 13's suggested template.

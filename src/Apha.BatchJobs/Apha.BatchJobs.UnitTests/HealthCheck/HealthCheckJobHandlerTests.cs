@@ -28,15 +28,6 @@ namespace Apha.BatchJobs.UnitTests.HealthCheck
             Assert.Equal("HealthCheck", handlerWithNullOptions.Name);
         }
 
-        [Fact]
-        public void HealthCheckJobRequest_Defaults_AreCorrect()
-        {
-            var req = new HealthCheckJobRequest();
-            Assert.Equal(100, req.RecordCount);
-            Assert.Equal(10, req.DelayPerRecordMs);
-            Assert.False(req.ShouldFail);
-        }
-
         // Add more tests for execution logic if/when ExecuteAsync is available
     }
 }

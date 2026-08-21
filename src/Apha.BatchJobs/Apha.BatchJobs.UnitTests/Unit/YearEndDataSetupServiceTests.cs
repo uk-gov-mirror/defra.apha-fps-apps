@@ -1,4 +1,6 @@
+using Apha.BatchJobs.Application.Jobs.ManualJobs.YearEnd.Execution;
 using Apha.BatchJobs.Application.Jobs.ManualJobs.YearEnd.Services;
+using Apha.BatchJobs.Application.Jobs.ManualJobs.YearEnd.Steps;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Apha.BatchJobs.UnitTests;

@@ -1,4 +1,4 @@
-using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Services;
+using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Grouping;
 using Apha.BatchJobs.Domain.Entities.MilestoneUpdateNotifications;
 
 namespace Apha.BatchJobs.UnitTests;

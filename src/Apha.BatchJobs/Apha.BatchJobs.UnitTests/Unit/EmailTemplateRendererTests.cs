@@ -1,4 +1,4 @@
-using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Services;
+using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Rendering;
 using Apha.BatchJobs.Domain.Configuration;
 using Apha.BatchJobs.Domain.Entities.MilestoneUpdateNotifications;
 using Microsoft.Extensions.Options;

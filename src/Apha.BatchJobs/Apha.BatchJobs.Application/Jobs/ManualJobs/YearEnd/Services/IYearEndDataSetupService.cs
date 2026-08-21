@@ -1,3 +1,5 @@
+using Apha.BatchJobs.Application.Jobs.ManualJobs.YearEnd.Execution;
+
 namespace Apha.BatchJobs.Application.Jobs.ManualJobs.YearEnd.Services;
 
 /// <summary>

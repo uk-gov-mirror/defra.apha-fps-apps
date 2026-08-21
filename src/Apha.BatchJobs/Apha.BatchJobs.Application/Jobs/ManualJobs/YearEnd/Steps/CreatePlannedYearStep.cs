@@ -1,7 +1,8 @@
 using Apha.BatchJobs.Domain.Interfaces;
 using Microsoft.Extensions.Logging;
 
-namespace Apha.BatchJobs.Application.Jobs.ManualJobs.YearEnd.Services;
+using Apha.BatchJobs.Application.Jobs.ManualJobs.YearEnd.Execution;
+namespace Apha.BatchJobs.Application.Jobs.ManualJobs.YearEnd.Steps;
 
 /// <summary>
 /// Creates the target FPS year in fps.tblyearmaster as Planned when it does not exist.

@@ -1,6 +1,7 @@
 using Apha.BatchJobs.Application.Jobs.ManualJobs.YearEnd.Services;
 using Microsoft.Extensions.DependencyInjection;
 
+using Apha.BatchJobs.Application.Jobs.ManualJobs.YearEnd.Steps;
 namespace Apha.BatchJobs.Application.Jobs.ManualJobs.YearEnd;
 
 /// <summary>

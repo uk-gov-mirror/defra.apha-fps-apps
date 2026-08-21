@@ -1,6 +1,6 @@
 using Apha.BatchJobs.Domain.Entities.MilestoneUpdateNotifications;
 
-namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Services;
+namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Grouping;
 
 /// <summary>
 /// Implementation of <see cref="INotificationGroupingService"/>. Groups every

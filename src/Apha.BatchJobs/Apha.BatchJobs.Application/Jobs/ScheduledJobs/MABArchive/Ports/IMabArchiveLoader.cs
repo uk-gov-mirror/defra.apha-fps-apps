@@ -1,4 +1,4 @@
-namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
+namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Ports;
 
 /// <summary>
 /// Represents one MABArchive year-load step.

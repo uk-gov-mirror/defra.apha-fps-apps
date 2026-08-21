@@ -1,4 +1,4 @@
-namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Services;
+namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Grouping;
 
 /// <summary>
 /// Computes the two distinct identity concepts described in plan section 9.1:

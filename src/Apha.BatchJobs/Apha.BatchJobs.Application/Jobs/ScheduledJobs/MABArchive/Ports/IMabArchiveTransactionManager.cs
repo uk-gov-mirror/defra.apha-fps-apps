@@ -1,4 +1,4 @@
-namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
+namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Ports;
 
 /// <summary>
 /// Wraps the full Open+Planned MABArchive cycle in a single atomic transaction.

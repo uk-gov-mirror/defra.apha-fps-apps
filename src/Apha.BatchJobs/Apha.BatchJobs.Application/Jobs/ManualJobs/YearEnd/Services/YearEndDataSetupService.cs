@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Logging;
 
+using Apha.BatchJobs.Application.Jobs.ManualJobs.YearEnd.Execution;
+using Apha.BatchJobs.Application.Jobs.ManualJobs.YearEnd.Steps;
 namespace Apha.BatchJobs.Application.Jobs.ManualJobs.YearEnd.Services;
 
 /// <summary>

@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text.RegularExpressions;
 
-namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Services;
+namespace Apha.BatchJobs.Application.Jobs.ScheduledJobs.MilestoneUpdateNotifications.Rendering;
 
 /// <summary>
 /// Extracts and validates the <c>href</c> from the legacy-generated EditLink HTML fragment
