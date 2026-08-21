@@ -1,5 +1,6 @@
-using Apha.BatchJobs.Application;
+using Apha.BatchJobs.Application.FailureHandling;
 using Apha.BatchJobs.Application.Interfaces;
+using Apha.BatchJobs.Application.Orchestration;
 using Apha.BatchJobs.Domain.Constants;
 using Apha.BatchJobs.Domain.Configuration;
 using Apha.BatchJobs.Domain.Entities;
@@ -25,6 +26,8 @@ public sealed class JobOrchestratorTests
     private readonly ICurrentJobExecutionContext _currentExecutionContext = Substitute.For<ICurrentJobExecutionContext>();
     private readonly IEmailNotificationService _notificationService = Substitute.For<IEmailNotificationService>();
     private readonly IConfiguration _configuration = Substitute.For<IConfiguration>();
+    private readonly BatchFailureClassifier _failureClassifier =
+        new(new ConfigurationBuilder().Build());
     private readonly IOptions<BatchJobSettings> _settings = Options.Create(new BatchJobSettings { JobTimeout = 3600 });
     // Nothing allowlisted by default — the many generic tests below don't assert on notification
     // behavior, so the safe-by-default (nothing opted in) gate stays invisible to them. Tests that
@@ -44,7 +47,7 @@ public sealed class JobOrchestratorTests
             _notificationService,
             _alertingSettings,
             _settings,
-            _configuration,
+            _failureClassifier,
             NullLogger<JobOrchestrator>.Instance);
     }
 
@@ -466,7 +469,7 @@ public sealed class JobOrchestratorTests
             _notificationService,
             alertingSettings,
             _settings,
-            _configuration,
+            _failureClassifier,
             NullLogger<JobOrchestrator>.Instance);
     }
 
@@ -547,7 +550,7 @@ public sealed class JobOrchestratorTests
         });
         var orchestrator = new JobOrchestrator(
             _factory, _lockRepo, _execRepo, _correlationService, _currentExecutionContext, _notificationService,
-            alertingSettings, _settings, _configuration, NullLogger<JobOrchestrator>.Instance);
+            alertingSettings, _settings, _failureClassifier, NullLogger<JobOrchestrator>.Instance);
 
         var job = Substitute.For<IBatchJob>();
         job.Name.Returns("DisabledNotifyJob");
@@ -860,7 +863,7 @@ public sealed class JobOrchestratorTests
             _notificationService,
             _alertingSettings,
             retrySettings,
-            _configuration,
+            _failureClassifier,
             NullLogger<JobOrchestrator>.Instance);
 
         SetupInitiatedExecution("RetrySuccessJob");
@@ -907,7 +910,7 @@ public sealed class JobOrchestratorTests
             _notificationService,
             _alertingSettings,
             retrySettings,
-            _configuration,
+            _failureClassifier,
             NullLogger<JobOrchestrator>.Instance);
 
         SetupInitiatedExecution("RetryFailJob");
@@ -960,7 +963,7 @@ public sealed class JobOrchestratorTests
             _notificationService,
             _alertingSettings,
             retrySettings,
-            _configuration,
+            _failureClassifier,
             NullLogger<JobOrchestrator>.Instance);
 
         SetupInitiatedExecution("NonRetryableJob");
@@ -1017,7 +1020,7 @@ public sealed class JobOrchestratorTests
             _notificationService,
             _alertingSettings,
             timeoutSettings,
-            _configuration,
+            _failureClassifier,
             NullLogger<JobOrchestrator>.Instance);
 
         SetupInitiatedExecution("RuntimeTimeoutJob");
@@ -1078,7 +1081,7 @@ public sealed class JobOrchestratorTests
             _notificationService,
             _alertingSettings,
             timeoutSettings,
-            _configuration,
+            _failureClassifier,
             NullLogger<JobOrchestrator>.Instance);
 
         SetupInitiatedExecution("OverrideTimeoutJob");
@@ -1118,7 +1121,7 @@ public sealed class JobOrchestratorTests
             _notificationService,
             _alertingSettings,
             timeoutSettings,
-            _configuration,
+            _failureClassifier,
             NullLogger<JobOrchestrator>.Instance);
 
         SetupInitiatedExecution("TimeoutJob");

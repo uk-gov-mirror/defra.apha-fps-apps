@@ -7,14 +7,13 @@ using Apha.BatchJobs.Domain.Enums;
 using Apha.BatchJobs.Domain.Exceptions;
 using Apha.BatchJobs.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Npgsql;
 using System.Runtime.ExceptionServices;
 using System.Text.Json;
 
-namespace Apha.BatchJobs.Application;
+namespace Apha.BatchJobs.Application.Orchestration;
 
 /// <summary>
 /// Implements the full execution lifecycle for a batch job:
@@ -30,7 +29,6 @@ public sealed class JobOrchestrator : IJobOrchestrator
     private readonly IEmailNotificationService _notificationService;
     private readonly BatchAlertingSettings _alertingSettings;
     private readonly ILogger<JobOrchestrator> _logger;
-    private readonly IConfiguration _configuration;
     private readonly int _lockTimeoutSeconds;
     private readonly int _retryAttempts;
     private readonly int _retryDelaySeconds;
@@ -58,7 +56,7 @@ public sealed class JobOrchestrator : IJobOrchestrator
         IEmailNotificationService notificationService,
         IOptions<BatchAlertingSettings> alertingSettings,
         IOptions<BatchJobSettings> settings,
-        IConfiguration configuration,
+        BatchFailureClassifier failureClassifier,
         ILogger<JobOrchestrator> logger)
     {
         _factory = factory ?? throw new ArgumentNullException(nameof(factory));
@@ -92,8 +90,7 @@ public sealed class JobOrchestrator : IJobOrchestrator
                 .ToDictionary(kv => kv.Key.Trim(), kv => kv.Value, StringComparer.OrdinalIgnoreCase)
             : new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-        _failureClassifier = new BatchFailureClassifier(_configuration);
+        _failureClassifier = failureClassifier ?? throw new ArgumentNullException(nameof(failureClassifier));
     }
 
     /// <inheritdoc />
@@ -536,7 +533,7 @@ public sealed class JobOrchestrator : IJobOrchestrator
         catch (Exception ex)
         {
             var originalType = originalException?.GetType().Name ?? "None";
-            var sqlType = _configuration["ExceptionTypes:Sql"] ?? "FPSBatchJobs.SQL_EXCEPTION";
+            var sqlType = _failureClassifier.Classify(ex).ErrorType;
             _logger.LogCritical(ex,
                 "[{ErrorType}] Could not write execution completion record — job result may not be persisted | OriginalExceptionType={OriginalExceptionType} | JobQueueId={JobQueueId}",
                 sqlType, originalType, jobQueueId);

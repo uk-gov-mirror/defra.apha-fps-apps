@@ -12,7 +12,7 @@ namespace Apha.BatchJobs.Application.Jobs.ManualJobs.RecreateSummaries;
 ///
 /// Replaces the legacy SQL Server <c>sp_RecreateSummaries</c> orchestration procedure.
 ///
-/// Lock lifecycle, retry, and final status are owned exclusively by <see cref="JobOrchestrator"/>.
+/// Lock lifecycle, retry, and final status are owned exclusively by <see cref="Apha.BatchJobs.Application.Orchestration.JobOrchestrator"/>.
 /// This job must not acquire or release the distributed lock, and performs no heartbeat or lock
 /// renewal of its own â€” that is a generic capability to be designed separately.
 /// </summary>
