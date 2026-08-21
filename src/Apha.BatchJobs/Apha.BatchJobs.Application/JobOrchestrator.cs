@@ -25,7 +25,7 @@ public sealed class JobOrchestrator : IJobOrchestrator
     private readonly IBatchJobFactory _factory;
     private readonly IBatchLockRepository _lockRepository;
     private readonly IJobExecutionRepository _executionRepository;
-    private readonly ICorrelationService _correlationService;
+    private readonly ICorrelationContextAccessor _correlationService;
     private readonly ICurrentJobExecutionContext _currentExecutionContext;
     private readonly IEmailNotificationService _notificationService;
     private readonly BatchAlertingSettings _alertingSettings;
@@ -53,7 +53,7 @@ public sealed class JobOrchestrator : IJobOrchestrator
         IBatchJobFactory factory,
         IBatchLockRepository lockRepository,
         IJobExecutionRepository executionRepository,
-        ICorrelationService correlationService,
+        ICorrelationContextAccessor correlationService,
         ICurrentJobExecutionContext currentExecutionContext,
         IEmailNotificationService notificationService,
         IOptions<BatchAlertingSettings> alertingSettings,

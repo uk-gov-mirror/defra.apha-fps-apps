@@ -1,4 +1,4 @@
-﻿using Apha.BatchJobs.Application.Interfaces;
+using Apha.BatchJobs.Application.Interfaces;
 using Apha.BatchJobs.Domain.Entities.MabArchive;
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive;
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
@@ -7,7 +7,7 @@ using Apha.BatchJobs.Domain.Interfaces.MabArchive;
 using Apha.BatchJobs.Domain.Interfaces;
 using Apha.BatchJobs.Infrastructure.Context;
 using Apha.BatchJobs.Infrastructure.Data;
-using Apha.BatchJobs.Infrastructure.Repositories.MabArchive;
+using Apha.BatchJobs.Infrastructure.MabArchive.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -35,7 +35,7 @@ public sealed class MabArchiveJobTests
             Substitute.For<IFpsTotalsRepository>(),
             Substitute.For<IMabArchiveYearRepository>(),
             new ExecutionYearContext(),
-            Substitute.For<ICorrelationService>(),
+            Substitute.For<ICorrelationContextAccessor>(),
             NullLogger<MabArchiveJob>.Instance,
             Options.Create(new MabArchiveSettings())));
 
@@ -53,7 +53,7 @@ public sealed class MabArchiveJobTests
             Substitute.For<IFpsTotalsRepository>(),
             Substitute.For<IMabArchiveYearRepository>(),
             new ExecutionYearContext(),
-            Substitute.For<ICorrelationService>(),
+            Substitute.For<ICorrelationContextAccessor>(),
             NullLogger<MabArchiveJob>.Instance,
             Options.Create(new MabArchiveSettings())));
 
@@ -71,7 +71,7 @@ public sealed class MabArchiveJobTests
             null!,
             Substitute.For<IMabArchiveYearRepository>(),
             new ExecutionYearContext(),
-            Substitute.For<ICorrelationService>(),
+            Substitute.For<ICorrelationContextAccessor>(),
             NullLogger<MabArchiveJob>.Instance,
             Options.Create(new MabArchiveSettings())));
 
@@ -89,7 +89,7 @@ public sealed class MabArchiveJobTests
             Substitute.For<IFpsTotalsRepository>(),
             null!,
             new ExecutionYearContext(),
-            Substitute.For<ICorrelationService>(),
+            Substitute.For<ICorrelationContextAccessor>(),
             NullLogger<MabArchiveJob>.Instance,
             Options.Create(new MabArchiveSettings())));
 
@@ -107,7 +107,7 @@ public sealed class MabArchiveJobTests
             Substitute.For<IFpsTotalsRepository>(),
             Substitute.For<IMabArchiveYearRepository>(),
             null!,
-            Substitute.For<ICorrelationService>(),
+            Substitute.For<ICorrelationContextAccessor>(),
             NullLogger<MabArchiveJob>.Instance,
             Options.Create(new MabArchiveSettings())));
 
@@ -143,7 +143,7 @@ public sealed class MabArchiveJobTests
             Substitute.For<IFpsTotalsRepository>(),
             Substitute.For<IMabArchiveYearRepository>(),
             new ExecutionYearContext(),
-            Substitute.For<ICorrelationService>(),
+            Substitute.For<ICorrelationContextAccessor>(),
             null!,
             Options.Create(new MabArchiveSettings())));
 
@@ -161,7 +161,7 @@ public sealed class MabArchiveJobTests
             Substitute.For<IFpsTotalsRepository>(),
             Substitute.For<IMabArchiveYearRepository>(),
             new ExecutionYearContext(),
-            Substitute.For<ICorrelationService>(),
+            Substitute.For<ICorrelationContextAccessor>(),
             NullLogger<MabArchiveJob>.Instance,
             settings: null!);
 
@@ -179,7 +179,7 @@ public sealed class MabArchiveJobTests
             Substitute.For<IFpsTotalsRepository>(),
             Substitute.For<IMabArchiveYearRepository>(),
             new ExecutionYearContext(),
-            Substitute.For<ICorrelationService>(),
+            Substitute.For<ICorrelationContextAccessor>(),
             NullLogger<MabArchiveJob>.Instance,
             Options.Create(new MabArchiveSettings()));
 
@@ -205,7 +205,7 @@ public sealed class MabArchiveJobTests
         yearSelectionService.GetProcessableYearsAsync(Arg.Any<CancellationToken>())
             .Returns(new MabArchiveExecutionContext(2026, 2027));
 
-        var correlationService = Substitute.For<ICorrelationService>();
+        var correlationService = Substitute.For<ICorrelationContextAccessor>();
         correlationService.GetCorrelationId().Returns((string?)null);
         correlationService.GenerateCorrelationId().Returns("cid-open-planned");
 
@@ -254,7 +254,7 @@ public sealed class MabArchiveJobTests
         yearSelectionService.GetProcessableYearsAsync(Arg.Any<CancellationToken>())
             .Returns(new MabArchiveExecutionContext(2026, null));
 
-        var correlationService = Substitute.For<ICorrelationService>();
+        var correlationService = Substitute.For<ICorrelationContextAccessor>();
         correlationService.GetCorrelationId().Returns("cid-open-only");
 
         await using var dbContext = CreateDbContext();
@@ -292,7 +292,7 @@ public sealed class MabArchiveJobTests
         yearSelectionService.GetProcessableYearsAsync(Arg.Any<CancellationToken>())
             .Returns(new MabArchiveExecutionContext(2026, null));
 
-        var correlationService = Substitute.For<ICorrelationService>();
+        var correlationService = Substitute.For<ICorrelationContextAccessor>();
         correlationService.GetCorrelationId().Returns("cid-fail");
 
         await using var dbContext = CreateDbContext();
@@ -330,7 +330,7 @@ public sealed class MabArchiveJobTests
         yearSelectionService.GetProcessableYearsAsync(Arg.Any<CancellationToken>())
             .Returns(new MabArchiveExecutionContext(2026, null));
 
-        var correlationService = Substitute.For<ICorrelationService>();
+        var correlationService = Substitute.For<ICorrelationContextAccessor>();
         correlationService.GetCorrelationId().Returns("cid-cancel");
 
         await using var dbContext = CreateDbContext();

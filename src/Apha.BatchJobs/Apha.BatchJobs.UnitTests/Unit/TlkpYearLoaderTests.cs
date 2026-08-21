@@ -1,5 +1,5 @@
 using Apha.BatchJobs.Infrastructure.Data;
-using Apha.BatchJobs.Infrastructure.Repositories.MabArchive.Loaders;
+using Apha.BatchJobs.Infrastructure.MabArchive.Loaders;
 using Microsoft.EntityFrameworkCore;
 
 namespace Apha.BatchJobs.UnitTests;

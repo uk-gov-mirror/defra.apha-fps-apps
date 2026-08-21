@@ -2,7 +2,7 @@ using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
 using Apha.BatchJobs.Domain.Configuration;
 using Apha.BatchJobs.Domain.Interfaces.MabArchive;
 using Apha.BatchJobs.Infrastructure.Data;
-using Apha.BatchJobs.Infrastructure.Repositories.MabArchive;
+using Apha.BatchJobs.Infrastructure.MabArchive.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -19,7 +19,7 @@ public class MabArchiveLoaderMetadataTests
             .Where(t =>
                 t is { IsClass: true, IsAbstract: false } &&
                 typeof(IMabArchiveLoader).IsAssignableFrom(t) &&
-                t.Namespace == "Apha.BatchJobs.Infrastructure.Repositories.MabArchive.Loaders")
+                t.Namespace == "Apha.BatchJobs.Infrastructure.MabArchive.Loaders")
             .ToList();
 
         static bool InheritsFromExecutionLoaderBase(Type type)

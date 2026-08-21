@@ -1,6 +1,6 @@
 using Apha.BatchJobs.Domain.Interfaces;
 
-namespace Apha.BatchJobs.Infrastructure.Services;
+namespace Apha.BatchJobs.Infrastructure.Context;
 
 /// <summary>
 /// AsyncLocal-based correlation ID service.

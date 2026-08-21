@@ -1,5 +1,5 @@
 using Apha.BatchJobs.Domain.Exceptions;
-using Apha.BatchJobs.Infrastructure.Repositories.MabArchive;
+using Apha.BatchJobs.Infrastructure.MabArchive.Repositories;
 
 namespace Apha.BatchJobs.UnitTests;
 

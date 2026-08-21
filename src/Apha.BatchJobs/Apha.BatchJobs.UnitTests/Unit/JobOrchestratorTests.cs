@@ -21,7 +21,7 @@ public sealed class JobOrchestratorTests
     private readonly IBatchJobFactory _factory = Substitute.For<IBatchJobFactory>();
     private readonly IBatchLockRepository _lockRepo = Substitute.For<IBatchLockRepository>();
     private readonly IJobExecutionRepository _execRepo = Substitute.For<IJobExecutionRepository>();
-    private readonly ICorrelationService _correlationService = Substitute.For<ICorrelationService>();
+    private readonly ICorrelationContextAccessor _correlationService = Substitute.For<ICorrelationContextAccessor>();
     private readonly ICurrentJobExecutionContext _currentExecutionContext = Substitute.For<ICurrentJobExecutionContext>();
     private readonly IEmailNotificationService _notificationService = Substitute.For<IEmailNotificationService>();
     private readonly IConfiguration _configuration = Substitute.For<IConfiguration>();

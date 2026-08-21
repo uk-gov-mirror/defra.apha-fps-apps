@@ -21,7 +21,7 @@ public sealed class RecreateSummaryJob : IBatchJob
     private readonly IRecreateSummariesExecutionRunner _executionRunner;
     private readonly IRecreateSummariesStepCatalog _stepCatalog;
     private readonly IRecreateSummariesContext _jobContext;
-    private readonly ICorrelationService _correlationService;
+    private readonly ICorrelationContextAccessor _correlationService;
     private readonly ILogger<RecreateSummaryJob> _logger;
 
     /// <summary>Canonical job name.</summary>
@@ -50,7 +50,7 @@ public sealed class RecreateSummaryJob : IBatchJob
         IRecreateSummariesExecutionRunner executionRunner,
         IRecreateSummariesStepCatalog stepCatalog,
         IRecreateSummariesContext jobContext,
-        ICorrelationService correlationService,
+        ICorrelationContextAccessor correlationService,
         ILogger<RecreateSummaryJob> logger)
     {
         _executionRunner = executionRunner ?? throw new ArgumentNullException(nameof(executionRunner));

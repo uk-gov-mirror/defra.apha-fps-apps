@@ -15,7 +15,7 @@ namespace Apha.BatchJobs.Application.Jobs.ManualJobs.BulkRates;
 public sealed class BulkTestRatesUpdateJob : IBatchJob
 {
     private readonly IBulkTestRatesService _service;
-    private readonly ICorrelationService _correlationService;
+    private readonly ICorrelationContextAccessor _correlationService;
     private readonly ILogger<BulkTestRatesUpdateJob> _logger;
 
     public string Name => BatchJobNames.BulkTestRatesUpdate;
@@ -26,7 +26,7 @@ public sealed class BulkTestRatesUpdateJob : IBatchJob
 
     public BulkTestRatesUpdateJob(
         IBulkTestRatesService service,
-        ICorrelationService correlationService,
+        ICorrelationContextAccessor correlationService,
         ILogger<BulkTestRatesUpdateJob> logger)
     {
         _service = service ?? throw new ArgumentNullException(nameof(service));

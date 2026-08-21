@@ -1,6 +1,6 @@
-﻿using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
+using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
 using Apha.BatchJobs.Infrastructure.Data;
-using Apha.BatchJobs.Infrastructure.Repositories.MabArchive;
+using Apha.BatchJobs.Infrastructure.MabArchive.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -196,7 +196,7 @@ public sealed class MabArchiveYearRepositoryTests
 
         // Legacy sp_LoadFromFPS parity: only loader 24 (my_tlkpproject_all) runs for the
         // Planned-year path. g_tlkpproject (loader 2) and my_tlkpproject (loader 3) are
-        // never touched here â€” they only refresh as part of the Open year's full load.
+        // never touched here — they only refresh as part of the Open year's full load.
         Assert.Equal(new Dictionary<int, int> { [24] = 1900 }, invokedSequenceYears);
     }
 

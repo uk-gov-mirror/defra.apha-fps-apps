@@ -30,7 +30,7 @@ public sealed class MabArchiveJob : IBatchJob
     private readonly IFpsTotalsRepository _totalsRepository;
     private readonly IMabArchiveYearRepository _yearRepository;
     private readonly IExecutionYearContext _executionYearContext;
-    private readonly ICorrelationService _correlationService;
+    private readonly ICorrelationContextAccessor _correlationService;
     private readonly ILogger<MabArchiveJob> _logger;
     private readonly MabArchiveSettings _settings;
 
@@ -46,7 +46,7 @@ public sealed class MabArchiveJob : IBatchJob
         IFpsTotalsRepository totalsRepository,
         IMabArchiveYearRepository yearRepository,
         IExecutionYearContext executionYearContext,
-        ICorrelationService correlationService,
+        ICorrelationContextAccessor correlationService,
         ILogger<MabArchiveJob> logger,
         IOptions<MabArchiveSettings> settings)
     {

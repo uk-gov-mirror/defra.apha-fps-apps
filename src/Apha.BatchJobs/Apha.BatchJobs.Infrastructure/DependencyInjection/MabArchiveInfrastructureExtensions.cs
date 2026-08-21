@@ -1,7 +1,8 @@
 using Apha.BatchJobs.Application.Jobs.ScheduledJobs.MABArchive.Services;
 using Apha.BatchJobs.Domain.Interfaces.MabArchive;
-using Apha.BatchJobs.Infrastructure.Repositories.MabArchive;
-using Apha.BatchJobs.Infrastructure.Repositories.MabArchive.Loaders;
+using Apha.BatchJobs.Infrastructure.MabArchive.Repositories;
+using Apha.BatchJobs.Infrastructure.MabArchive.Transactions;
+using Apha.BatchJobs.Infrastructure.MabArchive.Loaders;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Apha.BatchJobs.Infrastructure.DependencyInjection;

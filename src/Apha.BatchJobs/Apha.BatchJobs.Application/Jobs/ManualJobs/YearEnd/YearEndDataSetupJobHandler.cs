@@ -13,7 +13,7 @@ namespace Apha.BatchJobs.Application.Jobs.ManualJobs.YearEnd;
 public sealed class YearEndDataSetupJobHandler : IBatchJob
 {
     private readonly ILogger<YearEndDataSetupJobHandler> _logger;
-    private readonly ICorrelationService _correlationService;
+    private readonly ICorrelationContextAccessor _correlationService;
     private readonly IYearEndDataSetupService _service;
 
     public string Name => BatchJobNames.YearEndDataSetup;
@@ -28,7 +28,7 @@ public sealed class YearEndDataSetupJobHandler : IBatchJob
 
     public YearEndDataSetupJobHandler(
         IYearEndDataSetupService service,
-        ICorrelationService correlationService,
+        ICorrelationContextAccessor correlationService,
         ILogger<YearEndDataSetupJobHandler> logger)
     {
         _service = service ?? throw new ArgumentNullException(nameof(service));
