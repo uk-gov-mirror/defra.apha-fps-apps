@@ -43,6 +43,7 @@ namespace Apha.PIMS.Api.Controllers
         [HttpGet("{parentproject}/yearly")]
         public async Task<IActionResult> GetYearlyDetailsByProject(string parentproject)
         {
+            parentproject = Uri.UnescapeDataString(parentproject);
             List<ProjectsDto> result = await _service.GetYearlyDetailsByProjectAsync(parentproject);
             return Ok(_mapper.Map<List<ProjectsRes>>(result));
         }
@@ -55,6 +56,7 @@ namespace Apha.PIMS.Api.Controllers
         [HttpGet("ProjectDetailsMilestone/{parentproject}")]
         public async Task<IActionResult> GetProjectsDetailsForMilestoneAsync(string parentproject)
         {
+            parentproject = Uri.UnescapeDataString(parentproject);
             ProjectDetailsMilestoneDto? result = await _service.GetProjectsDetailsForMilestoneAsync(parentproject);
             if (result is null)
             {

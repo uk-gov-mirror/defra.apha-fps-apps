@@ -49,22 +49,25 @@
                                 <section class="sup_border govuk-!-padding-3" aria-labelledby="process-rules-title">
                                     <h2 class="govuk-heading-s govuk-!-margin-bottom-2" id="process-rules-title" tabindex="0">Process Rules</h2>
                                     <ul class="govuk-list govuk-list--bullet govuk-!-font-size-16 govuk-!-margin-bottom-0" tabindex="0">
-                                        <li>Calendar Year-End Process is a two-step process consisting of Data Setup Initiation &amp; Approval and Year Cutover.</li>
-                                        <li>Only FPS Admin can perform Calendar Year-End process.</li>
+                                        <li>Financial Year End Process is a two-step process consisting of Data Setup Initiation &amp; Approval and Year Cutover.</li>
+                                        <li>Only FPS Admin can perform Financial Year End process.</li>
                                         <li>The initiator and approver for the Data Setup Initiation &amp; Approval and Year Cutover steps must be different users.</li>
                                         <li>On Failure or Rejection, new request needs to be submitted.</li>
                                     </ul>
                                 </section>
                             </div>
 
-                            @* Calendar Year-End Process For *@
+                            @* Financial Year End Process For *@
                             <div class="govuk-grid-column-full sup_p_0 govuk-!-margin-top-3 govuk-!-margin-left-3">
                                 <div class="govuk-form-group govuk-!-margin-bottom-4" style="display:flex; align-items:center; gap:10px;">
-                                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-margin-bottom-0" for="yearEndProcessYear">
-                                        Calendar Year-End Process For
+                                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-margin-bottom-0" for="displayYearEndProcessYear">
+                                        Financial Year End Process For
                                     </label>
+                                    <input class="govuk-input govuk-input--width-5" id="displayYearEndProcessYear" type="text" 
+                                           value="@(Model.PlannedYear > 0 ? $"{Model.PlannedYear}-{(Model.PlannedYear + 1) % 100:D2}" : "")" 
+                                           autocomplete="off" disabled>
                                     <input class="govuk-input govuk-input--width-5" id="yearEndProcessYear"
-                                           type="text" value="@Model.PlannedYear" autocomplete="off" disabled>
+                                           type="text" value="@Model.PlannedYear" autocomplete="off" aria-label="Year End Process Year" style="display:none;">
                                 </div>
                             </div>
 

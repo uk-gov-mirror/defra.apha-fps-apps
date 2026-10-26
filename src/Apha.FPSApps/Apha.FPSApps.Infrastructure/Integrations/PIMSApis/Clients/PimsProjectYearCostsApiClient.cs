@@ -25,7 +25,7 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PIMSApis.Clients
             string project, short year, QueryParameters<string> query)
         {
             string url = QueryStringHelper.AddQueryString(
-                string.Format(PimsApiEndpoints.GetAdditionalActuals, project, year), query);
+                string.Format(PimsApiEndpoints.GetAdditionalActuals, Uri.EscapeDataString(project), year), query);
             var response = await _http.GetAsync<List<AdditionalCostRes>>(url);
             if (response.Success)
                 return _mapper.Map<ApiResponseDto<List<AdditionalCostDto>>>(response);
@@ -38,7 +38,7 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PIMSApis.Clients
             string project, short year, QueryParameters<string> query)
         {
             string url = QueryStringHelper.AddQueryString(
-                string.Format(PimsApiEndpoints.GetAdditionalPlans, project, year), query);
+                string.Format(PimsApiEndpoints.GetAdditionalPlans, Uri.EscapeDataString(project), year), query);
             var response = await _http.GetAsync<List<AdditionalCostRes>>(url);
             if (response.Success)
                 return _mapper.Map<ApiResponseDto<List<AdditionalCostDto>>>(response);
@@ -51,7 +51,7 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PIMSApis.Clients
             string project, short year, QueryParameters<string> query)
         {
             string url = QueryStringHelper.AddQueryString(
-                string.Format(PimsApiEndpoints.GetAnimalActuals, project, year), query);
+                string.Format(PimsApiEndpoints.GetAnimalActuals, Uri.EscapeDataString(project), year), query);
             var response = await _http.GetAsync<List<AnimalCostRes>>(url);
             if (response.Success)
                 return _mapper.Map<ApiResponseDto<List<AnimalCostDto>>>(response);
@@ -64,7 +64,7 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PIMSApis.Clients
             string project, short year, QueryParameters<string> query)
         {
             string url = QueryStringHelper.AddQueryString(
-                string.Format(PimsApiEndpoints.GetAnimalPlans, project, year), query);
+                string.Format(PimsApiEndpoints.GetAnimalPlans, Uri.EscapeDataString(project), year), query);
             var response = await _http.GetAsync<List<AnimalCostRes>>(url);
             if (response.Success)
                 return _mapper.Map<ApiResponseDto<List<AnimalCostDto>>>(response);
@@ -77,7 +77,7 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PIMSApis.Clients
             string project, short year, QueryParameters<string> query)
         {
             string url = QueryStringHelper.AddQueryString(
-                string.Format(PimsApiEndpoints.GetTestPlans, project, year), query);
+                string.Format(PimsApiEndpoints.GetTestPlans, Uri.EscapeDataString(project), year), query);
             var response = await _http.GetAsync<List<TestCostRes>>(url);
             if (response.Success)
                 return _mapper.Map<ApiResponseDto<List<TestCostDto>>>(response);
@@ -90,7 +90,7 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PIMSApis.Clients
             string project, short year, QueryParameters<string> query)
         {
             string url = QueryStringHelper.AddQueryString(
-                string.Format(PimsApiEndpoints.GetTestActuals, project, year), query);
+                string.Format(PimsApiEndpoints.GetTestActuals, Uri.EscapeDataString(project), year), query);
             var response = await _http.GetAsync<List<TestCostRes>>(url);
             if (response.Success)
                 return _mapper.Map<ApiResponseDto<List<TestCostDto>>>(response);
@@ -103,7 +103,7 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PIMSApis.Clients
             string project, short year, QueryParameters<string> query)
         {
             string url = QueryStringHelper.AddQueryString(
-                string.Format(PimsApiEndpoints.GetStaffPlans, project, year), query);
+                string.Format(PimsApiEndpoints.GetStaffPlans, Uri.EscapeDataString(project), year), query);
             var response = await _http.GetAsync<List<StaffCostRes>>(url);
             if (response.Success)
                 return _mapper.Map<ApiResponseDto<List<StaffCostDto>>>(response);
@@ -116,7 +116,7 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PIMSApis.Clients
             string project, short year, QueryParameters<string> query)
         {
             string url = QueryStringHelper.AddQueryString(
-                string.Format(PimsApiEndpoints.GetStaffActuals, project, year), query);
+                string.Format(PimsApiEndpoints.GetStaffActuals, Uri.EscapeDataString(project), year), query);
             var response = await _http.GetAsync<List<StaffCostRes>>(url);
             if (response.Success)
                 return _mapper.Map<ApiResponseDto<List<StaffCostDto>>>(response);
@@ -128,7 +128,7 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PIMSApis.Clients
         public async Task<ApiResponseDto<ProjectYearDetailsDto>> GetProjectYearDetailsAsync(
             string project, short year)
         {
-            string url = string.Format(PimsApiEndpoints.GetProjectYearDetails, project, year);
+            string url = string.Format(PimsApiEndpoints.GetProjectYearDetails, Uri.EscapeDataString(project), year);
             var response = await _http.GetAsync<ProjectYearDetailsRes>(url);
             if (response.Success)
                 return _mapper.Map<ApiResponseDto<ProjectYearDetailsDto>>(response);
@@ -141,7 +141,7 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PIMSApis.Clients
             string project, short year, QueryParameters<string> query)
         {
             string url = QueryStringHelper.AddQueryString(
-                string.Format(PimsApiEndpoints.GetPactPay, project, year), query);
+                string.Format(PimsApiEndpoints.GetPactPay, Uri.EscapeDataString(project), year), query);
             var response = await _http.GetAsync<List<PactPayRes>>(url);
             if (response.Success)
                 return _mapper.Map<ApiResponseDto<List<PactPayDto>>>(response);
@@ -154,7 +154,7 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PIMSApis.Clients
             string project, short year, QueryParameters<string> query)
         {
             string url = QueryStringHelper.AddQueryString(
-                string.Format(PimsApiEndpoints.GetMonthlyPactData, project, year), query);
+                string.Format(PimsApiEndpoints.GetMonthlyPactData, Uri.EscapeDataString(project), year), query);
             var response = await _http.GetAsync<List<MonthlyPactRes>>(url);
             if (response.Success)
                 return _mapper.Map<ApiResponseDto<List<MonthlyPactDto>>>(response);
@@ -165,7 +165,7 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PIMSApis.Clients
 
         public async Task<ApiResponseDto<FpsYearTotalsDto>> GetFpsYearTotalsAsync(string project, short year)
         {
-            string url = string.Format(PimsApiEndpoints.GetFpsYearTotals, project, year);
+            string url = string.Format(PimsApiEndpoints.GetFpsYearTotals, Uri.EscapeDataString(project), year);
             var response = await _http.GetAsync<FpsYearTotalsRes>(url);
             if (response.Success)
                 return _mapper.Map<ApiResponseDto<FpsYearTotalsDto>>(response);
@@ -176,7 +176,7 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PIMSApis.Clients
 
         public Task<byte[]> ExportProjectYearCostsToExcelAsync(string project, short year)
         {
-            string url = string.Format(PimsApiEndpoints.ExportProjectYearCostsToExcel, project, year);
+            string url = string.Format(PimsApiEndpoints.ExportProjectYearCostsToExcel, Uri.EscapeDataString(project), year);
             return _http.GetFileAsync(url);
         }
     }

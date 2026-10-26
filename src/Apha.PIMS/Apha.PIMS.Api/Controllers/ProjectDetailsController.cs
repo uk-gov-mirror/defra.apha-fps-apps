@@ -28,6 +28,7 @@ namespace Apha.PIMS.Api.Controllers
         [HttpGet("{parentproject}/fps")]
         public async Task<IActionResult> GetFpsProjectById(string parentproject)
         {
+            parentproject = Uri.UnescapeDataString(parentproject);
             ProjectDto? result = await _service.GetFpsProjectByIdAsync(parentproject);
             if (result is null)
             {
@@ -40,6 +41,7 @@ namespace Apha.PIMS.Api.Controllers
         [HttpGet("{parentproject}/pims")]
         public async Task<IActionResult> GetPimsDetail(string parentproject)
         {
+            parentproject = Uri.UnescapeDataString(parentproject);
             ProjectDetailDto? result = await _service.GetPimsDetailAsync(parentproject);
             if (result is null)
             {
@@ -53,6 +55,7 @@ namespace Apha.PIMS.Api.Controllers
         [HttpPost("{parentproject}/pims")]
         public async Task<IActionResult> SavePimsDetail(string parentproject, [FromBody] ProjectDetailReq request)
         {
+            parentproject = Uri.UnescapeDataString(parentproject);
             ProjectDetailDto dto = _mapper.Map<ProjectDetailDto>(request);
             dto.Parentproject = parentproject;
             ProjectDetailDto result = await _service.SavePimsDetailAsync(dto);
@@ -63,6 +66,7 @@ namespace Apha.PIMS.Api.Controllers
         [HttpGet("{parentproject}/proposed")]
         public async Task<IActionResult> GetProposedProject(string parentproject)
         {
+            parentproject = Uri.UnescapeDataString(parentproject);
             ProposedProjectDto? result = await _service.GetProposedProjectAsync(parentproject);
             if (result is null)
             {
@@ -76,6 +80,7 @@ namespace Apha.PIMS.Api.Controllers
         [HttpPut("{parentproject}/proposed")]
         public async Task<IActionResult> UpdateProposedProject(string parentproject, [FromBody] ProposedProjectReq request)
         {
+            parentproject = Uri.UnescapeDataString(parentproject);
             ProposedProjectDto dto = _mapper.Map<ProposedProjectDto>(request);
             dto.Parentproject = parentproject;
             string transferTo = request.TransferTo ?? parentproject;

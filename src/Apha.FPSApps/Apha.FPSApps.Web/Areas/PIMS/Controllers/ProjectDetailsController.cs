@@ -37,6 +37,11 @@ namespace Apha.FPSApps.Web.Areas.PIMS.Controllers
 
         public async Task<IActionResult> Index(string parentproject, int? showprojects = null)
         {
+            if (string.IsNullOrWhiteSpace(parentproject))
+            {
+                return RedirectToAction("Index", "ProjectList", new { area = "PIMS" });
+            }
+
             int normalizedShowProjects = showprojects == 0 ? 0 : 1;
             ProjectDetailsViewModel viewModel = await BuildViewModelAsync(parentproject, normalizedShowProjects);
             return View(viewModel);

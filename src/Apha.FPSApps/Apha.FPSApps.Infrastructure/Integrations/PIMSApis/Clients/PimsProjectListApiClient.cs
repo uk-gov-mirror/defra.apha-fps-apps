@@ -72,7 +72,7 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PIMSApis.Clients
 
         public async Task<ApiResponseDto<List<ProjectsDto>>> GetYearlyDetailsByProjectAsync(string parentproject)
         {
-            var response = await _http.GetAsync<List<ProjectsRes>>(string.Format(PimsApiEndpoints.GetYearlyDetailsByProject, parentproject));
+            var response = await _http.GetAsync<List<ProjectsRes>>(string.Format(PimsApiEndpoints.GetYearlyDetailsByProject, Uri.EscapeDataString(parentproject)));
             if (response.Success)
                 return _mapper.Map<ApiResponseDto<List<ProjectsDto>>>(response);
 
@@ -91,7 +91,7 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PIMSApis.Clients
         }
         public async Task<ApiResponseDto<ProjectDetailsMilestoneDto>> GetProjectsDetailsForMilestoneAsync(string parentproject)
         {
-            var response = await _http.GetAsync<ProjectDetailsMilestoneRes>(string.Format(PimsApiEndpoints.GetProjectsDetailsForMilestone, parentproject));
+            var response = await _http.GetAsync<ProjectDetailsMilestoneRes>(string.Format(PimsApiEndpoints.GetProjectsDetailsForMilestone, Uri.EscapeDataString(parentproject)));
 
             if (response.Success)
                 return _mapper.Map<ApiResponseDto<ProjectDetailsMilestoneDto>>(response);

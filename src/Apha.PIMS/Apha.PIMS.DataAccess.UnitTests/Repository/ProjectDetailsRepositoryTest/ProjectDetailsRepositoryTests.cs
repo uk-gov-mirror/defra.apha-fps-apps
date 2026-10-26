@@ -321,7 +321,7 @@ namespace Apha.PIMS.DataAccess.UnitTests.Repository.ProjectDetailsRepositoryTest
             Assert.Equal(new DateTime(2024, 1, 1), captured.Enddate);
             Assert.Equal("CB001", captured.Costbooknumber);
             Assert.Equal(2, captured.Riskid);
-            Assert.Equal((short)1, captured.Useprojectyear);
+            Assert.Equal((short)-1, captured.Useprojectyear);
             Assert.Equal(new DateTime(2024, 6, 1), captured.Revisedenddate);
             Assert.Equal(new DateTime(2024, 12, 1), captured.Closeddate);
         }
@@ -379,7 +379,7 @@ namespace Apha.PIMS.DataAccess.UnitTests.Repository.ProjectDetailsRepositoryTest
         }
 
         [Theory]
-        [InlineData(true, (short)1)]
+        [InlineData(true, (short)-1)]
         [InlineData(false, (short)0)]
         public async Task AddPimsDetailAsync_MapsUseprojectyear_FromUseProjectYears(
             bool useProjectYears, short expectedUseprojectyear)
@@ -457,7 +457,7 @@ namespace Apha.PIMS.DataAccess.UnitTests.Repository.ProjectDetailsRepositoryTest
             Assert.Equal(new DateTime(2024, 3, 1), existingRecord.Enddate);
             Assert.Equal("NEW_CB", existingRecord.Costbooknumber);
             Assert.Equal(3, existingRecord.Riskid);
-            Assert.Equal((short)1, existingRecord.Useprojectyear);
+            Assert.Equal((short)-1, existingRecord.Useprojectyear);
             Assert.Equal(new DateTime(2024, 9, 1), existingRecord.Revisedenddate);
             Assert.Equal(new DateTime(2025, 1, 1), existingRecord.Closeddate);
         }
@@ -494,7 +494,7 @@ namespace Apha.PIMS.DataAccess.UnitTests.Repository.ProjectDetailsRepositoryTest
         }
 
         [Theory]
-        [InlineData(true, (short)1)]
+        [InlineData(true, (short)-1)]
         [InlineData(false, (short)0)]
         public async Task UpdatePimsDetailAsync_MapsUseprojectyear_FromUseProjectYears(
             bool useProjectYears, short expectedUseprojectyear)

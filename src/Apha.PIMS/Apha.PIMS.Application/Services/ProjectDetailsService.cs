@@ -34,10 +34,7 @@ namespace Apha.PIMS.Application.Services
 
             ProjectDetail? existing = await _repository.GetPimsDetailAsync(dto.Parentproject!);
             if (existing is null)
-            {
-                // VBA Form_BeforeInsert: UseProjectYear defaults to False on new records
-                dto.UseProjectYears = false;
-
+            {                
                 ProjectDetail newEntity = _mapper.Map<ProjectDetail>(dto);
                 ProjectDetail created = await _repository.AddPimsDetailAsync(newEntity);
                 return _mapper.Map<ProjectDetailDto>(created);

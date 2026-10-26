@@ -21,7 +21,7 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PIMSApis.Clients
 
         public async Task<ApiResponseDto<ProjectDetailDto>> GetPimsDetailAsync(string parentproject)
         {
-            var response = await _http.GetAsync<ProjectDetailRes>(string.Format(PimsApiEndpoints.GetPimsDetail, parentproject));
+            var response = await _http.GetAsync<ProjectDetailRes>(string.Format(PimsApiEndpoints.GetPimsDetail, Uri.EscapeDataString(parentproject)));
             if (response.Success)
                 return _mapper.Map<ApiResponseDto<ProjectDetailDto>>(response);
 
@@ -33,7 +33,7 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PIMSApis.Clients
         {
             ProjectDetailReq request = _mapper.Map<ProjectDetailReq>(dto);
             var response = await _http.PostAsync<ProjectDetailReq, ProjectDetailRes>(
-                string.Format(PimsApiEndpoints.SavePimsDetail, parentproject), request);
+                string.Format(PimsApiEndpoints.SavePimsDetail, Uri.EscapeDataString(parentproject)), request);
             if (response.Success)
                 return _mapper.Map<ApiResponseDto<ProjectDetailDto>>(response);
 
@@ -43,7 +43,7 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PIMSApis.Clients
 
         public async Task<ApiResponseDto<ProposedProjectDto>> GetProposedProjectAsync(string parentproject)
         {
-            var response = await _http.GetAsync<ProposedProjectRes>(string.Format(PimsApiEndpoints.GetProposedProject, parentproject));
+            var response = await _http.GetAsync<ProposedProjectRes>(string.Format(PimsApiEndpoints.GetProposedProject, Uri.EscapeDataString(parentproject)));
             if (response.Success)
                 return _mapper.Map<ApiResponseDto<ProposedProjectDto>>(response);
 
@@ -55,7 +55,7 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PIMSApis.Clients
         {
             ProposedProjectReq request = _mapper.Map<ProposedProjectReq>(dto);
             var response = await _http.PutAsync<ProposedProjectReq, ProposedProjectRes>(
-                string.Format(PimsApiEndpoints.UpdateProposedProject, parentproject), request);
+                string.Format(PimsApiEndpoints.UpdateProposedProject, Uri.EscapeDataString(parentproject)), request);
             if (response.Success)
                 return _mapper.Map<ApiResponseDto<ProposedProjectDto>>(response);
 
@@ -85,7 +85,7 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PIMSApis.Clients
 
         public async Task<ApiResponseDto<ProjectDto>> GetFpsProjectAsync(string parentproject)
         {
-            var response = await _http.GetAsync<ProjectRes>(string.Format(PimsApiEndpoints.GetFpsProjectByProjectDetails, parentproject));
+            var response = await _http.GetAsync<ProjectRes>(string.Format(PimsApiEndpoints.GetFpsProjectByProjectDetails, Uri.EscapeDataString(parentproject)));
             if (response.Success)
                 return _mapper.Map<ApiResponseDto<ProjectDto>>(response);
 

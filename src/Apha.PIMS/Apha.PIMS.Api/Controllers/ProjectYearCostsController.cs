@@ -32,6 +32,7 @@ namespace Apha.PIMS.Api.Controllers
         public async Task<IActionResult> GetAdditionalActuals(
             string project, short year, [FromQuery] PaginationReq<string> query)
         {
+            project = Uri.UnescapeDataString(project);
             PaginationParameters<string> paging = _mapper.Map<PaginationParameters<string>>(query);
             PaginatedResult<AdditionalCostDto> result = await _service.GetAdditionalActualsAsync(project, year, paging);
             return Ok(_mapper.Map<PaginationRes<AdditionalCostRes>>(result));
@@ -42,6 +43,7 @@ namespace Apha.PIMS.Api.Controllers
         public async Task<IActionResult> GetAdditionalPlans(
             string project, short year, [FromQuery] PaginationReq<string> query)
         {
+            project = Uri.UnescapeDataString(project);
             PaginationParameters<string> paging = _mapper.Map<PaginationParameters<string>>(query);
             PaginatedResult<AdditionalCostDto> result = await _service.GetAdditionalPlansAsync(project, year, paging);
             return Ok(_mapper.Map<PaginationRes<AdditionalCostRes>>(result));
@@ -52,6 +54,7 @@ namespace Apha.PIMS.Api.Controllers
         public async Task<IActionResult> GetAnimalActuals(
             string project, short year, [FromQuery] PaginationReq<string> query)
         {
+            project = Uri.UnescapeDataString(project);
             PaginationParameters<string> paging = _mapper.Map<PaginationParameters<string>>(query);
             PaginatedResult<AnimalCostDto> result = await _service.GetAnimalActualsAsync(project, year, paging);
             return Ok(_mapper.Map<PaginationRes<AnimalCostRes>>(result));
@@ -62,6 +65,7 @@ namespace Apha.PIMS.Api.Controllers
         public async Task<IActionResult> GetAnimalPlans(
             string project, short year, [FromQuery] PaginationReq<string> query)
         {
+            project = Uri.UnescapeDataString(project);
             PaginationParameters<string> paging = _mapper.Map<PaginationParameters<string>>(query);
             PaginatedResult<AnimalCostDto> result = await _service.GetAnimalPlansAsync(project, year, paging);
             return Ok(_mapper.Map<PaginationRes<AnimalCostRes>>(result));
@@ -72,6 +76,7 @@ namespace Apha.PIMS.Api.Controllers
         public async Task<IActionResult> GetTestPlans(
             string project, short year, [FromQuery] PaginationReq<string> query)
         {
+            project = Uri.UnescapeDataString(project);
             PaginationParameters<string> paging = _mapper.Map<PaginationParameters<string>>(query);
             PaginatedResult<TestCostDto> result = await _service.GetTestPlansAsync(project, year, paging);
             return Ok(_mapper.Map<PaginationRes<TestCostRes>>(result));
@@ -82,6 +87,7 @@ namespace Apha.PIMS.Api.Controllers
         public async Task<IActionResult> GetTestActuals(
             string project, short year, [FromQuery] PaginationReq<string> query)
         {
+            project = Uri.UnescapeDataString(project);
             PaginationParameters<string> paging = _mapper.Map<PaginationParameters<string>>(query);
             PaginatedResult<TestCostDto> result = await _service.GetTestActualsAsync(project, year, paging);
             return Ok(_mapper.Map<PaginationRes<TestCostRes>>(result));
@@ -92,6 +98,7 @@ namespace Apha.PIMS.Api.Controllers
         public async Task<IActionResult> GetStaffPlans(
             string project, short year, [FromQuery] PaginationReq<string> query)
         {
+            project = Uri.UnescapeDataString(project);
             PaginationParameters<string> paging = _mapper.Map<PaginationParameters<string>>(query);
             PaginatedResult<StaffCostDto> result = await _service.GetStaffPlansAsync(project, year, paging);
             return Ok(_mapper.Map<PaginationRes<StaffCostRes>>(result));
@@ -102,6 +109,7 @@ namespace Apha.PIMS.Api.Controllers
         public async Task<IActionResult> GetStaffActuals(
             string project, short year, [FromQuery] PaginationReq<string> query)
         {
+            project = Uri.UnescapeDataString(project);
             PaginationParameters<string> paging = _mapper.Map<PaginationParameters<string>>(query);
             PaginatedResult<StaffCostDto> result = await _service.GetStaffActualsAsync(project, year, paging);
             return Ok(_mapper.Map<PaginationRes<StaffCostRes>>(result));
@@ -111,6 +119,7 @@ namespace Apha.PIMS.Api.Controllers
         [HttpGet("{project}/{year}/projectyeardetails")]
         public async Task<IActionResult> GetProjectYearDetails(string project, short year)
         {
+            project = Uri.UnescapeDataString(project);
             ProjectYearDetailsDto? result = await _service.GetProjectYearDetailsAsync(project, year);
             if (result is null)
             {
@@ -125,6 +134,7 @@ namespace Apha.PIMS.Api.Controllers
         public async Task<IActionResult> GetPactPay(
             string project, short year, [FromQuery] PaginationReq<string> query)
         {
+            project = Uri.UnescapeDataString(project);
             PaginationParameters<string> paging = _mapper.Map<PaginationParameters<string>>(query);
             PaginatedResult<PactPayDto> result = await _service.GetPactPayAsync(project, year, paging);
             return Ok(_mapper.Map<PaginationRes<PactPayRes>>(result));
@@ -135,6 +145,7 @@ namespace Apha.PIMS.Api.Controllers
         public async Task<IActionResult> GetMonthlyPactData(
             string project, short year, [FromQuery] PaginationReq<string> query)
         {
+            project = Uri.UnescapeDataString(project);
             PaginationParameters<string> paging = _mapper.Map<PaginationParameters<string>>(query);
             PaginatedResult<MonthlyPactDto> result = await _service.GetMonthlyPactDataAsync(project, year, paging);
             return Ok(_mapper.Map<PaginationRes<MonthlyPactRes>>(result));
@@ -143,6 +154,7 @@ namespace Apha.PIMS.Api.Controllers
             [HttpGet("{project}/{year}/fpsyeartotals")]
             public async Task<IActionResult> GetFpsYearTotals(string project, short year)
             {
+                project = Uri.UnescapeDataString(project);
                 FpsYearTotalsDto? result = await _service.GetFpsYearTotalsAsync(project, year);
                 if (result is null)
                 {
@@ -155,6 +167,7 @@ namespace Apha.PIMS.Api.Controllers
                 [HttpGet("{project}/{year}/export-excel")]
                 public async Task<IActionResult> ExportToExcel(string project, short year)
                 {
+                    project = Uri.UnescapeDataString(project);
                     byte[] bytes = await _service.ExportProjectYearCostsToExcelAsync(project, year);
                     string fileName = $"ProjectYearCosts_{project}_{year}.xlsx";
                     return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);

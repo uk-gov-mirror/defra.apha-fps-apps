@@ -41,6 +41,7 @@ namespace Apha.PIMS.Api.Controllers
         [HttpGet("{project}/milestones/{number}")]
         public async Task<IActionResult> GetMilestone(string project, string number)
         {
+            project = Uri.UnescapeDataString(project);
             var decodedId = HttpUtility.UrlDecode(number);
             MilestoneDto? result = await _service.GetMilestoneAsync(project, decodedId);
             if (result is null)
@@ -55,6 +56,7 @@ namespace Apha.PIMS.Api.Controllers
         [HttpPost("{project}/milestones")]
         public async Task<IActionResult> SaveMilestone(string project, [FromBody] MilestoneReq request)
         {
+            project = Uri.UnescapeDataString(project);
             MilestoneDto dto = _mapper.Map<MilestoneDto>(request);
             dto.Project = project;
             string? changedBy = ResolveUserEmail(User);
@@ -66,6 +68,7 @@ namespace Apha.PIMS.Api.Controllers
         [HttpPut("{project}/milestones/{number}")]
         public async Task<IActionResult> UpdateMilestone(string project, string number, [FromBody] MilestoneReq request)
         {
+            project = Uri.UnescapeDataString(project);
             var decodedId = HttpUtility.UrlDecode(number);
             MilestoneDto dto = _mapper.Map<MilestoneDto>(request);
             dto.Project = project;
@@ -79,6 +82,7 @@ namespace Apha.PIMS.Api.Controllers
         [HttpDelete("{project}/milestones/{number}")]
         public async Task<IActionResult> DeleteMilestone(string project, string number)
         {
+            project = Uri.UnescapeDataString(project);
             var decodedId = HttpUtility.UrlDecode(number);
             bool deleted = await _service.DeleteMilestoneAsync(project, decodedId);
             return Ok(new { success = deleted });
@@ -88,6 +92,7 @@ namespace Apha.PIMS.Api.Controllers
         [HttpPatch("{parentProject}/formrequired")]
         public async Task<IActionResult> UpdateFormRequired(string parentProject, [FromBody] bool formRequired)
         {
+            parentProject = Uri.UnescapeDataString(parentProject);
             bool updated = await _service.UpdateFormRequiredAsync(parentProject, formRequired);
             return Ok(new { success = updated });
         }
@@ -104,6 +109,7 @@ namespace Apha.PIMS.Api.Controllers
         public async Task<IActionResult> GetAllMilestoneFormDates(            
             [FromQuery] QueryParameters<string> parameters, string parentProject)
         {
+            parentProject = Uri.UnescapeDataString(parentProject);
             PaginatedResult<MilestoneFormDatesDto> result =
                 await _service.GetAllMilestoneFormDatesAsync(parameters, parentProject);
             return Ok(_mapper.Map<PaginationRes<MilestoneFormDatesRes>>(result));
@@ -113,6 +119,7 @@ namespace Apha.PIMS.Api.Controllers
         [HttpGet("{parentProject}/formdates/{year}")]
         public async Task<IActionResult> GetMilestoneFormDates(string parentProject, short year)
         {
+            parentProject = Uri.UnescapeDataString(parentProject);
             MilestoneFormDatesDto? result = await _service.GetMilestoneFormDatesAsync(year, parentProject);
             if (result is null)
             {
@@ -127,6 +134,7 @@ namespace Apha.PIMS.Api.Controllers
         public async Task<IActionResult> SaveMilestoneFormDates(
             string parentProject, [FromBody] MilestoneFormDatesReq request, [FromQuery] bool isAddingNew = false)
         {
+            parentProject = Uri.UnescapeDataString(parentProject);
             MilestoneFormDatesDto dto = _mapper.Map<MilestoneFormDatesDto>(request);
             dto.ParentProject = parentProject;
             MilestoneFormDatesDto result = await _service.SaveMilestoneFormDatesAsync(dto, isAddingNew);
@@ -137,6 +145,7 @@ namespace Apha.PIMS.Api.Controllers
         [HttpDelete("{parentProject}/formdates/{year}")]
         public async Task<IActionResult> DeleteMilestoneFormDates(string parentProject, short year)
         {
+            parentProject = Uri.UnescapeDataString(parentProject);
             bool deleted = await _service.DeleteMilestoneFormDatesAsync(year, parentProject);
             return Ok(new { success = deleted });
         }
@@ -215,6 +224,7 @@ namespace Apha.PIMS.Api.Controllers
             [FromQuery] bool isDeliverableMode = false
             )
         {
+            project = Uri.UnescapeDataString(project);
             string? createdBy = ResolveUserEmail(User);
             await _service.ValidateStagingAsync(project, typeId, isDeliverableMode, createdBy);
             return Ok(new { success = true });
@@ -224,6 +234,7 @@ namespace Apha.PIMS.Api.Controllers
         [HttpPost("{project}/staging/import")]
         public async Task<IActionResult> ImportStaging(string project)
         {
+            project = Uri.UnescapeDataString(project);
             string? userEmail = ResolveUserEmail(User);
             string? changedBy = userEmail;
             string? createdBy = userEmail;
@@ -235,6 +246,7 @@ namespace Apha.PIMS.Api.Controllers
         [HttpPost("{project}/staging/import-overwrite")]
         public async Task<IActionResult> ImportWithOverwrite(string project)
         {
+            project = Uri.UnescapeDataString(project);
             string? userEmail = ResolveUserEmail(User);
             string? changedBy = userEmail;
             string? createdBy = userEmail;
@@ -246,6 +258,7 @@ namespace Apha.PIMS.Api.Controllers
         [HttpGet("{project}/staging/nextnumber")]
         public async Task<IActionResult> GetNextMilestoneNumber(string project, [FromQuery] int year)
         {
+            project = Uri.UnescapeDataString(project);
             string next = await _service.GetNextMilestoneNumberAsync(project, year);
             return Ok(new { next });
         }

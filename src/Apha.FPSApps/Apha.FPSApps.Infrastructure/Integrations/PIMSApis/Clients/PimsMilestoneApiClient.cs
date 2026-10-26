@@ -27,7 +27,7 @@ namespace Apha.FPSApps.Infrastructure.Integrations.PIMSApis.Clients
         public async Task<ApiResponseDto<List<MilestoneDto>>> GetAllMilestonesAsync(QueryParameters<string> query, string project)
         {
             string url = QueryStringHelper.AddQueryString(PimsApiEndpoints.GetAllMilestones, query);
-            url += $"&project={project}";
+            url += $"&project={Uri.EscapeDataString(project)}";
             var response = await _http.GetAsync<List<MilestoneRes>>(url);
 
             if (response.Success && response.Data != null)

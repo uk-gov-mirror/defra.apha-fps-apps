@@ -52,9 +52,10 @@ namespace Apha.PIMS.DataAccess.Repository
                 Enddate        = entity.EndDate,
                 Costbooknumber = entity.CostbookNumber,
                 Riskid         = entity.Riskid,
-                Useprojectyear = (short)(entity.UseProjectYears ? 1 : 0),
+                Useprojectyear = (short)(entity.UseProjectYears ? -1 : 0),
                 Revisedenddate = entity.RevisedEndDate,
-                Closeddate     = entity.ClosedDate
+                Closeddate     = entity.ClosedDate,
+                Formrequired = true, // Default value for new records
             };
 
             _dbContext.ProjectRadTrackData.Add(radtrackData);
@@ -77,7 +78,7 @@ namespace Apha.PIMS.DataAccess.Repository
                 existing.Enddate        = entity.EndDate;
                 existing.Costbooknumber = entity.CostbookNumber;
                 existing.Riskid         = entity.Riskid;
-                existing.Useprojectyear = (short)(entity.UseProjectYears ? 1 : 0);
+                existing.Useprojectyear = (short)(entity.UseProjectYears ? -1 : 0);
                 existing.Revisedenddate = entity.RevisedEndDate;
                 existing.Closeddate     = entity.ClosedDate;
                 await _dbContext.SaveChangesAsync();

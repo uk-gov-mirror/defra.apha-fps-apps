@@ -59,11 +59,14 @@
                             @* Financial Year Initiation Process For + Config Values + Note *@
                             <div class="govuk-grid-column-full sup_p_0 govuk-!-margin-top-3 govuk-!-margin-left-3">
                                 <div class="govuk-form-group govuk-!-margin-bottom-4" style="display:flex; align-items:center; gap:10px;">
-                                    <label class="govuk-label govuk-!-font-weight-bold govuk-!-margin-bottom-0" for="yearEndProcessYear">
+                                <label class="govuk-label govuk-!-font-weight-bold govuk-!-margin-bottom-0" for="displayYearEndProcessYear">
                                         Financial Year Initiation Process For
                                     </label>
+                                    <input class="govuk-input govuk-input--width-5" id="displayYearEndProcessYear" type="text"
+                                       value="@(Model.PlannedYear > 0 ? $"{Model.PlannedYear}-{(Model.PlannedYear + 1) % 100:D2}" : "")"
+                                       autocomplete="off" disabled>
                                     <input class="govuk-input govuk-input--width-5" id="yearEndProcessYear"
-                                           type="text" value="@Model.PlannedYear" autocomplete="off" disabled>
+                                           type="text" value="@Model.PlannedYear" autocomplete="off" style="display:none;" aria-label="Year End Process Year">
                                 </div>
 
                                 <div class="govuk-grid-row">

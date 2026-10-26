@@ -209,7 +209,7 @@ namespace Apha.PIMS.Application.UnitTests.Services.ProjectDetailsServiceTest
             result.Parentproject.Should().Be("PP001");
             result.Version.Should().Be("1.0");
             result.Riskid.Should().Be(1);
-            dto.UseProjectYears.Should().BeFalse();
+            dto.UseProjectYears.Should().BeTrue();
             result.UseProjectYears.Should().BeFalse();
 
             await _mockRepository.Received(1).GetPimsDetailAsync(dto.Parentproject!);
@@ -245,7 +245,7 @@ namespace Apha.PIMS.Application.UnitTests.Services.ProjectDetailsServiceTest
             var result = await _sut.SavePimsDetailAsync(dto);
 
             // Assert
-            dto.UseProjectYears.Should().BeFalse();
+            dto.UseProjectYears.Should().BeTrue();
             result.UseProjectYears.Should().BeFalse();
 
             _mockMapper.Received(1).Map<ProjectDetail>(dto);
